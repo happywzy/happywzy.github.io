@@ -4,6 +4,35 @@
   
     
     <entry>
+      <title>springboot定时任务从配置文件中获取cron表达式</title>
+      <link href="/2020/04/07/springboot-ding-shi-ren-wu-cong-pei-zhi-wen-jian-zhong-huo-qu-cron-biao-da-shi/"/>
+      <url>/2020/04/07/springboot-ding-shi-ren-wu-cong-pei-zhi-wen-jian-zhong-huo-qu-cron-biao-da-shi/</url>
+      
+        <content type="html"><![CDATA[<h3 id="Scheduled"><a href="#Scheduled" class="headerlink" title="@Scheduled"></a>@Scheduled</h3><p>实现cron表达式从application.yml文件中获取</p><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">dbc</span><span class="token punctuation">:</span>  <span class="token key atrule">cron</span><span class="token punctuation">:</span> 0/5 * * * * <span class="token punctuation">?</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span><span class="token annotation punctuation">@EnableScheduling</span><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CompareSchedule</span> <span class="token punctuation">{</span>    <span class="token annotation punctuation">@Scheduled</span><span class="token punctuation">(</span>cron <span class="token operator">=</span> <span class="token string">"${dbc.cron}"</span><span class="token punctuation">)</span>    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">schedule</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <span class="token punctuation">}</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h3 id="cron表达式含义"><a href="#cron表达式含义" class="headerlink" title="cron表达式含义"></a>cron表达式含义</h3><p>cron一共有7位，但是最后一位是年，可以留空，所以我们可以写6位：</p><ul><li>第一位，表示秒，取值0-59</li><li>第二位，表示分，取值0-59 </li><li>第三位，表示小时，取值0-23 </li><li>第四位，日期天/日，取值1-31</li><li>第五位，日期月份，取值1-12 </li><li>第六位，星期，取值1-7，星期一，星期二…，注：不是第1周，第二周的意思 另外：1表示星期天，2表示星期一。</li><li>第七位，年份，可以留空，取值1970-2099 </li></ul><p>cron中，还有一些特殊的符号，含义如下：</p><ul><li>(*)星号：可以理解为每的意思，每秒，每分，每天，每月，每年… </li><li>(?)问号：问号只能出现在日期和星期这两个位置，表示这个位置的值不确定，每天3点执行，所以第六位星期的位置，我们是不需要关注的，就是不确定的值。同时：日期和星期是两个相互排斥的元素，通过问号来表明不指定值。比如，1月10日，比如是星期1，如果在星期的位置是另指定星期二，就前后冲突矛盾了。</li><li>(-)减号：表达一个范围，如在小时字段中使用“10-12”，则表示从10到12点，即10,11,12 </li><li>(,)逗号：表达一个列表值，如在星期字段中使用“1,2,4”，则表示星期一，星期二，星期四 </li><li>(/)斜杠：如：x/y，x是开始值，y是步长，比如在第一位（秒） 0/15就是，从0秒开始，每15秒，最后就是0，15，30，45，60 另：*/y，等同于0/y </li></ul><p>下面列举几个例子供大家来验证：</p><ul><li>0 0 3 * * ? 每天3点执行 </li><li>0 5 3 * * ? 每天3点5分执行 </li><li>0 5 3 ? * * 每天3点5分执行，与上面作用相同</li><li>0 5/10 3 * * ? 每天3点的 5分，15分，25分，35分，45分，55分这几个时间点执行 </li><li>0 10 3 ? * 1 每周星期天，3点10分 执行，注：1表示星期天 </li><li>0 10 3 ? * 1 #3 每个月的第三个星期，星期天 执行，#号只能出现在星期的位置 </li></ul><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> spring boot </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> spring boot </tag>
+            
+            <tag> schedule </tag>
+            
+            <tag> cron </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>测试文章加密，密码123456</title>
       <link href="/2020/04/07/ce-shi-wen-zhang-jia-mi/"/>
       <url>/2020/04/07/ce-shi-wen-zhang-jia-mi/</url>
@@ -1592,33 +1621,6 @@
     
     
     <entry>
-      <title>istio简介</title>
-      <link href="/2019/12/25/istio/"/>
-      <url>/2019/12/25/istio/</url>
-      
-        <content type="html"><![CDATA[<h2 id="Istio简介"><a href="#Istio简介" class="headerlink" title="Istio简介"></a>Istio简介</h2><p>Istio是一个开放服务网格，提供了一种连接，管理和保护微服务的统一方法。它支持管理服务之间的流量，执行访问策略以及汇总遥测数据，所有这些都无需更改微服务代码。<br>Istio：</p><ul><li>HTTP，gRPC，WebSocket，MongoDB和TCP通信的自动负载平衡。  </li><li>通过丰富的路由规则，重试，故障转移和故障注入对流量行为进行细粒度控制。  </li><li>可配置的策略层和API，支持访问控制，速率限制和配额。  </li><li>群集内所有流量的自动指标，日志和跟踪，包括群集入口和出口。  </li><li>通过强大的基于身份的身份验证和授权，在群集中进行安全的服务间通信。  </li></ul><h2 id="Istio架构图"><a href="#Istio架构图" class="headerlink" title="Istio架构图"></a>Istio架构图</h2><p><img src="/images/istio.jpg" alt="istio" title="istio架构图"></p><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
-      
-      
-      <categories>
-          
-          <category> istio </category>
-          
-      </categories>
-      
-      
-        <tags>
-            
-            <tag> istio </tag>
-            
-            <tag> service mesh </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>logback配置文件模板</title>
       <link href="/2019/12/25/logback-pei-zhi-wen-jian-mo-ban/"/>
       <url>/2019/12/25/logback-pei-zhi-wen-jian-mo-ban/</url>
@@ -1638,6 +1640,33 @@
             <tag> logback </tag>
             
             <tag> logback配置 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>istio简介</title>
+      <link href="/2019/12/25/istio/"/>
+      <url>/2019/12/25/istio/</url>
+      
+        <content type="html"><![CDATA[<h2 id="Istio简介"><a href="#Istio简介" class="headerlink" title="Istio简介"></a>Istio简介</h2><p>Istio是一个开放服务网格，提供了一种连接，管理和保护微服务的统一方法。它支持管理服务之间的流量，执行访问策略以及汇总遥测数据，所有这些都无需更改微服务代码。<br>Istio：</p><ul><li>HTTP，gRPC，WebSocket，MongoDB和TCP通信的自动负载平衡。  </li><li>通过丰富的路由规则，重试，故障转移和故障注入对流量行为进行细粒度控制。  </li><li>可配置的策略层和API，支持访问控制，速率限制和配额。  </li><li>群集内所有流量的自动指标，日志和跟踪，包括群集入口和出口。  </li><li>通过强大的基于身份的身份验证和授权，在群集中进行安全的服务间通信。  </li></ul><h2 id="Istio架构图"><a href="#Istio架构图" class="headerlink" title="Istio架构图"></a>Istio架构图</h2><p><img src="/images/istio.jpg" alt="istio" title="istio架构图"></p><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> istio </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> istio </tag>
+            
+            <tag> service mesh </tag>
             
         </tags>
       
