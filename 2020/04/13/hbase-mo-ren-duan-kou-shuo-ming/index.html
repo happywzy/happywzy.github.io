@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="flink中状态管理, Happywzy">
+    <meta name="keywords" content="hbase默认端口说明, Happywzy">
     <meta name="description" content="">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -16,7 +16,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>flink中状态管理 | Happywzy</title>
+    <title>hbase默认端口说明 | Happywzy</title>
     <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/awesome/css/all.css">
@@ -245,12 +245,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/21.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/13.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">flink中状态管理</h1>
+                    <h1 class="description center-align post-title">hbase默认端口说明</h1>
                 </div>
             </div>
         </div>
@@ -367,12 +367,8 @@
                     
                     <div class="article-tag">
                         
-                            <a href="/tags/flink/">
-                                <span class="chip bg-color">flink</span>
-                            </a>
-                        
-                            <a href="/tags/%E7%8A%B6%E6%80%81%E7%AE%A1%E7%90%86/">
-                                <span class="chip bg-color">状态管理</span>
+                            <a href="/tags/hbase/">
+                                <span class="chip bg-color">hbase</span>
                             </a>
                         
                     </div>
@@ -383,8 +379,8 @@
                     <div class="post-cate">
                         <i class="fas fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/flink/" class="post-category">
-                                flink
+                            <a href="/categories/hbase/" class="post-category">
+                                hbase
                             </a>
                         
                     </div>
@@ -396,28 +392,28 @@
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2020-03-25
+                    2020-04-13
                 </div>
                 
 
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
-                    2020-03-25
+                    2020-04-13
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    2.4k
+                    187
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                    8 分
+                    1 分
                 </div>
                 
 
@@ -433,82 +429,93 @@
         <hr class="clearfix">
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h3 id="流处理状态管理"><a href="#流处理状态管理" class="headerlink" title="流处理状态管理"></a>流处理状态管理</h3><p>有状态的计算是流处理框架要实现的重要功能，因为稍复杂的流处理场景都需要记录状态，然后在新流入数据的基础上不断更新状态。下面的几个场景都需要使用流处理的状态功能：</p>
-<ul>
-<li>数据流中的数据有重复，我们想对重复数据去重，需要记录哪些数据已经流入过应用，当新数据流入时，根据已流入过的数据来判断去重。</li>
-<li>检查输入流是否符合某个特定的模式，需要将之前流入的元素以状态的形式缓存下来。比如，判断一个温度传感器数据流中的温度是否在持续上升。</li>
-<li>对一个时间窗口内的数据进行聚合分析，分析一个小时内某项指标的75分位或99分位的数值。</li>
-<li>在线机器学习场景下，需要根据新流入数据不断更新机器学习的模型参数。</li>
-</ul>
-<h3 id="flink状态管理"><a href="#flink状态管理" class="headerlink" title="flink状态管理"></a>flink状态管理</h3><p>Flink的一个算子有多个子任务，每个子任务分布在不同实例上，我们可以把状态理解为某个算子子任务在其当前实例上的一个变量，变量记录了数据流的历史信息。当新数据流入时，我们可以结合历史信息来进行计算。实际上，Flink的状态是由算子的子任务来创建和管理的。一个状态更新和获取的流程如下图所示，一个算子子任务接收输入流，获取对应的状态，根据新的计算结果更新状态。一个简单的例子是对一个时间窗口内输入流的某个整数字段求和，那么当算子子任务接收到新元素时，会获取已经存储在状态中的数值，然后将当前输入加到状态上，并将状态数据更新。<br><img src="/images/flink20.png" alt="状态管理"></p>
-<p>获取和更新状态的逻辑其实并不复杂，但流处理框架还需要解决以下几类问题：</p>
-<ul>
-<li>数据的产出要保证实时性，延迟不能太高。</li>
-<li>需要保证数据不丢不重，恰好计算一次，尤其是当状态数据非常大或者应用出现故障需要恢复时，要保证状态的计算不出任何错误。</li>
-<li>一般流处理任务都是7*24小时运行的，程序的可靠性非常高。</li>
-</ul>
-<p>基于上述要求，我们不能将状态直接交由内存管理，因为内存的容量是有限制的，当状态数据稍微大一些时，就会出现内存不够的问题。作为一个计算框架，Flink提供了有状态的计算，封装了一些底层的实现，比如状态的高效存储、Checkpoint和Savepoint持久化备份机制、计算资源扩缩容等问题。因为Flink接管了这些问题，开发者只需调用Flink API，这样可以更加专注于业务逻辑。</p>
-<h3 id="Flink的几种状态类型"><a href="#Flink的几种状态类型" class="headerlink" title="Flink的几种状态类型"></a>Flink的几种状态类型</h3><h4 id="Managed-State和Raw-State"><a href="#Managed-State和Raw-State" class="headerlink" title="Managed State和Raw State"></a>Managed State和Raw State</h4><p>Flink有两种基本类型的状态：托管状态（Managed State）和原生状态（Raw State）。从名称中也能读出两者的区别：Managed State是由Flink管理的，Flink帮忙存储、恢复和优化，Raw State是开发者自己管理的，需要自己序列化。<br>| |Managed State|Raw State|<br>|—|—|—|<br>|状态管理方式|Flink Runtime自动管理，自动存储，自动恢复，内存管理优化|用户自己管理；需要自己序列化|<br>|状态数据结构|已知的数据结构：value，list，map…|字节数组：byte[]|<br>|推荐使用场景|大多数场景|自定义Operator时可使用|</p>
-<p>两者的具体区别有：</p>
-<ul>
-<li>从状态管理的方式上来说，Managed State由Flink Runtime托管，状态是自动存储、自动恢复的，Flink在存储管理和持久化上做了一些优化。当我们横向伸缩，或者说我们修改Flink应用的并行度时，状态也能自动重新分布到多个并行实例上。Raw State是用户自定义的状态。</li>
-<li>从状态的数据结构上来说，Managed State支持了一系列常见的数据结构，如ValueState、ListState、MapState等。Raw State只支持字节，任何上层数据结构需要序列化为字节数组。使用时，需要用户自己序列化，以非常底层的字节数组形式存储，Flink并不知道存储的是什么样的数据结构。</li>
-<li>从具体使用场景来说，绝大多数的算子都可以通过继承Rich函数类或其他提供好的接口类，在里面使用Managed State。Raw State是在已有算子和Managed State不够用时，用户自定义算子时使用。</li>
-</ul>
-<h4 id="Keyed-State和Operator-State"><a href="#Keyed-State和Operator-State" class="headerlink" title="Keyed State和Operator State"></a>Keyed State和Operator State</h4><p>对Managed State继续细分，它又有两种类型：Keyed State和Operator State。</p>
-<h4 id="Keyed-State"><a href="#Keyed-State" class="headerlink" title="Keyed State"></a><strong>Keyed State</strong></h4><p>Keyed State是<code>KeyedStream</code>上的状态。假如输入流按照id为Key进行了keyBy分组，形成一个KeyedStream，数据流中所有id为1的数据共享一个状态，可以访问和更新这个状态，以此类推，每个Key对应一个自己的状态。下图展示了Keyed State，因为一个算子子任务可以处理一到多个Key，算子子任务1处理了两种Key，两种Key分别对应自己的状态。</p>
-<p><img src="/images/flink21.png" alt="状态管理"></p>
-<h4 id="Operator-State"><a href="#Operator-State" class="headerlink" title="Operator State"></a><strong>Operator State</strong></h4><p>Operator State可以用在所有算子上，每个算子子任务或者说每个算子实例共享一个状态，流入这个算子子任务的数据可以访问和更新这个状态。下图展示了Operator State，算子子任务1上的所有数据可以共享第一个Operator State，以此类推，每个算子子任务上的数据共享自己的状态。</p>
-<p><img src="/images/flink22.png" alt="状态管理"></p>
-<p>无论是Keyed State还是Operator State，Flink的状态都是基于本地的，即每个算子子任务维护着这个算子子任务对应的状态存储，算子子任务之间的状态不能相互访问。</p>
-<p>在之前各算子的介绍中曾提到，为了自定义Flink的算子，我们可以重写Rich Function接口类，比如<code>RichFlatMapFunction</code>。使用Keyed State时，我们也可以通过重写<code>Rich Function</code>接口类，在里面创建和访问状态。对于Operator State，我们还需进一步实现<code>CheckpointedFunction</code>接口。</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Keyed State</th>
-<th>Operator State</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>适用算子类型</td>
-<td>只适用<code>keyedStream</code>上的算子</td>
-<td>适用所有算子</td>
-</tr>
-<tr>
-<td>状态分配</td>
-<td>每一个key对应一个状态</td>
-<td>一个算子上的子任务对应一个状态</td>
-</tr>
-<tr>
-<td>创建和访问方式</td>
-<td>重写<code>Rich Function</code>,通过里面的<code>RuntimeContext</code>访问</td>
-<td>实现<code>CheckpointedFunction</code>或<code>ListCheckpointed</code>接口</td>
-</tr>
-<tr>
-<td>横向扩展</td>
-<td>状态随着key自动在多个算子子任务上迁移</td>
-<td>有多种状态重新分配的方式:均匀分配、合并后每个得到全量</td>
-</tr>
-<tr>
-<td>支持的数据结构</td>
-<td><code>ValueState</code>、<code>ListState</code>、<code>MapState</code>、<code>ReducingState</code>等</td>
-<td><code>ListState</code></td>
-</tr>
-</tbody></table>
-<h4 id="几种KeyedState之间的关系"><a href="#几种KeyedState之间的关系" class="headerlink" title="几种KeyedState之间的关系"></a>几种KeyedState之间的关系</h4><p><img src="/images/flink23.png" alt="状态管理"></p>
-<h4 id="几种KeyedState之间的差异"><a href="#几种KeyedState之间的差异" class="headerlink" title="几种KeyedState之间的差异"></a>几种KeyedState之间的差异</h4><p><img src="/images/flink24.png" alt="状态管理"></p>
-<h3 id="状态的保存与恢复"><a href="#状态的保存与恢复" class="headerlink" title="状态的保存与恢复"></a>状态的保存与恢复</h3><p><img src="/images/flink25.png" alt="状态管理"></p>
-<h3 id="可选的状态存储方式"><a href="#可选的状态存储方式" class="headerlink" title="可选的状态存储方式"></a>可选的状态存储方式</h3><h4 id="MemoryStateBackend"><a href="#MemoryStateBackend" class="headerlink" title="MemoryStateBackend"></a>MemoryStateBackend</h4><p>Checkpoint 的存储，第一种是内存存储，即 <code>MemoryStateBackend</code>，构造方法是设置最大的StateSize，选择是否做异步快照，这种存储状态本身存储在 TaskManager 节点也就是执行节点内存中的，因为内存有容量限制，所以单个 State maxStateSize 默认 5 M，且需要注意 maxStateSize &lt;= akka.framesize 默认 10 M。Checkpoint 存储在 JobManager 内存中，因此总大小不超过 JobManager 的内存。<strong>推荐使用的场景为：本地测试、几乎无状态的作业，比如 ETL、JobManager 不容易挂，或挂掉影响不大的情况。不推荐在生产场景使用</strong>。</p>
-<h4 id="FsStateBackend"><a href="#FsStateBackend" class="headerlink" title="FsStateBackend"></a>FsStateBackend</h4><p>在文件系统上的 <code>FsStateBackend</code> ，构建方法是需要传一个文件路径和是否异步快照。State 依然在 TaskManager 内存中，但不会像 MemoryStateBackend 有 5 M 的设置上限，Checkpoint 存储在外部文件系统（本地或 HDFS），打破了总大小 Jobmanager 内存的限制。容量限制上，单 TaskManager 上 State 总量不超过它的内存，总大小不超过配置的文件系统容量。<strong>推荐使用的场景、常规使用状态的作业、例如分钟级窗口聚合或 join、需要开启HA的作业</strong>。</p>
-<h4 id="RocksDBStateBacked"><a href="#RocksDBStateBacked" class="headerlink" title="RocksDBStateBacked"></a>RocksDBStateBacked</h4><p>还有一种存储为 <code>RocksDBStateBackend</code> ，RocksDB 是一个 key/value 的内存存储系统，和其他的 key/value 一样，先将状态放到内存中，如果内存快满时，则写入到磁盘中，但需要注意 <strong>RocksDB 不支持同步的 Checkpoint</strong>，构造方法中没有同步快照这个选项。不过 <strong>RocksDB 支持增量的 Checkpoint</strong>，也是目前唯一增量 Checkpoint 的 Backend，意味着并不需要把所有 sst 文件上传到 Checkpoint 目录，仅需要上传新生成的 sst 文件即可。它的 Checkpoint 存储在外部文件系统（本地或HDFS），其容量限制只要单个 TaskManager 上 State 总量不超过它的内存+磁盘，单 Key最大 2G，总大小不超过配置的文件系统容量即可。<strong>推荐使用的场景为：超大状态的作业，例如天级窗口聚合、需要开启 HA 的作业、最好是对状态读写性能要求不高的作业</strong>。</p>
-<h4 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h4><ul>
-<li><p><a href="https://mp.weixin.qq.com/s/JLl-LMjcnVrIyHCCq7Yv7A" target="_blank" rel="noopener">Flink状态管理详解：Keyed State和Operator List State深度解析</a></p>
-</li>
-<li><p><a href="https://ververica.cn/developers/state-management/" target="_blank" rel="noopener">Apache Flink 零基础入门（七）：状态管理及容错机制</a></p>
-</li>
-</ul>
-<script>
+                <table>
+   <tbody><tr>
+      <td>节点</td>
+      <td>端口号</td>
+      <td>协议</td>
+      <td>使用</td>
+      <td>说明</td>
+   </tr>
+   <tr>
+      <td rowspan="2">zookeeper</td>
+      <td>2181</td>
+      <td></td>
+      <td>zkCli.sh -server zookeeper1:2181</td>
+      <td>客户端接入</td>
+   </tr>
+   <tr>
+      <td>2888,3888</td>
+      <td></td>
+      <td>N/A</td>
+      <td>集群内部通讯</td>
+   </tr>
+   <tr>
+      <td rowspan="2">HDFS Namenode</td>
+      <td>9000</td>
+      <td>HDFS</td>
+      <td>hdfs dfs -ls hdfs://namenode1:9000/</td>
+      <td>客户端接入</td>
+   </tr>
+   <tr>
+      <td>50070</td>
+      <td>HTTP</td>
+      <td>http://namenode1:50070/</td>
+      <td>集群监控</td>
+   </tr>
+   <tr>
+      <td>HDFS SecondaryNamenode</td>
+      <td>50090</td>
+      <td>HTTP</td>
+      <td>http://namenode1:50090/</td>
+      <td>secondary监控</td>
+   </tr>
+   <tr>
+      <td rowspan="3">HDFS Datanode</td>
+      <td>50010</td>
+      <td></td>
+      <td>N/A</td>
+      <td>客户端接入/其他节点接入</td>
+   </tr>
+   <tr>
+      <td>50020</td>
+      <td></td>
+      <td>N/A</td>
+      <td></td>
+   </tr>
+   <tr>
+      <td>50075</td>
+      <td>HTTP</td>
+      <td>http://datanode1:50075/</td>
+      <td>节点监控</td>
+   </tr>
+   <tr>
+      <td rowspan="2">HBase Master</td>
+      <td>16000</td>
+      <td></td>
+      <td>hbase-client-1.x.x.jar</td>
+      <td>RegionServer接入</td>
+   </tr>
+   <tr>
+      <td>16010</td>
+      <td>HTTP</td>
+      <td>http://namenode1:16010/</td>
+      <td>集群监控</td>
+   </tr>
+   <tr>
+      <td rowspan="2">HBase RegionServer</td>
+      <td>16020</td>
+      <td></td>
+      <td>N/A</td>
+      <td>客户端接入</td>
+   </tr>
+   <tr>
+      <td>16030</td>
+      <td>HTTP</td>
+      <td>http://datanode1:16030/</td>
+      <td>节点监控</td>
+   </tr>
+</tbody></table><script>
         document.querySelectorAll('.github-emoji')
           .forEach(el => {
             if (!el.dataset.src) { return; }
@@ -551,7 +558,7 @@
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="http://haolin.club/2020/03/25/flink-zhong-zhuang-tai-guan-li/">http://haolin.club/2020/03/25/flink-zhong-zhuang-tai-guan-li/</a>
+                    <a href="http://haolin.club/2020/04/13/hbase-mo-ren-duan-kou-shuo-ming/">http://haolin.club/2020/04/13/hbase-mo-ren-duan-kou-shuo-ming/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -589,12 +596,8 @@
                     
                         <div class="article-tag">
                             
-                                <a href="/tags/flink/">
-                                    <span class="chip bg-color">flink</span>
-                                </a>
-                            
-                                <a href="/tags/%E7%8A%B6%E6%80%81%E7%AE%A1%E7%90%86/">
-                                    <span class="chip bg-color">状态管理</span>
+                                <a href="/tags/hbase/">
+                                    <span class="chip bg-color">hbase</span>
                                 </a>
                             
                         </div>
@@ -765,7 +768,7 @@
         repo: 'happywzy.github.io',
         owner: 'happywzy',
         admin: ["happywzy"],
-        id: '2020-03-25T09-41-54',
+        id: '2020-04-13T11-07-13',
         distractionFreeMode: false  // Facebook-like distraction free mode
     });
 
@@ -787,52 +790,48 @@
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="far fa-dot-circle"></i>&nbsp;本篇
+            </div>
             <div class="card">
-                <a href="/2020/03/25/flinksql-shi-jian-chuo-zhuan-huan-cheng-ri-qi-ge-shi/">
+                <a href="/2020/04/13/hbase-mo-ren-duan-kou-shuo-ming/">
                     <div class="card-image">
                         
                         
-                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/16.jpg" class="responsive-img" alt="flinkSQL时间戳转换成日期格式">
+                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/13.jpg" class="responsive-img" alt="hbase默认端口说明">
                         
-                        <span class="card-title">flinkSQL时间戳转换成日期格式</span>
+                        <span class="card-title">hbase默认端口说明</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            问题{"id":5,"price":40,"ts":1585125854697,"type":"math"}
-{"id":3,"price":60,"ts":1585125861687,"type":"ph"}
-{"id":1,"price
+                            Hbase默认端口列表及说明
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2020-03-25
-                        </span>
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-13
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/flink/" class="post-category">
-                                    flink
+                            <a href="/categories/hbase/" class="post-category">
+                                    hbase
                                 </a>
                             
                             
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/flink/">
-                        <span class="chip bg-color">flink</span>
-                    </a>
-                    
-                    <a href="/tags/udf/">
-                        <span class="chip bg-color">udf</span>
+                    <a href="/tags/hbase/">
+                        <span class="chip bg-color">hbase</span>
                     </a>
                     
                 </div>
@@ -846,32 +845,31 @@
                 下一篇&nbsp;<i class="fas fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2020/03/25/flink-zhong-processfunction/">
+                <a href="/2020/04/13/hbase-mo-ren-pei-zhi/">
                     <div class="card-image">
                         
                         
-                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/22.jpg" class="responsive-img" alt="flink中ProcessFunction">
+                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/18.jpg" class="responsive-img" alt="HBase默认配置">
                         
-                        <span class="card-title">flink中ProcessFunction</span>
+                        <span class="card-title">HBase默认配置</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            ProcessFunction简介ProcessFunction是flink中最底层的API。
-Flink的一些算子和函数能够进行一些时间上的操作，但是不能获取算子当前的Processing Time或者是Watermark时间戳，调用起来
+                            hbase-default.xml中常用的的默认配置表|配置项|说明|默认值||—|—|—||hbase.tmp.dir|本地文件系统上的临时目录。将此设置更改为指向比“/tmp”更持久的位置，因为在重新启动计算机时清除了“/tmp”目录。
                         
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-03-25
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-13
                             </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/flink/" class="post-category">
-                                    flink
+                            <a href="/categories/hbase/" class="post-category">
+                                    hbase
                                 </a>
                             
                             
@@ -881,8 +879,8 @@ Flink的一些算子和函数能够进行一些时间上的操作，但是不能
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/flink/">
-                        <span class="chip bg-color">flink</span>
+                    <a href="/tags/hbase/">
+                        <span class="chip bg-color">hbase</span>
                     </a>
                     
                 </div>
