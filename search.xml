@@ -4,6 +4,35 @@
   
     
     <entry>
+      <title>k8s【coredns解析问题】</title>
+      <link href="/2020/07/02/k8s-dns-jie-xi-wen-ti/"/>
+      <url>/2020/07/02/k8s-dns-jie-xi-wen-ti/</url>
+      
+        <content type="html"><![CDATA[<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master busybox<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod -nkube-system -owide</span>NAME                             READY   STATUS    RESTARTS   AGE     IP               NODE     NOMINATED NODE   READINESS GATEScoredns-5c98db65d4-8zjps         1/1     Running   1          2d23h   10.244.0.13      master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>coredns-5c98db65d4-d2kth         1/1     Running   1          2d23h   10.244.0.14      master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master busybox<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod -owide</span>NAME                      READY   STATUS    RESTARTS   AGE    IP            NODE     NOMINATED NODE   READINESS GATEScurl-6bf6db5c4f-pjld9     1/1     Running   1          3d     10.244.1.2    node2    <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>gateway-99b655cc6-np685   1/1     Running   0          44s    10.244.0.54   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>test-post-start1          1/1     Running   0          115s   10.244.1.6    node2    <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>test-post-start2          1/1     Running   0          115s   10.244.0.52   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>test-post-start3          1/1     Running   0          115s   10.244.0.53   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>如上所示，出现部署在<code>master</code>节点上的<code>pod</code>，无法解析<code>gateway.default.svc.cluster.local</code>域名，但是部署在<code>node2</code>，确可以解析，如上<code>curl-6bf6db5c4f-pjld9</code>,<code>test-post-start1</code>通过<code>nslookup</code>都可以解析.</p><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 报错</span>/ <span class="token comment" spellcheck="true"># nslookup gateway</span>nslookup: can<span class="token string">'t resolve '</span><span class="token punctuation">(</span>null<span class="token punctuation">)</span><span class="token string">': Name does not resolvenslookup: can'</span>t resolve <span class="token string">'gateway'</span><span class="token keyword">:</span> Try again/ <span class="token comment" spellcheck="true"># nslookup gateway.default.svc.cluster.local</span>Server:    10.244.0.10Address 1: 10.244.0.10nslookup: can<span class="token string">'t resolve '</span>gateway.default.svc.cluster.local'<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>进入<code>master</code>节点<code>pod</code>，直接通过<code>coredns pod ip</code>解析测试</p><pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">exec</span> -it test-post-start2 sh<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><pre class="line-numbers language-bash"><code class="language-bash">/ <span class="token comment" spellcheck="true"># nslookup gateway.default.svc.cluster.local 10.244.0.13</span>Server:    10.244.0.13Address 1: 10.244.0.13 10-244-0-13.kube-dns.kube-system.svc.cluster.localName:      gateway.default.svc.cluster.localAddress 1: 10.244.106.29 gateway.default.svc.cluster.local<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>发现直接通过<code>coredns pod ip</code>解析可以成功，证明<code>coredns</code>服务本身没有问题.</p><p>查看<code>dns clusterIP</code>.</p><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc -nkube-system</span>NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>                  AGEkube-dns        ClusterIP   10.244.0.10    <span class="token operator">&lt;</span>none<span class="token operator">></span>        53/UDP,53/TCP,9153/TCP   21m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 通过clusterIP解析域名失败</span><span class="token function">nslookup</span> gateway.default.svc.cluster.local 10.244.0.10<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><p>通过以上测试证明问题出现在<code>coredns service</code>上.</p><h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><p>导出现有<code>kube-dns service</code>配置</p><pre class="line-numbers language-bash"><code class="language-bash">kubectl get svc -nkube-system kube-dns -oyaml <span class="token operator">></span> kube-dns-svc.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>修改<code>kube-dns-svc.yaml</code>.</p><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service<span class="token key atrule">metadata</span><span class="token punctuation">:</span>  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>    <span class="token key atrule">prometheus.io/port</span><span class="token punctuation">:</span> <span class="token string">"9153"</span>    <span class="token key atrule">prometheus.io/scrape</span><span class="token punctuation">:</span> <span class="token string">"true"</span>  <span class="token key atrule">labels</span><span class="token punctuation">:</span>    <span class="token key atrule">k8s-app</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns    <span class="token key atrule">kubernetes.io/cluster-service</span><span class="token punctuation">:</span> <span class="token string">"true"</span>    <span class="token key atrule">kubernetes.io/name</span><span class="token punctuation">:</span> KubeDNS  <span class="token key atrule">name</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>system<span class="token key atrule">spec</span><span class="token punctuation">:</span>  <span class="token key atrule">ports</span><span class="token punctuation">:</span>  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> dns    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">53</span>    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> UDP    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">53</span>  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> dns<span class="token punctuation">-</span>tcp    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">53</span>    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">53</span>  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> metrics    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9153</span>    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">9153</span>  <span class="token key atrule">selector</span><span class="token punctuation">:</span>    <span class="token key atrule">k8s-app</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns  <span class="token key atrule">sessionAffinity</span><span class="token punctuation">:</span> None  <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f kube-dns-svc.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>查看最新的<code>coredns clusterIP</code>,当前为<code>10.244.47.231</code>.</p><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc -nkube-system</span>NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>                  AGEkube-dns        ClusterIP   10.244.47.231    <span class="token operator">&lt;</span>none<span class="token operator">></span>        53/UDP,53/TCP,9153/TCP   21m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><p>进去之前无法解析的<code>pod</code>中测试，证明新的<code>clusterIP</code>没有问题.</p><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">nslookup</span> gateway.default.svc.cluster.local 10.244.47.231<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><p>修改<code>kubelet --clusterDNS</code>,这样新创建的<code>pod /etc/resolv.conf</code>中<code>nameserver</code>为新的<code>coredns clusterIP</code>.</p><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改kubelet配置</span>vim  /var/lib/kubelet/config.yaml<span class="token comment" spellcheck="true"># 找到clusterDNS</span>clusterDNS:- 10.244.47.231<span class="token comment" spellcheck="true"># 重启kubelet生效,注意k8s中所有节点都需要修改重启</span>systemctl restart kubelet.service<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>最后测试，新的<code>pod</code>中<code>/etc/resolv.conf</code>.解析没有问题.</p><pre class="line-numbers language-bash"><code class="language-bash">/ <span class="token comment" spellcheck="true"># cat /etc/resolv.conf </span>nameserver 10.244.47.231search default.svc.cluster.local svc.cluster.local cluster.localoptions ndots:5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> k8s </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> kube-dns </tag>
+            
+            <tag> kubelet </tag>
+            
+            <tag> coreDNS </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>influxDB内存优化</title>
       <link href="/2020/06/30/influxdb-nei-cun-you-hua/"/>
       <url>/2020/06/30/influxdb-nei-cun-you-hua/</url>
@@ -2802,33 +2831,6 @@
     
     
     <entry>
-      <title>istio简介</title>
-      <link href="/2019/12/25/istio/"/>
-      <url>/2019/12/25/istio/</url>
-      
-        <content type="html"><![CDATA[<h2 id="Istio简介"><a href="#Istio简介" class="headerlink" title="Istio简介"></a>Istio简介</h2><p>Istio是一个开放服务网格，提供了一种连接，管理和保护微服务的统一方法。它支持管理服务之间的流量，执行访问策略以及汇总遥测数据，所有这些都无需更改微服务代码。<br>Istio：</p><ul><li>HTTP，gRPC，WebSocket，MongoDB和TCP通信的自动负载平衡。  </li><li>通过丰富的路由规则，重试，故障转移和故障注入对流量行为进行细粒度控制。  </li><li>可配置的策略层和API，支持访问控制，速率限制和配额。  </li><li>群集内所有流量的自动指标，日志和跟踪，包括群集入口和出口。  </li><li>通过强大的基于身份的身份验证和授权，在群集中进行安全的服务间通信。  </li></ul><h2 id="Istio架构图"><a href="#Istio架构图" class="headerlink" title="Istio架构图"></a>Istio架构图</h2><p><img src="/images/istio.jpg" alt="istio" title="istio架构图"></p><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
-      
-      
-      <categories>
-          
-          <category> istio </category>
-          
-      </categories>
-      
-      
-        <tags>
-            
-            <tag> istio </tag>
-            
-            <tag> service mesh </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>logback配置文件模板</title>
       <link href="/2019/12/25/logback-pei-zhi-wen-jian-mo-ban/"/>
       <url>/2019/12/25/logback-pei-zhi-wen-jian-mo-ban/</url>
@@ -2848,6 +2850,33 @@
             <tag> logback </tag>
             
             <tag> logback配置 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>istio简介</title>
+      <link href="/2019/12/25/istio/"/>
+      <url>/2019/12/25/istio/</url>
+      
+        <content type="html"><![CDATA[<h2 id="Istio简介"><a href="#Istio简介" class="headerlink" title="Istio简介"></a>Istio简介</h2><p>Istio是一个开放服务网格，提供了一种连接，管理和保护微服务的统一方法。它支持管理服务之间的流量，执行访问策略以及汇总遥测数据，所有这些都无需更改微服务代码。<br>Istio：</p><ul><li>HTTP，gRPC，WebSocket，MongoDB和TCP通信的自动负载平衡。  </li><li>通过丰富的路由规则，重试，故障转移和故障注入对流量行为进行细粒度控制。  </li><li>可配置的策略层和API，支持访问控制，速率限制和配额。  </li><li>群集内所有流量的自动指标，日志和跟踪，包括群集入口和出口。  </li><li>通过强大的基于身份的身份验证和授权，在群集中进行安全的服务间通信。  </li></ul><h2 id="Istio架构图"><a href="#Istio架构图" class="headerlink" title="Istio架构图"></a>Istio架构图</h2><p><img src="/images/istio.jpg" alt="istio" title="istio架构图"></p><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> istio </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> istio </tag>
+            
+            <tag> service mesh </tag>
             
         </tags>
       
