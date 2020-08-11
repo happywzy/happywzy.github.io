@@ -403,21 +403,21 @@
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
-                    2020-08-04
+                    2020-08-06
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    554
+                    622
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                    2 分
+                    3 分
                 </div>
                 
 
@@ -498,11 +498,36 @@ docker run -d --name mysql -v /root/mysql:/etc/mysql -v /var/lib/mysql/:/var/lib
 - ...
 
 6. 使用`keepalive`工具
-```bash
-# 写一个脚本判断docker中mysql是否存活
-docker ps| grep mysql:5.7 | grep Up |wc -l
 
-# 配置keepalived</code></pre><script>
+写一个脚本`/etc/docker_mysql.sh`判断`docker`中`mysql`是否存活
+```bash
+#! /bin/bash
+count=$(docker ps |grep hub.deri.org.cn/library/mysql:5.7 | grep Up| wc -l)
+if [ $count == "1" ];then
+    exit 0
+else
+    exit 1
+fi
+
+
+# 测试这个脚本
+[root@mysql01 ~]# docker stop mysql
+mysql
+[root@mysql01 ~]# ./docker_mysql.sh 
+[root@mysql01 ~]# ./docker_mysql.sh ;echo $?
+1
+[root@mysql01 ~]# docker start mysql 
+mysql
+[root@mysql01 ~]# ./docker_mysql.sh ;echo $?
+0
+
+# 配置keepalived
+vrrp_script chk_mysql {
+    script "/etc/docker_mysql.sh"
+    interval 2
+    timeout 2
+    fall 3
+}</code></pre><script>
         document.querySelectorAll('.github-emoji')
           .forEach(el => {
             if (!el.dataset.src) { return; }
@@ -800,8 +825,7 @@ docker ps| grep mysql:5.7 | grep Up |wc -l
                             说明prometheus监控插件mysqld_exporter可以采集mysql指标并告警展示.
 步骤本文使用docker部署的方式
 
-创建用户并授权
-CREATE USER 'exporter'@'%' IDENTIFIED BY '12
+创建用户并授权```sqlCREATE USER ‘exporter’@’%’ IDENTIFIED B
                         
                     </div>
                     <div class="publish-info">
@@ -1075,7 +1099,7 @@ code[class*="language-"], pre[class*="language-"] { white-space: pre !important;
             <br>
             
             &nbsp;<i class="fas fa-chart-area"></i>&nbsp;站点总字数:&nbsp;<span
-                class="white-color">119.3k</span>&nbsp;字
+                class="white-color">122.5k</span>&nbsp;字
             
             
             
