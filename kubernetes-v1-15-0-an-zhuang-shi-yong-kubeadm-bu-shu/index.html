@@ -1,0 +1,1942 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="kubernetes-v1.15.0安装【使用kubeadm部署】, spring boot,java,flink,kubernetes,hadoop,分布式,微服务,容器,常用工具,linux">
+    <meta name="description" content="日常学习笔记,共同进步">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>kubernetes-v1.15.0安装【使用kubeadm部署】 | Happywzy</title>
+    <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/awesome/css/all.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/css/my.css">
+
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/jquery/jquery.min.js"></script>
+    
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
+<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Happywzy</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>主页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/categories" class="waves-effect waves-light">
+      
+      <i class="fas fa-bookmark" style="zoom: 0.6;"></i>
+      
+      <span>类别</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/contact" class="waves-effect waves-light">
+      
+      <i class="fas fa-comments" style="zoom: 0.6;"></i>
+      
+      <span>留言板</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友情链接</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Happywzy</div>
+        <div class="logo-desc">
+            
+            日常学习笔记,共同进步
+            
+        </div>
+    </div>
+
+    
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			主页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/categories" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-bookmark"></i>
+			
+			类别
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/contact" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-comments"></i>
+			
+			留言板
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友情链接
+		</a>
+          
+        </li>
+        
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/3.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">kubernetes-v1.15.0安装【使用kubeadm部署】</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/tocbot/tocbot.css">
+<style>
+    #articleContent h1::before,
+    #articleContent h2::before,
+    #articleContent h3::before,
+    #articleContent h4::before,
+    #articleContent h5::before,
+    #articleContent h6::before {
+        display: block;
+        content: " ";
+        height: 100px;
+        margin-top: -100px;
+        visibility: hidden;
+    }
+
+    #articleContent :focus {
+        outline: none;
+    }
+
+    .toc-fixed {
+        position: fixed;
+        top: 64px;
+    }
+
+    .toc-widget {
+        width: 345px;
+        padding-left: 20px;
+    }
+
+    .toc-widget .toc-title {
+        margin: 35px 0 15px 0;
+        padding-left: 17px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1.5rem;
+    }
+
+    .toc-widget ol {
+        padding: 0;
+        list-style: none;
+    }
+
+    #toc-content {
+        height: calc(100vh - 250px);
+        overflow: auto;
+    }
+
+    #toc-content ol {
+        padding-left: 10px;
+    }
+
+    #toc-content ol li {
+        padding-left: 10px;
+    }
+
+    #toc-content .toc-link:hover {
+        color: #42b983;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    #toc-content .toc-link::before {
+        background-color: transparent;
+        max-height: 25px;
+    }
+
+    #toc-content .is-active-link {
+        color: #42b983;
+    }
+
+    #toc-content .is-active-link::before {
+        background-color: #42b983;
+    }
+
+    #floating-toc-btn {
+        position: fixed;
+        right: 15px;
+        bottom: 76px;
+        padding-top: 15px;
+        margin-bottom: 0;
+        z-index: 998;
+    }
+
+    #floating-toc-btn .btn-floating {
+        width: 48px;
+        height: 48px;
+    }
+
+    #floating-toc-btn .btn-floating i {
+        line-height: 48px;
+        font-size: 1.4rem;
+    }
+</style>
+<div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/kubernetes/">
+                                <span class="chip bg-color">kubernetes</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fas fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/k8s/" class="post-category">
+                                k8s
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2019-09-06
+                </div>
+                
+
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
+                    2020-06-29
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    1k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    5 分
+                </div>
+                
+
+                
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="far fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				
+            </div>
+
+        </div>
+        <hr class="clearfix">
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h2 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h2><table>
+<thead>
+<tr>
+<th>节点名</th>
+<th>IP</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>node2</td>
+<td>192.168.41.129</td>
+<td>master</td>
+</tr>
+<tr>
+<td>node3</td>
+<td>192.168.41.130</td>
+<td>slave</td>
+</tr>
+<tr>
+<td>node4</td>
+<td>192.168.41.131</td>
+<td>slave</td>
+</tr>
+</tbody></table>
+<h3 id="系统配置"><a href="#系统配置" class="headerlink" title="系统配置"></a>系统配置</h3><p>在安装之前，需要先做如下准备,修改hosts：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">cat /etc/hosts
+192.168.41.129 node2
+192.168.41.130 node3
+192.168.41.131 node4<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>禁用防火墙：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">systemctl stop firewalld
+systemctl disable firewalld
+
+systemctl stop iptables
+systemctl disable iptables<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>禁用SELINUX：</p>
+<pre><code>setenforce 0</code></pre><pre><code>vi /etc/selinux/config
+SELINUX=disabled</code></pre><pre class="line-numbers language-sh"><code class="language-sh">#检查SELINUX状态
+/usr/sbin/sestatus -v
+SELinux status: disabled<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>创建/etc/sysctl.d/k8s.conf文件，添加如下内容：（vm.swappiness=0是swap相关配置，后面需要配置，这里统一加上）</p>
+<pre><code>net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+vm.swappiness=0</code></pre><p>执行命令使修改生效。</p>
+<pre><code>modprobe br_netfilter
+sysctl -p /etc/sysctl.d/k8s.conf</code></pre><h3 id="kube-proxy开启ipvs的前置条件"><a href="#kube-proxy开启ipvs的前置条件" class="headerlink" title="kube-proxy开启ipvs的前置条件"></a>kube-proxy开启ipvs的前置条件</h3><p>由于ipvs已经加入到了内核的主干，所以为kube-proxy开启ipvs的前提需要加载以下的内核模块：</p>
+<pre class="line-numbers language-s"><code class="language-s">ip_vs
+ip_vs_rr
+ip_vs_wrr
+ip_vs_sh
+nf_conntrack_ipv4<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在所有的Kubernetes节点node1和node2上执行以下脚本:</p>
+<pre><code>cat &gt; /etc/sysconfig/modules/ipvs.modules &lt;&lt;EOF
+#!/bin/bash
+modprobe -- ip_vs
+modprobe -- ip_vs_rr
+modprobe -- ip_vs_wrr
+modprobe -- ip_vs_sh
+modprobe -- nf_conntrack_ipv4
+EOF
+chmod 755 /etc/sysconfig/modules/ipvs.modules &amp;&amp; bash /etc/sysconfig/modules/ipvs.modules &amp;&amp; lsmod | grep -e ip_vs -e nf_conntrack_ipv4</code></pre><p>上面脚本创建了的<code>/etc/sysconfig/modules/ipvs.modules</code>文件，保证在节点重启后能自动加载所需模块。 使用</p>
+<pre><code>lsmod | grep -e ip_vs -e nf_conntrack_ipv4</code></pre><p>命令查看是否已经正确加载所需的内核模块。</p>
+<p>接下来还需要确保各个节点上已经安装了<code>ipset</code>软件包</p>
+<pre><code>yum install ipset</code></pre><p>为了便于查看ipvs的代理规则，最好安装一下管理工具<code>ipvsadm</code> 。</p>
+<pre><code>yum install ipvsadm</code></pre><p>如果以上前提条件如果不满足，则即使<code>kube-proxy</code>的配置开启了<code>ipvs</code>模式，也会退回到<code>iptables</code>模式。</p>
+<h3 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h3><blockquote>
+<p>Kubernetes从1.6开始使用<code>CRI</code>(<code>Container Runtime Interface</code>)容器运行时接口。默认的容器运行时仍然是<code>Docker</code>，使用的是<code>kubelet</code>中内置<code>dockershim CRI</code>实现。</p>
+</blockquote>
+<p>安装<code>docker</code>的<code>yum</code>源:</p>
+<pre class="line-numbers language-sh"><code class="language-sh">yum install -y yum-utils device-mapper-persistent-data lvm2
+yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>查看最新的Docker版本：</p>
+<pre class="line-numbers language-log"><code class="language-log">yum list docker-ce.x86_64  --showduplicates |sort -r
+docker-ce.x86_64            3:18.09.7-3.el7                     docker-ce-stable
+docker-ce.x86_64            3:18.09.6-3.el7                     docker-ce-stable
+docker-ce.x86_64            3:18.09.5-3.el7                     docker-ce-stable
+docker-ce.x86_64            3:18.09.4-3.el7                     docker-ce-stable
+docker-ce.x86_64            3:18.09.3-3.el7                     docker-ce-stable
+docker-ce.x86_64            3:18.09.2-3.el7                     docker-ce-stable
+docker-ce.x86_64            3:18.09.1-3.el7                     docker-ce-stable
+docker-ce.x86_64            3:18.09.0-3.el7                     docker-ce-stable
+docker-ce.x86_64            18.06.3.ce-3.el7                    docker-ce-stable
+docker-ce.x86_64            18.06.2.ce-3.el7                    docker-ce-stable
+docker-ce.x86_64            18.06.1.ce-3.el7                    docker-ce-stable
+docker-ce.x86_64            18.06.0.ce-3.el7                    docker-ce-stable
+docker-ce.x86_64            18.03.1.ce-1.el7.centos             docker-ce-stable
+docker-ce.x86_64            18.03.0.ce-1.el7.centos             docker-ce-stable<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>Kubernetes 1.15</code>当前支持的docker版本列表是<code>1.13.1</code>, <code>17.03</code>, <code>17.06</code>, <code>17.09</code>, <code>18.06</code>, <code>18.09</code>。 这里在各节点安装docker的<code>18.09.7</code>版本。</p>
+<pre class="line-numbers language-sh"><code class="language-sh">yum makecache fast
+
+yum install -y --setopt=obsoletes=0 \
+  docker-ce-18.09.7-3.el7 
+
+systemctl start docker
+systemctl enable docker<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>确认一下<code>iptables filter</code>表中<code>FOWARD</code>链的默认策略(<code>pllicy</code>)为<code>ACCEPT</code>:</p>
+<pre class="line-numbers language-sh"><code class="language-sh">iptables -nvL
+Chain INPUT (policy ACCEPT 263 packets, 19209 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 DOCKER-USER  all  --  *      *       0.0.0.0/0            0.0.0.0/0
+    0     0 DOCKER-ISOLATION-STAGE-1  all  --  *      *       0.0.0.0/0            0.0.0.0/0
+    0     0 ACCEPT     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0
+    0     0 ACCEPT     all  --  docker0 !docker0  0.0.0.0/0            0.0.0.0/0
+    0     0 ACCEPT     all  --  docker0 docker0  0.0.0.0/0            0.0.0.0/0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="修改docker-cgroup-driver为systemd"><a href="#修改docker-cgroup-driver为systemd" class="headerlink" title="修改docker cgroup driver为systemd"></a>修改docker cgroup driver为systemd</h3><p>根据文档<code>CRI installation</code>中的内容，对于使用<code>systemd</code>作为<code>init system</code>的Linux的发行版，使用systemd作为docker的<code>cgroup driver</code>可以确保服务器节点在资源紧张的情况更加稳定，因此这里修改各个节点上docker的cgroup driver为systemd。</p>
+<p>创建或修改<code>/etc/docker/daemon.json</code>：</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"exec-opts"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"native.cgroupdriver=systemd"</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>重启docker：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">systemctl restart docker
+
+docker info | grep Cgroup
+Cgroup Driver: systemd<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="使用kubeadm部署Kubernetes"><a href="#使用kubeadm部署Kubernetes" class="headerlink" title="使用kubeadm部署Kubernetes"></a>使用kubeadm部署Kubernetes</h2><h3 id="安装kubeadm和kubelet"><a href="#安装kubeadm和kubelet" class="headerlink" title="安装kubeadm和kubelet"></a>安装kubeadm和kubelet</h3><p>下面在各节点安装<code>kubeadm</code>和<code>kubelet</code>：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+
+#由于国内网络不通问题，推荐使用以下阿里云镜像
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
+        http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh">yum makecache fast
+#默认可能安装的版本不一样
+yum install -y kubelet kubeadm kubectl
+#建议指定版本
+yum install -y kubelet-1.15.0 kubeadm-1.15.0 kubectl-1.15.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>Kubernetes 1.8</code>开始要求关闭系统的<code>Swap</code>，如果不关闭，默认配置下kubelet将无法启动。 关闭系统的Swap方法如下:</p>
+<pre><code>swapoff -a</code></pre><p>永久关闭swap：</p>
+<p>修改 <code>/etc/fstab</code> 文件，注释掉 SWAP 的自动挂载，使用<code>free -m</code>确认swap已经关闭。</p>
+<p><code>swappiness</code>参数调整，修改<code>/etc/sysctl.d/k8s.conf</code>添加下面一行,<strong>前面已经统一加过了</strong>：</p>
+<pre><code>vm.swappiness=0</code></pre><p>执行<code>sysctl -p /etc/sysctl.d/k8s.conf</code>使修改生效。</p>
+<blockquote>
+<p>关闭swap可能会对其他服务产生影响，所以这里修改kubelet的配置去掉这个限制。<br>使用kubelet的启动参数<code>–fail-swap-on=false</code>去掉必须关闭Swap的限制，修改<code>/etc/sysconfig/kubelet</code>，加入：<br><code>KUBELET_EXTRA_ARGS=--fail-swap-on=false</code></p>
+</blockquote>
+<h3 id="使用kubeadm-init初始化集群"><a href="#使用kubeadm-init初始化集群" class="headerlink" title="使用kubeadm init初始化集群"></a>使用kubeadm init初始化集群</h3><p>在各节点开机启动<code>kubelet</code>服务：</p>
+<pre><code>systemctl enable kubelet.service</code></pre><p>使用<code>kubeadm config print init-defaults</code>可以打印集群初始化默认的使用的配置：</p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: kubeadm.k8s.io/v1beta2
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: abcdef.0123456789abcdef
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 1.2.3.4
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/dockershim.sock
+  name: node1
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+---
+apiServer:
+  timeoutForControlPlane: 4m0s
+apiVersion: kubeadm.k8s.io/v1beta2
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controllerManager: {}
+dns:
+  type: CoreDNS
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+imageRepository: k8s.gcr.io
+kind: ClusterConfiguration
+kubernetesVersion: v1.14.0
+networking:
+  dnsDomain: cluster.local
+  serviceSubnet: 10.96.0.0/12
+scheduler: {}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>从默认的配置中可以看到，可以使用<code>imageRepository</code>定制在集群初始化时拉取k8s所需镜像的地址。基于默认配置定制出本次使用kubeadm初始化集群所需的配置文件<code>kubeadm.yaml</code>：</p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: kubeadm.k8s.io/v1beta2
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 192.168.41.129
+  bindPort: 6443
+nodeRegistration:
+  taints:
+  - effect: PreferNoSchedule
+    key: node-role.kubernetes.io/master
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: v1.15.0
+networking:
+  podSubnet: 10.244.0.0/16<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在开始初始化集群之前可以使用</p>
+<pre><code>kubeadm config images pull</code></pre><p>预先在各个节点上拉取所k8s需要的docker镜像。</p>
+<blockquote>
+<p>由于国内网络问题，k8s.gcr.io 资源获取不了,使用以下方法</p>
+</blockquote>
+<pre class="line-numbers language-sh"><code class="language-sh">#!/bin/bash
+MY_REGISTRY=gcr.azk8s.cn/google-containers
+
+## 拉取镜像
+docker pull ${MY_REGISTRY}/kube-apiserver:v1.15.0
+docker pull ${MY_REGISTRY}/kube-controller-manager:v1.15.0
+docker pull ${MY_REGISTRY}/kube-scheduler:v1.15.0
+docker pull ${MY_REGISTRY}/kube-proxy:v1.15.0
+docker pull ${MY_REGISTRY}/pause:3.1
+docker pull ${MY_REGISTRY}/etcd:3.3.10
+docker pull ${MY_REGISTRY}/coredns:1.3.1
+
+## 添加Tag
+docker tag ${MY_REGISTRY}/kube-apiserver:v1.15.0 k8s.gcr.io/kube-apiserver:v1.15.0
+docker tag ${MY_REGISTRY}/kube-controller-manager:v1.15.0 k8s.gcr.io/kube-controller-manager:v1.15.0
+docker tag ${MY_REGISTRY}/kube-scheduler:v1.15.0 k8s.gcr.io/kube-scheduler:v1.15.0
+docker tag ${MY_REGISTRY}/kube-proxy:v1.15.0 k8s.gcr.io/kube-proxy:v1.15.0
+docker tag ${MY_REGISTRY}/pause:3.1 k8s.gcr.io/pause:3.1
+docker tag ${MY_REGISTRY}/etcd:3.3.10 k8s.gcr.io/etcd:3.3.10
+docker tag ${MY_REGISTRY}/coredns:1.3.1 k8s.gcr.io/coredns:1.3.1
+
+#删除无用的镜像
+docker images | grep ${MY_REGISTRY} | awk '{print "docker rmi "  $1":"$2}' | sh -x
+
+echo "end"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面的所有操作可以在一个节点上面完成，然后对进行复制即可。</p>
+<p>其它因为网络原因pull的镜像都可以同理先下载下来:</p>
+<pre class="line-numbers language-sh"><code class="language-sh">#1.先使用docker search命令查找
+
+#2.选择一个下载快的镜像使用docker pull下载下来
+
+#3.使用docker tag命令修改成程序需要的镜像
+
+#4.使用docker rmi删除之前的镜像
+
+#下载flannel网络镜像
+docker pull xmlgrg/flannel:v0.11.0-amd64
+docker tag docker.io/xmlgrg/flannel:v0.11.0-amd64 quay.io/coreos/flannel:v0.11.0-amd64
+docker rmi docker.io/xmlgrg/flannel:v0.11.0-amd64
+
+#下载tiller
+docker pull junolu/tiller:v2.14.3
+docker tag docker.io/junolu/tiller:v2.14.3 gcr.io/kubernetes-helm/tiller:v2.14.3
+docker rmi docker.io/junolu/tiller:v2.14.3
+
+#下载ingress-nginx/defaultbackend-amd64
+docker pull fungitive/defaultbackend-amd64
+docker tag docker.io/fungitive/defaultbackend-amd64:latest k8s.gcr.io/defaultbackend-amd64:1.5
+docker rmi docker.io/fungitive/defaultbackend-amd64:latest
+
+#下载dashboard
+docker.io/loveone/kubernetes-dashboard-amd64:v1.10.1
+docker tag docker.io/loveone/kubernetes-dashboard-amd64:v1.10.1 k8s.gcr.io/kubernetes-dashboard-amd64:v1.10.1
+docker  rmi docker.io/loveone/kubernetes-dashboard-amd64:v1.10.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>接下来使用<code>kubeadm</code>初始化集群，选择<code>node2</code>作为<code>Master Node</code>，在<code>node2</code>上执行下面的命令：</p>
+<pre class="line-numbers language-log"><code class="language-log">kubeadm init --config kubeadm.yaml --ignore-preflight-errors=Swap
+[init] Using Kubernetes version: v1.15.0
+[preflight] Running pre-flight checks
+    [WARNING Swap]: running with swap on is not supported. Please disable swap
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Activating the kubelet service
+[certs] Using certificateDir folder "/etc/kubernetes/pki"
+[certs] Generating "etcd/ca" certificate and key
+[certs] Generating "apiserver-etcd-client" certificate and key
+[certs] Generating "etcd/server" certificate and key
+[certs] etcd/server serving cert is signed for DNS names [node1 localhost] and IPs [192.168.99.11 127.0.0.1 ::1]
+[certs] Generating "etcd/peer" certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [node1 localhost] and IPs [192.168.99.11 127.0.0.1 ::1]
+[certs] Generating "etcd/healthcheck-client" certificate and key
+[certs] Generating "ca" certificate and key
+[certs] Generating "apiserver" certificate and key
+[certs] apiserver serving cert is signed for DNS names [node1 kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 192.168.99.11]
+[certs] Generating "apiserver-kubelet-client" certificate and key
+[certs] Generating "front-proxy-ca" certificate and key
+[certs] Generating "front-proxy-client" certificate and key
+[certs] Generating "sa" key and public key
+[kubeconfig] Using kubeconfig folder "/etc/kubernetes"
+[kubeconfig] Writing "admin.conf" kubeconfig file
+[kubeconfig] Writing "kubelet.conf" kubeconfig file
+[kubeconfig] Writing "controller-manager.conf" kubeconfig file
+[kubeconfig] Writing "scheduler.conf" kubeconfig file
+[control-plane] Using manifest folder "/etc/kubernetes/manifests"
+[control-plane] Creating static Pod manifest for "kube-apiserver"
+[control-plane] Creating static Pod manifest for "kube-controller-manager"
+[control-plane] Creating static Pod manifest for "kube-scheduler"
+[etcd] Creating static Pod manifest for local etcd in "/etc/kubernetes/manifests"
+[wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory "/etc/kubernetes/manifests". This can take up to 4m0s
+[apiclient] All control plane components are healthy after 26.004907 seconds
+[upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+[kubelet] Creating a ConfigMap "kubelet-config-1.15" in namespace kube-system with the configuration for the kubelets in the cluster
+[upload-certs] Skipping phase. Please see --upload-certs
+[mark-control-plane] Marking the node node1 as control-plane by adding the label "node-role.kubernetes.io/master=''"
+[mark-control-plane] Marking the node node1 as control-plane by adding the taints [node-role.kubernetes.io/master:PreferNoSchedule]
+[bootstrap-token] Using token: 4qcl2f.gtl3h8e5kjltuo0r
+[bootstrap-token] Configuring bootstrap tokens, cluster-info ConfigMap, RBAC Roles
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
+[bootstrap-token] configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token
+[bootstrap-token] configured RBAC rules to allow certificate rotation for all node client certificates in the cluster
+[bootstrap-token] Creating the "cluster-info" ConfigMap in the "kube-public" namespace
+[addons] Applied essential addon: CoreDNS
+[addons] Applied essential addon: kube-proxy
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.99.11:6443 --token 4qcl2f.gtl3h8e5kjltuo0r \
+    --discovery-token-ca-cert-hash sha256:7ed5404175cc0bf18dbfe53f19d4a35b1e3d40c19b10924275868ebf2a3bbe6e<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面记录了完成的初始化输出的内容，根据输出的内容基本上可以看出手动初始化安装一个Kubernetes集群所需要的关键步骤。 其中有以下关键内容：</p>
+<ul>
+<li>[kubelet-start] 生成kubelet的配置文件”/var/lib/kubelet/config.yaml”</li>
+<li>[certs]生成相关的各种证书</li>
+<li>[kubeconfig]生成相关的kubeconfig文件</li>
+<li>[control-plane]使用/etc/kubernetes/manifests目录中的yaml文件创建apiserver、controller-manager、scheduler的静态pod</li>
+<li>[bootstraptoken]生成token记录下来，后边使用kubeadm join往集群中添加节点时会用到</li>
+<li>最后给出了将节点加入集群的命令<code>kubeadm join 18.16.202.163:6443 --token jrts59.18pe12atfafgcxca \ --discovery-token-ca-cert-hash sha256:56d6c7d7b63a9109444ece68a1b155d8a9ac049ba57febab2c72d40d8ab7d426</code></li>
+</ul>
+<p><strong><font style="color:red">下面的命令是配置常规用户如何使用kubectl访问集群：务必配上，不然无法使用kubectl命令！</font></strong></p>
+<pre class="line-numbers language-sh"><code class="language-sh">mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>集群初始化如果遇到问题，可以使用下面的命令进行清理：</p>
+<pre><code>kubeadm reset</code></pre><blockquote>
+<p>遇到的问题：<code>The connection to the server localhost:8080 was refused - did you specify the right host or port?</code><br>初始化的集群，kube-apiserver没有监听默认的http 8080端口。</p>
+</blockquote>
+<p>查看kube-apiserver的监听端口可以看到只监听了https的6443端口:</p>
+<pre class="line-numbers language-log"><code class="language-log">netstat -nltp | grep apiserver
+tcp6       0      0 :::6443                 :::*                    LISTEN      9831/kube-apiserver<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>为了使用kubectl访问apiserver，在~/.bash_profile中追加下面的环境变量：</p>
+<pre class="line-numbers language-log"><code class="language-log">export KUBECONFIG=/etc/kubernetes/admin.conf
+source ~/.bash_profile<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>此时kubectl命令在master node上就好用了.</p>
+<h3 id="安装Pod-Network"><a href="#安装Pod-Network" class="headerlink" title="安装Pod Network"></a>安装Pod Network</h3><h4 id="使用flannel网络"><a href="#使用flannel网络" class="headerlink" title="使用flannel网络"></a>使用flannel网络</h4><p>接下来安装<code>flannel network add-on</code>：</p>
+<pre class="line-numbers language-log"><code class="language-log">mkdir -p ~/k8s/
+cd ~/k8s
+curl -O https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+kubectl apply -f  kube-flannel.yml
+
+clusterrole.rbac.authorization.k8s.io/flannel created
+clusterrolebinding.rbac.authorization.k8s.io/flannel created
+serviceaccount/flannel created
+configmap/kube-flannel-cfg created
+daemonset.extensions/kube-flannel-ds-amd64 created
+daemonset.extensions/kube-flannel-ds-arm64 created
+daemonset.extensions/kube-flannel-ds-arm created
+daemonset.extensions/kube-flannel-ds-ppc64le created
+daemonset.extensions/kube-flannel-ds-s390x created<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>这里注意kube-flannel.yml这个文件里的flannel的镜像是0.11.0，quay.io/coreos/flannel:v0.11.0-amd64.<br>由于网络问题，flannel镜像可能pull失败，建议参考之前拉取镜像的方法，提前再各个节点拉好镜像！</p>
+</blockquote>
+<blockquote>
+<p>如果Node有多个网卡的话，参考<a href="https://github.com/kubernetes/kubernetes/issues/39701" target="_blank" rel="noopener">flannel issues 39701</a>，目前需要在kube-flannel.yml中使用–iface参数指定集群主机内网网卡的名称，否则可能会出现dns无法解析。需要将<code>kube-flannel.yml</code>下载到本地，flanneld启动参数加上<code>–iface=&lt;iface-name&gt;</code></p>
+</blockquote>
+<pre class="line-numbers language-yml"><code class="language-yml">containers:
+      - name: kube-flannel
+        image: quay.io/coreos/flannel:v0.11.0-amd64
+        command:
+        - /opt/bin/flanneld
+        args:
+        - --ip-masq
+        - --kube-subnet-mgr
+        - --iface=eth1
+# ......<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用kubectl get pod –all-namespaces -o wide确保所有的Pod都处于Running状态。</p>
+<pre class="line-numbers language-log"><code class="language-log">kubectl get pod -n kube-system
+NAME                            READY   STATUS    RESTARTS   AGE
+coredns-5c98db65d4-dr8lf        1/1     Running   0          52m
+coredns-5c98db65d4-lp8dg        1/1     Running   0          52m
+etcd-node1                      1/1     Running   0          51m
+kube-apiserver-node1            1/1     Running   0          51m
+kube-controller-manager-node1   1/1     Running   0          51m
+kube-flannel-ds-amd64-mm296     1/1     Running   0          44s
+kube-proxy-kchkf                1/1     Running   0          52m
+kube-scheduler-node1            1/1     Running   0          51m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="问题，flannel一直在CrashLoopBackOff，日志如下"><a href="#问题，flannel一直在CrashLoopBackOff，日志如下" class="headerlink" title="问题，flannel一直在CrashLoopBackOff，日志如下"></a>问题，flannel一直在CrashLoopBackOff，日志如下</h4><pre class="line-numbers language-sh"><code class="language-sh">[root@master ~]# kubectl get pods --all-namespaces
+NAMESPACE     NAME                             READY   STATUS              RESTARTS   AGE
+kube-system   coredns-5c98db65d4-57zm5         0/1     ContainerCreating   0          7m46s
+kube-system   coredns-5c98db65d4-g8kqh         0/1     ContainerCreating   0          7m46s
+kube-system   etcd-master                      1/1     Running             0          6m51s
+kube-system   kube-apiserver-master            1/1     Running             0          6m31s
+kube-system   kube-controller-manager-master   1/1     Running             0          6m29s
+kube-system   kube-flannel-ds-amd64-jthsp      0/1     CrashLoopBackOff    3          104s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log"><code class="language-log">[root@master ~]# kubectl logs kube-flannel-ds-amd64-jthsp -n kube-system
+I1105 08:37:34.863407       1 main.go:527] Using interface with name eth0 and address 192.168.1.209
+I1105 08:37:34.863461       1 main.go:544] Defaulting external address to interface address (192.168.1.209)
+I1105 08:37:35.061919       1 kube.go:126] Waiting 10m0s for node controller to sync
+I1105 08:37:35.166015       1 kube.go:309] Starting kube subnet manager
+I1105 08:37:36.065963       1 kube.go:133] Node controller sync successful
+I1105 08:37:36.065985       1 main.go:244] Created subnet manager: Kubernetes Subnet Manager - master
+I1105 08:37:36.065989       1 main.go:247] Installing signal handlers
+I1105 08:37:36.066082       1 main.go:386] Found network config - Backend type: vxlan
+I1105 08:37:36.066143       1 vxlan.go:120] VXLAN config: VNI=1 Port=0 GBP=false DirectRouting=false
+E1105 08:37:36.066314       1 main.go:289] Error registering network: failed to acquire lease: node "master" pod cidr not assigned
+I1105 08:37:36.066356       1 main.go:366] Stopping shutdownHandler...<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>解决办法:</p>
+<pre class="line-numbers language-sh"><code class="language-sh"># 修改 
+/etc/kubernetes/manifests/kube-controller-manager.yaml
+# 增加参数
+--allocate-node-cidrs=true
+--cluster-cidr=10.244.0.0/16
+# 然后重启kubelet<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="使用weave网络"><a href="#使用weave网络" class="headerlink" title="使用weave网络"></a>使用weave网络</h4><p>虽然系统显示安装成功，但是master节点显示状态还是 NotReady，原因是需要安装网络插件，这边kubernetes官方提供了<a href="https://kubernetes.io/docs/concepts/cluster-administration/addons/#networking-and-network-policy" target="_blank" rel="noopener">几款网络插件</a>。。</p>
+<pre><code>kubectl apply -f https://git.io/weave-kube-1.6
+NAME                      STATUS    ROLES     AGE       VERSION
+izj6c3vsekthy7xn94b5s6z   Ready     master    1h        v1.10.3</code></pre><p>大概过一会master节点就显示ready了，说明master已经准备就绪了.</p>
+<h3 id="测试集群DNS是否可用"><a href="#测试集群DNS是否可用" class="headerlink" title="测试集群DNS是否可用"></a>测试集群DNS是否可用</h3><pre class="line-numbers language-sh"><code class="language-sh">kubectl run curl --image=radial/busyboxplus:curl -it
+kubectl run --generator=deployment/apps.v1beta1 is DEPRECATED and will be removed in a future version. Use kubectl create instead.
+If you don't see a command prompt, try pressing enter.
+[ root@curl-5cc7b478b6-r997p:/ ]$<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>进入后执行<code>nslookup kubernetes.default</code>确认解析正常:</p>
+<pre class="line-numbers language-log"><code class="language-log">nslookup kubernetes.default
+Server:    10.96.0.10
+Address 1: 10.96.0.10 kube-dns.kube-system.svc.cluster.local
+
+Name:      kubernetes.default
+Address 1: 10.96.0.1 kubernetes.default.svc.cluster.local<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="向Kubernetes集群中添加Node节点"><a href="#向Kubernetes集群中添加Node节点" class="headerlink" title="向Kubernetes集群中添加Node节点"></a>向Kubernetes集群中添加Node节点</h3><p>下面将node3这个主机添加到Kubernetes集群中，在node3上执行:</p>
+<pre class="line-numbers language-log"><code class="language-log">kubeadm join 192.168.99.11:6443 --token 4qcl2f.gtl3h8e5kjltuo0r \
+    --discovery-token-ca-cert-hash sha256:7ed5404175cc0bf18dbfe53f19d4a35b1e3d40c19b10924275868ebf2a3bbe6e \
+ --ignore-preflight-errors=Swap
+
+[preflight] Running pre-flight checks
+    [WARNING Swap]: running with swap on is not supported. Please disable swap
+    [WARNING Service-Kubelet]: kubelet service is not enabled, please run 'systemctl enable kubelet.service'
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -oyaml'
+[kubelet-start] Downloading configuration for the kubelet from the "kubelet-config-1.15" ConfigMap in the kube-system namespace
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Activating the kubelet service
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap...
+
+This node has joined the cluster:
+* Certificate signing request was sent to apiserver and a response was received.
+* The Kubelet was informed of the new secure connection details.
+
+Run 'kubectl get nodes' on the control-plane to see this node join the cluster.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>node3加入集群后，下面在master节点上执行命令查看集群中的节点：</p>
+<pre class="line-numbers language-log"><code class="language-log">kubectl get node
+NAME    STATUS   ROLES    AGE   VERSION
+node2   Ready    master   57m   v1.15.0
+node3   Ready    <none>   11s   v1.15.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="如果只想搭建一个只有master节点的单机测试环境"><a href="#如果只想搭建一个只有master节点的单机测试环境" class="headerlink" title="如果只想搭建一个只有master节点的单机测试环境"></a>如果只想搭建一个只有master节点的单机测试环境</h4><p>单机版<code>kubernetes</code>为了运行<code>Pod</code>.需要删除主机上的<code>Train</code>.允许<code>master</code>执行<code>Pod</code>.<br>执行命令如下：</p>
+<pre><code>kubectl taint nodes --all node-role.kubernetes.io/master-</code></pre><h4 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h4><p>执行上述命令一直卡在了<br><code>[preflight] Running pre-flight checks</code></p>
+<ul>
+<li>问题可能的原因是master防火墙没有关掉，检查firewalld和iptables</li>
+<li>加上 –v=2 命令具体看看</li>
+</ul>
+<h3 id="从集群中移除Node"><a href="#从集群中移除Node" class="headerlink" title="从集群中移除Node"></a>从集群中移除Node</h3><p>在master节点上执行：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">kubectl drain node2 --delete-local-data --force --ignore-daemonsets
+kubectl delete node node2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>在<code>Node</code>上执行：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">kubeadm reset
+ifconfig cni0 down
+ip link delete cni0
+ifconfig flannel.1 down
+ip link delete flannel.1
+rm -rf /var/lib/cni/<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="kube-proxy开启ipvs"><a href="#kube-proxy开启ipvs" class="headerlink" title="kube-proxy开启ipvs"></a>kube-proxy开启ipvs</h3><p>修改<code>ConfigMap</code>的<code>kube-system/kube-proxy</code>中的<code>config.conf</code>，<code>mode: "ipvs"</code></p>
+<pre><code>kubectl edit cm kube-proxy -n kube-system</code></pre><p>之后重启各个节点上的<code>kube-proxy pod</code>：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">kubectl get pod -n kube-system | grep kube-proxy | awk '{system("kubectl delete pod "$1" -n kube-system")}'<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-log"><code class="language-log">kubectl get pod -n kube-system | grep kube-proxy
+kube-proxy-7fsrg                1/1     Running   0          3s
+kube-proxy-k8vhm                1/1     Running   0          9s
+
+kubectl logs kube-proxy-7fsrg  -n kube-system
+I0703 04:42:33.308289       1 server_others.go:170] Using ipvs Proxier.
+W0703 04:42:33.309074       1 proxier.go:401] IPVS scheduler not specified, use rr by default
+I0703 04:42:33.309831       1 server.go:534] Version: v1.15.0
+I0703 04:42:33.320088       1 conntrack.go:52] Setting nf_conntrack_max to 131072
+I0703 04:42:33.320365       1 config.go:96] Starting endpoints config controller
+I0703 04:42:33.320393       1 controller_utils.go:1029] Waiting for caches to sync for endpoints config controller
+I0703 04:42:33.320455       1 config.go:187] Starting service config controller
+I0703 04:42:33.320470       1 controller_utils.go:1029] Waiting for caches to sync for service config controller
+I0703 04:42:33.420899       1 controller_utils.go:1036] Caches are synced for endpoints config controller
+I0703 04:42:33.420969       1 controller_utils.go:1036] Caches are synced for service config controller<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>日志中打印出了Using ipvs Proxier，说明ipvs模式已经开启。</p>
+<h2 id="Kubernetes常用组件部署"><a href="#Kubernetes常用组件部署" class="headerlink" title="Kubernetes常用组件部署"></a>Kubernetes常用组件部署</h2><p>越来越多的公司和团队开始使用Helm这个Kubernetes的包管理器，这里也将使用Helm安装Kubernetes的常用组件。</p>
+<h3 id="Helm的安装"><a href="#Helm的安装" class="headerlink" title="Helm的安装"></a>Helm的安装</h3><p>Helm由客户端命helm令行工具和服务端tiller组成，Helm的安装十分简单。 下载helm命令行工具到master节点node1的<code>/usr/local/bin</code>下，这里下载的<code>2.14.1</code>版本.</p>
+<p><strong>网络问题下载不了，可以直接在网上搜个压缩包拷进去即可！</strong></p>
+<pre class="line-numbers language-sh"><code class="language-sh">curl -O https://get.helm.sh/helm-v2.14.1-linux-amd64.tar.gz
+tar -zxvf helm-v2.14.1-linux-amd64.tar.gz
+cd linux-amd64/
+cp helm /usr/local/bin/<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>为了安装服务端tiller，还需要在这台机器上配置好kubectl工具和kubeconfig文件，确保kubectl工具可以在这台机器上访问apiserver且正常使用。</p>
+</blockquote>
+<p>因为Kubernetes APIServer开启了RBAC访问控制，所以需要创建tiller使用的service account: tiller并分配合适的角色给它。 详细内容可以查看helm文档中的<a href="https://helm.sh/docs/intro/" target="_blank" rel="noopener">Role-based Access Control</a>。 这里简单起见直接分配<code>cluster-admin</code>这个集群内置的<code>ClusterRole</code>给它。创建<code>helm-rbac.yaml</code>文件：</p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tiller
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: tiller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: tiller
+    namespace: kube-system<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh">kubectl create -f helm-rbac.yaml
+serviceaccount/tiller created
+clusterrolebinding.rbac.authorization.k8s.io/tiller created<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>接下来使用helm部署<code>tiller</code>:</p>
+<pre class="line-numbers language-log"><code class="language-log">helm init --service-account tiller --skip-refresh
+Creating /root/.helm
+Creating /root/.helm/repository
+Creating /root/.helm/repository/cache
+Creating /root/.helm/repository/local
+Creating /root/.helm/plugins
+Creating /root/.helm/starters
+Creating /root/.helm/cache/archive
+Creating /root/.helm/repository/repositories.yaml
+Adding stable repo with URL: https://kubernetes-charts.storage.googleapis.com
+Adding local repo with URL: http://127.0.0.1:8879/charts
+$HELM_HOME has been configured at /root/.helm.
+
+Tiller (the Helm server-side component) has been installed into your Kubernetes Cluster.
+
+Please note: by default, Tiller is deployed with an insecure 'allow unauthenticated users' policy.
+To prevent this, run `helm init` with the --tiller-tls-verify flag.
+For more information on securing your installation see: https://docs.helm.sh/using_helm/#securing-your-helm-installation
+Happy Helming!<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>tiller</code>默认被部署在k8s集群中的<code>kube-system</code>这个<code>namespace</code>下：</p>
+<pre class="line-numbers language-log"><code class="language-log">kubectl get pod -n kube-system -l app=helm
+NAME                            READY   STATUS    RESTARTS   AGE
+tiller-deploy-c4fd4cd68-dwkhv   1/1     Running   0          83s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log"><code class="language-log">helm version
+Client: &version.Version{SemVer:"v2.14.1", GitCommit:"5270352a09c7e8b6e8c9593002a73535276507c0", GitTreeState:"clean"}
+Server: &version.Version{SemVer:"v2.14.1", GitCommit:"5270352a09c7e8b6e8c9593002a73535276507c0", GitTreeState:"clean"}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h4 id="遇到的问题-1"><a href="#遇到的问题-1" class="headerlink" title="遇到的问题!!!!"></a>遇到的问题!!!!</h4><p>tiller可能因为网络问题安装失败，可以使用以下命令重置</p>
+<pre><code>helm reset --force</code></pre><p>然后安装tiller的时候指定image和stable url，这里用的阿里云的</p>
+<pre class="line-numbers language-log"><code class="language-log">helm init --service-account tiller --skip-refresh -i registry.cn-hangzhou.aliyuncs.com/google_containers/tiller:v2.14.3 --stable-repo-url https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>最后在node1上修改helm chart仓库的地址为azure提供的镜像地址：</p>
+<pre class="line-numbers language-log"><code class="language-log">helm repo add stable http://mirror.azure.cn/kubernetes/charts
+"stable" has been added to your repositories
+
+helm repo list
+NAME    URL                                     
+stable  http://mirror.azure.cn/kubernetes/charts
+local   http://127.0.0.1:8879/charts<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="使用Helm部署Nginx-Ingress"><a href="#使用Helm部署Nginx-Ingress" class="headerlink" title="使用Helm部署Nginx Ingress"></a>使用Helm部署Nginx Ingress</h3><p>为了便于将集群中的服务暴露到集群外部，需要使用Ingress。接下来使用Helm将Nginx Ingress部署到Kubernetes上。</p>
+<blockquote>
+<p>Nginx Ingress Controller被部署在Kubernetes的边缘节点上</p>
+</blockquote>
+<p>我们将<code>node1(192.168.99.11)</code>做为边缘节点，打上<code>Label</code>：</p>
+<pre class="line-numbers language-log"><code class="language-log">kubectl label node node1 node-role.kubernetes.io/edge=
+node/node1 labeled
+
+
+kubectl get node
+NAME    STATUS   ROLES         AGE    VERSION
+node1   Ready    edge,master   138m   v1.15.0
+node2   Ready    <none>        82m    v1.15.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>stable/nginx-ingress</code> <code>chart</code>的值文件<code>ingress-nginx.yaml</code>如下：</p>
+<pre class="line-numbers language-yml"><code class="language-yml">controller:
+  replicaCount: 1
+  hostNetwork: true
+  nodeSelector:
+    node-role.kubernetes.io/edge: ''
+  affinity:
+    podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - nginx-ingress
+            - key: component
+              operator: In
+              values:
+              - controller
+          topologyKey: kubernetes.io/hostname
+  tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: PreferNoSchedule
+defaultBackend:
+  nodeSelector:
+    node-role.kubernetes.io/edge: ''
+  tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: PreferNoSchedule<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>nginx ingress controller</code>的副本数<code>replicaCount</code>为<code>1</code>，将被调度到node1这个边缘节点上。</p>
+<p>这里并没有指定nginx ingress controller service的<code>externalIPs</code>，而是通过<code>hostNetwork: true</code>设置nginx ingress controller使用宿主机网络。</p>
+<pre class="line-numbers language-sh"><code class="language-sh">helm repo update
+
+# helm安装指定chart版本 --version
+helm install stable/nginx-ingress \
+-n nginx-ingress \
+--namespace ingress-nginx  \
+-f ingress-nginx.yaml --verion 1.27.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log"><code class="language-log">kubectl get pod -n ingress-nginx -o wide
+NAME                                            READY   STATUS    RESTARTS   AGE   IP              NODE    NOMINATED NODE   READINESS GATES
+nginx-ingress-controller-cc9b6d55b-pr8vr        1/1     Running   0          10m   192.168.99.11   node1   <none>           <none>
+nginx-ingress-default-backend-cc888fd56-bf4h2   1/1     Running   0          10m   10.244.0.14     node1   <none>           <none><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果访问<code>http://192.168.99.11</code>返回<code>default backend</code>，则部署完成。</p>
+<h4 id="遇到的问题-2"><a href="#遇到的问题-2" class="headerlink" title="遇到的问题!!!!"></a>遇到的问题!!!!</h4><blockquote>
+<p>这里可能因为网络原因安装失败需要清理之前的<code>nginx-ingress</code>，建议提前下载好相关镜像。<br>使用<code>kubectl describe pod [name] -n [namespace]</code>看看默认拉取的是哪个版本的镜像，参考之前方法提前下载！</p>
+</blockquote>
+<pre><code>kubectl delete namespace/ingress-nginx
+helm delete nginx-ingress
+helm del --purge nginx-ingress</code></pre><h3 id="使用Helm部署dashboard"><a href="#使用Helm部署dashboard" class="headerlink" title="使用Helm部署dashboard"></a>使用Helm部署dashboard</h3><h4 id="创建tls-secret："><a href="#创建tls-secret：" class="headerlink" title="创建tls secret："></a>创建<code>tls secret</code>：</h4><p>通过https进行访问必需要使用证书和密钥，在Kubernetes中可以通过配置一个加密凭证（TLS secret）来提供。创建一个自己签名的证书:</p>
+<pre><code>openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ./tls.key -out ./tls.crt -subj "/CN=192.168.1.210"</code></pre><p>将会产生两个文件tls.key和tls.crt，你可以改成自己的文件名或放在特定的目录下。<strong>后面的192.168.1.210是我的服务器IP地址，你需要改成自己的。</strong></p>
+<h4 id="安装tls-secret"><a href="#安装tls-secret" class="headerlink" title="安装tls secret:"></a>安装<code>tls secret</code>:</h4><p>将这两个文件的信息创建为一个Kubernetes的secret访问凭证，我将名称指定为<code>test-com-tls-secret</code>，这在后面的Ingress配置时将会用到。</p>
+<blockquote>
+<p>如果你修改了这个名字，注意后面的配置yaml文件也需要同步修改。</p>
+</blockquote>
+<pre><code>kubectl -n kube-system create secret tls test-com-tls-secret --key ./tls.key --cert ./tls.crt</code></pre><h4 id="查看"><a href="#查看" class="headerlink" title="查看:"></a>查看:</h4><pre><code>kubectl get secret -n kube-system |grep test</code></pre><h4 id="kubernetes-dashboard-yaml"><a href="#kubernetes-dashboard-yaml" class="headerlink" title="kubernetes-dashboard.yaml:"></a><code>kubernetes-dashboard.yaml</code>:</h4><blockquote>
+<p>注意修改里面的<code>secretName</code>和<code>hosts</code></p>
+</blockquote>
+<pre class="line-numbers language-yml"><code class="language-yml">image:
+  repository: k8s.gcr.io/kubernetes-dashboard-amd64
+  tag: v1.10.1
+ingress:
+  enabled: true
+  hosts: 
+    - k8s.test.com
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  tls:
+    - secretName: test-com-tls-secret
+      hosts:
+      - k8s.test.com
+nodeSelector:
+    node-role.kubernetes.io/edge: ''
+tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: PreferNoSchedule
+rbac:
+  clusterAdminRole: true
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="安装："><a href="#安装：" class="headerlink" title="安装："></a>安装：</h4><pre><code>helm install stable/kubernetes-dashboard \
+-n kubernetes-dashboard \
+--namespace kube-system  \
+-f kubernetes-dashboard.yaml</code></pre><h4 id="查看："><a href="#查看：" class="headerlink" title="查看："></a>查看：</h4><pre class="line-numbers language-log"><code class="language-log">kubectl -n kube-system get secret | grep kubernetes-dashboard-token
+kubernetes-dashboard-token-pkm2s                 kubernetes.io/service-account-token   3      3m7s
+
+kubectl describe -n kube-system secret/kubernetes-dashboard-token-pkm2s
+Name:         kubernetes-dashboard-token-pkm2s
+Namespace:    kube-system
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: kubernetes-dashboard
+              kubernetes.io/service-account.uid: 2f0781dd-156a-11e9-b0f0-080027bb7c43
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+ca.crt:     1025 bytes
+namespace:  11 bytes
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrdWJlcm5ldGVzLWRhc2hib2FyZC10b2tlbi1wa20ycyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJrdWJlcm5ldGVzLWRhc2hib2FyZCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjJmMDc4MWRkLTE1NmEtMTFlOS1iMGYwLTA4MDAyN2JiN2M0MyIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTprdWJlcm5ldGVzLWRhc2hib2FyZCJ9.24ad6ZgZMxdydpwlmYAiMxZ9VSIN7dDR7Q6-RLW0qC81ajXoQKHAyrEGpIonfld3gqbE0xO8nisskpmlkQra72-9X6sBPoByqIKyTsO83BQlME2sfOJemWD0HqzwSCjvSQa0x-bUlq9HgH2vEXzpFuSS6Svi7RbfzLXlEuggNoC4MfA4E2hF1OX_ml8iAKx-49y1BQQe5FGWyCyBSi1TD_-ZpVs44H5gIvsGK2kcvi0JT4oHXtWjjQBKLIWL7xxyRCSE4HmUZT2StIHnOwlX7IEIB0oBX4mPg2_xNGnqwcu-8OERU9IoqAAE2cZa0v3b5O2LMcJPrcxrVOukvRIumA<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="测试："><a href="#测试：" class="headerlink" title="测试："></a>测试：</h4><p>在dashboard的登录窗口使用上面的<code>token</code>登录，访问刚刚填写的hosts，如果是内网域名，需要在访问的那台机器上，在hosts文件中加入刚刚的域名和IP。<br><img src="/images/k8s1.png" alt="k8s"></p>
+<h3 id="使用Helm部署metrics-server"><a href="#使用Helm部署metrics-server" class="headerlink" title="使用Helm部署metrics-server"></a>使用Helm部署metrics-server</h3><blockquote>
+<p><code>heapster</code>从<code>Kubernetes 1.12</code>开始从Kubernetes各种安装脚本中移除。</p>
+</blockquote>
+<p>Kubernetes推荐使用<code>metrics-server</code>。我们这里也使用helm来部署<code>metrics-server</code>。</p>
+<p><code>metrics-server.yaml</code>:</p>
+<pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
+image:
+    repository: hub.deri.org.cn/k8s/metrics-server-amd64
+    tag: v0.3.5
+    pullPolicy: IfNotPresent
+args:
+- --logtostderr
+- --kubelet-insecure-tls
+- --kubelet-preferred-address-types=InternalIP
+nodeSelector:
+    node-role.kubernetes.io/edge: ''
+tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: PreferNoSchedule<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre><code>helm install stable/metrics-server \
+-n metrics-server \
+--namespace kube-system \
+-f metrics-server.yaml</code></pre><p>使用下面的命令可以获取到关于集群节点基本的指标信息：</p>
+<pre class="line-numbers language-log"><code class="language-log">kubectl top node
+NAME    CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+node1   650m         32%    1276Mi          73%
+node2   73m          3%     527Mi           30%<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log"><code class="language-log">kubectl top pod -n kube-system
+NAME                                    CPU(cores)   MEMORY(bytes)   
+coredns-5c98db65d4-dr8lf                8m           7Mi             
+coredns-5c98db65d4-lp8dg                6m           8Mi             
+etcd-node1                              44m          46Mi            
+kube-apiserver-node1                    74m          295Mi           
+kube-controller-manager-node1           35m          50Mi            
+kube-flannel-ds-amd64-7lwm9             2m           8Mi             
+kube-flannel-ds-amd64-mm296             5m           9Mi             
+kube-proxy-7fsrg                        1m           11Mi            
+kube-proxy-k8vhm                        3m           11Mi            
+kube-scheduler-node1                    8m           15Mi            
+kubernetes-dashboard-848b8dd798-c4sc2   2m           14Mi            
+metrics-server-8456fb6676-fwh2t         10m          19Mi            
+tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a href="https://www.kubernetes.org.cn/5551.html" target="_blank" rel="noopener">https://www.kubernetes.org.cn/5551.html</a></li>
+<li><a href="https://www.cnblogs.com/hongdada/p/11250293.html" target="_blank" rel="noopener">https://www.cnblogs.com/hongdada/p/11250293.html</a></li>
+<li><a href="https://www.jianshu.com/p/03eba1513c17" target="_blank" rel="noopener">https://www.jianshu.com/p/03eba1513c17</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+            </div>
+            <hr/>
+
+            
+
+    <div class="reprint" id="reprint-statement">
+        
+            <div class="reprint__author">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-user">
+                        文章作者:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    <a href="https://happywzy.top" rel="external nofollow noreferrer">wuzhiyong</a>
+                </span>
+            </div>
+            <div class="reprint__type">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-link">
+                        文章链接:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    <a href="https://happywzy.top/kubernetes-v1-15-0-an-zhuang-shi-yong-kubeadm-bu-shu/">https://happywzy.top/kubernetes-v1-15-0-an-zhuang-shi-yong-kubeadm-bu-shu/</a>
+                </span>
+            </div>
+            <div class="reprint__notice">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-copyright">
+                        版权声明:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    本博客所有文章除特別声明外，均采用
+                    <a href="https://creativecommons.org/licenses/by/4.0/deed.zh" rel="external nofollow noreferrer" target="_blank">CC BY 4.0</a>
+                    许可协议。转载请注明来源
+                    <a href="https://happywzy.top" target="_blank">wuzhiyong</a>
+                    !
+                </span>
+            </div>
+        
+    </div>
+
+    <script async defer>
+      document.addEventListener("copy", function (e) {
+        let toastHTML = '<span>复制成功，请遵循本文的转载规则</span><button class="btn-flat toast-action" onclick="navToReprintStatement()" style="font-size: smaller">查看</a>';
+        M.toast({html: toastHTML})
+      });
+
+      function navToReprintStatement() {
+        $("html, body").animate({scrollTop: $("#reprint-statement").offset().top - 80}, 800);
+      }
+    </script>
+
+
+
+            <div class="tag_share" style="display: block;">
+                <div class="post-meta__tag-list" style="display: inline-block;">
+                    
+                        <div class="article-tag">
+                            
+                                <a href="/tags/kubernetes/">
+                                    <span class="chip bg-color">kubernetes</span>
+                                </a>
+                            
+                        </div>
+                    
+                </div>
+                <div class="post_share" style="zoom: 80%; width: fit-content; display: inline-block; float: right; margin: -0.15rem 0;">
+                    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/share/css/share.min.css">
+
+<div id="article-share">
+    
+    
+    <div class="social-share" data-sites="twitter,facebook,qq,qzone,wechat,weibo,douban" data-wechat-qrcode-helper="<p>微信扫一扫即可分享！</p>"></div>
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/share/js/social-share.min.js"></script>
+    
+
+    
+
+</div>
+
+                </div>
+            </div>
+            
+                <style>
+    #reward {
+        margin: 40px 0;
+        text-align: center;
+    }
+
+    #reward .reward-link {
+        font-size: 1.4rem;
+        line-height: 38px;
+    }
+
+    #reward .btn-floating:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2), 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #rewardModal {
+        width: 320px;
+        height: 350px;
+    }
+
+    #rewardModal .reward-title {
+        margin: 15px auto;
+        padding-bottom: 5px;
+    }
+
+    #rewardModal .modal-content {
+        padding: 10px;
+    }
+
+    #rewardModal .close {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 1.3rem;
+        line-height: 20px;
+        cursor: pointer;
+    }
+
+    #rewardModal .close:hover {
+        color: #ef5350;
+        transform: scale(1.3);
+        -moz-transform:scale(1.3);
+        -webkit-transform:scale(1.3);
+        -o-transform:scale(1.3);
+    }
+
+    #rewardModal .reward-tabs {
+        margin: 0 auto;
+        width: 210px;
+    }
+
+    .reward-tabs .tabs {
+        height: 38px;
+        margin: 10px auto;
+        padding-left: 0;
+    }
+
+    .reward-content ul {
+        padding-left: 0 !important;
+    }
+
+    .reward-tabs .tabs .tab {
+        height: 38px;
+        line-height: 38px;
+    }
+
+    .reward-tabs .tab a {
+        color: #fff;
+        background-color: #ccc;
+    }
+
+    .reward-tabs .tab a:hover {
+        background-color: #ccc;
+        color: #fff;
+    }
+
+    .reward-tabs .wechat-tab .active {
+        color: #fff !important;
+        background-color: #22AB38 !important;
+    }
+
+    .reward-tabs .alipay-tab .active {
+        color: #fff !important;
+        background-color: #019FE8 !important;
+    }
+
+    .reward-tabs .reward-img {
+        width: 210px;
+        height: 210px;
+    }
+</style>
+
+<div id="reward">
+    <a href="#rewardModal" class="reward-link modal-trigger btn-floating btn-medium waves-effect waves-light red">赏</a>
+
+    <!-- Modal Structure -->
+    <div id="rewardModal" class="modal">
+        <div class="modal-content">
+            <a class="close modal-close"><i class="fas fa-times"></i></a>
+            <h4 class="reward-title">你的赏识是我钱进的动力</h4>
+            <div class="reward-content">
+                <div class="reward-tabs">
+                    <ul class="tabs row">
+                        <li class="tab col s6 alipay-tab waves-effect waves-light"><a href="#alipay">支付宝</a></li>
+                        <li class="tab col s6 wechat-tab waves-effect waves-light"><a href="#wechat">微 信</a></li>
+                    </ul>
+                    <div id="alipay">
+                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/reward/alipay.jpg" class="reward-img" alt="支付宝打赏二维码">
+                    </div>
+                    <div id="wechat">
+                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/reward/wechat.png" class="reward-img" alt="微信打赏二维码">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $('.tabs').tabs();
+    });
+</script>
+            
+        </div>
+    </div>
+
+    
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/gitalk/gitalk.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/css/my-gitalk.css">
+
+<div class="card gitalk-card" data-aos="fade-up">
+    <div class="comment_headling" style="font-size: 20px; font-weight: 700; position: relative; padding-left: 20px; top: 15px; padding-bottom: 5px;">
+        <i class="fas fa-comments fa-fw" aria-hidden="true"></i>
+        <span>评论</span>
+    </div>
+    <div id="gitalk-container" class="card-content"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/gitalk/gitalk.min.js"></script>
+<script>
+    let gitalk = new Gitalk({
+        clientID: '3dd9a520500a744e7a4a',
+        clientSecret: '11d61bcfde4317b4e7f4116bbe34455ca186cd8a',
+        repo: 'happywzy.github.io',
+        owner: 'happywzy',
+        admin: ["happywzy"],
+        id: '2019-09-06T16-59-39',
+        distractionFreeMode: false  // Facebook-like distraction free mode
+    });
+
+    gitalk.render('gitalk-container');
+</script>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/consul-watcher-handle-shi-yong/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/20.jpg" class="responsive-img" alt="consul【watcher handle使用】">
+                        
+                        <span class="card-title">consul【watcher handle使用】</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            配置创建watcher.json文件，放在consul配置目录下，启动consul时指定-config-dir:
+{
+  "watches": [
+    {
+      "type": "key",
+      "key": "foo/d
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2019-10-08
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/consul/" class="post-category">
+                                    consul
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/consul/">
+                        <span class="chip bg-color">consul</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/consul-kai-qi-acl/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/22.jpg" class="responsive-img" alt="consul【开启ACL】">
+                        
+                        <span class="card-title">consul【开启ACL】</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            开启acl// 这里的master token是用UUID生成的，保证三个server的acl配置一样
+"acl":{
+    "enabled":true,
+    "default_policy":"deny",
+    "enable
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2019-09-05
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/consul/" class="post-category">
+                                    consul
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/consul/">
+                        <span class="chip bg-color">consul</span>
+                    </a>
+                    
+                    <a href="/tags/acl/">
+                        <span class="chip bg-color">acl</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/codeBlock/codeBlockFuction.js"></script>
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/codeBlock/codeShrink.js"></script>
+
+
+<!-- 代码块折行 -->
+
+<style type="text/css">
+code[class*="language-"], pre[class*="language-"] { white-space: pre !important; }
+</style>
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('#articleContent').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+    <footer class="page-footer bg-color">
+    
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/aplayer/APlayer.min.css">
+<style>
+    .aplayer .aplayer-lrc p {
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 16px !important;
+    }
+
+    .aplayer .aplayer-lrc p.aplayer-lrc-current {
+        font-size: 15px;
+        color: #42b983;
+    }
+
+    
+    .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body {
+        left: -66px !important;
+    }
+
+    .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body:hover {
+        left: 0px !important;
+    }
+
+    
+</style>
+<div class="">
+    
+    <div class="row">
+        <meting-js class="col l8 offset-l2 m10 offset-m1 s12"
+                   server="netease"
+                   type="playlist"
+                   id="503838841"
+                   fixed='true'
+                   autoplay='false'
+                   theme='#42b983'
+                   loop='all'
+                   order='random'
+                   preload='auto'
+                   volume='0.7'
+                   list-folded='true'
+        >
+        </meting-js>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/aplayer/APlayer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+    
+    <div class="container row center-align" style="margin-bottom: 15px !important;">
+        <div class="col s12 m8 l8 copy-right">
+            Copyright&nbsp;&copy;
+            <span id="year">2019</span>
+            <a href="https://happywzy.top" target="_blank">wuzhiyong</a>
+            <br>
+            
+            &nbsp;<i class="fas fa-chart-area"></i>&nbsp;站点总字数:&nbsp;<span
+                class="white-color">125.2k</span>&nbsp;字
+            
+            
+            
+            
+            
+            
+            <span id="busuanzi_container_site_pv">
+                |&nbsp;<i class="far fa-eye"></i>&nbsp;总访问量:&nbsp;<span id="busuanzi_value_site_pv"
+                    class="white-color"></span>&nbsp;次
+            </span>
+            
+            
+            <span id="busuanzi_container_site_uv">
+                |&nbsp;<i class="fas fa-users"></i>&nbsp;总访问人数:&nbsp;<span id="busuanzi_value_site_uv"
+                    class="white-color"></span>&nbsp;人
+            </span>
+            
+            <br>
+            
+            <span id="sitetime">载入运行时间...</span>
+            <script>
+                function siteTime() {
+                    var seconds = 1000;
+                    var minutes = seconds * 60;
+                    var hours = minutes * 60;
+                    var days = hours * 24;
+                    var years = days * 365;
+                    var today = new Date();
+                    var startYear = "2019";
+                    var startMonth = "11";
+                    var startDate = "25";
+                    var startHour = "0";
+                    var startMinute = "0";
+                    var startSecond = "0";
+                    var todayYear = today.getFullYear();
+                    var todayMonth = today.getMonth() + 1;
+                    var todayDate = today.getDate();
+                    var todayHour = today.getHours();
+                    var todayMinute = today.getMinutes();
+                    var todaySecond = today.getSeconds();
+                    var t1 = Date.UTC(startYear, startMonth, startDate, startHour, startMinute, startSecond);
+                    var t2 = Date.UTC(todayYear, todayMonth, todayDate, todayHour, todayMinute, todaySecond);
+                    var diff = t2 - t1;
+                    var diffYears = Math.floor(diff / years);
+                    var diffDays = Math.floor((diff / days) - diffYears * 365);
+                    var diffHours = Math.floor((diff - (diffYears * 365 + diffDays) * days) / hours);
+                    var diffMinutes = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours) /
+                        minutes);
+                    var diffSeconds = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours -
+                        diffMinutes * minutes) / seconds);
+                    if (startYear == todayYear) {
+                        document.getElementById("year").innerHTML = todayYear;
+                        document.getElementById("sitetime").innerHTML = "本站已勉强运行 " + diffDays + " 天 " + diffHours +
+                            " 小时 " + diffMinutes + " 分钟 " + diffSeconds + " 秒";
+                    } else {
+                        document.getElementById("year").innerHTML = startYear + " - " + todayYear;
+                        document.getElementById("sitetime").innerHTML = "本站已勉强运行 " + diffYears + " 年 " + diffDays +
+                            " 天 " + diffHours + " 小时 " + diffMinutes + " 分钟 " + diffSeconds + " 秒";
+                    }
+                }
+                setInterval(siteTime, 1000);
+            </script>
+            
+            <br>
+            
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/happywzy" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fab fa-github"></i>
+    </a>
+
+
+
+    <a href="mailto:1154365135@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+        <i class="fas fa-envelope-open"></i>
+    </a>
+
+
+
+
+
+
+
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=1154365135" class="tooltipped" target="_blank" data-tooltip="QQ联系我: 1154365135" data-position="top" data-delay="50">
+        <i class="fab fa-qq"></i>
+    </a>
+
+
+
+
+
+
+
+    <a href="/atom.xml" class="tooltipped" target="_blank" data-tooltip="RSS 订阅" data-position="top" data-delay="50">
+        <i class="fas fa-rss"></i>
+    </a>
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/js/search.js"></script>
+<script type="text/javascript">
+$(function () {
+    searchFunc("https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/" + "search.xml", 'searchInput', 'searchResult');
+});
+</script>
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/materialize/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/aos/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/js/matery.js"></script>
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/others/clicklove.js" async="async"></script>
+    
+    
+    <script async src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/background/ribbon-dynamic.js" async="async"></script>
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>
