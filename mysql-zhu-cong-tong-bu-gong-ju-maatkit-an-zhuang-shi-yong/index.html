@@ -410,7 +410,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    1.7k
+                    1.6k
                 </div>
                 
 
@@ -535,10 +535,10 @@ test     t_department     0 192.168.41.142 InnoDB         13         7a4c9153   
 </ol>
 <p><code>mk-table-sync</code>用来修复多个实例之间数据的不一致. <code>mk-table-sync</code>的工作方式是：先一行一行检查主从库的表是否一样，如果哪里不一样，就执行删除，更新，插入等操作，使其达到一致。</p>
 <p>由于上面在<code>mk-table-checksum</code>检查时用的<code>data_check</code>只有<code>select</code>权限，权限太小，不能用于<code>mk-table-sync</code>修复数据只用。<br>所以还需要在主库和从库数据库里创建用于<code>mk-table-sync</code>修复数据之用的账号权限</p>
-<pre class="line-numbers language-sql"><code class="language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">GRANT</span> <span class="token keyword">ALL</span> <span class="token keyword">ON</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">to</span> mksync<span class="token variable">@'%'</span> identified <span class="token keyword">by</span> <span class="token string">"123456"</span><span class="token punctuation">;</span>
+<pre class="line-numbers language-sql"><code class="language-sql">mysql<span class="token operator">></span> <span class="token keyword">GRANT</span> <span class="token keyword">ALL</span> <span class="token keyword">ON</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">to</span> mksync<span class="token variable">@'%'</span> identified <span class="token keyword">by</span> <span class="token string">"123456"</span><span class="token punctuation">;</span>
 Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
 
-mysql<span class="token operator">&gt;</span> flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
+mysql<span class="token operator">></span> flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
 Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 注意：主从数据库表和表结构必须一致,否则会报错！</span>
 <span class="token comment" spellcheck="true"># --print               显示同步需要执行的语句</span>
@@ -546,7 +546,7 @@ Query OK<span class="token punctuation">,</span> <span class="token number">0</s
 <span class="token comment" spellcheck="true"># --charset=utf8mb4     设置字符集，避免从库乱码。</span>
 <span class="token comment" spellcheck="true"># --no-check-slave      如果不加这个参数，会提示报错，因为此工具默认不允许在从库上修改数据</span>
 <span class="token comment" spellcheck="true"># -t                    指定同步的表名,多个表时可以在-t后加=号，即-t=tables1,tables2,..</span>
-<span class="token comment" spellcheck="true"># &gt; /root/result        命令后面加上 &gt; /root/result 将结果导出</span>
+<span class="token comment" spellcheck="true"># > /root/result        命令后面加上 > /root/result 将结果导出</span>
 
 <span class="token punctuation">[</span>root@mysql01 maatkit-7540<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mk-table-sync --execute --charset=utf8mb4 --print --no-check-slave --databases test h=192.168.41.141,u=mksync,p=123456,P=3306 h=192.168.41.142,u=mksync,p=123456,P=3306</span>
 UPDATE <span class="token variable"><span class="token variable">`</span><span class="token function">test</span><span class="token variable">`</span></span><span class="token keyword">.</span><span class="token variable"><span class="token variable">`</span>t_department<span class="token variable">`</span></span> SET <span class="token variable"><span class="token variable">`</span>department_name<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'44'</span>, <span class="token variable"><span class="token variable">`</span>parent_id<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'0'</span>, <span class="token variable"><span class="token variable">`</span>level<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'1'</span>, <span class="token variable"><span class="token variable">`</span>create_time<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'2020-07-28 16:06:24'</span>, <span class="token variable"><span class="token variable">`</span>update_time<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'2020-07-28 16:06:24'</span> WHERE <span class="token variable"><span class="token variable">`</span>department_id<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'3'</span> LIMIT 1 /*maatkit src_db:test src_tbl:t_department src_dsn:A<span class="token operator">=</span>utf8mb4,P<span class="token operator">=</span>3306,h<span class="token operator">=</span>192.168.41.141,p<span class="token operator">=</span><span class="token punctuation">..</span>.,u<span class="token operator">=</span>mksync dst_db:test dst_tbl:t_department dst_dsn:A<span class="token operator">=</span>utf8mb4,P<span class="token operator">=</span>3306,h<span class="token operator">=</span>192.168.41.142,p<span class="token operator">=</span><span class="token punctuation">..</span>.,u<span class="token operator">=</span>mksync lock:0 transaction:1 changing_src:0 replicate:0 bidirectional:0 pid:3869 user:root host:mysql01*/<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
@@ -1133,7 +1133,7 @@ code[class*="language-"], pre[class*="language-"] { white-space: pre !important;
             <br>
             
             &nbsp;<i class="fas fa-chart-area"></i>&nbsp;站点总字数:&nbsp;<span
-                class="white-color">125.2k</span>&nbsp;字
+                class="white-color">124.9k</span>&nbsp;字
             
             
             
