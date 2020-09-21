@@ -4,6 +4,56 @@
   
     
     <entry>
+      <title>influxdb内存持续升高不主动释放问题</title>
+      <link href="/influxdb-nei-cun-chi-xu-sheng-gao-bu-shi-fang-wen-ti/"/>
+      <url>/influxdb-nei-cun-chi-xu-sheng-gao-bu-shi-fang-wen-ti/</url>
+      
+        <content type="html"><![CDATA[<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p><code>influxdb</code>部署后,内存会随着查询等操作持续升高且不会主动释放.</p><h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><ul><li><p><code>go</code>在释放内存返回到内核时，在<code>Linux</code>上使用的是<code>MADV_DONTNEED</code>，虽然效率比较低，但是会让<code>RSS</code>（<code>resident set size</code> 常驻内存集）数量下降得很快。</p></li><li><p>不过在<code>go 1.12</code>里专门针对这个做了优化，在释放内存时，使用了更加高效的<code>MADV_FREE</code>而不是之前的<code>MADV_DONTNEED</code>,这样带来的好处是，一次<code>GC</code>后的内存分配延迟得以改善，也会更加积极地将释放的内存归还给操作系统，以应对大块内存分配无法重用已存在的堆空间的问题。不过也会带来一个<code>副作用</code>：<code>RSS</code>不会立刻下降，而是要等到系统有内存压力了，才会延迟下降。</p></li><li><p><code>InfluxDB</code>使用<code>MADV_FREE</code>，只有当系统内存使用有压力的时候才会进行真正的内存回收，这个时候<code>RSS</code>才会下降，可以通过<code>GODEBUG=madvdontneed=1 ./influxdb</code>的方式启动,强制使用<code>MADV_DONTNEED</code>方式.</p></li></ul><blockquote><p><code>MADV_FREE</code> 需要 <code>Linux 4.5</code> 以及以上内核，否则会继续使用原先的 <code>MADV_DONTNEED</code> 方式。</p></blockquote><h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul><li><a href="https://blog.csdn.net/u012794915/article/details/105450680/" target="_blank" rel="noopener">记InfluxDB线上内存升高且持续高水位问题处理过程</a></li><li><a href="https://ms2008.github.io/2019/06/30/golang-madvfree/" target="_blank" rel="noopener">Go 1.12 关于内存释放的一个改进</a></li></ul><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> influxdb </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> influxdb </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>influxdb客户端连接超时问题</title>
+      <link href="/influxdb-ke-hu-duan-lian-jie-chao-shi-wen-ti/"/>
+      <url>/influxdb-ke-hu-duan-lian-jie-chao-shi-wen-ti/</url>
+      
+        <content type="html"><![CDATA[<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 默认情况，java客户端连接服务端等待数据返回的时间很短,如果超时就会报以下错误</span>org<span class="token punctuation">.</span>influxdb<span class="token punctuation">.</span>InfluxDBIOException<span class="token operator">:</span> java<span class="token punctuation">.</span>net<span class="token punctuation">.</span>SocketTimeoutException<span class="token operator">:</span> timeout<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre><h3 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h3><ul><li><p>java</p><pre class="line-numbers language-java"><code class="language-java">OkHttpClient<span class="token punctuation">.</span>Builder client <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">OkHttpClient<span class="token punctuation">.</span>Builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>      <span class="token punctuation">.</span><span class="token function">connectTimeout</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MINUTES<span class="token punctuation">)</span>      <span class="token punctuation">.</span><span class="token function">readTimeout</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MINUTES<span class="token punctuation">)</span>      <span class="token punctuation">.</span><span class="token function">writeTimeout</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MINUTES<span class="token punctuation">)</span>      <span class="token punctuation">.</span><span class="token function">retryOnConnectionFailure</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>InfluxDB influxdb <span class="token operator">=</span> InfluxDBFactory<span class="token punctuation">.</span><span class="token function">connect</span><span class="token punctuation">(</span><span class="token string">"http://localhost:8086"</span><span class="token punctuation">,</span> client<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li><li><p>Scala</p><pre class="line-numbers language-java"><code class="language-java">val client <span class="token operator">=</span> OkHttpClient<span class="token punctuation">.</span><span class="token function">Builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>      <span class="token punctuation">.</span><span class="token function">connectTimeout</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MINUTES<span class="token punctuation">)</span>      <span class="token punctuation">.</span><span class="token function">readTimeout</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MINUTES<span class="token punctuation">)</span>      <span class="token punctuation">.</span><span class="token function">writeTimeout</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MINUTES<span class="token punctuation">)</span>      <span class="token punctuation">.</span><span class="token function">retryOnConnectionFailure</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span>val influxConnection <span class="token operator">=</span> InfluxDBFactory<span class="token punctuation">.</span><span class="token function">connect</span><span class="token punctuation">(</span><span class="token string">"http://localhost:8086"</span><span class="token punctuation">,</span> client<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li></ul><h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul><li><a href="https://stackoverflow.com/questions/50922473/influxdbioexception-java-net-sockettimeoutexception-timeout" target="_blank" rel="noopener">https://stackoverflow.com</a></li></ul><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> influxdb </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> influxdb </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>influxdb正则表达式的应用</title>
       <link href="/influxdb-zheng-ze-biao-da-shi-de-ying-yong/"/>
       <url>/influxdb-zheng-ze-biao-da-shi-de-ying-yong/</url>
