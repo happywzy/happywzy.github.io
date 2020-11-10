@@ -4,6 +4,33 @@
   
     
     <entry>
+      <title>docker-compose配置依赖和启动顺序</title>
+      <link href="/docker-compose-pei-zhi-yi-lai-he-qi-dong-shun-xu/"/>
+      <url>/docker-compose-pei-zhi-yi-lai-he-qi-dong-shun-xu/</url>
+      
+        <content type="html"><![CDATA[<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p><code>docker-compose</code>配置容器启动顺序,有时依靠<code>depends_on</code>并不能完全解决,主要原因是:</p><ul><li><code>depends_on</code>只能保证容器进入了<code>running</code>状态,而不保证进入<code>ready</code>状态.</li><li><a href="https://docs.docker.com/compose/startup-order/" target="_blank" rel="noopener">Control startup and shutdown order in Compose</a></li></ul><h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>启动命令前增加<code>判断依赖服务状态的工具</code></p><ul><li><a href="https://github.com/vishnubob/wait-for-it" target="_blank" rel="noopener">wait-for-it</a></li><li><a href="https://github.com/jwilder/dockerize" target="_blank" rel="noopener">dockerize</a></li><li><a href="https://github.com/Eficode/wait-for" target="_blank" rel="noopener">wait-for</a></li></ul><p>示例:</p><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">"2"</span><span class="token key atrule">services</span><span class="token punctuation">:</span>  <span class="token key atrule">web</span><span class="token punctuation">:</span>    <span class="token key atrule">build</span><span class="token punctuation">:</span> .    <span class="token key atrule">ports</span><span class="token punctuation">:</span>      <span class="token punctuation">-</span> <span class="token string">"80:8000"</span>    <span class="token key atrule">depends_on</span><span class="token punctuation">:</span>      <span class="token punctuation">-</span> <span class="token string">"db"</span>    <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"./wait-for-it.sh"</span><span class="token punctuation">,</span> <span class="token string">"db:5432"</span><span class="token punctuation">,</span> <span class="token string">"--"</span><span class="token punctuation">,</span> <span class="token string">"python"</span><span class="token punctuation">,</span> <span class="token string">"app.py"</span><span class="token punctuation">]</span>  <span class="token key atrule">db</span><span class="token punctuation">:</span>    <span class="token key atrule">image</span><span class="token punctuation">:</span> postgres<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h3 id="自己编写script"><a href="#自己编写script" class="headerlink" title="自己编写script"></a>自己编写script</h3><pre class="line-numbers language-sh"><code class="language-sh">#!/bin/sh# wait-for-postgres.shset -ehost="$1"shiftcmd="$@"until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$host" -U "postgres" -c '\q'; do  >&2 echo "Postgres is unavailable - sleeping"  sleep 1done>&2 echo "Postgres is up - executing command"exec $cmd<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>测试：</p><pre class="line-numbers language-sh"><code class="language-sh">command: ["./wait-for-postgres.sh", "db", "python", "app.py"]<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre><h3 id="wait-for命令测试"><a href="#wait-for命令测试" class="headerlink" title="wait-for命令测试"></a>wait-for命令测试</h3><ul><li>下载<a href="https://github.com/eficode/wait-for/blob/master/wait-for" target="_blank" rel="noopener">wait-for</a></li></ul><pre class="line-numbers language-sh"><code class="language-sh">[root@node1 ~]# chmod a+x wait_for [root@node1 ~]# ./wait_for localhost:3306 -- echo "Mysql site is up"Eficode site is up<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> docker </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> docker-compose </tag>
+            
+            <tag> docker </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>docker目录映射加z或Z标签</title>
       <link href="/docker-mu-lu-ying-she-jia-z-huo-z-biao-qian/"/>
       <url>/docker-mu-lu-ying-she-jia-z-huo-z-biao-qian/</url>
@@ -3982,33 +4009,6 @@
     
     
     <entry>
-      <title>istio简介</title>
-      <link href="/istio/"/>
-      <url>/istio/</url>
-      
-        <content type="html"><![CDATA[<h2 id="Istio简介"><a href="#Istio简介" class="headerlink" title="Istio简介"></a>Istio简介</h2><p>Istio是一个开放服务网格，提供了一种连接，管理和保护微服务的统一方法。它支持管理服务之间的流量，执行访问策略以及汇总遥测数据，所有这些都无需更改微服务代码。<br>Istio：</p><ul><li>HTTP，gRPC，WebSocket，MongoDB和TCP通信的自动负载平衡。  </li><li>通过丰富的路由规则，重试，故障转移和故障注入对流量行为进行细粒度控制。  </li><li>可配置的策略层和API，支持访问控制，速率限制和配额。  </li><li>群集内所有流量的自动指标，日志和跟踪，包括群集入口和出口。  </li><li>通过强大的基于身份的身份验证和授权，在群集中进行安全的服务间通信。  </li></ul><h2 id="Istio架构图"><a href="#Istio架构图" class="headerlink" title="Istio架构图"></a>Istio架构图</h2><p><img src="/images/istio.jpg" alt="istio" title="istio架构图"></p><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
-      
-      
-      <categories>
-          
-          <category> istio </category>
-          
-      </categories>
-      
-      
-        <tags>
-            
-            <tag> istio </tag>
-            
-            <tag> service mesh </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>logback配置文件模板</title>
       <link href="/logback-pei-zhi-wen-jian-mo-ban/"/>
       <url>/logback-pei-zhi-wen-jian-mo-ban/</url>
@@ -4028,6 +4028,33 @@
             <tag> logback </tag>
             
             <tag> logback配置 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>istio简介</title>
+      <link href="/istio/"/>
+      <url>/istio/</url>
+      
+        <content type="html"><![CDATA[<h2 id="Istio简介"><a href="#Istio简介" class="headerlink" title="Istio简介"></a>Istio简介</h2><p>Istio是一个开放服务网格，提供了一种连接，管理和保护微服务的统一方法。它支持管理服务之间的流量，执行访问策略以及汇总遥测数据，所有这些都无需更改微服务代码。<br>Istio：</p><ul><li>HTTP，gRPC，WebSocket，MongoDB和TCP通信的自动负载平衡。  </li><li>通过丰富的路由规则，重试，故障转移和故障注入对流量行为进行细粒度控制。  </li><li>可配置的策略层和API，支持访问控制，速率限制和配额。  </li><li>群集内所有流量的自动指标，日志和跟踪，包括群集入口和出口。  </li><li>通过强大的基于身份的身份验证和授权，在群集中进行安全的服务间通信。  </li></ul><h2 id="Istio架构图"><a href="#Istio架构图" class="headerlink" title="Istio架构图"></a>Istio架构图</h2><p><img src="/images/istio.jpg" alt="istio" title="istio架构图"></p><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> istio </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> istio </tag>
+            
+            <tag> service mesh </tag>
             
         </tags>
       
