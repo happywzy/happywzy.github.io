@@ -403,7 +403,7 @@
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
-                    2020-08-06
+                    2020-12-30
                 </div>
                 
 
@@ -438,15 +438,15 @@
 <li>容器中<code>mysql</code>配置文件目录<code>/etc/mysql/</code>;</li>
 </ul>
 <h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><ol>
-<li>启动镜像，将镜像中配置目录拷贝到宿主机<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动,并设置root密码</span>
-docker run -d --name mysql  -e MYSQL_ROOT_PASSWORD<span class="token operator">=</span>123456 hub.deri.org.cn/library/mysql:5.7
+<li>启动镜像，将镜像中配置目录拷贝到宿主机<pre class="line-numbers language-sh"><code class="language-sh">#启动,并设置root密码
+docker run -d --name mysql  -e MYSQL_ROOT_PASSWORD=123456 hub.deri.org.cn/library/mysql:5.7
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 </li>
 </ol>
-<h1 id="复制"><a href="#复制" class="headerlink" title="复制"></a>复制</h1><p>docker cp mysql:/etc/mysql /root</p>
+<p>#复制<br>docker cp mysql:/etc/mysql /root</p>
 <pre><code>
-```bash
-# 配置文件目录结构
+```sh
+#配置文件目录结构
 [root@mysql01 mysql]# tree
 .
 ├── conf.d
@@ -464,8 +464,8 @@ docker run -d --name mysql  -e MYSQL_ROOT_PASSWORD<span class="token operator">=
 <p>– 登录<br>docker exec -it mysql bash<br>mysql -uroot -p123456<br>– 查询<br>mysql&gt; show variables like ‘%datadir%’;<br>+—————+—————–+<br>| Variable_name | Value           |<br>+—————+—————–+<br>| datadir       | /var/lib/mysql/ |<br>+—————+—————–+<br>1 row in set (0.01 sec)</p>
 <pre><code>
 3. 修改`mysql.cnf`
-```bash
-# 参考mysql主从配置
+```sh
+#参考mysql主从配置
 [mysqld]
 server-id=1 # 主从设置不一样
 log-bin=mysql-bin
@@ -482,12 +482,12 @@ binlog-format=ROW
 #slave-skip-errors=1062,1032,1060 # 跳过已知错误,主键冲突、表已存在等错误代码如1062,1032,1060等
 #relay-log-purge = 1    #是否自动清空不再需要中继日志时。默认值为1(启用)
 #expire_logs_days = 30  #超过 30 天的 binlog 删除</code></pre><ol start="4">
-<li>启动mysql<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 映射端口、配置文件和data</span>
-docker run -d --name mysql -v /root/mysql:/etc/mysql -v /var/lib/mysql/:/var/lib/mysql/ -e MYSQL_ROOT_PASSWORD<span class="token operator">=</span>123456 -p 3306:3306  hub.deri.org.cn/library/mysql:5.7
+<li>启动mysql<pre class="line-numbers language-sh"><code class="language-sh">#映射端口、配置文件和data
+docker run -d --name mysql -v /root/mysql:/etc/mysql -v /var/lib/mysql/:/var/lib/mysql/ -e MYSQL_ROOT_PASSWORD=123456 -p 3306:3306  hub.deri.org.cn/library/mysql:5.7
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 </li>
 </ol>
-<h1 id="也可以按需只映射一个配置文件mysql-cnf"><a href="#也可以按需只映射一个配置文件mysql-cnf" class="headerlink" title="也可以按需只映射一个配置文件mysql.cnf"></a>也可以按需只映射一个配置文件mysql.cnf</h1><p>docker run -d –name mysql -v /root/mysql/mysql.cnf:/etc/mysql/mysql.cnf -v /var/lib/mysql/:/var/lib/mysql/ -e MYSQL_ROOT_PASSWORD=123456 -p 3307:3306  hub.deri.org.cn/library/mysql:5.7</p>
+<p>#也可以按需只映射一个配置文件mysql.cnf<br>docker run -d –name mysql -v /root/mysql/mysql.cnf:/etc/mysql/mysql.cnf -v /var/lib/mysql/:/var/lib/mysql/ -e MYSQL_ROOT_PASSWORD=123456 -p 3307:3306  hub.deri.org.cn/library/mysql:5.7</p>
 <pre><code>
 5. 其它主从配置,参考非`docker`安装配置
 
@@ -500,7 +500,7 @@ docker run -d --name mysql -v /root/mysql:/etc/mysql -v /var/lib/mysql/:/var/lib
 6. 使用`keepalive`工具
 
 写一个脚本`/etc/docker_mysql.sh`判断`docker`中`mysql`是否存活
-```bash
+```sh
 #! /bin/bash
 count=$(docker ps |grep hub.deri.org.cn/library/mysql:5.7 | grep Up| wc -l)
 if [ $count == "1" ];then
@@ -510,7 +510,7 @@ else
 fi
 
 
-# 测试这个脚本
+#测试这个脚本
 [root@mysql01 ~]# docker stop mysql
 mysql
 [root@mysql01 ~]# ./docker_mysql.sh 
@@ -521,7 +521,7 @@ mysql
 [root@mysql01 ~]# ./docker_mysql.sh ;echo $?
 0
 
-# 配置keepalived
+#配置keepalived
 vrrp_script chk_mysql {
     script "/etc/docker_mysql.sh"
     interval 2
