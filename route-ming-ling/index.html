@@ -386,21 +386,21 @@
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-check fa-fw"></i>更新日期:&nbsp;&nbsp;
-                    2020-07-22
+                    2021-05-13
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    1.7k
+                    1.9k
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                    7 分
+                    8 分
                 </div>
                 
 
@@ -421,9 +421,19 @@
 <ul>
 <li>该Linux系统在一个局域网中，局域网中有一个网关，能够让机器访问Internet，那么就需要将这台机器的ip地址设置为Linux机器的默认路由。</li>
 <li>直接在命令行下执行route命令来添加路由，不会永久保存，当网卡重启或者机器重启之后，该路由就失效了</li>
-<li>可以在<code>/etc/rc.local</code>中添加<code>route</code>命令来保证该路由设置永久有效。</li>
+<li>可以在<code>/etc/rc.local</code>中添加<code>route</code>命令来保证该路由设置永久有效，这个方法只能在重启电脑的时候生效，重启网络不生效；</li>
+<li>推荐在<code>/etc/sysconfig/static-routes</code>编写路由，重启网络或服务器都能生效；</li>
 </ul>
-<h3 id="route语法"><a href="#route语法" class="headerlink" title="route语法"></a>route语法</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 设置和查看路由表都可以用 route 命令，设置内核路由表的命令格式是：</span>
+<pre class="line-numbers language-sh"><code class="language-sh"># vim /etc/sysconfig/static-routes
+# 这个文件默认不存在
+any net 192.168.11.0 gw 192.168.21.1 netmask 255.255.255.0 metric 1 dev eth0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意，如果本机安装了docker,添加路由后重启网络，会导致docker服务启动添加的路由失效，导致docker服务调用失败，创建新的docker服务会报以下错误,重启docker服务可以解决。<code>systemctl restart docker</code></p>
+</blockquote>
+<pre><code>[root@localhost ~]# docker run -d -p 9000:80 centos:httpd /bin/sh -c /usr/local/bin/start.sh
+d5b2bd5a7bc4895a973fe61efd051847047d26385f65c278aaa09e4fa31c4d76
+docker: Error response from daemon: driver failed programming external connectivity on endpoint quirky_allen (6bda693d1143657e46bee0300276aa05820da2b21a3d89441e820d1a274c48b6): (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 9000 -j DNAT --to-destination 172.17.0.2:80 ! -i docker0: iptables: No chain/target/match by that name.
+(exit status 1)).</code></pre><h3 id="route语法"><a href="#route语法" class="headerlink" title="route语法"></a>route语法</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 设置和查看路由表都可以用 route 命令，设置内核路由表的命令格式是：</span>
 route  <span class="token punctuation">[</span>add<span class="token operator">|</span>del<span class="token punctuation">]</span> <span class="token punctuation">[</span>-net<span class="token operator">|</span>-host<span class="token punctuation">]</span> target <span class="token punctuation">[</span>netmask Nm<span class="token punctuation">]</span> <span class="token punctuation">[</span>gw Gw<span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">[</span>dev<span class="token punctuation">]</span> If<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <ol>
 <li>方法</li>
@@ -633,7 +643,7 @@ route add default gw 192.168.120.240<span aria-hidden="true" class="line-numbers
 <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># vi /etc/sysctl.conf</span>
 net.ipv4.ip_forward <span class="token operator">=</span> 1
 <span class="token comment" spellcheck="true"># 或者 使用下面的命令</span>
-<span class="token keyword">echo</span> net.ipv4.ip_forward<span class="token operator">=</span>1 <span class="token operator">>></span> /etc/sysctl.conf
+<span class="token keyword">echo</span> net.ipv4.ip_forward<span class="token operator">=</span>1 <span class="token operator">&gt;&gt;</span> /etc/sysctl.conf
 <span class="token comment" spellcheck="true"># 使上面配置生效</span>
 sysctl -p <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>用户还可以使用如下的命令查看当前系统是否支持包转发。</p>
@@ -1227,7 +1237,7 @@ code[class*="language-"], pre[class*="language-"] { white-space: pre !important;
             <br>
             
             &nbsp;<i class="fas fa-chart-area"></i>&nbsp;站点总字数:&nbsp;<span
-                class="white-color">234.9k</span>&nbsp;字
+                class="white-color">235.1k</span>&nbsp;字
             
             
             
