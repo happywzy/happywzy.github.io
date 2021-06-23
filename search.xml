@@ -4,6 +4,33 @@
   
     
     <entry>
+      <title>springboot集成Prometheus</title>
+      <link href="springboot-ji-cheng-prometheus/"/>
+      <url>springboot-ji-cheng-prometheus/</url>
+      
+        <content type="html"><![CDATA[<h3 id="接口说明"><a href="#接口说明" class="headerlink" title="接口说明"></a>接口说明</h3><p>springboot集成Prometheus需要开发的接口有：</p><ul><li>监控JVM、tomcat等相关的指标；</li><li>自定义监控程序相关指标;</li></ul><h3 id="监控JVM、tomcat等相关的指标"><a href="#监控JVM、tomcat等相关的指标" class="headerlink" title="监控JVM、tomcat等相关的指标"></a>监控JVM、tomcat等相关的指标</h3><p><code>micrometer</code>已经为我们做好了相关的接口，只需要引入依赖即可.</p><pre class="line-numbers language-xml"><code class="language-xml"><span class="token comment" spellcheck="true">&lt;!--集成Prometheus--></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-actuator<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>io.micrometer<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>micrometer-registry-prometheus<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>设置<code>application.yml</code></p><pre class="line-numbers language-yml"><code class="language-yml">server:  port: 9090spring:  application:    name: application-namemanagement:  endpoint:  endpoints:    web:      exposure:        include: '*'  metrics:    tags:      application: ${spring.application.name}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><p>启动程序后，访问<code>/actuator/prometheus</code>即可获取相关指标.</p><h3 id="自定义监控程序相关指标"><a href="#自定义监控程序相关指标" class="headerlink" title="自定义监控程序相关指标"></a>自定义监控程序相关指标</h3><p>如果上面的接口返回的指标不够用，需要自己开发，可以参考下面的：</p><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"/metrics"</span><span class="token punctuation">,</span> produces <span class="token operator">=</span> <span class="token string">"text/plain"</span><span class="token punctuation">)</span><span class="token annotation punctuation">@ResponseBody</span>String <span class="token function">metrics</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>    <span class="token comment" spellcheck="true">// 这里产生的随机数,实际按需修改</span>    <span class="token keyword">return</span> <span class="token string">"user_random{application=\"application\"} "</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">(</span>Math<span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h3 id="然后配置到Prometheus的Targets中即可"><a href="#然后配置到Prometheus的Targets中即可" class="headerlink" title="然后配置到Prometheus的Targets中即可."></a>然后配置到Prometheus的Targets中即可.</h3><script>        document.querySelectorAll('.github-emoji')          .forEach(el => {            if (!el.dataset.src) { return; }            const img = document.createElement('img');            img.style = 'display:none !important;';            img.src = el.dataset.src;            img.addEventListener('error', () => {              img.remove();              el.style.color = 'inherit';              el.style.backgroundImage = 'none';              el.style.background = 'none';            });            img.addEventListener('load', () => {              img.remove();            });            document.body.appendChild(img);          });      </script>]]></content>
+      
+      
+      <categories>
+          
+          <category> java </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> spring boot </tag>
+            
+            <tag> prometheus </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>使用canal监控mysql数据变化</title>
       <link href="shi-yong-canal-jian-kong-mysql-shu-ju-bian-hua/"/>
       <url>shi-yong-canal-jian-kong-mysql-shu-ju-bian-hua/</url>
