@@ -410,14 +410,14 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    281
+                    464
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                    1 分
+                    2 分
                 </div>
                 
 
@@ -461,11 +461,32 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*'
-  metrics:
-    tags:
-      application: ${spring.application.name}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+        include: '*'<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Bean</span>
+MeterRegistryCustomizer<span class="token operator">&lt;</span>MeterRegistry<span class="token operator">></span> <span class="token function">configurer</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Value</span><span class="token punctuation">(</span><span class="token string">"${spring.application.name}"</span><span class="token punctuation">)</span> String applicationName<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> registry <span class="token operator">-</span><span class="token operator">></span> registry<span class="token punctuation">.</span><span class="token function">config</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">commonTags</span><span class="token punctuation">(</span><span class="token string">"application"</span><span class="token punctuation">,</span> applicationName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>启动程序后，访问<code>/actuator/prometheus</code>即可获取相关指标.</p>
+<h3 id="使用Micrometer实现方法执行时间监控"><a href="#使用Micrometer实现方法执行时间监控" class="headerlink" title="使用Micrometer实现方法执行时间监控"></a>使用Micrometer实现方法执行时间监控</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Bean</span>
+<span class="token keyword">public</span> TimedAspect <span class="token function">timedAspect</span><span class="token punctuation">(</span>MeterRegistry registry<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">TimedAspect</span><span class="token punctuation">(</span>registry<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 类上要开启@Aspect</span>
+<span class="token comment" spellcheck="true">// 在方法上添加 @Timed 注解即可</span>
+<span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/log/warn"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Timed</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"warn_methord"</span><span class="token punctuation">,</span>description <span class="token operator">=</span> <span class="token string">"健康检查接口"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> String <span class="token function">warn</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    log<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"warn msg."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token string">"warn"</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>启动服务后，访问本地的<code>/actuator/prometheus</code>接口，就能看到如下的指标数据了，其中就有我们自定义的<code>warn_methord</code>的三个指标（count sum max）。</p>
+<pre class="line-numbers language-conf"><code class="language-conf"># HELP warn_methord_seconds 健康检查接口
+# TYPE warn_methord_seconds summary
+warn_methord_seconds_count{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 3.0
+warn_methord_seconds_sum{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 0.0208932
+# HELP warn_methord_seconds_max 健康检查接口
+# TYPE warn_methord_seconds_max gauge
+warn_methord_seconds_max{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 0.01753<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="自定义监控程序相关指标"><a href="#自定义监控程序相关指标" class="headerlink" title="自定义监控程序相关指标"></a>自定义监控程序相关指标</h3><p>如果上面的接口返回的指标不够用，需要自己开发，可以参考下面的：</p>
 <pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"/metrics"</span><span class="token punctuation">,</span> produces <span class="token operator">=</span> <span class="token string">"text/plain"</span><span class="token punctuation">)</span>
 <span class="token annotation punctuation">@ResponseBody</span>
@@ -752,57 +773,51 @@ String <span class="token function">metrics</span><span class="token punctuation
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="far fa-dot-circle"></i>&nbsp;本篇
-            </div>
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/springboot-ji-cheng-prometheus/">
+                <a href="/go-template-shi-yong/">
                     <div class="card-image">
                         
                         
-                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/3.jpg" class="responsive-img" alt="springboot集成Prometheus">
+                        <img src="https://cdn.jsdelivr.net/gh/happywzy/happywzy.github.io/medias/featureimages/3.jpg" class="responsive-img" alt="go template使用">
                         
-                        <span class="card-title">springboot集成Prometheus</span>
+                        <span class="card-title">go template使用</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            接口说明springboot集成Prometheus需要开发的接口有：
-
-监控JVM、tomcat等相关的指标；
-自定义监控程序相关指标;
-
-监控JVM、tomcat等相关的指标micrometer已经为我们做好了相关的接口，只需要引入依赖
+                            语法- 格式: {{ 模板表达式 }}
+- 注释格式: {{/* 注释语法 */}}
+- {{.字段名}}
+- {{.字段名1.字段名2}}
+减号- 在左边增加减号和空格，表示删除左边空格： {{- 模板表达式 }}
+- 在右边增加空格和减
                         
                     </div>
                     <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2021-06-23
-                            </span>
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-06-25
+                        </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/java/" class="post-category">
-                                    java
+                            <a href="/categories/go/" class="post-category">
+                                    go
                                 </a>
                             
                             
                         </span>
                     </div>
                 </div>
-
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/spring-boot/">
-                        <span class="chip bg-color">spring boot</span>
-                    </a>
-                    
-                    <a href="/tags/prometheus/">
-                        <span class="chip bg-color">prometheus</span>
+                    <a href="/tags/go-template/">
+                        <span class="chip bg-color">go template</span>
                     </a>
                     
                 </div>
@@ -1055,7 +1070,7 @@ code[class*="language-"], pre[class*="language-"] { white-space: pre !important;
             <br>
             
             &nbsp;<i class="fas fa-chart-area"></i>&nbsp;站点总字数:&nbsp;<span
-                class="white-color">236.1k</span>&nbsp;字
+                class="white-color">239.7k</span>&nbsp;字
             
             
             
