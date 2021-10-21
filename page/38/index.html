@@ -203,6 +203,212 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-ji-qun-jian-kong-shi-yong-helm-yi-jian-an-zhuang-prometheusoperator/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-ji-qun-jian-kong-shi-yong-helm-yi-jian-an-zhuang-prometheusoperator/" class="post-title-link" itemprop="url">k8s集群监控【使用Helm一键安装Prometheus Operator】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-22 11:03:54" itemprop="dateCreated datePublished" datetime="2019-11-22T11:03:54+08:00">2019-11-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-07 17:34:27" itemprop="dateModified" datetime="2020-05-07T17:34:27+08:00">2020-05-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>首先我们先来了解下 <code>Prometheus-Operator</code>的架构图：<br><img src="/images/k8s3.jpg" alt="Prometheus-Operator"></p>
+<p>上图是<code>Prometheus-Operator</code>官方提供的架构图，其中<code>Operator</code>是最核心的部分，作为一个控制器，他会去创建<code>Prometheus</code>、<code>ServiceMonitor</code>、<code>AlertManager</code>以及<code>PrometheusRule</code>4个<code>CRD</code>资源对象，然后会一直监控并维持这4个资源对象的状态。</p>
+<p>其中创建的<code>prometheus</code>这种资源对象就是作为<code>Prometheus Server</code>存在，而<code>ServiceMonitor</code>就是<code>exporter</code>的各种抽象，<code>exporter</code>前面我们已经学习了，是用来提供专门提供<code>metrics</code>数据接口的工具，<code>Prometheus</code>就是通过<code>ServiceMonitor</code>提供的<code>metrics</code>数据接口去 <code>pull</code> 数据的，当然<code>alertmanager</code>这种资源对象就是对应的<code>AlertManager</code>的抽象，而<code>PrometheusRule</code>是用来被<code>Prometheus</code>实例使用的报警规则文件。</p>
+<p>这样我们要在集群中监控什么数据，就变成了直接去操作 <code>Kubernetes</code> 集群的资源对象了，是不是方便很多了。上图中的 <code>Service</code>和 <code>ServiceMonitor</code> 都是 <code>Kubernetes</code> 的资源，一个 <code>ServiceMonitor</code>可以通过 <code>labelSelector</code> 的方式去匹配一类<code>Service</code>，<code>Prometheus</code> 也可以通过 <code>labelSelector</code> 去匹配多个<code>ServiceMonitor</code>。</p>
+<h3 id="查看stable-prometheus-operator的默认值"><a href="#查看stable-prometheus-operator的默认值" class="headerlink" title="查看stable/prometheus-operator的默认值"></a>查看stable/prometheus-operator的默认值</h3><pre><code>helm inspect values stable/prometheus-operator</code></pre><h3 id="将默认配置导出，备用"><a href="#将默认配置导出，备用" class="headerlink" title="将默认配置导出，备用"></a>将默认配置导出，备用</h3><pre><code>helm inspect values stable/prometheus-operator &gt; prometheus-operator.yaml</code></pre><h3 id="提前将配置中涉及到的镜像下载好"><a href="#提前将配置中涉及到的镜像下载好" class="headerlink" title="提前将配置中涉及到的镜像下载好"></a>提前将配置中涉及到的镜像下载好</h3><pre class="line-numbers language-sh"><code class="language-sh">#!/bin/sh
+docker pull hub.deri.org.cn/k8s_monitor/alertmanager:v0.19.0
+docker tag hub.deri.org.cn/k8s_monitor/alertmanager:v0.19.0 quay.io/prometheus/alertmanager:v0.19.0
+docker rmi hub.deri.org.cn/k8s_monitor/alertmanager:v0.19.0
+
+docker pull hub.deri.org.cn/k8s_monitor/ghostunnel:v1.4.1 
+docker tag hub.deri.org.cn/k8s_monitor/ghostunnel:v1.4.1 squareup/ghostunnel:v1.4.1
+docker rmi hub.deri.org.cn/k8s_monitor/ghostunnel:v1.4.1 
+
+docker pull hub.deri.org.cn/k8s_monitor/kube-webhook-certgen:v1.0.0 
+docker tag hub.deri.org.cn/k8s_monitor/kube-webhook-certgen:v1.0.0  jettech/kube-webhook-certgen:v1.0.0
+docker rmi hub.deri.org.cn/k8s_monitor/kube-webhook-certgen:v1.0.0 
+
+docker pull hub.deri.org.cn/k8s_monitor/prometheus-operator:v0.34.0
+docker tag hub.deri.org.cn/k8s_monitor/prometheus-operator:v0.34.0 quay.io/coreos/prometheus-operator:v0.34.0
+docker rmi hub.deri.org.cn/k8s_monitor/prometheus-operator:v0.34.0
+
+docker pull hub.deri.org.cn/k8s_monitor/configmap-reload:v0.0.1
+docker tag hub.deri.org.cn/k8s_monitor/configmap-reload:v0.0.1 quay.io/coreos/configmap-reload:v0.0.1
+docker rmi pull hub.deri.org.cn/k8s_monitor/configmap-reload:v0.0.1
+
+docker pull hub.deri.org.cn/k8s_monitor/prometheus-config-reloader:v0.34.0
+docker tag hub.deri.org.cn/k8s_monitor/prometheus-config-reloader:v0.34.0 quay.io/coreos/prometheus-config-reloader:v0.34.0
+docker rmi hub.deri.org.cn/k8s_monitor/prometheus-config-reloader:v0.34.0
+
+docker pull hub.deri.org.cn/k8s_monitor/hyperkube:v1.12.1
+docker tag hub.deri.org.cn/k8s_monitor/hyperkube:v1.12.1 k8s.gcr.io/hyperkube:v1.12.1
+docker rmi  hub.deri.org.cn/k8s_monitor/hyperkube:v1.12.1
+
+docker pull hub.deri.org.cn/k8s_monitor/prometheus:v2.13.1
+docker tag hub.deri.org.cn/k8s_monitor/prometheus:v2.13.1 quay.io/prometheus/prometheus:v2.13.1
+docker rmi hub.deri.org.cn/k8s_monitor/prometheus:v2.13.1
+
+docker pull hub.deri.org.cn/k8s_monitor/kube-state-metrics:v1.8.0
+docker tag hub.deri.org.cn/k8s_monitor/kube-state-metrics:v1.8.0 quay.io/coreos/kube-state-metrics:v1.8.0
+docker rmi hub.deri.org.cn/k8s_monitor/kube-state-metrics:v1.8.0
+
+docker pull hub.deri.org.cn/k8s_monitor/node-exporter:v0.18.1
+docker tag hub.deri.org.cn/k8s_monitor/node-exporter:v0.18.1 quay.io/prometheus/node-exporter:v0.18.1
+docker rmi hub.deri.org.cn/k8s_monitor/node-exporter:v0.18.1
+
+docker pull hub.deri.org.cn/k8s_monitor/k8s-sidecar:0.1.20
+docker tag hub.deri.org.cn/k8s_monitor/k8s-sidecar:0.1.20 kiwigrid/k8s-sidecar:0.1.20
+docker rmi hub.deri.org.cn/k8s_monitor/k8s-sidecar:0.1.20
+
+docker pull hub.deri.org.cn/k8s_monitor/grafana:6.4.2
+docker tag hub.deri.org.cn/k8s_monitor/grafana:6.4.2 grafana/grafana:6.4.2
+docker rmi hub.deri.org.cn/k8s_monitor/grafana:6.4.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="用默认配置安装，指定了name、namespace等信息"><a href="#用默认配置安装，指定了name、namespace等信息" class="headerlink" title="用默认配置安装，指定了name、namespace等信息"></a>用默认配置安装，指定了name、namespace等信息</h3><pre><code>helm install stable/prometheus-operator  --name prometheus-operator --namespace monitoring -f prometheus-operator.yaml --set grafana.adminPassword=admin</code></pre><h3 id="查看pod运行情况"><a href="#查看pod运行情况" class="headerlink" title="查看pod运行情况"></a>查看pod运行情况</h3><pre><code>kubectl get pod -n monitoring</code></pre><h3 id="修改Grafana的service类型为NodePort，便于访问测试"><a href="#修改Grafana的service类型为NodePort，便于访问测试" class="headerlink" title="修改Grafana的service类型为NodePort，便于访问测试"></a>修改Grafana的service类型为NodePort，便于访问测试</h3><pre><code>kubectl edit svc prometheus-operator-grafana -n monitoring</code></pre><p>通过下面命令，查看绑定宿主机的端口 ，访问测试密码安装时指定了<code>admin/admin</code></p>
+<pre><code>kubectl get svc -n monitoring</code></pre><h3 id="卸载"><a href="#卸载" class="headerlink" title="卸载"></a>卸载</h3><pre><code>helm delete prometheus-operator</code></pre><pre><code>helm delete --purge prometheus-operator</code></pre><p><code>Prometheus-Operator</code>安装时会去创建<code>Prometheus</code>、<code>ServiceMonitor</code>、<code>AlertManager</code>以及<code>PrometheusRule</code>4个<code>CRD</code>资源对象，卸载时一并删掉</p>
+<pre><code>kubectl delete crd prometheuses.monitoring.coreos.com
+kubectl delete crd prometheusrules.monitoring.coreos.com
+kubectl delete crd servicemonitors.monitoring.coreos.com
+kubectl delete crd podmonitors.monitoring.coreos.com
+kubectl delete crd alertmanagers.monitoring.coreos.com</code></pre><h3 id="修改prometheus-operator-yaml，配置ingress"><a href="#修改prometheus-operator-yaml，配置ingress" class="headerlink" title="修改prometheus-operator.yaml，配置ingress"></a>修改prometheus-operator.yaml，配置ingress</h3><pre class="line-numbers language-yml"><code class="language-yml"># 例如AlterManager配置，默认情况enabled: false修改成true，hosts: []填入alterManager的域名
+alertmanager:
+  ingress:
+    enabled: true
+    hosts: ["alert.deri.com"]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="修改prometheus-operator-yaml，配置数据持久化"><a href="#修改prometheus-operator-yaml，配置数据持久化" class="headerlink" title="修改prometheus-operator.yaml，配置数据持久化"></a>修改prometheus-operator.yaml，配置数据持久化</h3><pre class="line-numbers language-yml"><code class="language-yml"># 例如AlterManager，默认如下，是被注释掉的，取消注释，并填入你的storageClassName
+    storage: {}
+    # volumeClaimTemplate:
+    #   spec:
+    #     storageClassName: gluster
+    #     accessModes: ["ReadWriteOnce"]
+    #     resources:
+    #       requests:
+    #         storage: 50Gi
+    #   selector: {}
+
+alertmanager:
+  alertmanagerSpec:
+    storage: 
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-client
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+        selector: {}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其它配置可以在默认配置<code>prometheus-operator.yaml</code>中查看并修改。</p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><h4 id="问题一"><a href="#问题一" class="headerlink" title="问题一:"></a>问题一:</h4><p>【摘自<code>https://github.com/helm/charts/tree/master/stable/prometheus-operator</code>】</p>
+<p>KubeProxy【改完重启kubelet、docker服务】</p>
+<pre class="line-numbers language-log"><code class="language-log">The metrics bind address of kube-proxy is default to 127.0.0.1:10249 that prometheus instances cannot access to. You should expose metrics by changing metricsBindAddress field value to 0.0.0.0:10249 if you want to collect them.
+
+Depending on the cluster, the relevant part config.conf will be in ConfigMap kube-system/kube-proxy or kube-system/kube-proxy-config. For example:<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<pre><code>kubectl -n kube-system edit cm kube-proxy</code></pre><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+data:
+  config.conf: |-
+    apiVersion: kubeproxy.config.k8s.io/v1alpha1
+    kind: KubeProxyConfiguration
+    # ...
+    # metricsBindAddress: 127.0.0.1:10249
+    metricsBindAddress: 0.0.0.0:10249
+    # ...
+  kubeconfig.conf: |-
+    # ...
+kind: ConfigMap
+metadata:
+  labels:
+    app: kube-proxy
+  name: kube-proxy
+  namespace: kube-system<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="问题二："><a href="#问题二：" class="headerlink" title="问题二："></a>问题二：</h4><p>在不同环境安装时发现结果不一样，所有配置都一样，可能原因：</p>
+<p>由于上述是通过<code>helm</code>安装的，首先通过命令<code>helm repo list</code>检查源是否一致；</p>
+<p>通过<code>helm search | grep prometheus</code>查看<code>CHART VERSION    APP VERSION</code>是否一致；</p>
+<p>如果不一致通过<code>helm repo update</code>更新一下就可以了。</p>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a href="https://github.com/helm/charts/tree/master/stable/prometheus-operator" target="_blank" rel="noopener">https://github.com/helm/charts/tree/master/stable/prometheus-operator</a> </li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-zi-dai-ren-zheng-gong-neng/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -982,120 +1188,6 @@ spec:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/an-zhuang-shi-yong-nfs/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/an-zhuang-shi-yong-nfs/" class="post-title-link" itemprop="url">CentOS 7 安装使用NFS</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-15 15:43:29" itemprop="dateCreated datePublished" datetime="2019-11-15T15:43:29+08:00">2019-11-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-16 09:59:50" itemprop="dateModified" datetime="2020-04-16T09:59:50+08:00">2020-04-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="yum-安装"><a href="#yum-安装" class="headerlink" title="yum 安装"></a>yum 安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum <span class="token function">install</span> nfs-utils<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="设置-NFS-服务开机启动"><a href="#设置-NFS-服务开机启动" class="headerlink" title="设置 NFS 服务开机启动"></a>设置 NFS 服务开机启动</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl <span class="token function">enable</span> rpcbind
-<span class="token function">sudo</span> systemctl <span class="token function">enable</span> nfs<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="启动-NFS-服务"><a href="#启动-NFS-服务" class="headerlink" title="启动 NFS 服务"></a>启动 NFS 服务</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl start rpcbind
-<span class="token function">sudo</span> systemctl start nfs<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="服务启动之后，我们在服务端配置一个共享目录"><a href="#服务启动之后，我们在服务端配置一个共享目录" class="headerlink" title="服务启动之后，我们在服务端配置一个共享目录"></a>服务启动之后，我们在服务端配置一个共享目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">mkdir</span> /data
-<span class="token function">sudo</span> <span class="token function">chmod</span> 755 /data<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="根据这个目录，相应配置导出目录"><a href="#根据这个目录，相应配置导出目录" class="headerlink" title="根据这个目录，相应配置导出目录"></a>根据这个目录，相应配置导出目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">vi</span> /etc/exports<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="添加如下配置"><a href="#添加如下配置" class="headerlink" title="添加如下配置"></a>添加如下配置</h3><pre><code>/data/     192.168.0.0/24(rw,sync,no_root_squash,no_all_squash)</code></pre><blockquote>
-<ol>
-<li><code>/data</code>: 共享目录位置。</li>
-<li><code>192.168.0.0/24</code>: 客户端 <code>IP</code> 范围，<code>*</code> 代表所有，即没有限制。</li>
-<li><code>rw</code>: 权限设置，可读可写。</li>
-<li><code>sync</code>: 同步共享目录。</li>
-<li><code>no_root_squash</code>: 可以使用 <code>root</code> 授权。</li>
-<li><code>no_all_squash</code>: 可以使用普通用户授权。</li>
-</ol>
-</blockquote>
-<h3 id="wq保存设置之后，重启-NFS-服务"><a href="#wq保存设置之后，重启-NFS-服务" class="headerlink" title=":wq保存设置之后，重启 NFS 服务"></a><code>:wq</code>保存设置之后，重启 <code>NFS</code> 服务</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl restart nfs<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="可以检查一下本地的共享目录"><a href="#可以检查一下本地的共享目录" class="headerlink" title="可以检查一下本地的共享目录"></a>可以检查一下本地的共享目录</h3><pre class="line-numbers language-bash"><code class="language-bash">showmount -e localhost
-Export list <span class="token keyword">for</span> localhost:
-/data 192.168.0.0/24<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a href="https://qizhanming.com/blog/2018/08/08/how-to-install-nfs-on-centos-7" target="_blank" rel="noopener">参考</a></p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1167,7 +1259,7 @@ Export list <span class="token keyword">for</span> localhost:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">257</span>
+          <span class="site-state-item-count">258</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1180,7 +1272,7 @@ Export list <span class="token keyword">for</span> localhost:
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">182</span>
+        <span class="site-state-item-count">183</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

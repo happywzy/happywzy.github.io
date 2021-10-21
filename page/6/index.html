@@ -203,6 +203,215 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/traefik-pei-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/traefik-pei-zhi/" class="post-title-link" itemprop="url">traefik配置</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-07 09:35:09 / 修改时间：10:13:52" itemprop="dateCreated datePublished" datetime="2021-02-07T09:35:09+08:00">2021-02-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/traefik/" itemprop="url" rel="index"><span itemprop="name">traefik</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><ul>
+<li><code>Entrypoints</code> -&gt; 入口</li>
+<li><code>HTTP Router</code> -&gt; 路由规则</li>
+<li><code>Service</code> -&gt; 可以理解为部署在<code>docker</code>中的容器、这里也可以是在配置文件中自定义的<code>service</code></li>
+<li><code>TLS</code> -&gt; <code>https</code></li>
+</ul>
+<h3 id="toml配置文件"><a href="#toml配置文件" class="headerlink" title="toml配置文件"></a>toml配置文件</h3><p><code>traefik</code>支持通过<code>toml</code>配置文件手动配置<code>https</code>、自定义<code>Router</code>、<code>Service</code>;</p>
+<ul>
+<li><code>traefik.toml</code><pre class="line-numbers language-conf"><code class="language-conf"># 全局配置
+[global]
+checkNewVersion = false
+sendAnonymousUsage = false
+# 入口
+[entryPoints]
+# http 
+[entryPoints.web]
+  address = ":80"
+# https "websecure"这个名字是自己定义的  
+[entryPoints.websecure]
+  address = ":443"
+#  traefik web ui 
+[entryPoints.traefik]
+  address = ":8080" 
+# 免费Let's Encrypt 证书（注意：必须域名解析到的主机中才有效，traefik会把秘钥写入acme.json中）
+[certificatesResolvers.bxtlschallenge.acme]
+# 自己的邮箱地址
+email = "xxxx@xx.com"
+# 秘钥写入地址，根据自己文件映射来配置
+storage = "/letsencrypt/acme.json"
+[certificatesResolvers.bxtlschallenge.acme.httpChallenge]
+entryPoint = "web"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<h1 id="自定义Router、Services（貌似必须定义在外部文件里面，坑了好久）"><a href="#自定义Router、Services（貌似必须定义在外部文件里面，坑了好久）" class="headerlink" title="自定义Router、Services（貌似必须定义在外部文件里面，坑了好久）"></a>自定义Router、Services（貌似必须定义在外部文件里面，坑了好久）</h1><p>[providers.file]<br>  directory = “/etc/traefik/conf”</p>
+<h1 id="traefik-需要开启的功能"><a href="#traefik-需要开启的功能" class="headerlink" title="traefik 需要开启的功能"></a>traefik 需要开启的功能</h1><p>[api]<br>  insecure = true<br>  dashboard = true<br>[ping]<br>[providers.docker]<br>  endpoint = “unix:///var/run/docker.sock”<br>  exposedByDefault = true</p>
+<h1 id="传输配置"><a href="#传输配置" class="headerlink" title="传输配置"></a>传输配置</h1><p>[serversTransport]</p>
+<h1 id="如果后端需要代理https自定义证书，可以使用这种方式就可以跳过验证，不然会报x509证书错误"><a href="#如果后端需要代理https自定义证书，可以使用这种方式就可以跳过验证，不然会报x509证书错误" class="headerlink" title="如果后端需要代理https自定义证书，可以使用这种方式就可以跳过验证，不然会报x509证书错误"></a>如果后端需要代理https自定义证书，可以使用这种方式就可以跳过验证，不然会报x509证书错误</h1><p>  insecureSkipVerify = true</p>
+<pre><code>
+- `file.toml`
+```conf
+[http]
+  # 自定义 routers
+  [http.routers]
+    # http 方式
+    [http.routers.routers-cnblogs]
+      entryPoints = ["web"]
+      rule = "Host(`cnblogs.fanxp.com`)"
+      service = "cnblogs"
+    # https 方式
+    [http.routers.routers-cnblogs1]
+      entryPoints = ["websecure"]
+      rule = "Host(`cnblogs.fanxp.com`)"
+      service = "cnblogs"
+      [http.routers.routers-cnblogs1.tls]
+        certResolver = "bxtlschallenge"
+  # 自定义 services
+  [http.services]
+    [http.services.cnblogs]
+      # 可以设置多个url traefik 根据算法做负载均衡
+      [http.services.cnblogs.loadBalancer]
+        [[http.services.cnblogs.loadBalancer.servers]]
+          url = "https://www.cnblogs.com/fanxp/"
+        [[http.services.cnblogs.loadBalancer.servers]]
+          url = "https://github.com/fanxiaoping/grpc-test"</code></pre><ul>
+<li>测试<code>traefik-compose.yml</code></li>
+</ul>
+<pre class="line-numbers language-yml"><code class="language-yml">version: '3'
+
+services:
+    traefik:
+        image: traefik:v2.1
+        container_name: traefik
+        ports:
+            # HTTP 端口
+            - "80:80"
+            # HTTPS 端口
+            - "443:443"
+            # Web UI 端口
+            - "8080:8080"
+        volumes:
+            # 这样Traefik可以监听Docker事件
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            # 启动配置文件
+            - ./traefik.toml:/etc/traefik/traefik.toml
+            # 自定义routers、services
+            - ./conf:/etc/traefik/conf
+            # 存储证书秘钥
+            - ./letsencrypt:/letsencrypt
+
+    whoami:
+        # 公开API以显示其IP地址的容器
+        image: containous/whoami
+        container_name: whoami
+        labels:
+            # 地址：whoami.fanxp.com
+            - "traefik.http.routers.whoami.rule=Host(`whoami.fanxp.com`)"
+            # 入口方式，这里采用https
+            - "traefik.http.routers.whoami.entrypoints=websecure"
+            # 指定证书
+            - "traefik.http.routers.whoami.tls.certresolver=bxtlschallenge"
+
+    whoami2:
+        # 公开API以显示其IP地址的容器
+        image: containous/whoami
+        container_name: whoami2
+        labels:
+            # 地址：whoami.fanxp.com/v2
+            - "traefik.http.routers.whoami2.rule=Host(`whoami.fanxp.com`) && PathPrefix(`/v2`)"
+            # 默认代理使用http://172.0.0.4 配置方式用https://172.0.0.4
+            # - "traefik.http.services.bx_resource_library.loadbalancer.server.scheme=https"
+            # 定义中间件 规则
+            - "traefik.http.routers.whoami2.middlewares=whoami2-stripprefix"
+            # 代理：172.0.0.4/v2访问，这肯定不是我们想要的 写上规则后 代理：172.0.0.4
+            - "traefik.http.middlewares.whoami2-stripprefix.stripprefix.prefixes=/v2"
+            # 如果容器有多个端口 可以指定当前service暴露哪一个端口，默认第一个
+            - "traefik.http.services.whoami2.loadbalancer.server.port=80"
+            # 入口方式，这里采用https
+            - "traefik.http.routers.whoami2.entrypoints=websecure"
+            # 指定证书
+            - "traefik.http.routers.whoami2.tls.certresolver=bxtlschallenge"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a href="https://www.cnblogs.com/fanxp/p/12146045.html" target="_blank" rel="noopener">原文链接</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/traefik-ru-men-shi-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -869,132 +1078,6 @@ RUN echo "Asia/shanghai" > /etc/timezone
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/linux-she-zhi-swap/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/linux-she-zhi-swap/" class="post-title-link" itemprop="url">linux设置swap</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-12-04 16:52:39 / 修改时间：17:25:04" itemprop="dateCreated datePublished" datetime="2020-12-04T16:52:39+08:00">2020-12-04</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="查看swap状态"><a href="#查看swap状态" class="headerlink" title="查看swap状态"></a>查看swap状态</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@ecs ~]# free -m
-              total        used        free      shared  buff/cache   available
-Mem:           7820        4825         133         896        2862        1818
-Swap:             0           0           0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-sh"><code class="language-sh"># 无返回
-swapon -s
-# 空
-cat /proc/swaps<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="通过文件设置swap"><a href="#通过文件设置swap" class="headerlink" title="通过文件设置swap"></a>通过文件设置swap</h3><ol>
-<li><p>新建swap交换文件</p>
-<pre class="line-numbers language-sh"><code class="language-sh"># count设置文件大小,4G
-dd if=/dev/zero of=/home/swap bs=1024 count=4096000<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-</li>
-<li><p>制作为swap格式文件</p>
-<pre class="line-numbers language-sh"><code class="language-sh">mkswap /home/swap<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
-<li><p>挂载swap分区</p>
-<pre class="line-numbers language-sh"><code class="language-sh">swapon /home/swap<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>此时通过<code>free</code>命令已经可以看到<code>swap</code>分区了,但是重启失效.</p>
-</li>
-<li><p>设置持久生效</p>
-<pre class="line-numbers language-sh"><code class="language-sh">vi /etc/fstab
-# 在文件最后一行加上
-/home/swap swap swap default 0 0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-</li>
-</ol>
-<h3 id="删除文件swap分区"><a href="#删除文件swap分区" class="headerlink" title="删除文件swap分区"></a>删除文件swap分区</h3><ol>
-<li><p>先停止swap分区</p>
-<pre class="line-numbers language-sh"><code class="language-sh">swapoff /home/swap<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
-<li><p>删除swap分区文件</p>
-<pre class="line-numbers language-sh"><code class="language-sh">rm -rf /home/swap<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
-<li><p>删除自动装载配置</p>
-<pre class="line-numbers language-sh"><code class="language-sh">vi /etc/fstab
-# 删除刚刚 增加的配置<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-</li>
-</ol>
-<h3 id="通过分区配置swap"><a href="#通过分区配置swap" class="headerlink" title="通过分区配置swap"></a>通过分区配置swap</h3><h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://blog.csdn.net/weixin_43228740/article/details/83620958" target="_blank" rel="noopener">参考链接</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1066,7 +1149,7 @@ dd if=/dev/zero of=/home/swap bs=1024 count=4096000<span aria-hidden="true" clas
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">257</span>
+          <span class="site-state-item-count">258</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1079,7 +1162,7 @@ dd if=/dev/zero of=/home/swap bs=1024 count=4096000<span aria-hidden="true" clas
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">182</span>
+        <span class="site-state-item-count">183</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
