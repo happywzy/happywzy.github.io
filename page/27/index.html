@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="日常学习笔记,共同进步">
@@ -597,7 +597,7 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
 <li>对一个时间窗口内的数据进行聚合分析，分析一个小时内某项指标的75分位或99分位的数值。</li>
 <li>在线机器学习场景下，需要根据新流入数据不断更新机器学习的模型参数。</li>
 </ul>
-<h3 id="flink状态管理"><a href="#flink状态管理" class="headerlink" title="flink状态管理"></a>flink状态管理</h3><p>Flink的一个算子有多个子任务，每个子任务分布在不同实例上，我们可以把状态理解为某个算子子任务在其当前实例上的一个变量，变量记录了数据流的历史信息。当新数据流入时，我们可以结合历史信息来进行计算。实际上，Flink的状态是由算子的子任务来创建和管理的。一个状态更新和获取的流程如下图所示，一个算子子任务接收输入流，获取对应的状态，根据新的计算结果更新状态。一个简单的例子是对一个时间窗口内输入流的某个整数字段求和，那么当算子子任务接收到新元素时，会获取已经存储在状态中的数值，然后将当前输入加到状态上，并将状态数据更新。<br><img src="/images/flink20.png" alt="状态管理"></p>
+<h3 id="flink状态管理"><a href="#flink状态管理" class="headerlink" title="flink状态管理"></a>flink状态管理</h3><p>Flink的一个算子有多个子任务，每个子任务分布在不同实例上，我们可以把状态理解为某个算子子任务在其当前实例上的一个变量，变量记录了数据流的历史信息。当新数据流入时，我们可以结合历史信息来进行计算。实际上，Flink的状态是由算子的子任务来创建和管理的。一个状态更新和获取的流程如下图所示，一个算子子任务接收输入流，获取对应的状态，根据新的计算结果更新状态。一个简单的例子是对一个时间窗口内输入流的某个整数字段求和，那么当算子子任务接收到新元素时，会获取已经存储在状态中的数值，然后将当前输入加到状态上，并将状态数据更新。<br><img data-src="/images/flink20.png" alt="状态管理"></p>
 <p>获取和更新状态的逻辑其实并不复杂，但流处理框架还需要解决以下几类问题：</p>
 <ul>
 <li>数据的产出要保证实时性，延迟不能太高。</li>
@@ -614,9 +614,9 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
 </ul>
 <h4 id="Keyed-State和Operator-State"><a href="#Keyed-State和Operator-State" class="headerlink" title="Keyed State和Operator State"></a>Keyed State和Operator State</h4><p>对Managed State继续细分，它又有两种类型：Keyed State和Operator State。</p>
 <h4 id="Keyed-State"><a href="#Keyed-State" class="headerlink" title="Keyed State"></a><strong>Keyed State</strong></h4><p>Keyed State是<code>KeyedStream</code>上的状态。假如输入流按照id为Key进行了keyBy分组，形成一个KeyedStream，数据流中所有id为1的数据共享一个状态，可以访问和更新这个状态，以此类推，每个Key对应一个自己的状态。下图展示了Keyed State，因为一个算子子任务可以处理一到多个Key，算子子任务1处理了两种Key，两种Key分别对应自己的状态。</p>
-<p><img src="/images/flink21.png" alt="状态管理"></p>
+<p><img data-src="/images/flink21.png" alt="状态管理"></p>
 <h4 id="Operator-State"><a href="#Operator-State" class="headerlink" title="Operator State"></a><strong>Operator State</strong></h4><p>Operator State可以用在所有算子上，每个算子子任务或者说每个算子实例共享一个状态，流入这个算子子任务的数据可以访问和更新这个状态。下图展示了Operator State，算子子任务1上的所有数据可以共享第一个Operator State，以此类推，每个算子子任务上的数据共享自己的状态。</p>
-<p><img src="/images/flink22.png" alt="状态管理"></p>
+<p><img data-src="/images/flink22.png" alt="状态管理"></p>
 <p>无论是Keyed State还是Operator State，Flink的状态都是基于本地的，即每个算子子任务维护着这个算子子任务对应的状态存储，算子子任务之间的状态不能相互访问。</p>
 <p>在之前各算子的介绍中曾提到，为了自定义Flink的算子，我们可以重写Rich Function接口类，比如<code>RichFlatMapFunction</code>。使用Keyed State时，我们也可以通过重写<code>Rich Function</code>接口类，在里面创建和访问状态。对于Operator State，我们还需进一步实现<code>CheckpointedFunction</code>接口。</p>
 <table>
@@ -653,9 +653,9 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
 <td><code>ListState</code></td>
 </tr>
 </tbody></table>
-<h4 id="几种KeyedState之间的关系"><a href="#几种KeyedState之间的关系" class="headerlink" title="几种KeyedState之间的关系"></a>几种KeyedState之间的关系</h4><p><img src="/images/flink23.png" alt="状态管理"></p>
-<h4 id="几种KeyedState之间的差异"><a href="#几种KeyedState之间的差异" class="headerlink" title="几种KeyedState之间的差异"></a>几种KeyedState之间的差异</h4><p><img src="/images/flink24.png" alt="状态管理"></p>
-<h3 id="状态的保存与恢复"><a href="#状态的保存与恢复" class="headerlink" title="状态的保存与恢复"></a>状态的保存与恢复</h3><p><img src="/images/flink25.png" alt="状态管理"></p>
+<h4 id="几种KeyedState之间的关系"><a href="#几种KeyedState之间的关系" class="headerlink" title="几种KeyedState之间的关系"></a>几种KeyedState之间的关系</h4><p><img data-src="/images/flink23.png" alt="状态管理"></p>
+<h4 id="几种KeyedState之间的差异"><a href="#几种KeyedState之间的差异" class="headerlink" title="几种KeyedState之间的差异"></a>几种KeyedState之间的差异</h4><p><img data-src="/images/flink24.png" alt="状态管理"></p>
+<h3 id="状态的保存与恢复"><a href="#状态的保存与恢复" class="headerlink" title="状态的保存与恢复"></a>状态的保存与恢复</h3><p><img data-src="/images/flink25.png" alt="状态管理"></p>
 <h3 id="可选的状态存储方式"><a href="#可选的状态存储方式" class="headerlink" title="可选的状态存储方式"></a>可选的状态存储方式</h3><h4 id="MemoryStateBackend"><a href="#MemoryStateBackend" class="headerlink" title="MemoryStateBackend"></a>MemoryStateBackend</h4><p>Checkpoint 的存储，第一种是内存存储，即 <code>MemoryStateBackend</code>，构造方法是设置最大的StateSize，选择是否做异步快照，这种存储状态本身存储在 TaskManager 节点也就是执行节点内存中的，因为内存有容量限制，所以单个 State maxStateSize 默认 5 M，且需要注意 maxStateSize &lt;= akka.framesize 默认 10 M。Checkpoint 存储在 JobManager 内存中，因此总大小不超过 JobManager 的内存。<strong>推荐使用的场景为：本地测试、几乎无状态的作业，比如 ETL、JobManager 不容易挂，或挂掉影响不大的情况。不推荐在生产场景使用</strong>。</p>
 <h4 id="FsStateBackend"><a href="#FsStateBackend" class="headerlink" title="FsStateBackend"></a>FsStateBackend</h4><p>在文件系统上的 <code>FsStateBackend</code> ，构建方法是需要传一个文件路径和是否异步快照。State 依然在 TaskManager 内存中，但不会像 MemoryStateBackend 有 5 M 的设置上限，Checkpoint 存储在外部文件系统（本地或 HDFS），打破了总大小 Jobmanager 内存的限制。容量限制上，单 TaskManager 上 State 总量不超过它的内存，总大小不超过配置的文件系统容量。<strong>推荐使用的场景、常规使用状态的作业、例如分钟级窗口聚合或 join、需要开启HA的作业</strong>。</p>
 <h4 id="RocksDBStateBacked"><a href="#RocksDBStateBacked" class="headerlink" title="RocksDBStateBacked"></a>RocksDBStateBacked</h4><p>还有一种存储为 <code>RocksDBStateBackend</code> ，RocksDB 是一个 key/value 的内存存储系统，和其他的 key/value 一样，先将状态放到内存中，如果内存快满时，则写入到磁盘中，但需要注意 <strong>RocksDB 不支持同步的 Checkpoint</strong>，构造方法中没有同步快照这个选项。不过 <strong>RocksDB 支持增量的 Checkpoint</strong>，也是目前唯一增量 Checkpoint 的 Backend，意味着并不需要把所有 sst 文件上传到 Checkpoint 目录，仅需要上传新生成的 sst 文件即可。它的 Checkpoint 存储在外部文件系统（本地或HDFS），其容量限制只要单个 TaskManager 上 State 总量不超过它的内存+磁盘，单 Key最大 2G，总大小不超过配置的文件系统容量即可。<strong>推荐使用的场景为：超大状态的作业，例如天级窗口聚合、需要开启 HA 的作业、最好是对状态读写性能要求不高的作业</strong>。</p>
@@ -750,7 +750,7 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="ProcessFunction简介"><a href="#ProcessFunction简介" class="headerlink" title="ProcessFunction简介"></a>ProcessFunction简介</h3><p><code>ProcessFunction</code>是flink中最底层的API。<br><img src="/images/flink26.png" alt="low-api"></p>
+          <h3 id="ProcessFunction简介"><a href="#ProcessFunction简介" class="headerlink" title="ProcessFunction简介"></a>ProcessFunction简介</h3><p><code>ProcessFunction</code>是flink中最底层的API。<br><img data-src="/images/flink26.png" alt="low-api"></p>
 <p>Flink的一些算子和函数能够进行一些时间上的操作，但是不能获取算子当前的<code>Processing Time</code>或者是<code>Watermark时间戳</code>，调用起来简单但功能相对受限。如果想获取数据流中Watermark的时间戳，或者在时间上前后穿梭，需要使用<code>ProcessFunction</code>系列函数，它们是Flink体系中<strong>最底层的API</strong>，提供了对数据流<strong>更细粒度的操作权限</strong>。Flink SQL是基于这些函数实现的，一些需要高度个性化的业务场景也需要使用这些函数。</p>
 <p>目前，这个系列函数主要包括<code>KeyedProcessFunction</code>、<code>ProcessFunction</code>、<code>CoProcessFunction</code>、<code>KeyedCoProcessFunction</code>、<code>ProcessJoinFunction</code>和<code>ProcessWindowFunction</code>等多种函数，这些函数各有侧重，但核心功能比较相似，主要包括两点：</p>
 <ul>
@@ -1722,6 +1722,7 @@ under the License.
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

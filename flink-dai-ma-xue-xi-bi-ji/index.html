@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="一些关键字的解释说明.split(“\s”)\\s表示空格、回车、换行等空白符\\s+表示一个或多个空格、回车、换行等空白符 .split(“\w+”)表示匹配数字和字母下划线的多个字符 tuple元组tuple是flink中自定义的一种组合类型，类似java中Map&lt;String,String&gt;，只不过Map只有两个字段，相当于Tuple2。 flink中tuple最多支持25个字段">
@@ -280,11 +280,11 @@ KeyedStream<span class="token operator">&lt;</span>Tuple3<span class="token oper
 <pre class="line-numbers language-java"><code class="language-java">DataStream<span class="token operator">&lt;</span>Tuple3<span class="token operator">&lt;</span>Tuple2<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span> Float<span class="token operator">></span><span class="token punctuation">,</span>String<span class="token punctuation">,</span>Long<span class="token operator">>></span> ds<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>指定keyBy(0)将导致系统使用full Tuple2作为键（以Integer和Float为键）。</p>
 <p>更多参考<a href="https://flink.sojb.cn/dev/api_concepts.html" target="_blank" rel="noopener">官网</a></p>
-<h3 id="map和flatMap"><a href="#map和flatMap" class="headerlink" title="map和flatMap"></a>map和flatMap</h3><h4 id="map"><a href="#map" class="headerlink" title="map"></a>map</h4><p>把数组流中的每一个值，使用所提供的函数执行一遍，一一对应。得到元素个数相同的数组流。<br><img src="/images/flink6.png" alt="map"></p>
+<h3 id="map和flatMap"><a href="#map和flatMap" class="headerlink" title="map和flatMap"></a>map和flatMap</h3><h4 id="map"><a href="#map" class="headerlink" title="map"></a>map</h4><p>把数组流中的每一个值，使用所提供的函数执行一遍，一一对应。得到元素个数相同的数组流。<br><img data-src="/images/flink6.png" alt="map"></p>
 <p>map算子对一个DataStream中的每个元素使用用户自定义的map函数进行处理，每个输入元素对应一个输出元素，最终整个数据流被转换成一个新的DataStream。输出的数据流DataStream[OUT]类型可能和输入的数据流DataStream[IN]不同。</p>
-<h4 id="flatMap"><a href="#flatMap" class="headerlink" title="flatMap"></a>flatMap</h4><p>flat是扁平的意思。它把数组流中的每一个值，使用所提供的函数执行一遍，一一对应。得到元素相同的数组流。只不过，里面的元素也是一个子数组流。把这些子数组合并成一个数组以后，元素个数大概率会和原数组流的个数不同。<br><img src="/images/flink7.png" alt="flatMap"></p>
-<h3 id="filter"><a href="#filter" class="headerlink" title="filter"></a>filter</h3><p>filter算子对每个元素进行过滤，过滤的过程使用一个filter函数进行逻辑判断。对于输入的每个元素，如果filter函数返回True，则保留，如果返回False，则丢弃。<br><img src="/images/flink12.png" alt="filter"></p>
-<h3 id="keyBy"><a href="#keyBy" class="headerlink" title="keyBy"></a><a href="https://zhuanlan.zhihu.com/p/98975650" target="_blank" rel="noopener">keyBy</a></h3><p>绝大多数情况，我们要根据事件的某种属性或数据的某个字段进行分组，对一个分组内的数据进行处理。如下图所示，keyBy算子根据元素的形状对数据进行分组，相同形状的元素被分到了一起，可被后续算子统一处理。比如，多支股票数据流处理时，可以根据股票代号进行分组，然后对同一股票代号的数据统计其价格变动。又如，电商用户行为日志把所有用户的行为都记录了下来，如果要分析某一个用户行为，需要先按用户ID进行分组。<br><img src="/images/flink10.png" alt="keyby"></p>
+<h4 id="flatMap"><a href="#flatMap" class="headerlink" title="flatMap"></a>flatMap</h4><p>flat是扁平的意思。它把数组流中的每一个值，使用所提供的函数执行一遍，一一对应。得到元素相同的数组流。只不过，里面的元素也是一个子数组流。把这些子数组合并成一个数组以后，元素个数大概率会和原数组流的个数不同。<br><img data-src="/images/flink7.png" alt="flatMap"></p>
+<h3 id="filter"><a href="#filter" class="headerlink" title="filter"></a>filter</h3><p>filter算子对每个元素进行过滤，过滤的过程使用一个filter函数进行逻辑判断。对于输入的每个元素，如果filter函数返回True，则保留，如果返回False，则丢弃。<br><img data-src="/images/flink12.png" alt="filter"></p>
+<h3 id="keyBy"><a href="#keyBy" class="headerlink" title="keyBy"></a><a href="https://zhuanlan.zhihu.com/p/98975650" target="_blank" rel="noopener">keyBy</a></h3><p>绝大多数情况，我们要根据事件的某种属性或数据的某个字段进行分组，对一个分组内的数据进行处理。如下图所示，keyBy算子根据元素的形状对数据进行分组，相同形状的元素被分到了一起，可被后续算子统一处理。比如，多支股票数据流处理时，可以根据股票代号进行分组，然后对同一股票代号的数据统计其价格变动。又如，电商用户行为日志把所有用户的行为都记录了下来，如果要分析某一个用户行为，需要先按用户ID进行分组。<br><img data-src="/images/flink10.png" alt="keyby"></p>
 <h3 id="aggregation"><a href="#aggregation" class="headerlink" title="aggregation"></a>aggregation</h3><p>常见的聚合操作有sum、max、min等，这些聚合操作统称为aggregation。aggregation需要一个参数来指定按照哪个字段进行聚合。跟keyBy相似，我们可以使用数字位置来指定对哪个字段进行聚合，也可以使用字段名。</p>
 <p>与批处理不同，这些聚合函数是对流数据进行数据，流数据是依次进入Flink的，聚合操作是对之前流入的数据进行统计聚合。</p>
 <ul>
@@ -298,7 +298,7 @@ KeyedStream<span class="token operator">&lt;</span>Tuple3<span class="token oper
 <blockquote>
 <p>注意，对于一个KeyedStream,一次只能使用一个aggregation操作，无法链式使用多个。</p>
 </blockquote>
-<h3 id="reduce"><a href="#reduce" class="headerlink" title="reduce"></a>reduce</h3><p>前面几个aggregation是几个较为特殊的操作，对分组数据进行处理更为通用的方法是使用reduce算子。<br><img src="/images/flink11.png" alt="reduce"></p>
+<h3 id="reduce"><a href="#reduce" class="headerlink" title="reduce"></a>reduce</h3><p>前面几个aggregation是几个较为特殊的操作，对分组数据进行处理更为通用的方法是使用reduce算子。<br><img data-src="/images/flink11.png" alt="reduce"></p>
 <p>上图展示了reduce算子的原理：reduce在按照同一个Key分组的数据流上生效，它接受两个输入，生成一个输出，即两两合一地进行汇总操作，生成一个同类型的新元素。</p>
 <pre class="line-numbers language-java"><code class="language-java">DataStream<span class="token operator">&lt;</span>Tuple2<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Integer<span class="token operator">>></span> counts <span class="token operator">=</span>
     <span class="token comment" spellcheck="true">// split up the lines in pairs (2-tuples) containing: (word,1)</span>
@@ -514,6 +514,7 @@ KeyedStream<span class="token operator">&lt;</span>Tuple3<span class="token oper
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

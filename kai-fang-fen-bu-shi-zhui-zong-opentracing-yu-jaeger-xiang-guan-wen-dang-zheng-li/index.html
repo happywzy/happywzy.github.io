@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="为什么需要服务追踪？开发和工程团队因为系统组件水平扩展、开发团队小型化、敏捷开发、CD（持续集成）、解耦等各种需求，正在使用现代的微服务架构替换老旧的单片机系统，当一个生产系统面对真正的高并发，或者解耦成大量微服务时，以前很容易实现的重点任务变得困难了，如用户体验优化、后台真实错误原因分析，分布式系统内各组件的调用情况等。  分布式服务追踪现状当代分布式跟踪系统（例如，Zipkin, Dapper">
@@ -259,11 +259,11 @@
         <h1 id="为什么需要服务追踪？"><a href="#为什么需要服务追踪？" class="headerlink" title="为什么需要服务追踪？"></a>为什么需要服务追踪？</h1><p>开发和工程团队因为系统组件水平扩展、开发团队小型化、敏捷开发、CD（持续集成）、解耦等各种需求，正在使用现代的微服务架构替换老旧的单片机系统，当一个生产系统面对真正的高并发，或者解耦成大量微服务时，以前很容易实现的重点任务变得困难了，如<strong>用户体验优化</strong>、<strong>后台真实错误原因分析</strong>，<strong>分布式系统内各组件的调用情况</strong>等。 </p>
 <h1 id="分布式服务追踪现状"><a href="#分布式服务追踪现状" class="headerlink" title="分布式服务追踪现状"></a>分布式服务追踪现状</h1><p>当代分布式跟踪系统（例如，<code>Zipkin</code>, <code>Dapper</code>, <code>HTrace</code>, <code>X-Trace</code>等）旨在解决这些问题，但是他们使用不兼容的<code>API</code>来实现各自的应用需求。尽管这些分布式追踪系统有着相似的API语法，但各种语言的开发人员依然很难将他们各自的系统（使用不同的语言和技术）和特定的分布式追踪系统进行整合。</p>
 <h1 id="OpenTracing"><a href="#OpenTracing" class="headerlink" title="OpenTracing"></a>OpenTracing</h1><p>OpenTracing通过提供平台无关、厂商无关的API，使得开发人员能够方便的添加（或更换）追踪系统的实现。 OpenTracing提供了用于运营支撑系统的和针对特定平台的辅助程序库。</p>
-<h1 id="典型服务追踪案例"><a href="#典型服务追踪案例" class="headerlink" title="典型服务追踪案例"></a>典型服务追踪案例</h1><p><img src="/images/ot1.png" alt="案例"></p>
+<h1 id="典型服务追踪案例"><a href="#典型服务追踪案例" class="headerlink" title="典型服务追踪案例"></a>典型服务追踪案例</h1><p><img data-src="/images/ot1.png" alt="案例"></p>
 <p>在一个分布式系统中，追踪一个事务或者调用流一般如上图所示。虽然这种图对于看清各组件的组合关系是很有用的，但是，它不能很好显示组件的调用时间，是串行调用还是并行调用，如果展现更复杂的调用关系，会更加复杂，甚至无法画出这样的图。这种图也无法显示调用间的时间间隔以及是否通过定时调用来启动调用.</p>
-<p><img src="/images/ot2.png" alt="案例"></p>
+<p><img data-src="/images/ot2.png" alt="案例"></p>
 <p>这种展现方式增加显示了执行时间的上下文，相关服务间的层次关系，进程或者任务的串行或并行调用关系。这样的视图有助于发现系统调用的关键路径。通过关注关键路径的执行过程，项目团队可能专注于优化路径中的关键位置，最大幅度的提升系统性能。例如：可以通过追踪一个资源定位的调用情况，明确底层的调用情况，发现哪些操作有阻塞的情况。</p>
-<h1 id="Jaeger-架构"><a href="#Jaeger-架构" class="headerlink" title="Jaeger 架构"></a>Jaeger 架构</h1><p><code>Jaeger</code>是OpenTracing的一种实现。<br><img src="/images/jaeger.jpg" alt="jaeger"></p>
+<h1 id="Jaeger-架构"><a href="#Jaeger-架构" class="headerlink" title="Jaeger 架构"></a>Jaeger 架构</h1><p><code>Jaeger</code>是OpenTracing的一种实现。<br><img data-src="/images/jaeger.jpg" alt="jaeger"></p>
 <p>如上图所示，<code>Jaeger</code> 主要由以下几部分组成。</p>
 <ul>
 <li><strong>Jaeger Client</strong> - 为不同语言实现了符合 OpenTracing 标准的 SDK。应用程序通过 API 写入数据，client library 把 trace 信息按照应用程序指定的采样策略传递给 jaeger-agent。在 Application 中调用 Jaeger Client Library 记录 Span 的过程通常被称为埋点。</li>
@@ -486,6 +486,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 
