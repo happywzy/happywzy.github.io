@@ -203,6 +203,260 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/chi-xian-huan-jing-an-zhuang-docker-he-docker-compose/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/chi-xian-huan-jing-an-zhuang-docker-he-docker-compose/" class="post-title-link" itemprop="url">离线环境安装docker和docker-compose</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-03-29 09:54:55 / 修改时间：09:55:22" itemprop="dateCreated datePublished" datetime="2021-03-29T09:54:55+08:00">2021-03-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="下载软件包"><a href="#下载软件包" class="headerlink" title="下载软件包"></a>下载软件包</h3><ul>
+<li><a href="https://download.docker.com/linux/static/stable/x86_64/" target="_blank" rel="noopener">docker软件包下载地址</a></li>
+<li><a href="https://github.com/docker/compose/releases" target="_blank" rel="noopener">docker-compose软件包下载地址</a><blockquote>
+<p>本次安装下载的软件包版本:</p>
+<ul>
+<li><code>docker-19.03.9.tgz</code></li>
+<li><code>docker-compose 1.24.1</code></li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h3 id="关闭防火墙"><a href="#关闭防火墙" class="headerlink" title="关闭防火墙"></a>关闭防火墙</h3><blockquote>
+<p>本次安装使用<code>centos7.5</code>操作系统.</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 关闭防火墙</span>
+systemctl stop firewalld
+systemctl disable firewalld
+<span class="token comment" spellcheck="true"># 查看防火墙状态</span>
+systemctl status firewalld
+
+<span class="token comment" spellcheck="true"># 关闭selinux</span>
+setenforce 0
+vim /etc/selinux/config
+<span class="token comment" spellcheck="true"># 查看selinux状态</span>
+/usr/sbin/sestatus -v<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装docker"><a href="#安装docker" class="headerlink" title="安装docker"></a>安装docker</h3><ul>
+<li>准备<code>docker.service</code>，<code>docker</code>服务化配置文件<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>Unit<span class="token punctuation">]</span>
+Description<span class="token operator">=</span>Docker Application Container Engine
+Documentation<span class="token operator">=</span>https://docs.docker.com
+After<span class="token operator">=</span>network-online.target firewalld.service
+Wants<span class="token operator">=</span>network-online.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<p>[Service]<br>Type=notify</p>
+<h1 id="the-default-is-not-to-use-systemd-for-cgroups-because-the-delegate-issues-still"><a href="#the-default-is-not-to-use-systemd-for-cgroups-because-the-delegate-issues-still" class="headerlink" title="the default is not to use systemd for cgroups because the delegate issues still"></a>the default is not to use systemd for cgroups because the delegate issues still</h1><h1 id="exists-and-systemd-currently-does-not-support-the-cgroup-feature-set-required"><a href="#exists-and-systemd-currently-does-not-support-the-cgroup-feature-set-required" class="headerlink" title="exists and systemd currently does not support the cgroup feature set required"></a>exists and systemd currently does not support the cgroup feature set required</h1><h1 id="for-containers-run-by-docker"><a href="#for-containers-run-by-docker" class="headerlink" title="for containers run by docker"></a>for containers run by docker</h1><p>ExecStart=/usr/bin/dockerd<br>ExecReload=/bin/kill -s HUP $MAINPID</p>
+<h1 id="Having-non-zero-Limit-s-causes-performance-problems-due-to-accounting-overhead"><a href="#Having-non-zero-Limit-s-causes-performance-problems-due-to-accounting-overhead" class="headerlink" title="Having non-zero Limit*s causes performance problems due to accounting overhead"></a>Having non-zero Limit*s causes performance problems due to accounting overhead</h1><h1 id="in-the-kernel-We-recommend-using-cgroups-to-do-container-local-accounting"><a href="#in-the-kernel-We-recommend-using-cgroups-to-do-container-local-accounting" class="headerlink" title="in the kernel. We recommend using cgroups to do container-local accounting."></a>in the kernel. We recommend using cgroups to do container-local accounting.</h1><p>LimitNOFILE=infinity<br>LimitNPROC=infinity<br>LimitCORE=infinity</p>
+<h1 id="Uncomment-TasksMax-if-your-systemd-version-supports-it"><a href="#Uncomment-TasksMax-if-your-systemd-version-supports-it" class="headerlink" title="Uncomment TasksMax if your systemd version supports it."></a>Uncomment TasksMax if your systemd version supports it.</h1><h1 id="Only-systemd-226-and-above-support-this-version"><a href="#Only-systemd-226-and-above-support-this-version" class="headerlink" title="Only systemd 226 and above support this version."></a>Only systemd 226 and above support this version.</h1><p>#TasksMax=infinity<br>TimeoutStartSec=0</p>
+<h1 id="set-delegate-yes-so-that-systemd-does-not-reset-the-cgroups-of-docker-containers"><a href="#set-delegate-yes-so-that-systemd-does-not-reset-the-cgroups-of-docker-containers" class="headerlink" title="set delegate yes so that systemd does not reset the cgroups of docker containers"></a>set delegate yes so that systemd does not reset the cgroups of docker containers</h1><p>Delegate=yes</p>
+<h1 id="kill-only-the-docker-process-not-all-processes-in-the-cgroup"><a href="#kill-only-the-docker-process-not-all-processes-in-the-cgroup" class="headerlink" title="kill only the docker process, not all processes in the cgroup"></a>kill only the docker process, not all processes in the cgroup</h1><p>KillMode=process</p>
+<h1 id="restart-the-docker-process-if-it-exits-prematurely"><a href="#restart-the-docker-process-if-it-exits-prematurely" class="headerlink" title="restart the docker process if it exits prematurely"></a>restart the docker process if it exits prematurely</h1><p>Restart=on-failure<br>StartLimitBurst=3<br>StartLimitInterval=60s</p>
+<p>[Install]<br>WantedBy=multi-user.target</p>
+<pre><code>
+- 依次执行命令安装
+```bash
+# 解压tar包
+tar -xvf docker-19.03.9.tgz
+# 将docker目录移到/usr/bin目录下
+cp docker/* /usr/bin/
+# 将docker.service 移到/etc/systemd/system/ 目录
+cp docker.service /etc/systemd/system/
+# 添加文件权限
+chmod +x /etc/systemd/system/docker.service
+# 重新加载配置文件
+systemctl daemon-reload
+# 启动docker
+systemctl start docker
+# 设置开机自启
+systemctl enable docker.service
+# 验证docker安装是否成功
+docker -v</code></pre><h3 id="安装docker-compose"><a href="#安装docker-compose" class="headerlink" title="安装docker-compose"></a>安装docker-compose</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 添加文件权限</span>
+<span class="token function">chmod</span> +x /xxx/docker-compose
+<span class="token comment" spellcheck="true"># 创建软链接</span>
+<span class="token function">ln</span> -s /xxx/docker-compose /usr/bin/docker-compose
+<span class="token comment" spellcheck="true"># 验证安装是否成功</span>
+docker-compose --version<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置普通用户可以使用docker命令"><a href="#配置普通用户可以使用docker命令" class="headerlink" title="配置普通用户可以使用docker命令"></a>配置普通用户可以使用docker命令</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建用户组,默认安装docker可能已经创建了</span>
+<span class="token function">sudo</span> <span class="token function">groupadd</span> docker
+<span class="token comment" spellcheck="true"># 示例</span>
+<span class="token function">sudo</span> <span class="token function">usermod</span> -aG docker testuser
+<span class="token comment" spellcheck="true"># 重新服务再登录即可使用docker命令</span>
+<span class="token function">sudo</span> systemctl restart docker<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/jia-mi-shu-ju-ru-he-jin-xing-mo-hu-cha-xun/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/jia-mi-shu-ju-ru-he-jin-xing-mo-hu-cha-xun/" class="post-title-link" itemprop="url">加密数据如何进行模糊查询</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-03-04 17:34:31 / 修改时间：17:38:25" itemprop="dateCreated datePublished" datetime="2021-03-04T17:34:31+08:00">2021-03-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>数据加密之后，如何进行模糊查询？</p>
+<h2 id="解决办法-——-分词"><a href="#解决办法-——-分词" class="headerlink" title="解决办法 —— 分词"></a>解决办法 —— 分词</h2><p>如<code>abcdefghijklmn</code>按4个字符一组分词，则可分为</p>
+<ul>
+<li><code>abcd</code></li>
+<li><code>bcde</code></li>
+<li><code>cdef</code></li>
+<li><code>defg</code></li>
+<li><code>efgh</code></li>
+<li><code>fghi</code></li>
+<li>…</li>
+</ul>
+<p>分词后分别加密存储,模糊查询时就可以直接使用了.</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/traefik-pei-zhi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -846,242 +1100,10 @@ http {
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/java-rong-qi-zhong-shi-qu-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/java-rong-qi-zhong-shi-qu-wen-ti/" class="post-title-link" itemprop="url">java容器中时区问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-12-31 15:38:37 / 修改时间：15:43:28" itemprop="dateCreated datePublished" datetime="2020-12-31T15:38:37+08:00">2020-12-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>容器时间与主机差8个小时,如果里面运行的是java程序，那么程序时间还是有8个小时时差.</p>
-<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><ul>
-<li><p>容器内时间与宿主机时间不一样<br>```sh<br>#启动容器时增加</p>
-</li>
-<li><p>v /etc/localtime:/etc/localtime</p>
-<pre><code></code></pre></li>
-<li><p>java时区主要从<code>/etc/timezone</code>获取</p>
-<pre class="line-numbers language-sh"><code class="language-sh">#dockerfile增加
-RUN echo "Asia/shanghai" > /etc/timezone
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-</li>
-</ul>
-<p>#也也可以从宿主机映射，宿主机可能没有该文件，则需要先新增<br>-v /etc/timezone:/etc/timezone</p>
-<p>#或者jvm参数传递<br>-Duser.timezone=GMT+08</p>
-<pre><code></code></pre><script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-shi-yong-upstream-shi-xian-fu-zai-jun-heng/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/nginx-shi-yong-upstream-shi-xian-fu-zai-jun-heng/" class="post-title-link" itemprop="url">nginx使用upstream实现负载均衡</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-12-22 11:11:53 / 修改时间：11:20:40" itemprop="dateCreated datePublished" datetime="2020-12-22T11:11:53+08:00">2020-12-22</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="轮询（默认）"><a href="#轮询（默认）" class="headerlink" title="轮询（默认）"></a>轮询（默认）</h3><pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="权重"><a href="#权重" class="headerlink" title="权重"></a>权重</h3><blockquote>
-<p><code>weight</code> 默认为<code>1</code>,<code>weight</code>越大,负载的权重就越大</p>
-</blockquote>
-<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span> weight<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span> weight<span class="token operator">=</span><span class="token number">10</span><span class="token punctuation">;</span> 
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="IP哈希"><a href="#IP哈希" class="headerlink" title="IP哈希"></a>IP哈希</h3><blockquote>
-<p>请求按访问ip的hash结果分配</p>
-</blockquote>
-<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    ip_hash<span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="响应时间"><a href="#响应时间" class="headerlink" title="响应时间"></a>响应时间</h3><blockquote>
-<p>按后端服务器的响应时间来分配请求,响应时间短的优先分配</p>
-</blockquote>
-<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    fair<span class="token punctuation">;</span>
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="其它哈希"><a href="#其它哈希" class="headerlink" title="其它哈希"></a>其它哈希</h3><blockquote>
-<p>如：根据请求路径哈希,<code>hash_method</code>是使用的<code>hash</code>算法</p>
-</blockquote>
-<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    fair<span class="token punctuation">;</span>
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span>
-    hash $request_uri<span class="token punctuation">;</span> 
-    hash_method crc32<span class="token punctuation">;</span> 
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="down-backup"><a href="#down-backup" class="headerlink" title="down/backup"></a>down/backup</h3><pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    <span class="token comment" spellcheck="true">// down 表示单前的server暂时不参与负载.</span>
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span> down<span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.3</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    <span class="token comment" spellcheck="true">// 其它所有的非backup机器down或者忙的时候请求backup机器.</span>
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.4</span><span class="token punctuation">:</span><span class="token number">8080</span> backup<span class="token punctuation">;</span> 
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://www.cnblogs.com/muhy/p/10528449.html" target="_blank" rel="noopener">https://www.cnblogs.com/muhy/p/10528449.html</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/44/">44</a><a class="extend next" rel="next" href="/page/8/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/45/">45</a><a class="extend next" rel="next" href="/page/8/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1149,20 +1171,20 @@ RUN echo "Asia/shanghai" > /etc/timezone
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">264</span>
+          <span class="site-state-item-count">266</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-count">29</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">184</span>
+        <span class="site-state-item-count">185</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

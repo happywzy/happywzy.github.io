@@ -29167,4 +29167,155 @@ public class FilterDemo {
           });
       </script>]]></content>
   </entry>
+  <entry>
+    <title>TDengine单机体验</title>
+    <url>/tdengine-dan-ji-ti-yan/</url>
+    <content><![CDATA[<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># docker安装</span>
+docker run -d --name tdengine tdengine/tdengine
+<span class="token comment" spellcheck="true"># 进入容器</span>
+docker <span class="token function">exec</span> -it tdengine /bin/bash
+<span class="token comment" spellcheck="true"># 容器内执行命令</span>
+taosdemo
+<span class="token comment" spellcheck="true"># 上述命令运行结束,进入tdengine终端</span>
+taos<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>taosdemo</code>命令将在数据库 <code>test</code> 下面自动创建一张超级表 <code>meters</code>，该超级表下有 <code>1 万</code>张表，表名为 “d0” 到 “d9999”，每张表有 1 万条记录，每条记录有 (ts, current, voltage, phase) 四个字段，时间戳从 “2017-07-14 10:40:00 000” 到 “2017-07-14 10:40:09 999”，每张表带有标签 location 和 groupId，groupId 被设置为 1 到 10， location 被设置为 “beijing” 或者 “shanghai”。</p>
+<blockquote>
+<p><code>taosdemo</code>命令本身带有很多选项，配置表的数目、记录条数等等，请执行 taosdemo –help详细列出</p>
+</blockquote>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看数据库。</span>
+<span class="token keyword">show</span> <span class="token keyword">databases</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查看超级表</span>
+<span class="token keyword">use</span> test<span class="token punctuation">;</span>
+<span class="token keyword">show</span> stables<span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查看表，限制输出十条</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>t0 <span class="token keyword">limit</span> <span class="token number">10</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查看 d0 表的标签值</span>
+<span class="token keyword">select</span> groupid<span class="token punctuation">,</span> location <span class="token keyword">from</span> test<span class="token number">.d0</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查询超级表下记录总条数</span>
+<span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>meters<span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查询1亿条记录的平均值、最大值、最小值等</span>
+<span class="token keyword">select</span> <span class="token function">avg</span><span class="token punctuation">(</span><span class="token keyword">current</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>voltage<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">min</span><span class="token punctuation">(</span>phase<span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>meters<span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查询location="beijing"的记录总条数</span>
+<span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>meters <span class="token keyword">where</span> location<span class="token operator">=</span><span class="token string">"beijing"</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查询groupId=10的所有记录的平均值、最大值、最小值等</span>
+<span class="token keyword">select</span> <span class="token function">avg</span><span class="token punctuation">(</span><span class="token keyword">current</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>voltage<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">min</span><span class="token punctuation">(</span>phase<span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>meters <span class="token keyword">where</span> groupId<span class="token operator">=</span><span class="token number">10</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 对表d10按10s进行平均值、最大值和最小值聚合统计</span>
+<span class="token keyword">select</span> <span class="token function">avg</span><span class="token punctuation">(</span><span class="token keyword">current</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>voltage<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">min</span><span class="token punctuation">(</span>phase<span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token number">.d10</span> interval<span class="token punctuation">(</span>10s<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+  </entry>
+  <entry>
+    <title>TDengine集群部署</title>
+    <url>/tdengine-ji-qun-bu-shu/</url>
+    <content><![CDATA[<h3 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h3><ul>
+<li>准备3台服务器,搭建3节点集群</li>
+<li>所有节点准备RPM安装包</li>
+<li>建议关闭所有物理节点的防火墙，至少保证端口：6030 - 6042的TCP和UDP端口都是开放的</li>
+<li>每台服务器执行<code>hostname -f</code>,获取机器名,在各个节点都配置好<code>/etc/hosts</code></li>
+<li>节点保证时区一致,时间相差不大</li>
+</ul>
+<h3 id="所有节点安装服务端-注意不要启动taosd服务"><a href="#所有节点安装服务端-注意不要启动taosd服务" class="headerlink" title="所有节点安装服务端(注意不要启动taosd服务)"></a>所有节点安装服务端(注意不要启动taosd服务)</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装命令</span>
+rpm -vi TDengine-server-2.2.1.1-Linux-x64.rpm
+<span class="token comment" spellcheck="true"># 卸载命令</span>
+rpm -e tdengine<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意关键步骤：<code>Enter FQDN:port (like h1.taosdata.com:6030) of an existing TDengine cluster node to join OR leave it blank to build one :</code>  </p>
+<ol>
+<li>第一台节点可以一路<code>回车</code>,也可以输入自己的<code>hostname:6030</code>  </li>
+<li>之后的节点到这一步时输入第一台节点的<code>hostname:6030</code></li>
+</ol>
+</blockquote>
+<ul>
+<li><a href="https://www.taosdata.com/blog/2019/08/09/566.html" target="_blank" rel="noopener">其它安装方式参考链接</a></li>
+</ul>
+<p>自动生成配置文件目录、数据库目录、日志目录。</p>
+<ul>
+<li>配置文件缺省目录：<code>/etc/taos/taos.cfg</code>， 软链接到<code>/usr/local/taos/cfg/taos.cfg</code>；</li>
+<li>数据库缺省目录：<code>/var/lib/taos</code>， 软链接到<code>/usr/local/taos/data</code>；</li>
+<li>日志缺省目录：<code>/var/log/taos</code>， 软链接到<code>/usr/local/taos/log</code>；</li>
+<li><code>/usr/local/taos/bin</code>目录下的可执行文件，会软链接到<code>/usr/bin</code>目录下；</li>
+<li><code>/usr/local/taos/driver</code>目录下的动态库文件，会软链接到<code>/usr/lib</code>目录下；</li>
+<li><code>/usr/local/taos/include</code>目录下的头文件，会软链接到到<code>/usr/include</code>目录下；</li>
+</ul>
+<h3 id="修改TDengine的配置文件（所有节点的文件-etc-taos-taos-cfg都需要修改）"><a href="#修改TDengine的配置文件（所有节点的文件-etc-taos-taos-cfg都需要修改）" class="headerlink" title="修改TDengine的配置文件（所有节点的文件/etc/taos/taos.cfg都需要修改）"></a>修改TDengine的配置文件（所有节点的文件<code>/etc/taos/taos.cfg</code>都需要修改）</h3><pre class="line-numbers language-conf"><code class="language-conf">// firstEp 是每个数据节点首次启动后连接的第一个数据节点
+firstEp               h1.taosdata.com:6030
+// 必须配置为本数据节点的FQDN，如果本机只有一个hostname, 可注释掉本项
+fqdn                  h1.taosdata.com  
+// 配置本数据节点的端口号，缺省是6030
+serverPort            6030
+// 副本数为偶数的时候，需要配置，请参考《Arbitrator的使用》的部分
+arbitrator            ha.taosdata.com:6042<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：一定要修改的参数是<code>firstEp</code>和<code>fqdn</code>。在每个数据节点，<strong>firstEp需全部配置成一样</strong>，但<code>fqdn</code>一定要配置成其所在数据节点的值。</p>
+</blockquote>
+<h3 id="启动集群"><a href="#启动集群" class="headerlink" title="启动集群"></a>启动集群</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动服务命令</span>
+systemctl start taosd
+systemctl status taosd<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol>
+<li>在第一台节点执行<code>taos</code>命令进入控制台:<br>```sql<br>[root@data1 tdengine]# taos<br>Welcome to the TDengine shell from Linux, Client Version:2.2.1.1<br>Copyright (c) 2020 by TAOS Data, Inc. All rights reserved.</li>
+</ol>
+<p>– 查看节点列表<br>taos&gt; show dnodes;<br>   id   |           end_point            | vnodes | cores  |   status   | role  |       create_time       |      offline reason      |<br>======================================================================================================================================<br>      1 | data1:6030                     |      1 |      4 | ready      | any   | 2021-10-29 09:50:55.154 |                          |<br>Query OK, 1 row(s) in set (0.000985s)</p>
+<pre><code>
+2. 启动第二、三台节点的服务
+
+3. 在第一台节点控制台执行加入节点的命令
+```sql
+-- 加入节点2
+taos&gt; create dnode "data2:6030";
+Query OK, 0 of 0 row(s) in database (0.000578s)
+-- 加入节点3
+taos&gt; create dnode "data2:6030";
+Query OK, 0 of 0 row(s) in database (0.000578s)
+-- 查看节点列表
+taos&gt; show dnodes;
+   id   |           end_point            | vnodes | cores  |   status   | role  |       create_time       |      offline reason      |
+======================================================================================================================================
+      1 | data1:6030                     |      1 |      4 | ready      | any   | 2021-10-29 09:50:55.154 |                          |
+      2 | data2:6030                     |      1 |      4 | ready      | any   | 2021-10-29 09:52:37.821 |                          |
+      3 | data3:6030                     |      0 |      4 | ready      | any   | 2021-10-29 09:52:58.892 |                          |</code></pre><ul>
+<li><a href="https://www.taosdata.com/cn/documentation/cluster" target="_blank" rel="noopener">TDengine集群安装与管理</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>TDengine</category>
+      </categories>
+      <tags>
+        <tag>TDengine</tag>
+      </tags>
+  </entry>
 </search>
