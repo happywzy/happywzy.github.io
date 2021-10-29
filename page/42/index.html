@@ -203,6 +203,183 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/si-you-jing-xiang-cang-ku-harbor-v1-5-0-da-jian-yu-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/si-you-jing-xiang-cang-ku-harbor-v1-5-0-da-jian-yu-shi-yong/" class="post-title-link" itemprop="url">私有镜像仓库Harbor-v1.5.0搭建与使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-25 09:55:24" itemprop="dateCreated datePublished" datetime="2019-10-25T09:55:24+08:00">2019-10-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 13:38:53" itemprop="dateModified" datetime="2020-04-15T13:38:53+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ol>
+<li>安装<code>docker-ce</code>（过程省略）</li>
+<li>安装<code>docker-compose</code>（过程省略）</li>
+<li>安装<code>harbor</code></li>
+</ol>
+<h3 id="下载Harbor离线安装包"><a href="#下载Harbor离线安装包" class="headerlink" title="下载Harbor离线安装包"></a>下载Harbor离线安装包</h3><ol>
+<li>下载地址：<code>http://harbor.orientsoft.cn/</code>，找个最新的，本文使用<code>v1.5.0</code>版本</li>
+<li>使用 <code>tar xvf harbor-offline-installer-v1.5.0.tgz</code></li>
+<li>进入到解压后的目录，<code>harbor/</code></li>
+</ol>
+<h3 id="配置harbor-cfg【关键配置】"><a href="#配置harbor-cfg【关键配置】" class="headerlink" title="配置harbor.cfg【关键配置】"></a>配置<code>harbor.cfg</code><font color="red">【关键配置】</font></h3><pre><code>#hostname设置访问地址，可以使用ip、域名，不可以设置为127.0.0.1或localhost
+hostname = harbor.deri.com
+
+# 访问协议，默认是http，也可以设置https，如果设置https，则nginx ssl需要设置on
+ui_url_protocol = http
+
+#配置admin用户的密码，默认Harbor12345
+harbor_admin_password = Harbor12345
+
+#是否只允许admin用户创建项目，everyone是所有人都可以
+project_creation_restriction = adminonly
+
+# 是否开启自注册
+self_registration = on
+
+# Token有效时间，默认30分钟
+token_expiration = 30</code></pre><h3 id="配置docker-compose-yml"><a href="#配置docker-compose-yml" class="headerlink" title="配置docker-compose.yml"></a>配置<code>docker-compose.yml</code></h3><p>如果需要修改访问端口，默认<code>80</code>，<code>443</code>，也可以不修改.</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true">##此处粘贴部分配置  </span>
+  <span class="token key atrule">proxy</span><span class="token punctuation">:</span>
+    <span class="token key atrule">image</span><span class="token punctuation">:</span> vmware/nginx<span class="token punctuation">-</span>photon<span class="token punctuation">:</span>v1.5.0
+    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> nginx
+    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
+    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> ./common/config/nginx<span class="token punctuation">:</span>/etc/nginx<span class="token punctuation">:</span>z
+    <span class="token key atrule">networks</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> harbor
+    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token datetime number">80:80</span>
+      <span class="token punctuation">-</span> 443<span class="token punctuation">:</span><span class="token number">443</span>
+      <span class="token punctuation">-</span> 4443<span class="token punctuation">:</span><span class="token number">4443</span>
+    <span class="token key atrule">depends_on</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> mysql
+      <span class="token punctuation">-</span> registry
+      <span class="token punctuation">-</span> ui
+      <span class="token punctuation">-</span> log
+    <span class="token key atrule">logging</span><span class="token punctuation">:</span>
+      <span class="token key atrule">driver</span><span class="token punctuation">:</span> <span class="token string">"syslog"</span>
+      <span class="token key atrule">options</span><span class="token punctuation">:</span>  
+        <span class="token key atrule">syslog-address</span><span class="token punctuation">:</span> <span class="token string">"tcp://127.0.0.1:1514"</span>
+        <span class="token key atrule">tag</span><span class="token punctuation">:</span> <span class="token string">"proxy"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动harbor"><a href="#启动harbor" class="headerlink" title="启动harbor"></a>启动<code>harbor</code></h3><p>到<code>harbor/</code>目录下，执行<code>./install.sh</code>，<code>harbor</code>会根据当前目录下<code>docker-compose.yml</code>配置，下载相关镜像，并启动。</p>
+<h3 id="配置本地hosts文件"><a href="#配置本地hosts文件" class="headerlink" title="配置本地hosts文件"></a>配置本地<code>hosts</code>文件</h3><p>配置<code>hosts</code>文件，增加部署机器的 <code>IP</code> 和 域名【域名是<code>harbor.cfg</code>中的<code>hostname</code>】</p>
+<pre><code>Windows: C:\Windows\System32\drivers\etc\hosts 
+Linux: /etc/hosts</code></pre><h3 id="访问Harbor"><a href="#访问Harbor" class="headerlink" title="访问Harbor"></a>访问<code>Harbor</code></h3><p>浏览器输入<code>hostname</code>，用户名密码：<code>admin/Harbor12345</code></p>
+<p><img data-src="/images/harbor1.jpg" alt="Harbor首页"></p>
+<h3 id="上传镜像"><a href="#上传镜像" class="headerlink" title="上传镜像"></a>上传镜像</h3><h4 id="创建项目"><a href="#创建项目" class="headerlink" title="创建项目"></a>创建项目</h4><p><em>注意选择访问级别</em><br><img data-src="/images/harbor2.jpg" alt="Harbor创建项目"></p>
+<h4 id="使用docker-login登录到私有仓库"><a href="#使用docker-login登录到私有仓库" class="headerlink" title="使用docker login登录到私有仓库"></a>使用<code>docker login</code>登录到私有仓库</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node4 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker login harbor.deri.com</span>
+Username: admin
+Password: 
+WARNING<span class="token operator">!</span> Your password will be stored unencrypted <span class="token keyword">in</span> /root/.docker/config.json.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/engine/reference/commandline/login/<span class="token comment" spellcheck="true">#credentials-store</span>
+
+Login Succeeded<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<hr>
+<p><font color="red"><strong>这里有个问题</strong></font></p>
+<p>执行上面的一步肯定会报错：<code>Error response from daemon: Get https://harbor.deri.com/v2/users/: dial tcp 192.168.41.139:443: getsockopt: connection refused</code>，原因是<code>docker</code>认为这个仓库不可信，需要在<code>/etc/docker/daemon.json</code>（<font color="red">不存在就新建</font>）增加<code>insecure-registries</code>配置，注意是标准的json格式！</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"insecure-registries"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"harbor.deri.com"</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>然后重启docker服务</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl daemon-reload
+<span class="token function">sudo</span> systemctl restart docker<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>重启harbor服务</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true">#到harbor/目录下执行</span>
+docker-compose down -v
+docker-compose up -d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<hr>
+<h4 id="本地随便找个镜像"><a href="#本地随便找个镜像" class="headerlink" title="本地随便找个镜像"></a>本地随便找个镜像</h4><p>修改其<code>tag</code>，如</p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker tag hub.c.163.com/library/mysql:5.7 harbor.deri.com/deri/mysql:5.7<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p><font color="red"><strong>注意<code>tag</code>格式：<code>域名</code>/<code>项目名</code>/<code>镜像名</code>:<code>版本</code></strong></font></p>
+<h4 id="上传镜像-1"><a href="#上传镜像-1" class="headerlink" title="上传镜像"></a>上传镜像</h4><pre class="line-numbers language-bash"><code class="language-bash">docker push harbor.deri.com/deri/mysql:5.7<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h4 id="登录UI查看"><a href="#登录UI查看" class="headerlink" title="登录UI查看"></a>登录<code>UI</code>查看</h4><p><img data-src="/images/harbor3.jpg" alt="harbor镜像仓库"></p>
+<h4 id="从私有镜像仓库拉取镜像"><a href="#从私有镜像仓库拉取镜像" class="headerlink" title="从私有镜像仓库拉取镜像"></a>从私有镜像仓库拉取镜像</h4><pre class="line-numbers language-bash"><code class="language-bash">docker pull harbor.deri.com/deri/mysql:5.7<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h4 id="退出登录"><a href="#退出登录" class="headerlink" title="退出登录"></a>退出登录</h4><pre class="line-numbers language-bash"><code class="language-bash">docker <span class="token function">logout</span> harbor.deri.com<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>使用结束！接下来创建项目、用户了。</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubernetes-ji-qun-fa-bu-wai-bu-fu-wu-mysql-redis-bing-ce-shi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1144,125 +1321,6 @@ ttt:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-k-v-http-jie-kou/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/consul-k-v-http-jie-kou/" class="post-title-link" itemprop="url">consul【K/V-HTTP接口】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-10-10 10:31:32" itemprop="dateCreated datePublished" datetime="2019-10-10T10:31:32+08:00">2019-10-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-14 16:21:01" itemprop="dateModified" datetime="2020-04-14T16:21:01+08:00">2020-04-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="全局配置"><a href="#全局配置" class="headerlink" title="全局配置"></a>全局配置</h3><blockquote>
-<p>http头部加入<code>X-Consul-Token</code>，值为有权限的<code>token</code></p>
-</blockquote>
-<h3 id="查询一个key值"><a href="#查询一个key值" class="headerlink" title="查询一个key值"></a>查询一个key值</h3><pre><code>#key=/data
-http://192.168.1.11:8500/v1/kv/data
-
-#key=/test/data
-http://192.168.1.11:8500/v1/kv/test/data</code></pre><h3 id="查询一个folder下所有key值"><a href="#查询一个folder下所有key值" class="headerlink" title="查询一个folder下所有key值"></a>查询一个folder下所有key值</h3><pre><code>#folder是test，注意test后面有/不能少！
-http://192.168.1.11:8500/v1/kv/test/?recurse=true</code></pre><h3 id="查询folder下有哪些key"><a href="#查询folder下有哪些key" class="headerlink" title="查询folder下有哪些key"></a>查询folder下有哪些key</h3><pre><code>#test后面有/
-http://192.168.1.11:8500/v1/kv/test/?keys</code></pre><h3 id="修改key值"><a href="#修改key值" class="headerlink" title="修改key值"></a>修改key值</h3><blockquote>
-<p>注意：KV存储中的值不能大于<font style="color:red"><strong>512kb</strong></font>。</p>
-</blockquote>
-<pre><code>#使用PUT请求，key为/test/data
-http://192.168.1.11:8500/v1/kv/test/data
-
-#body可以是
-{
-  "data":"sasasaasas1231313131"
-}
-
-#或者是
-{
-  "data-binary":"sasasaasas6666666"
-}
-
-#修改成功则回复true</code></pre><h3 id="删除key"><a href="#删除key" class="headerlink" title="删除key"></a>删除key</h3><pre><code>#使用DELETE请求，key为/test/data
-http://192.168.1.11:8500/v1/kv/test/data
-
-#成功则返回true</code></pre><script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1334,7 +1392,7 @@ http://192.168.1.11:8500/v1/kv/test/data
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">266</span>
+          <span class="site-state-item-count">267</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
