@@ -29363,4 +29363,75 @@ taos&gt; show dnodes;
         <tag>TDengine</tag>
       </tags>
   </entry>
+  <entry>
+    <title>TDengine数据更新</title>
+    <url>/tdengine-shu-ju-geng-xin/</url>
+    <content><![CDATA[<h3 id="开启数据库更新功能"><a href="#开启数据库更新功能" class="headerlink" title="开启数据库更新功能"></a>开启数据库更新功能</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 创建数据库时使用默认参数，数据库的update属性为0，即不允许数据的更新</span>
+<span class="token keyword">CREATE</span> <span class="token keyword">DATABASE</span> power <span class="token keyword">UPDATE</span> <span class="token number">1</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>向不支持数据更新的表中写入重复时间戳的数据，后写入的数据会被丢弃;</li>
+<li>向支持数据更新功能的表中，写入重复时间戳的数据时，老的数据会被覆盖.</li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>TDengine</category>
+      </categories>
+      <tags>
+        <tag>TDengine</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>TDengine数据建模</title>
+    <url>/tdengine-shu-ju-jian-mo/</url>
+    <content><![CDATA[<h3 id="创建库"><a href="#创建库" class="headerlink" title="创建库"></a>创建库</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 创建一个名为 power 的库，这个库的数据将保留 365 天（超过 365 天将被自动删除），副本数为3，每 10 天一个数据文件，内存块数为 6，允许更新数据</span>
+<span class="token keyword">CREATE</span> <span class="token keyword">DATABASE</span> power KEEP <span class="token number">365</span> REPLICA <span class="token number">3</span>  DAYS <span class="token number">10</span> BLOCKS <span class="token number">6</span> <span class="token keyword">UPDATE</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> power<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建超级表"><a href="#创建超级表" class="headerlink" title="创建超级表"></a>创建超级表</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> STABLE meters <span class="token punctuation">(</span>ts <span class="token keyword">timestamp</span><span class="token punctuation">,</span> <span class="token keyword">current</span> <span class="token keyword">float</span><span class="token punctuation">,</span> voltage <span class="token keyword">int</span><span class="token punctuation">,</span> phase <span class="token keyword">float</span><span class="token punctuation">)</span> TAGS <span class="token punctuation">(</span>location <span class="token keyword">binary</span><span class="token punctuation">(</span><span class="token number">64</span><span class="token punctuation">)</span><span class="token punctuation">,</span> groupId <span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="创建子表"><a href="#创建子表" class="headerlink" title="创建子表"></a>创建子表</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token number">d1001</span> <span class="token keyword">USING</span> meters TAGS <span class="token punctuation">(</span><span class="token string">"Beijing.Chaoyang"</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 如果该子表没有创建会自动创建</span>
+<span class="token keyword">INSERT</span> <span class="token keyword">INTO</span> <span class="token number">d1001</span> <span class="token keyword">USING</span> meters TAGS <span class="token punctuation">(</span><span class="token string">"Beijng.Chaoyang"</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span>now<span class="token punctuation">,</span> <span class="token number">10.2</span><span class="token punctuation">,</span> <span class="token number">219</span><span class="token punctuation">,</span> <span class="token number">0.32</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>TDengine</category>
+      </categories>
+      <tags>
+        <tag>TDengine</tag>
+      </tags>
+  </entry>
 </search>

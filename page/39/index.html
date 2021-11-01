@@ -203,6 +203,431 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-chuang-jian-alertmanager-de-webhook/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/prometheus-operator-shi-yong-chuang-jian-alertmanager-de-webhook/" class="post-title-link" itemprop="url">prometheus-operator使用【创建Alertmanager的Webhook】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-03 14:38:49" itemprop="dateCreated datePublished" datetime="2019-12-03T14:38:49+08:00">2019-12-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 10:42:41" itemprop="dateModified" datetime="2020-04-15T10:42:41+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>上文介绍了<strong>Alertmanager集成钉钉</strong>，我们还可以自己写一个webhook，用于接收Alertmanager的通知服务。</p>
+</blockquote>
+<h3 id="获取Alertmanager的请求内容"><a href="#获取Alertmanager的请求内容" class="headerlink" title="获取Alertmanager的请求内容"></a>获取Alertmanager的请求内容</h3><p>参考前文，我们知道Alertmanager会向配置的webhook地址发送一个POST请求，这里我们先编写一个简单的controller，用于接收Alertmanager的请求，如下：</p>
+<pre class="line-numbers language-java"><code class="language-java">    <span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/test"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">watcher</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">getMethod</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        BufferedReader reader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BufferedReader</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">InputStreamReader</span><span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        String str <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">;</span>
+        String wholeStr <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>str <span class="token operator">=</span> reader<span class="token punctuation">.</span><span class="token function">readLine</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            wholeStr <span class="token operator">+=</span> str<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"body:"</span> <span class="token operator">+</span> wholeStr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>写好上面的服务之后，修改Alertmanager中webhook地址，然后将上面打印的body分析分析。如下：</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"receiver"</span><span class="token operator">:</span><span class="token string">"webhook_alert"</span><span class="token punctuation">,</span>
+  <span class="token property">"status"</span><span class="token operator">:</span><span class="token string">"resolved"</span><span class="token punctuation">,</span>
+  <span class="token property">"alerts"</span><span class="token operator">:</span><span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"status"</span><span class="token operator">:</span><span class="token string">"resolved"</span><span class="token punctuation">,</span>
+      <span class="token property">"labels"</span><span class="token operator">:</span><span class="token punctuation">{</span>
+        <span class="token property">"alertname"</span><span class="token operator">:</span><span class="token string">"curl test"</span><span class="token punctuation">,</span>
+        <span class="token property">"severity"</span><span class="token operator">:</span><span class="token string">"warning"</span>
+      <span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token property">"annotations"</span><span class="token operator">:</span><span class="token punctuation">{</span>
+        <span class="token property">"description"</span><span class="token operator">:</span><span class="token string">"this is a test alert from curl"</span><span class="token punctuation">,</span>
+        <span class="token property">"summary"</span><span class="token operator">:</span><span class="token string">"test alert from curl"</span>
+      <span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token property">"startsAt"</span><span class="token operator">:</span><span class="token string">"2019-12-03T03:22:50.430372292Z"</span><span class="token punctuation">,</span>
+      <span class="token property">"endsAt"</span><span class="token operator">:</span><span class="token string">"2019-12-03T03:26:50.430372292Z"</span><span class="token punctuation">,</span>
+      <span class="token property">"generatorURL"</span><span class="token operator">:</span><span class="token string">""</span><span class="token punctuation">,</span>
+      <span class="token property">"fingerprint"</span><span class="token operator">:</span><span class="token string">"960077177807fca5"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"groupLabels"</span><span class="token operator">:</span><span class="token punctuation">{</span>
+    <span class="token property">"alertname"</span><span class="token operator">:</span><span class="token string">"curl test"</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"commonLabels"</span><span class="token operator">:</span><span class="token punctuation">{</span>
+    <span class="token property">"alertname"</span><span class="token operator">:</span><span class="token string">"curl test"</span><span class="token punctuation">,</span>
+    <span class="token property">"severity"</span><span class="token operator">:</span><span class="token string">"warning"</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"commonAnnotations"</span><span class="token operator">:</span><span class="token punctuation">{</span>
+    <span class="token property">"description"</span><span class="token operator">:</span><span class="token string">"this is a test alert from curl"</span><span class="token punctuation">,</span>
+    <span class="token property">"summary"</span><span class="token operator">:</span><span class="token string">"test alert from curl"</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"externalURL"</span><span class="token operator">:</span><span class="token string">"http://alertmanager-prometheus-operator-alertmanager-test-0:9093"</span><span class="token punctuation">,</span>
+  <span class="token property">"version"</span><span class="token operator">:</span><span class="token string">"4"</span><span class="token punctuation">,</span>
+  <span class="token property">"groupKey"</span><span class="token operator">:</span><span class="token string">"{}/{severity="</span>warning<span class="token string">"}:{alertname="</span>curl test<span class="token string">"}"</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>所有接收到的请求内容格式基本不变，标准的<code>JSON格式</code>，我们编写一个<code>实体类</code>用于接收。</p>
+<h3 id="编写实体类"><a href="#编写实体类" class="headerlink" title="编写实体类"></a>编写实体类</h3><p>编写内层实体类<code>Alert.java</code></p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">/**
+ * @ClassName: Alert
+ * @Description: TODO
+ * @Author: wuzhiyong
+ * @Time: 2019/12/3 11:39
+ * @Version: v1.0
+ **/</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Alert</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">/**
+     * 状态：firing / resolved
+     */</span>
+    <span class="token keyword">private</span> String status<span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">/**
+     * 标签
+     */</span>
+    <span class="token keyword">private</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">></span> labels<span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">/**
+     * 携带的其它信息
+     */</span>
+    <span class="token keyword">private</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">></span> annotations<span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">/**
+     * 开始时间
+     */</span>
+    <span class="token keyword">private</span> String startsAt<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String endsAt<span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">/**
+     * 产生的alertmanager信息
+     */</span>
+    <span class="token keyword">private</span> String generatorURL<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String fingerprint<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token function">Alert</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>编写外层实体类<code>Alerts.java</code></p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">/**
+ * @ClassName: Alerts
+ * @Description: Alertmanager发出的告警格式
+ * @Author: wuzhiyong
+ * @Time: 2019/12/3 11:49
+ * @Version: v1.0
+ **/</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Alerts</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> String externalURL<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String version<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String groupKey<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String receiver<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String status<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> List<span class="token operator">&lt;</span>Alert<span class="token operator">></span> alerts<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">></span> groupLabels<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">></span> commonLabels<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">></span> commonAnnotations<span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token function">Alerts</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="编写webhook"><a href="#编写webhook" class="headerlink" title="编写webhook"></a>编写webhook</h3><pre class="line-numbers language-java"><code class="language-java">    <span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"/receive"</span><span class="token punctuation">,</span> method <span class="token operator">=</span> RequestMethod<span class="token punctuation">.</span>POST<span class="token punctuation">)</span>
+    <span class="token keyword">void</span> <span class="token function">receive</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestBody</span> Alerts alerts<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"new alert: {}"</span><span class="token punctuation">,</span>alerts<span class="token punctuation">.</span><span class="token function">getCommonLabels</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"alertname"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面接收到<code>Alert manager</code>的请求，只是打印了<code>alert name</code>的日志，我们可以根据接收到告警，做更多的事。</p>
+<p>可以根据自身业务自行发挥。</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-prometheus-pei-zhi-shuo-ming/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/prometheus-operator-shi-yong-prometheus-pei-zhi-shuo-ming/" class="post-title-link" itemprop="url">prometheus-operator使用【prometheus配置说明】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-29 15:23:20" itemprop="dateCreated datePublished" datetime="2019-11-29T15:23:20+08:00">2019-11-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 10:39:12" itemprop="dateModified" datetime="2020-04-15T10:39:12+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="全局配置"><a href="#全局配置" class="headerlink" title="全局配置"></a>全局配置</h2><p>参考官网：<code>https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">global:
+  # How frequently to scrape targets by default.
+  [ scrape_interval: <duration> | default = 1m ]
+
+  # How long until a scrape request times out.
+  [ scrape_timeout: <duration> | default = 10s ]
+
+  # How frequently to evaluate rules.
+  [ evaluation_interval: <duration> | default = 1m ]
+
+  # The labels to add to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    [ <labelname>: <labelvalue> ... ]
+
+# Rule files specifies a list of globs. Rules and alerts are read from
+# all matching files.
+rule_files:
+  [ - <filepath_glob> ... ]
+
+# A list of scrape configurations.
+scrape_configs:
+  [ - <scrape_config> ... ]
+
+# Alerting specifies settings related to the Alertmanager.
+alerting:
+  alert_relabel_configs:
+    [ - <relabel_config> ... ]
+  alertmanagers:
+    [ - <alertmanager_config> ... ]
+
+# Settings related to the remote write feature.
+remote_write:
+  [ - <remote_write> ... ]
+
+# Settings related to the remote read feature.
+remote_read:
+  [ - <remote_read> ... ]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="更改指标标签"><a href="#更改指标标签" class="headerlink" title="更改指标标签"></a>更改指标标签</h2><p>更改标签的时机：抓取前修改、抓取后修改、告警时修改</p>
+<ul>
+<li>采集数据之前，通过<code>relabel_config</code>；</li>
+<li>采集数据之后，写入存储之前，通过<code>metric_relabel_configs</code></li>
+<li>在告警前修改标签，通过<code>alert_relabel_configs</code></li>
+</ul>
+<h2 id="JOB配置"><a href="#JOB配置" class="headerlink" title="JOB配置"></a>JOB配置</h2><pre class="line-numbers language-yml"><code class="language-yml">- job_name: prometheus
+  honor_labels: false
+  kubernetes_sd_configs:
+  - role: endpoints
+    namespaces:
+      names:
+      - monitoring
+  scrape_interval: 30s
+  relabel_configs:
+  - action: keep
+    source_labels:
+    - __meta_kubernetes_service_label_prometheus
+    regex: k8s
+  - source_labels:
+    - __meta_kubernetes_endpoint_address_target_kind
+    - __meta_kubernetes_endpoint_address_target_name
+    separator: ;
+    regex: Pod;(.*)
+    replacement: ${1}
+    target_label: pod
+  - source_labels:
+    - __meta_kubernetes_namespace
+    target_label: namespace<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>kubernetes_sd_configs</code>：使用这个配置可以自动发现 k8s 中 node、service、pod、endpoint、ingress，并为其添加监控，更多的内容可以直接查看官方文档。__meta_kubernetes_xxxxx具体什么意思都可以在官网找到。</li>
+<li><code>endpoints</code>:采用endpoints方式采集，每创建一个 service 就会创建一个对应的 endpoint，通过endpoint方式可以将service下所有的pod都采集到。</li>
+<li>下面配置的意思是只有 service 的标签包含 prometheus=k8s，k8s 才会对其对应的 endpoint 进行采集。所以我们后面要为 Prometheus 创建一个 service，并且要为这个 service 加上 prometheus: k8s 这样的标签。<pre class="line-numbers language-yml"><code class="language-yml">- action: keep
+  source_labels:
+  - __meta_kubernetes_service_label_prometheus
+  regex: k8s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>下面配置意识是如果 <strong>meta_kubernetes_endpoint_address_target_kind 的值为 Pod，</strong>meta_kubernetes_endpoint_address_target_name 的值为 prometheus-0，在它们之间加上一个 ; 之后，它们合起来就是 Pod;prometheus-0。使用正则表达式 Pod;(.*) 对其进行匹配，那么 ${1} 就是取第一个分组，它值就是 prometheus-0，最后将这个值交给 pod 这个标签。因此这一段配置就是为所有采集到的监控指标增加一个 pod=prometheus-0 的标签。如果 __meta_kubernetes_endpoint_address_target_kind 的值不是 Pod，那么不会添加任何标签。<br>```yml</li>
+<li>source_labels:<ul>
+<li>__meta_kubernetes_endpoint_address_target_kind</li>
+<li>__meta_kubernetes_endpoint_address_target_name<br>separator: ;<br>regex: Pod;(.*)<br>replacement: ${1}<br>target_label: pod<br>```</li>
+</ul>
+</li>
+<li>没有指定 url，Prometheus 会采集默认的 url <code>/metrics</code>。</li>
+</ul>
+<h2 id="定义告警规则"><a href="#定义告警规则" class="headerlink" title="定义告警规则"></a>定义告警规则</h2><pre class="line-numbers language-yml"><code class="language-yml">groups:
+- name: example
+  rules:
+  - alert: HighRequestLatency
+    expr: job:request_latency_seconds:mean5m{job="myjob"} > 0.5
+    for: 10m
+    labels:
+      severity: page
+    annotations:
+      summary: High request latency<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>参考官网： <code>https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/</code></p>
+<ul>
+<li><code>for</code>：Prometheus将在每次发出警报之前检查警报在10分钟内是否继续处于活动状态</li>
+<li><code>labels</code>：允许指定一组附加标签来附加到警报。任何现有的冲突标签都将被覆盖。标签值可以模板化。</li>
+<li><code>annotations</code>：指定了一组信息标签，可用于存储更长的附加信息，例如警报说明或运行手册链接。注释值可以模板化。</li>
+</ul>
+<h2 id="模板化"><a href="#模板化" class="headerlink" title="模板化"></a>模板化</h2><p>标签和注释值可以使用<a href="https://prometheus.io/docs/visualization/consoles/" target="_blank" rel="noopener">控制台模板进行模板化</a>。该<code>$labels</code> 变量保存警报实例的标签键/值对。可以通过<code>$externalLabels</code>变量访问已组态的外部标签。该 <code>$value</code>变量保存警报实例的评估值。</p>
+<pre class="line-numbers language-yml"><code class="language-yml"># To insert a firing element's label values:
+{{ $labels.<labelname> }}
+# To insert the numeric expression value of the firing element:
+{{ $value }}</labelname><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>例子：</p>
+<pre class="line-numbers language-yml"><code class="language-yml">groups:
+- name: example
+  rules:
+
+  # Alert for any instance that is unreachable for >5 minutes.
+  - alert: InstanceDown
+    expr: up == 0
+    for: 5m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} down"
+      description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5 minutes."
+
+  # Alert for any instance that has a median request latency >1s.
+  - alert: APIHighRequestLatency
+    expr: api_http_request_latencies_second{quantile="0.5"} > 1
+    for: 10m
+    annotations:
+      summary: "High request latency on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has a median request latency above 1s (current value: {{ $value }}s)"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-chuang-jian-xin-de-alertmanager/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1092,307 +1517,6 @@ metadata:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-zi-dai-ren-zheng-gong-neng/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ingress-nginx-zi-dai-ren-zheng-gong-neng/" class="post-title-link" itemprop="url">ingress-nginx自带认证功能</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-19 11:35:26" itemprop="dateCreated datePublished" datetime="2019-11-19T11:35:26+08:00">2019-11-19</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:40:51" itemprop="dateModified" datetime="2020-04-15T13:40:51+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="安装htpasswd"><a href="#安装htpasswd" class="headerlink" title="安装htpasswd"></a>安装htpasswd</h3><p><code>htpasswd</code>不是<code>centos7</code>自带的命令，需要使用<code>yum</code>安装。</p>
-<pre><code>yum install httpd-tools</code></pre><p>选项</p>
-<ul>
-<li>-c: 创建一个新的密码文件</li>
-<li>-b: 在命令行中一并输入用户名和密码而不是根据提示输入密码</li>
-<li>-D: 删除指定的用户</li>
-<li>-n: 不更新密码文件,只将加密后的用户名密码输出到屏幕上</li>
-<li>-p: 不对密码进行加密,采用明文的方式</li>
-<li>-m: 采用MD5算法对密码进行加密(默认的加密方式)</li>
-<li>-d: 采用CRYPT算法对密码进行加密</li>
-<li>-s: 采用SHA算法对密码进行加密</li>
-<li>-B: 采用bcrypt算法对密码进行加密(非常安全)</li>
-</ul>
-<p>参数</p>
-<ul>
-<li>用户名: 要创建或者更新的用户名</li>
-<li>密码: 用户的新密码</li>
-</ul>
-<h3 id="创建用户，设置密码"><a href="#创建用户，设置密码" class="headerlink" title="创建用户，设置密码"></a>创建用户，设置密码</h3><p>用下面的三个操作，创建 <code>basic-auth</code> 用户 <code>foo</code>，密码 <code>123456</code>，将用户信息提交到 <code>kubernetes</code>：</p>
-<pre class="line-numbers language-sh"><code class="language-sh">$ htpasswd -c auth foo
-$ kubectl -n demo-echo create secret generic basic-auth --from-file=auth<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意其中命名空间<code>demo-echo</code>，<code>secret</code> 与目标服务<code>echo</code>在同一个 <code>namespace</code> 中。</p>
-</blockquote>
-<h3 id="为目标服务设置-ingress"><a href="#为目标服务设置-ingress" class="headerlink" title="为目标服务设置 ingress"></a>为目标服务设置 ingress</h3><blockquote>
-<p>注意其中的<code>basic-auth</code>改成你的</p>
-</blockquote>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: ingress-echo-with-auth-basic
-  annotations:
-    # type of authentication
-    nginx.ingress.kubernetes.io/auth-type: basic
-    # name of the secret that contains the user/password definitions
-    nginx.ingress.kubernetes.io/auth-secret: basic-auth
-    # message to display with an appropriate context why the authentication is required
-    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - foo'
-spec:
-  rules:
-  - host: auth-basic.echo.example
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: echo
-          servicePort: 80<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="访问测试"><a href="#访问测试" class="headerlink" title="访问测试"></a>访问测试</h3><p><img data-src="/images/k8s2.png" alt="ingress-nginx"></p>
-<h3 id="原文链接"><a href="#原文链接" class="headerlink" title="原文链接"></a>原文链接</h3><ul>
-<li><a href="https://www.lijiaocn.com/soft/k8s/ingress-nginx/auth.html" target="_blank" rel="noopener">https://www.lijiaocn.com/soft/k8s/ingress-nginx/auth.html</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-she-zhi-https-zheng-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ingress-nginx-she-zhi-https-zheng-shu/" class="post-title-link" itemprop="url">ingress-nginx设置https证书</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-19 11:26:00" itemprop="dateCreated datePublished" datetime="2019-11-19T11:26:00+08:00">2019-11-19</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:40:45" itemprop="dateModified" datetime="2020-04-15T13:40:45+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="创建自签署证书"><a href="#创建自签署证书" class="headerlink" title="创建自签署证书"></a>创建自签署证书</h3><blockquote>
-<p>注意证书中的<code>CN=tls.echo.example</code>改成自己的域名地址。</p>
-</blockquote>
-<pre><code>echo "生成自签署的 ca 证书"
-openssl req -x509 -sha256 -newkey rsa:4096 -keyout ca.key -out ca.crt -days 3560 -nodes -subj '/CN=My Cert Authority'
-
-echo "生成用上述 ca 签署的 server 证书"
-openssl req -new -newkey rsa:4096 -keyout server.key -out server.csr -nodes -subj '/CN=tls.echo.example'
-openssl x509 -req -sha256 -days 3650 -in server.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out server.crt</code></pre><h3 id="将-server-证书上传到-kubernetes"><a href="#将-server-证书上传到-kubernetes" class="headerlink" title="将 server 证书上传到 kubernetes"></a>将 server 证书上传到 kubernetes</h3><blockquote>
-<p>注意其中的命名空间<code>demo-echo和secret</code>名称<code>tls-echo-exmaple-secret</code>，改成自己的。</p>
-</blockquote>
-<pre><code>kubectl -n demo-echo create secret generic tls-echo-exmaple-secret --from-file=tls.crt=server.crt --from-file=tls.key=server.key</code></pre><h3 id="配置ingress"><a href="#配置ingress" class="headerlink" title="配置ingress"></a>配置ingress</h3><blockquote>
-<p><code>ignress</code> 中的 <code>host</code> 一定要与证书的 <code>CN</code> 相同，在 <code>tls</code> 配置中引用前面创建的 <code>secret</code></p>
-</blockquote>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: ingress-echo-with-tls
-spec:
-  rules:
-  - host: tls.echo.example
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: echo
-          servicePort: 80
-  tls:
-  - hosts:
-    - tls.echo.example
-    secretName: tls-echo-exmaple-secret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="为多个域名配置证书"><a href="#为多个域名配置证书" class="headerlink" title="为多个域名配置证书"></a>为多个域名配置证书</h3><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: foo-tls
-  namespace: default
-spec:
-  tls:
-  - hosts:
-    - foo.bar.com
-    # This secret must exist beforehand
-    # The cert must also contain the subj-name foo.bar.com
-    # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
-    secretName: foobar
-  - hosts:
-    - bar.baz.com
-    # This secret must exist beforehand
-    # The cert must also contain the subj-name bar.baz.com
-    # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
-    secretName: barbaz
-  rules:
-  - host: foo.bar.com
-    http:
-      paths:
-      - backend:
-          serviceName: http-svc
-          servicePort: 80
-        path: /
-  - host: bar.baz.com
-    http:
-      paths:
-      - backend:
-          serviceName: nginx
-          servicePort: 80
-        path: /<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://www.lijiaocn.com/soft/k8s/ingress-nginx/tls.html" target="_blank" rel="noopener">https://www.lijiaocn.com/soft/k8s/ingress-nginx/tls.html</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1464,7 +1588,7 @@ spec:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">267</span>
+          <span class="site-state-item-count">269</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
