@@ -203,6 +203,750 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-bookinfo-shi-li/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-shi-yong-bookinfo-shi-li/" class="post-title-link" itemprop="url">Istio使用【Bookinfo示例】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-26 17:12:20" itemprop="dateCreated datePublished" datetime="2019-12-26T17:12:20+08:00">2019-12-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-01-09 14:41:27" itemprop="dateModified" datetime="2020-01-09T14:41:27+08:00">2020-01-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="Bookinfo示例简介"><a href="#Bookinfo示例简介" class="headerlink" title="Bookinfo示例简介"></a>Bookinfo示例简介</h3><p><code>Bookinfo</code>是<code>istio</code>官网示例，应用程序分为四个单独的微服务：</p>
+<ul>
+<li><code>productpage</code>。该<code>productpage</code>微服务调用<code>details</code>和<code>reviews</code>微服务来填充页面。</li>
+<li><code>details</code>。该<code>details</code>微服务包含图书信息。</li>
+<li><code>reviews</code>。该<code>reviews</code>微服务包含了书评。它们调用<code>ratings</code>微服务。</li>
+<li><code>ratings</code>。该<code>ratings</code>微服务包含预定伴随书评排名信息。</li>
+</ul>
+<p><code>reviews</code>微服务有3个版本：</p>
+<ul>
+<li>版本<code>v1</code>不会调用该<code>ratings</code>服务。</li>
+<li>版本<code>v2</code>调用该<code>ratings</code>服务，并将每个等级显示为1到5个黑星<font color="black">★</font>。</li>
+<li>版本<code>v3</code>调用该<code>ratings</code>服务，并将每个等级显示为1到5个红色星号<font color="red">★</font>。</li>
+</ul>
+<p><img data-src="/images/bookinfo1.jpg" alt="Bookinfo架构图"></p>
+<h3 id="Bookinfo在Istio中架构"><a href="#Bookinfo在Istio中架构" class="headerlink" title="Bookinfo在Istio中架构"></a><code>Bookinfo</code>在<code>Istio</code>中架构</h3><p>如果想要在<code>Istio</code>中运行<code>Bookinfo</code>，<code>Bookinfo</code>本身不需要任何改动，只需要为<code>Bookinfo</code>的微服务注入<code>Istio</code>的<code>Sidecar</code>。最终架构图如下：</p>
+<p><img data-src="/images/bookinfo2.jpg" alt="Bookinfo架构图"></p>
+<p>所有的微服务都与<code>Envoy</code>边车打包在一起，该<code>Envoy</code>边车拦截对服务的出/入请求，并与<code>Istio</code>控制面交互，提供路由、采集、实施各种策略等。</p>
+<h3 id="启动Bookinfo服务，参考官网"><a href="#启动Bookinfo服务，参考官网" class="headerlink" title="启动Bookinfo服务，参考官网"></a>启动<code>Bookinfo</code>服务，参考<a href="https://istio.io/docs/examples/bookinfo/" target="_blank" rel="noopener">官网</a></h3><h4 id="进入istio目录"><a href="#进入istio目录" class="headerlink" title="进入istio目录"></a>进入istio目录</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># pwd</span>
+/root/istio/istio-1.4.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h4 id="设置namespace自动注入sidecar"><a href="#设置namespace自动注入sidecar" class="headerlink" title="设置namespace自动注入sidecar"></a>设置namespace自动注入sidecar</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection<span class="token operator">=</span>enabled<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h4 id="部署bookinfo服务"><a href="#部署bookinfo服务" class="headerlink" title="部署bookinfo服务"></a>部署bookinfo服务</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>你也可以手动为这个yaml注入sidecar再部署，参考<a href="">Istio使用【sidecar注入】</a></p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f <span class="token operator">&lt;</span><span class="token punctuation">(</span>istioctl kube-inject -f samples/bookinfo/platform/kube/bookinfo.yaml<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h4 id="确定启动完成"><a href="#确定启动完成" class="headerlink" title="确定启动完成"></a>确定启动完成</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod</span>
+NAME                                                       READY   STATUS    RESTARTS   AGE
+details-v1-74f858558f-7gx6r                                2/2     Running   0          31h
+productpage-v1-8554d58bff-fwcj4                            2/2     Running   0          31h
+ratings-v1-7855f5bcb9-r7z5l                                2/2     Running   0          31h
+reviews-v1-59fd8b965b-jppqr                                2/2     Running   0          31h
+reviews-v2-d6cfdb7d6-rx648                                 2/2     Running   0          31h
+reviews-v3-75699b5cfb-qpdjm                                2/2     Running   0          31h<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc</span>
+NAME          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>     AGE
+details       ClusterIP   10.102.10.128    <span class="token operator">&lt;</span>none<span class="token operator">></span>        9080/TCP    31h
+productpage   ClusterIP   10.110.251.239   <span class="token operator">&lt;</span>none<span class="token operator">></span>        9080/TCP    31h
+ratings       ClusterIP   10.99.146.247    <span class="token operator">&lt;</span>none<span class="token operator">></span>        9080/TCP    31h
+reviews       ClusterIP   10.102.77.22     <span class="token operator">&lt;</span>none<span class="token operator">></span>        9080/TCP    31h<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="确定程序运行正常"><a href="#确定程序运行正常" class="headerlink" title="确定程序运行正常"></a>确定程序运行正常</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">exec</span> -it <span class="token punctuation">$(</span>kubectl get pod -l app<span class="token operator">=</span>ratings -o jsonpath<span class="token operator">=</span><span class="token string">'{.items[0].metadata.name}'</span><span class="token punctuation">)</span> -c ratings -- curl productpage:9080/productpage <span class="token operator">|</span> <span class="token function">grep</span> -o <span class="token string">"&lt;title>.*&lt;/title>"</span>
+<span class="token operator">&lt;</span>title<span class="token operator">></span>Simple Bookstore App<span class="token operator">&lt;</span>/title<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h4 id="定义应用的入口网关"><a href="#定义应用的入口网关" class="headerlink" title="定义应用的入口网关"></a>定义应用的入口网关</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h4 id="确认网关已创建"><a href="#确认网关已创建" class="headerlink" title="确认网关已创建"></a>确认网关已创建</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get gateway</span>
+NAME               AGE
+bookinfo-gateway   30h<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>下面可以通过<code>Isito</code>的入口网关来访问了，在访问前，需要确定<code>Isito网关IP和端口</code>。</p>
+<h3 id="获取Istio入口网关IP和端口：参考官网"><a href="#获取Istio入口网关IP和端口：参考官网" class="headerlink" title="获取Istio入口网关IP和端口：参考官网"></a>获取Istio入口网关IP和端口：参考<a href="https://istio.io/docs/tasks/traffic-management/ingress/ingress-control/#determining-the-ingress-ip-and-ports" target="_blank" rel="noopener">官网</a></h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl get svc istio-ingressgateway -n istio-system
+NAME                   TYPE           CLUSTER-IP      EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>                                                                                                                                      AGE
+istio-ingressgateway   LoadBalancer   10.110.94.234   <span class="token operator">&lt;</span>pending<span class="token operator">></span>     15020:32344/TCP,80:31380/TCP,443:31390/TCP,31400:31400/TCP,15029:31933/TCP,15030:30470/TCP,15031:31361/TCP,15032:31151/TCP,15443:31081/TCP   2d2h<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>如果<code>EXTERNAL-IP</code>设置了该值，则您的环境具有可用于入口网关的外部负载平衡器。如果<code>EXTERNAL-IP</code>值是<code>&lt;none&gt;</code>（或永久<code>&lt;pending&gt;</code>），则您的环境不为入口网关提供外部负载平衡器。在这种情况下，您可以使用服务的节点端口来访问网关。</p>
+<h4 id="确定端口"><a href="#确定端口" class="headerlink" title="确定端口"></a>确定端口</h4><ul>
+<li><p>这里<code>80</code>对应的端口是<code>Http</code>服务的端口，映射的主机端口<code>31380</code>；</p>
+</li>
+<li><p>这里<code>443</code>对应的端口是<code>Https</code>服务的端口，映射的主机端口<code>31390</code>；</p>
+</li>
+</ul>
+<h4 id="确定IP"><a href="#确定IP" class="headerlink" title="确定IP"></a>确定IP</h4><p>可以通过下面命令找个<code>hostIP</code></p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get po -l istio=ingressgateway -n istio-system -o yaml | grep hostIP: -C3</span>
+---
+      state:
+        running:
+          startedAt: <span class="token string">"2019-12-24T06:46:29Z"</span>
+    hostIP: 192.168.1.212
+    phase: Running
+    podIP: 10.244.3.136
+    qosClass: Burstable
+---<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也可以通过下面的命令找到Ingress部署的节点。</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get po -l istio=ingressgateway -n istio-system -o wide</span>
+NAME                                    READY   STATUS    RESTARTS   AGE    IP             NODE     NOMINATED NODE   READINESS GATES
+istio-ingressgateway-6b7bfd7459-wljhh   1/1     Running   0          2d2h   10.244.3.136   k8s-02   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="访问Bookinfo应用"><a href="#访问Bookinfo应用" class="headerlink" title="访问Bookinfo应用"></a>访问Bookinfo应用</h3><p>浏览器访问刚刚或者的<code>IP</code>+<code>端口</code>+<code>/productpage</code>，例如我的是<a href="">http://192.168.1.212:31380/productpage</a></p>
+<p><img data-src="/images/bookinfo3.jpg" alt="Reviewer-v1"><br><img data-src="/images/bookinfo4.jpg" alt="Reviewer-v2"><br><img data-src="/images/bookinfo5.jpg" alt="Reviewer-v3"></p>
+<p>不停的刷新页面，可以看到返回的<code>Reviewer</code>是不同的版本。</p>
+<h3 id="简单分析下"><a href="#简单分析下" class="headerlink" title="简单分析下"></a>简单分析下</h3><p>针对<code>samples/bookinfo/networking/bookinfo-gateway.yaml</code>，我们可以看看默认配置做了啥。</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token punctuation">[</span>root@k8s<span class="token punctuation">-</span>master istio<span class="token punctuation">-</span>1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># cat samples/bookinfo/networking/bookinfo-gateway.yaml</span>
+<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Gateway
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> bookinfo<span class="token punctuation">-</span>gateway
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">istio</span><span class="token punctuation">:</span> ingressgateway <span class="token comment" spellcheck="true"># use istio default controller</span>
+  <span class="token key atrule">servers</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span>
+      <span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">80</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> http
+      <span class="token key atrule">protocol</span><span class="token punctuation">:</span> HTTP
+    <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token string">"*"</span>
+<span class="token punctuation">---</span>
+<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> bookinfo
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token string">"*"</span>
+  <span class="token key atrule">gateways</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> bookinfo<span class="token punctuation">-</span>gateway
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /productpage
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> /static
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /login
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /logout
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> /api/v1/products
+    <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> productpage
+        <span class="token key atrule">port</span><span class="token punctuation">:</span>
+          <span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">9080</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><p>首先创建一个<code>Gateway</code>，这是<code>Istio</code>的一个自定义资源类型(<code>CRD</code>)，它创建了这个<code>bookinfo</code>应用的网关<code>bookinfo-gateway</code>，使用了<code>istio</code>默认的<code>controller——ingressgateway</code>，如上文，<code>istio</code>的<code>ingress</code>网关定义了很多类型端口，这里<code>bookinfo-gateway</code>使用了<code>80</code>端口，域名使用的通配符 <code>*</code> 。</p>
+</li>
+<li><p>定义<code>VirtualService</code>，这里需要绑定刚刚创建的<code>bookinfo-gateway</code>，定义了匹配的<code>URI</code>和后台服务。</p>
+</li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-lian-lu-jian-kong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-shi-yong-lian-lu-jian-kong/" class="post-title-link" itemprop="url">Istio使用【链路监控】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-26 14:22:36" itemprop="dateCreated datePublished" datetime="2019-12-26T14:22:36+08:00">2019-12-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-01-09 14:52:24" itemprop="dateModified" datetime="2020-01-09T14:52:24+08:00">2020-01-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p><strong>本文使用的istio版本：<code>1.4.2</code></strong></p>
+</blockquote>
+<h3 id="开启链路监控"><a href="#开启链路监控" class="headerlink" title="开启链路监控"></a>开启链路监控</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token punctuation">...</span>.
+<span class="token comment" spellcheck="true">#</span>
+<span class="token comment" spellcheck="true"># addon jaeger tracing configuration</span>
+<span class="token comment" spellcheck="true">#</span>
+<span class="token key atrule">tracing</span><span class="token punctuation">:</span>
+  <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token punctuation">...</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看出。<code>istio</code>链路监控集成使用的是<code>Jaeger</code>，<code>Jaeger</code>是什么，参考<a href="https://blog.csdn.net/wzy_168/article/details/103628084" target="_blank" rel="noopener">开发分布式追踪OpenTracing与Jaeger相关文档整理</a>。</p>
+<h3 id="查看是否启动成功"><a href="#查看是否启动成功" class="headerlink" title="查看是否启动成功"></a>查看是否启动成功</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get po -n istio-system --show-labels | grep jaeger</span>
+istio-tracing-795c9c64c4-224wm            1/1     Running     0          47h   app<span class="token operator">=</span>jaeger,chart<span class="token operator">=</span>tracing,heritage<span class="token operator">=</span>Tiller,pod-template-hash<span class="token operator">=</span>795c9c64c4,release<span class="token operator">=</span>istio<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="访问jaeger-UI"><a href="#访问jaeger-UI" class="headerlink" title="访问jaeger UI"></a>访问<code>jaeger UI</code></h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc -n istio-system | grep jaeger</span>
+jaeger-agent             ClusterIP      None             <span class="token operator">&lt;</span>none<span class="token operator">></span>        5775/UDP,6831/UDP,6832/UDP                                                                                                                   47h
+jaeger-collector         ClusterIP      10.110.206.207   <span class="token operator">&lt;</span>none<span class="token operator">></span>        14267/TCP,14268/TCP,14250/TCP                                                                                                                47h
+jaeger-query             NodePort       10.101.53.38     <span class="token operator">&lt;</span>none<span class="token operator">></span>        16686:31944/TCP <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如上所示，默认情况下，<code>jaeger-query</code>类型也是<code>ClusterIP</code>，为了便于访问，直接修改成<code>NodePort</code>类型:</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl edit svc jaeger-query  -n istio-system<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>然后访问<code>IP:31944</code>即可。</p>
+<h3 id="UI预览"><a href="#UI预览" class="headerlink" title="UI预览"></a>UI预览</h3><p><img data-src="/images/jaeger1.jpg" alt="Jaeger UI"><br><img data-src="/images/jaeger2.jpg" alt="Jaeger UI"><br><img data-src="/images/jaeger3.jpg" alt="Jaeger UI"></p>
+<h3 id="采集频率控制"><a href="#采集频率控制" class="headerlink" title="采集频率控制"></a>采集频率控制</h3><p>如果所有的请求都采集监控，不管出于性能考虑还是资源考虑，都是不实际的。</p>
+<p><code>pilot</code>组件中<code>PILOT_TRACE_SAMPLING</code>环境变量用于控制采集率，默认为<code>1</code>（<code>0~100</code>），测试的时候可以改大点便于分析:</p>
+<pre class="line-numbers language-bash"><code class="language-bash"> kubectl -n istio-system get deploy istio-pilot -oyaml <span class="token operator">|</span> <span class="token function">grep</span> PILOT_TRACE_SAMPLING -A5
+
+--
+        - name: PILOT_TRACE_SAMPLING
+          value: <span class="token string">"1"</span>
+        - name: PILOT_ENABLE_PROTOCOL_SNIFFING_FOR_OUTBOUND
+          value: <span class="token string">"true"</span>
+        - name: PILOT_ENABLE_PROTOCOL_SNIFFING_FOR_INBOUND
+          value: <span class="token string">"false"</span>
+---<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="监控数据采集存储"><a href="#监控数据采集存储" class="headerlink" title="监控数据采集存储"></a>监控数据采集存储</h3><p>参考<a href="https://blog.csdn.net/wzy_168/article/details/103699618" target="_blank" rel="noopener">控制台kiali配置</a>，其中配置了<code>Prometheus</code>和<code>grafana</code>。参考<a href="https://cloud.tencent.com/developer/article/1435739" target="_blank" rel="noopener">Istio链路监控和监控可视化</a></p>
+<ul>
+<li><code>prometheus</code>作为基础数据采集和存储方式，可以通过<code>PromQL</code>查询指标。</li>
+<li><code>grafana</code>可定制化报表展示。</li>
+</ul>
+<p><img data-src="/images/istio1.jpg" alt="grafana"></p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/logback-pei-zhi-wen-jian-mo-ban/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/logback-pei-zhi-wen-jian-mo-ban/" class="post-title-link" itemprop="url">logback配置文件模板</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-25 16:30:22" itemprop="dateCreated datePublished" datetime="2019-12-25T16:30:22+08:00">2019-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 13:42:34" itemprop="dateModified" datetime="2020-04-15T13:42:34+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Logback默认配置的步骤"><a href="#Logback默认配置的步骤" class="headerlink" title="Logback默认配置的步骤"></a>Logback默认配置的步骤</h2><ol>
+<li>尝试在 classpath下查找文件logback-test.xml；</li>
+<li>如果文件不存在，则查找文件logback.xml；</li>
+<li>如果两个文件都不存在，logback用BasicConfigurator自动对自己进行配置，这会导致记录输出到控制台。</li>
+</ol>
+<h2 id="logback配置文件模板"><a href="#logback配置文件模板" class="headerlink" title="logback配置文件模板"></a>logback配置文件模板</h2><pre class="line-numbers language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="UTF-8"?></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>statusListener</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.status.NopStatusListener<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ROOT<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>./logs/<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILESIZE<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>100MB<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>MAXHISTORY<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>30<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timestamp</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>DATETIME<span class="token punctuation">"</span></span> <span class="token attr-name">datePattern</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>yyyy-MM-dd HH:mm:ss<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token comment" spellcheck="true">&lt;!-- 控制台打印 --></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>STDOUT<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.ConsoleAppender<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>encoder</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pattern</span><span class="token punctuation">></span></span>[%-5level] %d{yyyy-MM-dd HH:mm:ss:SSS} [%thread] %logger{36} - %m%n<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pattern</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>encoder</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appender</span><span class="token punctuation">></span></span>
+    <span class="token comment" spellcheck="true">&lt;!-- 输入到文件，按日期和文件大小 --></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILEOUT<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.RollingFileAppender<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>encoder</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pattern</span><span class="token punctuation">></span></span>[%-5level] %d{yyyy-MM-dd HH:mm:ss:SSS} [%thread] %logger{36} - %m%n<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pattern</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>encoder</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>rollingPolicy</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.TimeBasedRollingPolicy<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>fileNamePattern</span><span class="token punctuation">></span></span>${ROOT}/log.%d.%i.log<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>fileNamePattern</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>maxHistory</span><span class="token punctuation">></span></span>${MAXHISTORY}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>maxHistory</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timeBasedFileNamingAndTriggeringPolicy</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>maxFileSize</span><span class="token punctuation">></span></span>${FILESIZE}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>maxFileSize</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>timeBasedFileNamingAndTriggeringPolicy</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>rollingPolicy</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appender</span><span class="token punctuation">></span></span>
+    <span class="token comment" spellcheck="true">&lt;!-- Logger 根目录 --></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>root</span> <span class="token attr-name">level</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>INFO<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>STDOUT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILEOUT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>root</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio/" class="post-title-link" itemprop="url">istio简介</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-25 16:30:22" itemprop="dateCreated datePublished" datetime="2019-12-25T16:30:22+08:00">2019-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-12-26 11:22:07" itemprop="dateModified" datetime="2019-12-26T11:22:07+08:00">2019-12-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Istio简介"><a href="#Istio简介" class="headerlink" title="Istio简介"></a>Istio简介</h2><p>Istio是一个开放服务网格，提供了一种连接，管理和保护微服务的统一方法。它支持管理服务之间的流量，执行访问策略以及汇总遥测数据，所有这些都无需更改微服务代码。<br>Istio：</p>
+<ul>
+<li>HTTP，gRPC，WebSocket，MongoDB和TCP通信的自动负载平衡。  </li>
+<li>通过丰富的路由规则，重试，故障转移和故障注入对流量行为进行细粒度控制。  </li>
+<li>可配置的策略层和API，支持访问控制，速率限制和配额。  </li>
+<li>群集内所有流量的自动指标，日志和跟踪，包括群集入口和出口。  </li>
+<li>通过强大的基于身份的身份验证和授权，在群集中进行安全的服务间通信。  </li>
+</ul>
+<h2 id="Istio架构图"><a href="#Istio架构图" class="headerlink" title="Istio架构图"></a>Istio架构图</h2><p><img data-src="/images/istio.jpg" alt="istio" title="istio架构图"></p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-dashboard-kiali/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-shi-yong-dashboard-kiali/" class="post-title-link" itemprop="url">Istio使用【dashboard—kiali】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-25 15:38:30" itemprop="dateCreated datePublished" datetime="2019-12-25T15:38:30+08:00">2019-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 11:42:14" itemprop="dateModified" datetime="2020-04-15T11:42:14+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>本文使用的istio版本号：<code>1.4.2</code></p>
+</blockquote>
+<h3 id="配置安装kiali"><a href="#配置安装kiali" class="headerlink" title="配置安装kiali"></a>配置安装kiali</h3><p>默认配置，istio并未选择安装kiali，参考上一章<a href="">安装</a>，修改<code>values.yaml</code></p>
+<pre class="line-numbers language-sh"><code class="language-sh">vim install/kubernetes/helm/istio/values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-yml"><code class="language-yml"># ....
+kiali:
+  enabled: true
+# ....<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同时如果需要链路监控，需要开启安装<code>jaeger</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">#....
+tracing:
+  enabled: true
+#....<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果系统中没有安装<code>grafana</code>和<code>Prometheus</code>，也需要开启</p>
+<pre class="line-numbers language-yml"><code class="language-yml">#.....
+grafana:
+  enabled: true
+
+prometheus:
+  enabled: true
+#.....<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置kiali"><a href="#配置kiali" class="headerlink" title="配置kiali"></a>配置kiali</h3><p>可以在安装前配置好<code>kaili</code>，主要配置集中在</p>
+<pre><code>vim install/kubernetes/helm/istio/charts/kiali/values.yaml</code></pre><pre class="line-numbers language-yml"><code class="language-yml">#......
+ingress:
+  enabled: false
+  hosts:
+    - kiali.local
+
+dashboard:
+  auth:
+    strategy: login
+  secretName: kiali 
+  viewOnlyMode: false 
+  grafanaURL:  
+  jaegerURL:  
+prometheusAddr: http://prometheus:9090
+#.....<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>配置访问：ingress是否开启，hosts地址，tls…</li>
+<li><code>strategy</code>：认证策略，可以是anonymous, login, openshift，默认login</li>
+<li><code>secretName</code>：登录用户名/密码，需要提前创建好secret<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: Secret
+metadata:
+name: kiali
+labels:
+  app: kiali
+  version: v1.9
+type: Opaque
+data:
+username: YWRtaW4=    # admin
+passphrase: YWRtaW4=    # admin<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh">#base64 加密
+echo -n "admin" | base64<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li><p>grafanaURL：grafana地址，如果是在同一个namespace下，可以是</p>
+<pre><code>http://grafana:3000 或者 http://grafana.monitoring.svc.cluster.local:3000</code></pre></li>
+<li><p>prometheusAddr：Prometheus地址，如果是在同一个namespace下，可以是</p>
+<pre><code>http://prometheus:9090 或者 http://prometheus.monitoring.svc.cluster.local:9090</code></pre></li>
+<li><p>jaegerURL：jaeger地址，默认在同一个namespace istio-system下，可以是</p>
+<pre><code>http://jaeger-query:16686/jaeger</code></pre></li>
+</ul>
+<p>如果是在安装后，想要修改kiali配置，可以修改<code>istio-system</code>下<code>configmap</code> <code>kiali</code></p>
+<pre><code>kubectl edit cm  kiali   -n istio-system</code></pre><p>修改<code>configmap</code>里面的<code>config.yaml</code>文件，对应的</p>
+<pre class="line-numbers language-yml"><code class="language-yml">istio_namespace: istio-system
+deployment:
+  accessible_namespaces: ['**']
+auth:
+  strategy: login
+server:
+  port: 20001
+  web_root: /kiali
+external_services:
+  tracing:
+    url: http://jaeger-query:16686/jaeger
+  grafana:
+    url: http://grafana:3000
+  prometheus:
+    url: http://prometheus:9090<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>修改完需要重启<code>kiali POD</code>。</p>
+<h3 id="预览"><a href="#预览" class="headerlink" title="预览"></a>预览</h3><p><img data-src="/images/istio4.png" alt="istio"></p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-dashboard-naftis/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -347,784 +1091,10 @@ kubectl -n naftis port-forward $(kubectl -n naftis get pod -l app=naftis-ui -o j
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-sidecar-zhu-ru/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/istio-shi-yong-sidecar-zhu-ru/" class="post-title-link" itemprop="url">Istio使用【sidecar注入】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-25 11:29:41" itemprop="dateCreated datePublished" datetime="2019-12-25T11:29:41+08:00">2019-12-25</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-01-09 15:04:42" itemprop="dateModified" datetime="2020-01-09T15:04:42+08:00">2020-01-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p><strong>本文使用的istio版本：<code>1.4.2</code></strong></p>
-</blockquote>
-<h3 id="查看默认sidecar配置"><a href="#查看默认sidecar配置" class="headerlink" title="查看默认sidecar配置"></a>查看默认sidecar配置</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml <span class="token operator">|</span> <span class="token function">grep</span> <span class="token string">"namespaceSelector:"</span> -A5
-
-  namespaceSelector:
-    matchLabels:
-      istio-injection: enabled
-  objectSelector: <span class="token punctuation">{</span><span class="token punctuation">}</span>
-  reinvocationPolicy: Never
-  rules:<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>可以看出，<code>istio</code>默认<code>sidecar</code>注入规则是，<code>namespace</code>带有标签<code>istio-injection: enabled</code>才会注入sidecar。</p>
-<p>查看哪些<code>namespace</code>已经配置注入：</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get namespace -L istio-injection</span>
-NAME              STATUS   AGE   ISTIO-INJECTION
-default           Active   70d   
-ingress-nginx     Active   69d   
-istio-system      Active   19h   
-kube-node-lease   Active   70d   
-kube-public       Active   70d   
-kube-system       Active   70d   
-naftis            Active   19h   
-test-deri         Active   47d <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>为<code>namespace</code>打上注入<code>sidecar</code>标签：</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection<span class="token operator">=</span>enabled --overwrite<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>默认情况，是没有设置。</p>
-<h3 id="为namespace设置不注入sidecar"><a href="#为namespace设置不注入sidecar" class="headerlink" title="为namespace设置不注入sidecar"></a>为namespace设置不注入sidecar</h3><p>有些k8s系统组件<code>namespace</code>不应该注入<code>sidecar</code>，如<code>kube-system</code>等，参考如下设置</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml <span class="token operator">|</span> <span class="token function">grep</span> <span class="token string">"namespaceSelector:"</span> -A5
-
-  namespaceSelector:
-    matchExpressions:
-    - key: istio-injection
-      operator: NotIn
-      values:
-      - disabled
-  rules:
-  - apiGroups:
-    - <span class="token string">""</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>为<code>namespace</code>打上不注入<code>sidecar</code>标签:</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace istio-system istio-injection<span class="token operator">=</span>disabled --overwrite<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl get namespace -L istio-injection
-NAME           STATUS    AGE       ISTIO-INJECTION
-default        Active    18d
-istio-system   Active    3d        disabled
-kube-public    Active    18d       disabled
-kube-system    Active    18d       disabled<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="查看sidecar配置策略"><a href="#查看sidecar配置策略" class="headerlink" title="查看sidecar配置策略"></a>查看sidecar配置策略</h3><p><code>sidecar</code>配置保存在<code>configmap-istio-sidecar-injector</code>中，更多配置可以在<code>install/kubernetes/helm/istio/charts/sidecarInjectorWebhook/values.yaml</code>中查看。</p>
-<p>主要配置，默认策略：</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl -n istio-system get configmap istio-sidecar-injector -o jsonpath<span class="token operator">=</span><span class="token string">'{.data.config}'</span> <span class="token operator">|</span> <span class="token function">grep</span> policy:<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>允许的值为<code>disabled</code>和<code>enabled</code>。仅当<code>Webhook namespaceSelector</code>匹配目标名称空间时，才应用默认策略。无法识别的策略导致注入被完全禁用。</p>
-<blockquote>
-<p><font color="red">注意</font>：①策略为<code>disabled</code>，但是想要为POD注入<code>sidecar</code>，增加<code>annotation sidecar.istio.io/inject: "true"</code>即可<br> ②策略为<code>enabled</code>，但是不想要为POD注入<code>sidecar</code>，增加<code>annotation sidecar.istio.io/inject: "false"</code>即可</p>
-</blockquote>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> ignored
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">template</span><span class="token punctuation">:</span>
-    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-      <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-        <span class="token key atrule">sidecar.istio.io/inject</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
-    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
-      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ignored
-        <span class="token key atrule">image</span><span class="token punctuation">:</span> tutum/curl
-        <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sleep"</span><span class="token punctuation">,</span><span class="token string">"infinity"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="手动注入sidecar"><a href="#手动注入sidecar" class="headerlink" title="手动注入sidecar"></a>手动注入<code>sidecar</code></h3><p>为一个写好的yaml文件手动注入sidecar，我们可以使用<code>istioctl kube-inject</code>:</p>
-<pre class="line-numbers language-bash"><code class="language-bash">istioctl kube-inject -f samples/sleep/sleep.yaml <span class="token operator">|</span> kubectl apply -f -<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>默认情况下，这将使用集群内配置。或者，可以使用配置的本地副本来完成注入。下面命令可以将默认配置导出到文件：</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl -n istio-system get configmap istio-sidecar-injector -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.config}'</span> <span class="token operator">></span> inject-config.yaml
-kubectl -n istio-system get configmap istio-sidecar-injector -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.values}'</span> <span class="token operator">></span> inject-values.yaml
-kubectl -n istio-system get configmap istio -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.mesh}'</span> <span class="token operator">></span> mesh-config.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>然后再将文件中配置注入到已建好的<code>YAML</code>中并运行：</p>
-<pre class="line-numbers language-bash"><code class="language-bash">istioctl kube-inject \
-    --injectConfigFile inject-config.yaml \
-    --meshConfigFile mesh-config.yaml \
-    --valuesFile inject-values.yaml \
-    --filename samples/sleep/sleep.yaml \
-    <span class="token operator">|</span> kubectl apply -f -<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>这和第一条命令效果一样。验证<code>sidecar</code>已经注入：</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl get pod  -l app<span class="token operator">=</span>sleep
-NAME                     READY   STATUS    RESTARTS   AGE
-sleep-64c6f57bc8-f5n4x   2/2     Running   0          24s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="其它配置：neverInjectSelector-alwaysInjectSelector"><a href="#其它配置：neverInjectSelector-alwaysInjectSelector" class="headerlink" title="其它配置：neverInjectSelector/alwaysInjectSelector"></a>其它配置：<code>neverInjectSelector/alwaysInjectSelector</code></h3><p>参考<a href="https://istio.io/docs/setup/additional-setup/sidecar-injection/#more-control-adding-exceptions" target="_blank" rel="noopener">官网</a></p>
-<p>示例：</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> ConfigMap
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> istio<span class="token punctuation">-</span>sidecar<span class="token punctuation">-</span>injector
-<span class="token key atrule">data</span><span class="token punctuation">:</span>
-  <span class="token key atrule">config</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token punctuation">-</span>
-    <span class="token key atrule">policy</span><span class="token punctuation">:</span> enabled
-    <span class="token key atrule">neverInjectSelector</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">matchExpressions</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token punctuation">{</span><span class="token key atrule">key</span><span class="token punctuation">:</span> openshift.io/build.name<span class="token punctuation">,</span> <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists<span class="token punctuation">}</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">matchExpressions</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token punctuation">{</span><span class="token key atrule">key</span><span class="token punctuation">:</span> openshift.io/deployer<span class="token punctuation">-</span>pod<span class="token punctuation">-</span>for.name<span class="token punctuation">,</span> <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists<span class="token punctuation">}</span>
-    <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token punctuation">-</span>
-      <span class="token key atrule">initContainers</span><span class="token punctuation">:</span>
-<span class="token punctuation">...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置优先级"><a href="#配置优先级" class="headerlink" title="配置优先级"></a>配置优先级</h3><p>如果<code>POD</code>配置了<code>注解</code>、<code>neverInjectSelector/alwaysInjectSelector</code>也都配置了，默认策略也配置了，那么他们之间的优先级参考如下：</p>
-<pre><code>Pod Annotations → NeverInjectSelector → AlwaysInjectSelector → Default Policy</code></pre><h3 id="卸载自动注入sidecar"><a href="#卸载自动注入sidecar" class="headerlink" title="卸载自动注入sidecar"></a>卸载自动注入sidecar</h3><h4 id="卸载istio中sidecar组件"><a href="#卸载istio中sidecar组件" class="headerlink" title="卸载istio中sidecar组件"></a>卸载istio中sidecar组件</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl delete mutatingwebhookconfiguration istio-sidecar-injector
-kubectl -n istio-system delete <span class="token function">service</span> istio-sidecar-injector
-kubectl -n istio-system delete deployment istio-sidecar-injector
-kubectl -n istio-system delete serviceaccount istio-sidecar-injector-service-account
-kubectl delete clusterrole istio-sidecar-injector-istio-system
-kubectl delete clusterrolebinding istio-sidecar-injector-admin-role-binding-istio-system<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="删除某个namespace自动注入"><a href="#删除某个namespace自动注入" class="headerlink" title="删除某个namespace自动注入"></a>删除某个namespace自动注入</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="sidecar注入问题"><a href="#sidecar注入问题" class="headerlink" title="sidecar注入问题"></a>sidecar注入问题</h3><p>更多可以参考<a href="https://istio.io/docs/ops/common-problems/injection/" target="_blank" rel="noopener">官网</a>.</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-an-zhuang-pei-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/istio-shi-yong-an-zhuang-pei-zhi/" class="post-title-link" itemprop="url">istio使用【安装配置】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-25 10:32:38" itemprop="dateCreated datePublished" datetime="2019-12-25T10:32:38+08:00">2019-12-25</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 11:30:14" itemprop="dateModified" datetime="2020-04-15T11:30:14+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>本文使用的版本号：<code>1.4.2</code></p>
-</blockquote>
-<h3 id="自定义安装组件"><a href="#自定义安装组件" class="headerlink" title="自定义安装组件"></a>自定义安装组件</h3><p>参考<a href="https://istio.io/docs/setup/install/helm/" target="_blank" rel="noopener">安装页面</a>，官网给配置分了几个级别，</p>
-<p><img data-src="/images/k8s9.png" alt="istio"></p>
-<p>分别代表：</p>
-<ul>
-<li>default：根据IstioControlPlaneAPI的默认设置启用组件 （建议用于生产部署）。您可以通过运行命令显示默认设置istioctl profile dump。</li>
-<li>demo：旨在展示Istio功能且资源需求适中的配置。适合运行Bookinfo应用程序和相关任务。这是随快速入门说明一起安装的配置，但是 如果您想探索更高级的任务，则可以稍后自定义配置以启用其他功能。<blockquote>
-<p>此配置文件可实现高级别的跟踪和访问日志记录，因此不适合进行性能测试。</p>
-</blockquote>
-</li>
-<li>minimal：使用Istio的流量管理功能所需的最少组件集。</li>
-<li>sds：类似于默认配置文件，但也启用Istio的SDS（​​秘密发现服务）。此配置文件附带默认情况下启用的其他身份验证功能（严格双向TLS）。</li>
-<li>remote：用于配置共享控制平面的多集群服务网格multicluster mesh。</li>
-</ul>
-<p>不同配置安装的的组件也不一样，参考<a href="https://istio.io/docs/setup/additional-setup/config-profiles/" target="_blank" rel="noopener">配置</a>，打<code>X</code>是要安装的<br><img data-src="/images/k8s10.png" alt="istio"></p>
-<p>当然我们也可以自定义安装组件</p>
-<pre><code>cd install/kubernetes/helm/istio
-vim values.yaml</code></pre><pre class="line-numbers language-yml"><code class="language-yml">gateways:
-  enabled: true
-
-sidecarInjectorWebhook:
-  enabled: true
-
-galley:
-  enabled: true
-
-mixer:
-  policy:
-    enabled: true
-
-  telemetry:
-    enabled: true
-
-pilot:
-  enabled: true
-
-security:
-  enabled: true
-
-nodeagent:
-  enabled: false
-
-grafana:
-  enabled: false
-
-prometheus:
-  enabled: true
-
-tracing:
-  enabled: false
-
-kiali:
-  enabled: false
-
-certmanager:
-  enabled: false
-
-istio_cni:
-  enabled: false
-
-istiocoredns:
-  enabled: false
-
-# ...<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>可以将我们需要安装的组件定义为<code>true</code>之后，参考<a href="">部署</a>再安装。</p>
-<p>所有的配置说明参考<a href="https://istio.io/docs/reference/config/installation-options/" target="_blank" rel="noopener">官网配置选项</a>.</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-bu-shu-zai-kubernetes-shang-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/istio-bu-shu-zai-kubernetes-shang-bu-shu/" class="post-title-link" itemprop="url">istio部署【在kubernetes上部署】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-24 17:23:08" itemprop="dateCreated datePublished" datetime="2019-12-24T17:23:08+08:00">2019-12-24</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:41:06" itemprop="dateModified" datetime="2020-04-15T13:41:06+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><h3 id="下载istio"><a href="#下载istio" class="headerlink" title="下载istio"></a>下载istio</h3><p>下载页面，下载与您的操作系统相对应的安装文件。Linux上可以直接执行下面命令下载并解压最新版</p>
-<pre><code>curl -L https://istio.io/downloadIstio | sh -</code></pre><h3 id="移至Istio软件包目录"><a href="#移至Istio软件包目录" class="headerlink" title="移至Istio软件包目录"></a>移至Istio软件包目录</h3><p>例如，如果软件包为 <code>istio-1.4.2</code>：</p>
-<pre><code>cd istio-1.4.2</code></pre><h3 id="安装目录包含："><a href="#安装目录包含：" class="headerlink" title="安装目录包含："></a>安装目录包含：</h3><ul>
-<li><code>Kubernetes</code>的安装<code>YAML</code>文件在 <code>install/kubernetes</code></li>
-<li>示例应用程序 <code>samples/</code></li>
-<li>目录中的客户端二进制文件。手动注入<code>Envoy</code>作为<code>Sidecar</code>代理时使用。<code>istioctlbin/istioctl</code></li>
-<li>将<code>istioctl</code>命令添加到环境变量，如下命令是临时加入<pre><code>export PATH=$PWD/bin:$PATH</code></pre></li>
-</ul>
-<h2 id="两种安装方式"><a href="#两种安装方式" class="headerlink" title="两种安装方式"></a>两种安装方式</h2><p>istio在kubenetes上有两种安装方式，参考<a href="https://istio.io/docs/setup/install/helm/" target="_blank" rel="noopener">官网</a></p>
-<h3 id="helm-template方式安装Istio"><a href="#helm-template方式安装Istio" class="headerlink" title="helm template方式安装Istio"></a>helm template方式安装Istio</h3><h4 id="创建namespace"><a href="#创建namespace" class="headerlink" title="创建namespace"></a>创建namespace</h4><pre><code>kubectl create namespace istio-system</code></pre><h4 id="安装所有istio的CRD"><a href="#安装所有istio的CRD" class="headerlink" title="安装所有istio的CRD"></a>安装所有istio的CRD</h4><p>先将<code>template</code>导出到<code>istio.yaml</code></p>
-<pre><code>helm template install/kubernetes/helm/istio-init --name istio-init --namespace istio-system &gt; istio.yaml</code></pre><p>然后执行</p>
-<pre><code>kubectl apply -f istio.yaml</code></pre><p>或者，两个步骤合二为一 </p>
-<pre><code>helm template install/kubernetes/helm/istio-init --name istio-init --namespace istio-system | kubectl apply -f -</code></pre><h4 id="等待所有CRD创建完毕"><a href="#等待所有CRD创建完毕" class="headerlink" title="等待所有CRD创建完毕"></a>等待所有CRD创建完毕</h4><pre><code>kubectl -n istio-system wait --for=condition=complete job --all</code></pre><h4 id="使用默认配置安装isito，其它配置参考官网，同上，命令也可以分开执行"><a href="#使用默认配置安装isito，其它配置参考官网，同上，命令也可以分开执行" class="headerlink" title="使用默认配置安装isito，其它配置参考官网，同上，命令也可以分开执行"></a>使用默认配置安装isito，其它配置参考官网，同上，命令也可以分开执行</h4><pre><code>helm template install/kubernetes/helm/istio --name istio --namespace istio-system | kubectl apply -f -</code></pre><h3 id="helm-install方式安装Istio"><a href="#helm-install方式安装Istio" class="headerlink" title="helm install方式安装Istio"></a>helm install方式安装Istio</h3><h4 id="为Tiller创建service-account，如果已安装好Tiller直接跳过。"><a href="#为Tiller创建service-account，如果已安装好Tiller直接跳过。" class="headerlink" title="为Tiller创建service-account，如果已安装好Tiller直接跳过。"></a>为Tiller创建service-account，如果已安装好Tiller直接跳过。</h4><pre><code>kubectl apply -f install/kubernetes/helm/helm-service-account.yaml</code></pre><h4 id="安装Tiller，如果已安装好Tiller直接跳过。"><a href="#安装Tiller，如果已安装好Tiller直接跳过。" class="headerlink" title="安装Tiller，如果已安装好Tiller直接跳过。"></a>安装Tiller，如果已安装好Tiller直接跳过。</h4><pre><code>helm init --service-account tiller</code></pre><h4 id="安装istio-init，其中包括了创建istio的CRDs。"><a href="#安装istio-init，其中包括了创建istio的CRDs。" class="headerlink" title="安装istio-init，其中包括了创建istio的CRDs。"></a>安装istio-init，其中包括了创建istio的CRDs。</h4><pre><code>helm install install/kubernetes/helm/istio-init --name istio-init --namespace istio-system</code></pre><h4 id="等待CRD创建完成。"><a href="#等待CRD创建完成。" class="headerlink" title="等待CRD创建完成。"></a>等待CRD创建完成。</h4><pre><code>kubectl -n istio-system wait --for=condition=complete job --all</code></pre><h4 id="使用默认配置安装istio，其它配置参考官网"><a href="#使用默认配置安装istio，其它配置参考官网" class="headerlink" title="使用默认配置安装istio，其它配置参考官网"></a>使用默认配置安装istio，其它配置参考官网</h4><pre><code>helm install install/kubernetes/helm/istio --name istio --namespace istio-system</code></pre><h4 id="确定安装完成"><a href="#确定安装完成" class="headerlink" title="确定安装完成"></a>确定安装完成</h4><pre><code>kubectl get svc -n istio-system</code></pre><pre><code>kubectl get pods -n istio-system</code></pre><h2 id="卸载Istio"><a href="#卸载Istio" class="headerlink" title="卸载Istio"></a>卸载Istio</h2><h3 id="使用helm-template安装方式卸载"><a href="#使用helm-template安装方式卸载" class="headerlink" title="使用helm template安装方式卸载"></a>使用helm template安装方式卸载</h3><pre><code>helm template install/kubernetes/helm/istio --name istio --namespace istio-system | kubectl delete -f -
-
-kubectl delete namespace istio-system</code></pre><h3 id="使用helm-install安装方式卸载"><a href="#使用helm-install安装方式卸载" class="headerlink" title="使用helm install安装方式卸载"></a>使用helm install安装方式卸载</h3><pre><code>helm delete --purge istio
-helm delete --purge istio-init
-helm delete --purge istio-cni
-kubectl delete namespace istio-system</code></pre><h3 id="删除CRDs"><a href="#删除CRDs" class="headerlink" title="删除CRDs"></a>删除CRDs</h3><pre><code>kubectl delete -f install/kubernetes/helm/istio-init/files</code></pre><p>以上就是通过默认配置安装和卸载istio。</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kai-fang-fen-bu-shi-zhui-zong-opentracing-yu-jaeger-xiang-guan-wen-dang-zheng-li/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/kai-fang-fen-bu-shi-zhui-zong-opentracing-yu-jaeger-xiang-guan-wen-dang-zheng-li/" class="post-title-link" itemprop="url">开放分布式追踪OpenTracing与Jaeger相关文档整理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-18 10:36:11" itemprop="dateCreated datePublished" datetime="2019-12-18T10:36:11+08:00">2019-12-18</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:38:25" itemprop="dateModified" datetime="2020-04-15T13:38:25+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="为什么需要服务追踪？"><a href="#为什么需要服务追踪？" class="headerlink" title="为什么需要服务追踪？"></a>为什么需要服务追踪？</h1><p>开发和工程团队因为系统组件水平扩展、开发团队小型化、敏捷开发、CD（持续集成）、解耦等各种需求，正在使用现代的微服务架构替换老旧的单片机系统，当一个生产系统面对真正的高并发，或者解耦成大量微服务时，以前很容易实现的重点任务变得困难了，如<strong>用户体验优化</strong>、<strong>后台真实错误原因分析</strong>，<strong>分布式系统内各组件的调用情况</strong>等。 </p>
-<h1 id="分布式服务追踪现状"><a href="#分布式服务追踪现状" class="headerlink" title="分布式服务追踪现状"></a>分布式服务追踪现状</h1><p>当代分布式跟踪系统（例如，<code>Zipkin</code>, <code>Dapper</code>, <code>HTrace</code>, <code>X-Trace</code>等）旨在解决这些问题，但是他们使用不兼容的<code>API</code>来实现各自的应用需求。尽管这些分布式追踪系统有着相似的API语法，但各种语言的开发人员依然很难将他们各自的系统（使用不同的语言和技术）和特定的分布式追踪系统进行整合。</p>
-<h1 id="OpenTracing"><a href="#OpenTracing" class="headerlink" title="OpenTracing"></a>OpenTracing</h1><p>OpenTracing通过提供平台无关、厂商无关的API，使得开发人员能够方便的添加（或更换）追踪系统的实现。 OpenTracing提供了用于运营支撑系统的和针对特定平台的辅助程序库。</p>
-<h1 id="典型服务追踪案例"><a href="#典型服务追踪案例" class="headerlink" title="典型服务追踪案例"></a>典型服务追踪案例</h1><p><img data-src="/images/ot1.png" alt="案例"></p>
-<p>在一个分布式系统中，追踪一个事务或者调用流一般如上图所示。虽然这种图对于看清各组件的组合关系是很有用的，但是，它不能很好显示组件的调用时间，是串行调用还是并行调用，如果展现更复杂的调用关系，会更加复杂，甚至无法画出这样的图。这种图也无法显示调用间的时间间隔以及是否通过定时调用来启动调用.</p>
-<p><img data-src="/images/ot2.png" alt="案例"></p>
-<p>这种展现方式增加显示了执行时间的上下文，相关服务间的层次关系，进程或者任务的串行或并行调用关系。这样的视图有助于发现系统调用的关键路径。通过关注关键路径的执行过程，项目团队可能专注于优化路径中的关键位置，最大幅度的提升系统性能。例如：可以通过追踪一个资源定位的调用情况，明确底层的调用情况，发现哪些操作有阻塞的情况。</p>
-<h1 id="Jaeger-架构"><a href="#Jaeger-架构" class="headerlink" title="Jaeger 架构"></a>Jaeger 架构</h1><p><code>Jaeger</code>是OpenTracing的一种实现。<br><img data-src="/images/jaeger.jpg" alt="jaeger"></p>
-<p>如上图所示，<code>Jaeger</code> 主要由以下几部分组成。</p>
-<ul>
-<li><strong>Jaeger Client</strong> - 为不同语言实现了符合 OpenTracing 标准的 SDK。应用程序通过 API 写入数据，client library 把 trace 信息按照应用程序指定的采样策略传递给 jaeger-agent。在 Application 中调用 Jaeger Client Library 记录 Span 的过程通常被称为埋点。</li>
-<li><strong>Agent</strong> - 它是一个监听在 UDP 端口上接收 span 数据的网络守护进程，它会将数据批量发送给 collector。它被设计成一个基础组件，部署到所有的宿主机上。Agent 将 client library 和 collector 解耦，为 client library 屏蔽了路由和发现 collector 的细节。</li>
-<li><strong>Collector</strong> - 接收 jaeger-agent 发送来的数据，然后将数据写入后端存储。Collector 被设计成无状态的组件，因此您可以同时运行任意数量的 jaeger-collector。</li>
-<li><strong>Data Store</strong> - 后端存储被设计成一个可插拔的组件，支持将数据写入 cassandra、elastic search。</li>
-<li><strong>Query</strong> - 接收查询请求，然后从后端存储系统中检索 trace 并通过 UI 进行展示。Query 是无状态的，您可以启动多个实例，把它们部署在 nginx 这样的负载均衡器后面。</li>
-</ul>
-<h1 id="Istio-Trace链路追踪方案"><a href="#Istio-Trace链路追踪方案" class="headerlink" title="Istio Trace链路追踪方案"></a>Istio Trace链路追踪方案</h1><ul>
-<li><p><code>Envoy</code>原生就支持分布式追踪系统的接入，如支持<code>jaeger</code>和<code>zipkin</code>；</p>
-</li>
-<li><p>生成<code>Request Id</code>，填充<code>HTTP</code>的<code>header</code>字段<code>x-request-id</code>;</p>
-</li>
-<li><p>如果<code>incoming</code>的请求没有trace相关的headers，则会在流量进入pods之前创建一个<code>root span</code>;</p>
-</li>
-<li><p>如果<code>incoming</code>的请求包含有trace相关的headers，Sidecar的proxy将会extract这些span的上下文信息，然后在流量进入pods之前创建一个继承上一个span的新的span;</p>
-</li>
-<li><p>Jaeger本身支持在client端调整和通过collector调整采样策略，但是在Istio中并没有Jaeger的client，只是envoy里面支持了trace，不过Istio中提供了一个全局的设置，通过设置pilot的参数可以用来控制采用策略。</p>
-</li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ri-zhi-ju-he-gong-ju-loki-an-zhuang-shi-yong-cai-yong-helm-an-zhuang/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ri-zhi-ju-he-gong-ju-loki-an-zhuang-shi-yong-cai-yong-helm-an-zhuang/" class="post-title-link" itemprop="url">日志聚合工具Loki安装使用【采用helm安装】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-17 11:01:31" itemprop="dateCreated datePublished" datetime="2019-12-17T11:01:31+08:00">2019-12-17</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:38:44" itemprop="dateModified" datetime="2020-04-15T13:38:44+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>Loki是 Grafana Labs 团队最新的开源项目，是一个水平可扩展，高可用性，多租户的日志聚合系统。它的设计非常经济高效且易于操作，因为它不会为日志内容编制索引，而是为每个日志流编制一组标签。项目受 Prometheus 启发，官方的介绍就是：Like Prometheus, but for logs.，类似于 Prometheus 的日志系统。</p>
-<p>与其他日志聚合系统相比，Loki具有下面的一些特性：</p>
-<ul>
-<li>不对日志进行全文索引。通过存储压缩非结构化日志和仅索引元数据，Loki 操作起来会更简单，更省成本。</li>
-<li>通过使用与 Prometheus 相同的标签记录流对日志进行索引和分组，这使得日志的扩展和操作效率更高。</li>
-<li>特别适合储存 Kubernetes Pod 日志; 诸如 Pod 标签之类的元数据会被自动删除和编入索引。</li>
-<li>受 Grafana 原生支持。</li>
-</ul>
-<p>Loki 由以下3个部分组成：<br><img data-src="/images/loki.png" alt="Loki"></p>
-<ol>
-<li>loki是主服务器，负责存储日志和处理查询。</li>
-<li>promtail是代理，负责收集日志并将其发送给 loki 。</li>
-<li>Grafana用于 UI 展示。</li>
-</ol>
-<h3 id="Loki安装"><a href="#Loki安装" class="headerlink" title="Loki安装"></a>Loki安装</h3><p>参考<a href="https://github.com/grafana/loki/blob/master/docs/installation/helm.md" target="_blank" rel="noopener">官网</a></p>
-<h4 id="添加-更新helm"><a href="#添加-更新helm" class="headerlink" title="添加/更新helm"></a>添加/更新helm</h4><pre class="line-numbers language-bash"><code class="language-bash">helm repo add loki https://grafana.github.io/loki/charts
-helm repo update<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h4 id="安装loki（使用默认配置）"><a href="#安装loki（使用默认配置）" class="headerlink" title="安装loki（使用默认配置）"></a>安装loki（使用默认配置）</h4><pre class="line-numbers language-bash"><code class="language-bash">helm upgrade --install loki loki/loki-stack<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h4 id="安装loki（设置namespace）"><a href="#安装loki（设置namespace）" class="headerlink" title="安装loki（设置namespace）"></a>安装loki（设置namespace）</h4><pre class="line-numbers language-bash"><code class="language-bash">helm upgrade --install loki --namespace<span class="token operator">=</span>loki loki/loki<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h4 id="安装loki（更改一些配置）"><a href="#安装loki（更改一些配置）" class="headerlink" title="安装loki（更改一些配置）"></a>安装loki（更改一些配置）</h4><pre class="line-numbers language-bash"><code class="language-bash">helm upgrade --install loki loki/loki-stack  --set grafana.enabled<span class="token operator">=</span>true,prometheus.enabled<span class="token operator">=</span>true,prometheus.alertmanager.persistentVolume.enabled<span class="token operator">=</span>false,prometheus.server.persistentVolume.enabled<span class="token operator">=</span>false<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<blockquote>
-<p>这边loki使用的镜像是<code>grafana/loki:v1.2.0</code>，建议提前拉取下来。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker pull grafana/loki:v1.2.0<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>其它一些信息，可以参考官网配置。</p>
-</blockquote>
-<h3 id="Promtail安装"><a href="#Promtail安装" class="headerlink" title="Promtail安装"></a>Promtail安装</h3><p>参考<a href="https://github.com/grafana/loki/blob/master/docs/clients/promtail/installation.md" target="_blank" rel="noopener">官网</a></p>
-<pre class="line-numbers language-bash"><code class="language-bash">helm upgrade --install promtail loki/promtail --set <span class="token string">"loki.serviceName=loki"</span> --namespace<span class="token operator">=</span>loki<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<blockquote>
-<p>这边loki使用的镜像是<code>grafana/promtail:v1.2.0</code>，建议提前拉取下来。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker pull grafana/promtail:v1.2.0<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>其它一些信息，可以参考官网配置。</p>
-</blockquote>
-<h3 id="集成Grafana，实现页面查询日志"><a href="#集成Grafana，实现页面查询日志" class="headerlink" title="集成Grafana，实现页面查询日志"></a>集成Grafana，实现页面查询日志</h3><blockquote>
-<p>前文使用<a href="">Helm一键安装Prometheus Operator</a>已经安装了grafana服务，我们可以直接使用。</p>
-</blockquote>
-<h4 id="登录grafana，选择添加数据源"><a href="#登录grafana，选择添加数据源" class="headerlink" title="登录grafana，选择添加数据源"></a>登录grafana，选择添加数据源</h4><p><img data-src="/images/loki1.jpg" alt="添加Loki数据源"></p>
-<h4 id="数据源列表中选择Loki，配置服务地址"><a href="#数据源列表中选择Loki，配置服务地址" class="headerlink" title="数据源列表中选择Loki，配置服务地址"></a>数据源列表中选择Loki，配置服务地址</h4><blockquote>
-<p>如果<code>grafana</code>与<code>loki</code>在同一个<code>namespace</code>，只需写服务名即可。<br>如果是在不同的<code>namespace</code>，那么要写完整<code>DNS</code>地址。</p>
-</blockquote>
-<p><img data-src="/images/loki2.jpg" alt="添加Loki数据源"></p>
-<h4 id="切换到grafana左侧区域的Explore，进入loki页面"><a href="#切换到grafana左侧区域的Explore，进入loki页面" class="headerlink" title="切换到grafana左侧区域的Explore，进入loki页面"></a>切换到<code>grafana</code>左侧区域的<code>Explore</code>，进入<code>loki</code>页面</h4><p><img data-src="/images/loki3.jpg" alt="添加Loki数据源"></p>
-<p>点击Log labels就可以把当前系统采集的日志标签给显示出来，可以根据这些标签进行日志的过滤查询</p>
-<p><img data-src="/images/loki4.jpg" alt="添加Loki数据源"></p>
-<h3 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h3><pre><code>...........
-level=error ts=2019-12-17T05:43:00.189385282Z caller=filetarget.go:272 msg="failed to tail file, stat failed" error="stat /var/log/pods/kube-system_kube-flannel-ds-amd64-btn7m_5088625c-bba8-41d6-86c8-dc738d3b43ab/kube-flannel/3.log: no such file or directory" filename=/var/log/pods/kube-system_kube-flannel-ds-amd64-btn7m_5088625c-bba8-41d6-86c8-dc738d3b43ab/kube-flannel/3.log
-level=error ts=2019-12-17T05:43:00.192476724Z caller=filetarget.go:272 msg="failed to tail file, stat failed" error="stat /var/log/pods/kube-system_kube-flannel-ds-amd64-btn7m_5088625c-bba8-41d6-86c8-dc738d3b43ab/install-cni/5.log: no such file or directory" filename=/var/log/pods/kube-system_kube-flannel-ds-amd64-btn7m_5088625c-bba8-41d6-86c8-dc738d3b43ab/install-cni/5.log
-......</code></pre><p>提示找不到<code>/var/log/pods</code>目录下的日志文件，无法<code>tail</code>。</p>
-<p>首先我们可以进入<code>promtail</code>容器内，到该目录下查看下是否有该文件，通过<code>cat</code>命令看看是否有日志。</p>
-<p>默认安装<code>promtail</code>，它会将主机<code>/var/log/pods</code>和<code>/var/lib/docker/containers</code>目录通过<code>volumes</code>方式挂载到<code>promtail</code>容器内。如果安装<code>docker</code>和<code>k8s</code>都是采用默认配置，应该不会存在读不到日志的问题。</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"docker"</span><span class="token punctuation">,</span>
-    <span class="token property">"hostPath"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"path"</span><span class="token operator">:</span> <span class="token string">"/var/lib/docker/containers"</span><span class="token punctuation">,</span>
-        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">""</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"pods"</span><span class="token punctuation">,</span>
-    <span class="token property">"hostPath"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"path"</span><span class="token operator">:</span> <span class="token string">"/var/log/pods"</span><span class="token punctuation">,</span>
-        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">""</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>本人因为主机系统盘太小，设置了<code>docker</code>镜像的目录到挂载磁盘<code>/data</code>目录下，所以需要修改默认<code>volumes</code>配置。</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"docker"</span><span class="token punctuation">,</span>
-    <span class="token property">"hostPath"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"path"</span><span class="token operator">:</span> <span class="token string">"/data/docker/containers"</span><span class="token punctuation">,</span>
-        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">""</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"pods"</span><span class="token punctuation">,</span>
-    <span class="token property">"hostPath"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"path"</span><span class="token operator">:</span> <span class="token string">"/var/log/pods"</span><span class="token punctuation">,</span>
-        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">""</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-//注意对应的volumeMounts也要修改
-<span class="token property">"volumeMounts"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
-              <span class="token punctuation">{</span>
-                <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"docker"</span><span class="token punctuation">,</span>
-                <span class="token property">"readOnly"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
-                <span class="token property">"mountPath"</span><span class="token operator">:</span> <span class="token string">"/data/docker/containers"</span>
-              <span class="token punctuation">}</span><span class="token punctuation">,</span>
-              <span class="token punctuation">{</span>
-                <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"pods"</span><span class="token punctuation">,</span>
-                <span class="token property">"readOnly"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
-                <span class="token property">"mountPath"</span><span class="token operator">:</span> <span class="token string">"/var/log/pods"</span>
-              <span class="token punctuation">}</span>
-            <span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>上面<code>volumes</code>和<code>volumeMounts</code>都要修改，因为<code>/var/log/pods</code>目录下的日志文件其实是个软链接，指向的是<code>docker/containers</code>目录下的日志文件。如果只修改了<code>volumes</code>，那么<code>promtail</code>容器内可以找到日志文件，但是打开确实空的，因为它只是个软连接。</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node1 log<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># ll /var/log/pods/monitoring_promtail-bs5cs_5bc5bc90-bac9-480d-b291-4caadeff2236/promtail/</span>
-total 4
-lrwxrwxrwx 1 root root 162 Dec 17 14:04 0.log -<span class="token operator">></span> /data/docker/containers/db45d5118e9508817e1a2efa3c9da68cfe969a2b0a3ed42619ff61a29cc64e5f/db45d5118e9508817e1a2efa3c9da68cfe969a2b0a3ed42619ff61a29cc64e5f-json.log<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/36/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/36/">36</a><span class="page-number current">37</span><a class="page-number" href="/page/38/">38</a><span class="space">&hellip;</span><a class="page-number" href="/page/45/">45</a><a class="extend next" rel="next" href="/page/38/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/36/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/36/">36</a><span class="page-number current">37</span><a class="page-number" href="/page/38/">38</a><span class="space">&hellip;</span><a class="page-number" href="/page/46/">46</a><a class="extend next" rel="next" href="/page/38/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1192,20 +1162,20 @@ lrwxrwxrwx 1 root root 162 Dec 17 14:04 0.log -<span class="token operator">></s
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">269</span>
+          <span class="site-state-item-count">274</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-count">30</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">185</span>
+        <span class="site-state-item-count">187</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

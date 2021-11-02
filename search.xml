@@ -29434,4 +29434,367 @@ taos&gt; show dnodes;
         <tag>TDengine</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Elasticsearch中文分词器</title>
+    <url>/elasticsearch-zhong-wen-fen-ci-qi/</url>
+    <content><![CDATA[<h3 id="在线安装"><a href="#在线安装" class="headerlink" title="在线安装"></a>在线安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># v6.3.0版本改成es对应的版本</span>
+./bin/elasticsearch-plugin <span class="token function">install</span> https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.5.2/elasticsearch-analysis-ik-7.5.2.zip<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="离线安装"><a href="#离线安装" class="headerlink" title="离线安装"></a>离线安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">cd</span> your-es-root/plugins/ <span class="token operator">&amp;&amp;</span> <span class="token function">mkdir</span> ik
+<span class="token comment" spellcheck="true"># 解压到目录</span>
+your-es-root/plugins/ik
+<span class="token comment" spellcheck="true"># docker安装的可以本地解压后拷贝到容器</span>
+docker <span class="token function">cp</span> ik/ es:/usr/share/elasticsearch/plugins/<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>所有ES节点都需要安装!</p>
+</blockquote>
+<h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><p>Kibana打开Dev Tools:</p>
+<ul>
+<li><p>测试分词</p>
+<pre class="line-numbers language-json"><code class="language-json">// ik_max_word<span class="token operator">:</span> 会将文本做最细粒度的拆分
+GET index/_analyze
+<span class="token punctuation">{</span>
+<span class="token property">"text"</span><span class="token operator">:</span> <span class="token string">"中国早日收复台湾"</span><span class="token punctuation">,</span><span class="token property">"tokenizer"</span><span class="token operator">:</span> <span class="token string">"ik_max_word"</span>
+<span class="token punctuation">}</span>
+// ik_smart<span class="token operator">:</span> 会做最粗粒度的拆分
+GET index/_analyze
+<span class="token punctuation">{</span>
+<span class="token property">"text"</span><span class="token operator">:</span> <span class="token string">"中国早日收复台湾"</span><span class="token punctuation">,</span><span class="token property">"tokenizer"</span><span class="token operator">:</span> <span class="token string">"ik_smart"</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>读写数据</p>
+<pre class="line-numbers language-json"><code class="language-json">// 新建index
+PUT /index
+// 新建type<span class="token punctuation">,</span>如果ik分词器没有安装成功会报错
+POST index/_mapping
+<span class="token punctuation">{</span>
+<span class="token property">"properties"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"content"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"text"</span><span class="token punctuation">,</span>
+        <span class="token property">"analyzer"</span><span class="token operator">:</span> <span class="token string">"ik_max_word"</span><span class="token punctuation">,</span>
+        <span class="token property">"search_analyzer"</span><span class="token operator">:</span> <span class="token string">"ik_smart"</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+// 写入数据<span class="token number">1</span>
+POST index/_create/<span class="token number">1</span>
+<span class="token punctuation">{</span>
+<span class="token property">"content"</span><span class="token operator">:</span><span class="token string">"美国留给伊拉克的是个烂摊子吗"</span>
+<span class="token punctuation">}</span>
+// 写入数据<span class="token number">2</span>
+POST index/_create/<span class="token number">2</span>
+<span class="token punctuation">{</span>
+<span class="token property">"content"</span><span class="token operator">:</span><span class="token string">"中韩渔警冲突调查：韩警平均每天扣1艘中国渔船"</span>
+<span class="token punctuation">}</span>
+// 写入数据<span class="token number">3</span>
+POST index/_create/<span class="token number">3</span>
+<span class="token punctuation">{</span>
+<span class="token property">"content"</span><span class="token operator">:</span><span class="token string">"公安部：各地校车将享最高路权"</span>
+<span class="token punctuation">}</span>
+// 写入数据<span class="token number">4</span>
+POST index/_create/<span class="token number">4</span>
+<span class="token punctuation">{</span>
+<span class="token property">"content"</span><span class="token operator">:</span><span class="token string">"中国驻洛杉矶领事馆遭亚裔男子枪击 嫌犯已自首"</span>
+<span class="token punctuation">}</span>
+// 查询
+POST index/_search
+<span class="token punctuation">{</span>
+<span class="token property">"query"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+  <span class="token property">"match"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"中国"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<h3 id="elasticsearch-analysis-ik"><a href="#elasticsearch-analysis-ik" class="headerlink" title="elasticsearch-analysis-ik"></a><a href="https://github.com/medcl/elasticsearch-analysis-ik" target="_blank" rel="noopener">elasticsearch-analysis-ik</a></h3><script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>Elasticsearch</category>
+      </categories>
+      <tags>
+        <tag>Elasticsearch</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Elasticsearch-kibana部署</title>
+    <url>/elasticsearch-kibana-bu-shu/</url>
+    <content><![CDATA[<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name kibana -p 5601:5601 \
+-e ELASTICSEARCH_HOSTS<span class="token operator">=</span><span class="token string">'["http://192.168.3.17:9200","http://192.168.3.19:9200","http://192.168.3.20:9200"]'</span> \
+kibana:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>Elasticsearch</category>
+      </categories>
+      <tags>
+        <tag>Elasticsearch</tag>
+        <tag>kibana</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Elasticsearch单机版部署</title>
+    <url>/elasticsearch-dan-ji-ban-bu-shu/</url>
+    <content><![CDATA[<pre class="line-numbers language-bash"><code class="language-bash">docker run -p 9200:9200 -p 9300:9300 -e <span class="token string">"discovery.type=single-node"</span> docker.elastic.co/elasticsearch/elasticsearch:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>Elasticsearch</category>
+      </categories>
+      <tags>
+        <tag>Elasticsearch</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Elasticsearch集群部署</title>
+    <url>/elasticsearch-ji-qun-bu-shu/</url>
+    <content><![CDATA[<h3 id="环境要求"><a href="#环境要求" class="headerlink" title="环境要求"></a>环境要求</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 检查vm.max_map_count设置,至少要求262144</span>
+<span class="token function">grep</span> vm.max_map_count /etc/sysctl.conf
+vm.max_map_count<span class="token operator">=</span>262144
+<span class="token comment" spellcheck="true"># 在线设置</span>
+sysctl -w vm.max_map_count<span class="token operator">=</span>262144
+<span class="token comment" spellcheck="true"># ES的data目录需要设置rwx权限</span>
+<span class="token function">chmod</span> g+rwx /root/es/data<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="三台机器搭建集群"><a href="#三台机器搭建集群" class="headerlink" title="三台机器搭建集群"></a>三台机器搭建集群</h3><ul>
+<li><p>node1<br>```bash<br>docker run -d –name es –net host \</p>
+</li>
+<li><p>e node.name=es1 -e cluster.name=es-docker-cluster \</p>
+</li>
+<li><p>e discovery.seed_hosts=192.168.3.19,192.168.3.20 \</p>
+</li>
+<li><p>e cluster.initial_master_nodes=192.168.3.17,192.168.3.19,192.168.3.20 \</p>
+</li>
+<li><p>e network.publish_host=192.168.3.17 \</p>
+</li>
+<li><p>v /root/es/data:/usr/share/elasticsearch/data <br>elasticsearch:7.5.2<br>```</p>
+</li>
+<li><p>node2<br>```bash<br>docker run -d –name es –net host \</p>
+</li>
+<li><p>e node.name=es2 -e cluster.name=es-docker-cluster \</p>
+</li>
+<li><p>e discovery.seed_hosts=192.168.3.17,192.168.3.20 \</p>
+</li>
+<li><p>e cluster.initial_master_nodes=192.168.3.17,192.168.3.19,192.168.3.20 \</p>
+</li>
+<li><p>e network.publish_host=192.168.3.19 \</p>
+</li>
+<li><p>v /root/es/data:/usr/share/elasticsearch/data <br>elasticsearch:7.5.2 </p>
+<pre><code></code></pre></li>
+<li><p>node3<br>```bash<br>docker run -d –name es –net host \</p>
+</li>
+<li><p>e node.name=es3 -e cluster.name=es-docker-cluster \</p>
+</li>
+<li><p>e discovery.seed_hosts=192.168.3.17,192.168.3.19 \</p>
+</li>
+<li><p>e cluster.initial_master_nodes=192.168.3.17,192.168.3.19,192.168.3.20 \</p>
+</li>
+<li><p>e network.publish_host=192.168.3.20 \</p>
+</li>
+<li><p>v /root/es/data:/usr/share/elasticsearch/data <br>elasticsearch:7.5.2 </p>
+<pre><code></code></pre></li>
+</ul>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data2 es<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># curl -X GET "localhost:9200/_cat/nodes?v&amp;pretty"</span>
+ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role master name
+192.168.3.17           20          98   1    0.07    0.07     0.05 dilm      *      es1
+192.168.3.20           12          97   1    0.04    0.03     0.05 dilm      -      es3
+192.168.3.19            9          93   1    0.01    0.04     0.05 dilm      -      es2
+<span class="token punctuation">[</span>root@data1 es<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># curl 'localhost:9200/_cluster/health?pretty'</span>
+<span class="token punctuation">{</span>
+  <span class="token string">"cluster_name"</span> <span class="token keyword">:</span> <span class="token string">"es-docker-cluster"</span>,
+  <span class="token string">"status"</span> <span class="token keyword">:</span> <span class="token string">"green"</span>,
+  <span class="token string">"timed_out"</span> <span class="token keyword">:</span> false,
+  <span class="token string">"number_of_nodes"</span> <span class="token keyword">:</span> 3,
+  <span class="token string">"number_of_data_nodes"</span> <span class="token keyword">:</span> 3,
+  <span class="token string">"active_primary_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"active_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"relocating_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"initializing_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"unassigned_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"delayed_unassigned_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"number_of_pending_tasks"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"number_of_in_flight_fetch"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"task_max_waiting_in_queue_millis"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"active_shards_percent_as_number"</span> <span class="token keyword">:</span> 100.0
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>Elasticsearch</category>
+      </categories>
+      <tags>
+        <tag>Elasticsearch</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Elasticsearch安全验证</title>
+    <url>/elasticsearch-an-quan-yan-zheng/</url>
+    <content><![CDATA[<h3 id="1-创建证书"><a href="#1-创建证书" class="headerlink" title="1.创建证书"></a>1.创建证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动一个单机的es</span>
+<span class="token comment" spellcheck="true"># 进入容器执行下面命令</span>
+bin/elasticsearch-certutil cert -out config/elastic-certificates.p12 -pass <span class="token string">""</span>
+<span class="token comment" spellcheck="true"># 证书拷出容器</span>
+docker <span class="token function">cp</span> es:/usr/share/elasticsearch/config/elastic-certificates.p12 <span class="token keyword">.</span>
+<span class="token comment" spellcheck="true"># 将证书拷贝到各个节点</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="2-各个节点准备es配置文件"><a href="#2-各个节点准备es配置文件" class="headerlink" title="2.各个节点准备es配置文件"></a>2.各个节点准备es配置文件</h3><pre class="line-numbers language-yml"><code class="language-yml"># 集群名称保持一致
+cluster.name: elasticsearch-cluster
+# 集群内唯一
+node.name: es-node1
+network.bind_host: 0.0.0.0
+# 本节点IP
+network.publish_host: 192.168.3.17
+http.port: 9200
+transport.tcp.port: 9300
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+node.master: true
+node.data: true
+# 这些节点争抢master
+cluster.initial_master_nodes: 192.168.3.17,192.168.3.19,192.168.3.20
+discovery.seed_hosts: 192.168.3.19,192.168.3.20
+# 安全验证相关的
+xpack.security.enabled: true
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.keystore.path: /usr/share/elasticsearch/config/elastic-certificates.p12
+xpack.security.transport.ssl.truststore.path: /usr/share/elasticsearch/config/elastic-certificates.p12<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="3-准备data目录"><a href="#3-准备data目录" class="headerlink" title="3.准备data目录"></a>3.准备data目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 用于保存es数据,需要是777权限</span>
+<span class="token function">mkdir</span> data
+<span class="token function">chmod</span> 777 -R data/<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="4-启动"><a href="#4-启动" class="headerlink" title="4.启动"></a>4.启动</h3><pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name es --net host \
+-v /root/es/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
+-v /root/es/elastic-certificates.p12:/usr/share/elasticsearch/config/elastic-certificates.p12 \
+-v /root/es/data:/usr/share/elasticsearch/data \
+elasticsearch:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="5-创建用户"><a href="#5-创建用户" class="headerlink" title="5.创建用户"></a>5.创建用户</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 登录一台es容器内</span>
+<span class="token comment" spellcheck="true"># 自动生成好默认用户和密码</span>
+bin/elasticsearch-setup-passwords auto
+<span class="token comment" spellcheck="true"># 手动输入密码</span>
+<span class="token punctuation">[</span>root@data1 bin<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># elasticsearch-setup-passwords interactive</span>
+Initiating the setup of passwords <span class="token keyword">for</span> reserved <span class="token function">users</span> elastic,apm_system,kibana,logstash_system,beats_system,remote_monitoring_user.
+You will be prompted to enter passwords as the process progresses.
+Please confirm that you would like to <span class="token keyword">continue</span> <span class="token punctuation">[</span>y/N<span class="token punctuation">]</span>y
+Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>elastic<span class="token punctuation">]</span>: 
+Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>elastic<span class="token punctuation">]</span>: 
+Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>apm_system<span class="token punctuation">]</span>: 
+Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>apm_system<span class="token punctuation">]</span>: 
+Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>kibana<span class="token punctuation">]</span>: 
+Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>kibana<span class="token punctuation">]</span>: 
+Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>logstash_system<span class="token punctuation">]</span>: 
+Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>logstash_system<span class="token punctuation">]</span>: 
+Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>beats_system<span class="token punctuation">]</span>: 
+Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>beats_system<span class="token punctuation">]</span>: 
+Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>remote_monitoring_user<span class="token punctuation">]</span>: 
+Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>remote_monitoring_user<span class="token punctuation">]</span>: 
+Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>apm_system<span class="token punctuation">]</span>
+Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>kibana<span class="token punctuation">]</span>
+Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>logstash_system<span class="token punctuation">]</span>
+Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>beats_system<span class="token punctuation">]</span>
+Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>remote_monitoring_user<span class="token punctuation">]</span>
+Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>elastic<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="6-验证"><a href="#6-验证" class="headerlink" title="6.验证"></a>6.验证</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 用户密码都是elastic</span>
+curl --user elastic:elastic <span class="token string">'localhost:9200/_cluster/health?pretty'</span>
+curl -X GET --user elastic:elastic  <span class="token string">"localhost:9200/_cat/nodes?v&amp;pretty"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装kibana"><a href="#安装kibana" class="headerlink" title="安装kibana"></a>安装kibana</h3><ul>
+<li>kibana配置<pre class="line-numbers language-yml"><code class="language-yml">server.name: kibana
+server.host: "0"
+elasticsearch.hosts: ["http://192.168.3.17:9200","http://192.168.3.19:9200","http://192.168.3.20:9200"]
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+elasticsearch.username: "elastic"
+elasticsearch.password: "elastic"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>启动<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name kibana -p 5601:5601 -v /root/es/kibana.yml:/usr/share/kibana/config/kibana.yml kibana:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>Elasticsearch</category>
+      </categories>
+      <tags>
+        <tag>Elasticsearch</tag>
+      </tags>
+  </entry>
 </search>
