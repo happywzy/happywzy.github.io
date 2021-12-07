@@ -861,42 +861,33 @@ sysctl -w vm.max_map_count<span class="token operator">=</span>262144
 <span class="token comment" spellcheck="true"># ES的data目录需要设置rwx权限</span>
 <span class="token function">chmod</span> g+rwx /root/es/data<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="三台机器搭建集群"><a href="#三台机器搭建集群" class="headerlink" title="三台机器搭建集群"></a>三台机器搭建集群</h3><ul>
-<li><p>node1<br>```bash<br>docker run -d –name es –net host \</p>
+<li><p>node1</p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name es --net host \
+-e node.name<span class="token operator">=</span>es1 -e cluster.name<span class="token operator">=</span>es-docker-cluster \
+-e discovery.seed_hosts<span class="token operator">=</span>192.168.3.19,192.168.3.20 \
+-e cluster.initial_master_nodes<span class="token operator">=</span>192.168.3.17,192.168.3.19,192.168.3.20 \
+-e network.publish_host<span class="token operator">=</span>192.168.3.17 \
+-v /root/es/data:/usr/share/elasticsearch/data \
+elasticsearch:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 </li>
-<li><p>e node.name=es1 -e cluster.name=es-docker-cluster \</p>
+<li><p>node2</p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name es --net host \
+-e node.name<span class="token operator">=</span>es2 -e cluster.name<span class="token operator">=</span>es-docker-cluster \
+-e discovery.seed_hosts<span class="token operator">=</span>192.168.3.17,192.168.3.20 \
+-e cluster.initial_master_nodes<span class="token operator">=</span>192.168.3.17,192.168.3.19,192.168.3.20 \
+-e network.publish_host<span class="token operator">=</span>192.168.3.19 \
+-v /root/es/data:/usr/share/elasticsearch/data \
+elasticsearch:7.5.2 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 </li>
-<li><p>e discovery.seed_hosts=192.168.3.19,192.168.3.20 \</p>
+<li><p>node3</p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name es --net host \
+-e node.name<span class="token operator">=</span>es3 -e cluster.name<span class="token operator">=</span>es-docker-cluster \
+-e discovery.seed_hosts<span class="token operator">=</span>192.168.3.17,192.168.3.19 \
+-e cluster.initial_master_nodes<span class="token operator">=</span>192.168.3.17,192.168.3.19,192.168.3.20 \
+-e network.publish_host<span class="token operator">=</span>192.168.3.20 \
+-v /root/es/data:/usr/share/elasticsearch/data \
+elasticsearch:7.5.2 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 </li>
-<li><p>e cluster.initial_master_nodes=192.168.3.17,192.168.3.19,192.168.3.20 \</p>
-</li>
-<li><p>e network.publish_host=192.168.3.17 \</p>
-</li>
-<li><p>v /root/es/data:/usr/share/elasticsearch/data <br>elasticsearch:7.5.2<br>```</p>
-</li>
-<li><p>node2<br>```bash<br>docker run -d –name es –net host \</p>
-</li>
-<li><p>e node.name=es2 -e cluster.name=es-docker-cluster \</p>
-</li>
-<li><p>e discovery.seed_hosts=192.168.3.17,192.168.3.20 \</p>
-</li>
-<li><p>e cluster.initial_master_nodes=192.168.3.17,192.168.3.19,192.168.3.20 \</p>
-</li>
-<li><p>e network.publish_host=192.168.3.19 \</p>
-</li>
-<li><p>v /root/es/data:/usr/share/elasticsearch/data <br>elasticsearch:7.5.2 </p>
-<pre><code></code></pre></li>
-<li><p>node3<br>```bash<br>docker run -d –name es –net host \</p>
-</li>
-<li><p>e node.name=es3 -e cluster.name=es-docker-cluster \</p>
-</li>
-<li><p>e discovery.seed_hosts=192.168.3.17,192.168.3.19 \</p>
-</li>
-<li><p>e cluster.initial_master_nodes=192.168.3.17,192.168.3.19,192.168.3.20 \</p>
-</li>
-<li><p>e network.publish_host=192.168.3.20 \</p>
-</li>
-<li><p>v /root/es/data:/usr/share/elasticsearch/data <br>elasticsearch:7.5.2 </p>
-<pre><code></code></pre></li>
 </ul>
 <h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data2 es<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># curl -X GET "localhost:9200/_cat/nodes?v&amp;pretty"</span>
 ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role master name
@@ -29902,6 +29893,57 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true
       </categories>
       <tags>
         <tag>民法典</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mysql全量备份和增量备份</title>
+    <url>/mysql-quan-liang-bei-fen-he-zeng-liang-bei-fen/</url>
+    <content><![CDATA[<h3 id="全量备份"><a href="#全量备份" class="headerlink" title="全量备份"></a>全量备份</h3><h4 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h4><p>在MySQL中提供了命令行导出数据库数据以及文件的一种方便的工具<code>mysqldump</code>,</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 备份全部数据库的数据和结构</span>
+<span class="token comment" spellcheck="true">-- -d 备份全部数据库的结构</span>
+<span class="token comment" spellcheck="true">-- -t 备份全部数据库的数据</span>
+mysqldump <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token operator">-</span>A <span class="token operator">></span> <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql
+
+<span class="token comment" spellcheck="true">-- 备份单个或多个数据库的数据和结构</span>
+mysqldump <span class="token operator">-</span>u root <span class="token operator">-</span>p <span class="token comment" spellcheck="true">--databases db1 db2 > xxx.sql</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="还原"><a href="#还原" class="headerlink" title="还原"></a>还原</h4><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 方法一：在系统命令行中</span>
+mysql <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token operator">&lt;</span> <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql
+<span class="token comment" spellcheck="true">-- 方法二：登录进入mysql系统中</span>
+mysql<span class="token operator">></span> source <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="增量备份"><a href="#增量备份" class="headerlink" title="增量备份"></a>增量备份</h3><p>要做增量备份首先要开启<code>log_bin</code></p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看log_bin开启状态</span>
+<span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%log_bin%'</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 开启后可以查看当前使用的日志文件</span>
+<span class="token keyword">show</span> master <span class="token keyword">status</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 刷新使用的日志文件,如当前使用mysql-bin.00005,执行命令后变为mysql-bin.00006</span>
+mysqladmin <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 flush<span class="token operator">-</span>logs
+<span class="token comment" spellcheck="true">-- 保存mysql-bin日志文件</span>
+<span class="token comment" spellcheck="true">-- 从mysql-bin恢复数据</span>
+mysqlbinlog <span class="token operator">/</span>var<span class="token operator">/</span>lib<span class="token operator">/</span>mysql<span class="token operator">/</span>mysql<span class="token operator">-</span>bin<span class="token number">.000015</span> <span class="token operator">|</span> mysql <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token number">db1</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>mysql</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
       </tags>
   </entry>
 </search>

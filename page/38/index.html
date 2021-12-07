@@ -203,6 +203,180 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-dashboard-kiali/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-shi-yong-dashboard-kiali/" class="post-title-link" itemprop="url">Istio使用【dashboard—kiali】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-25 15:38:30" itemprop="dateCreated datePublished" datetime="2019-12-25T15:38:30+08:00">2019-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 11:42:14" itemprop="dateModified" datetime="2020-04-15T11:42:14+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>本文使用的istio版本号：<code>1.4.2</code></p>
+</blockquote>
+<h3 id="配置安装kiali"><a href="#配置安装kiali" class="headerlink" title="配置安装kiali"></a>配置安装kiali</h3><p>默认配置，istio并未选择安装kiali，参考上一章<a href="">安装</a>，修改<code>values.yaml</code></p>
+<pre class="line-numbers language-sh"><code class="language-sh">vim install/kubernetes/helm/istio/values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-yml"><code class="language-yml"># ....
+kiali:
+  enabled: true
+# ....<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同时如果需要链路监控，需要开启安装<code>jaeger</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">#....
+tracing:
+  enabled: true
+#....<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果系统中没有安装<code>grafana</code>和<code>Prometheus</code>，也需要开启</p>
+<pre class="line-numbers language-yml"><code class="language-yml">#.....
+grafana:
+  enabled: true
+
+prometheus:
+  enabled: true
+#.....<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置kiali"><a href="#配置kiali" class="headerlink" title="配置kiali"></a>配置kiali</h3><p>可以在安装前配置好<code>kaili</code>，主要配置集中在</p>
+<pre><code>vim install/kubernetes/helm/istio/charts/kiali/values.yaml</code></pre><pre class="line-numbers language-yml"><code class="language-yml">#......
+ingress:
+  enabled: false
+  hosts:
+    - kiali.local
+
+dashboard:
+  auth:
+    strategy: login
+  secretName: kiali 
+  viewOnlyMode: false 
+  grafanaURL:  
+  jaegerURL:  
+prometheusAddr: http://prometheus:9090
+#.....<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>配置访问：ingress是否开启，hosts地址，tls…</li>
+<li><code>strategy</code>：认证策略，可以是anonymous, login, openshift，默认login</li>
+<li><code>secretName</code>：登录用户名/密码，需要提前创建好secret<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: Secret
+metadata:
+name: kiali
+labels:
+  app: kiali
+  version: v1.9
+type: Opaque
+data:
+username: YWRtaW4=    # admin
+passphrase: YWRtaW4=    # admin<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh">#base64 加密
+echo -n "admin" | base64<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li><p>grafanaURL：grafana地址，如果是在同一个namespace下，可以是</p>
+<pre><code>http://grafana:3000 或者 http://grafana.monitoring.svc.cluster.local:3000</code></pre></li>
+<li><p>prometheusAddr：Prometheus地址，如果是在同一个namespace下，可以是</p>
+<pre><code>http://prometheus:9090 或者 http://prometheus.monitoring.svc.cluster.local:9090</code></pre></li>
+<li><p>jaegerURL：jaeger地址，默认在同一个namespace istio-system下，可以是</p>
+<pre><code>http://jaeger-query:16686/jaeger</code></pre></li>
+</ul>
+<p>如果是在安装后，想要修改kiali配置，可以修改<code>istio-system</code>下<code>configmap</code> <code>kiali</code></p>
+<pre><code>kubectl edit cm  kiali   -n istio-system</code></pre><p>修改<code>configmap</code>里面的<code>config.yaml</code>文件，对应的</p>
+<pre class="line-numbers language-yml"><code class="language-yml">istio_namespace: istio-system
+deployment:
+  accessible_namespaces: ['**']
+auth:
+  strategy: login
+server:
+  port: 20001
+  web_root: /kiali
+external_services:
+  tracing:
+    url: http://jaeger-query:16686/jaeger
+  grafana:
+    url: http://grafana:3000
+  prometheus:
+    url: http://prometheus:9090<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>修改完需要重启<code>kiali POD</code>。</p>
+<h3 id="预览"><a href="#预览" class="headerlink" title="预览"></a>预览</h3><p><img data-src="/images/istio4.png" alt="istio"></p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-dashboard-naftis/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -935,192 +1109,6 @@ kubectl delete namespace istio-system</code></pre><h3 id="删除CRDs"><a href="#
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ri-zhi-ju-he-gong-ju-loki-an-zhuang-shi-yong-cai-yong-helm-an-zhuang/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ri-zhi-ju-he-gong-ju-loki-an-zhuang-shi-yong-cai-yong-helm-an-zhuang/" class="post-title-link" itemprop="url">日志聚合工具Loki安装使用【采用helm安装】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-17 11:01:31" itemprop="dateCreated datePublished" datetime="2019-12-17T11:01:31+08:00">2019-12-17</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:38:44" itemprop="dateModified" datetime="2020-04-15T13:38:44+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>Loki是 Grafana Labs 团队最新的开源项目，是一个水平可扩展，高可用性，多租户的日志聚合系统。它的设计非常经济高效且易于操作，因为它不会为日志内容编制索引，而是为每个日志流编制一组标签。项目受 Prometheus 启发，官方的介绍就是：Like Prometheus, but for logs.，类似于 Prometheus 的日志系统。</p>
-<p>与其他日志聚合系统相比，Loki具有下面的一些特性：</p>
-<ul>
-<li>不对日志进行全文索引。通过存储压缩非结构化日志和仅索引元数据，Loki 操作起来会更简单，更省成本。</li>
-<li>通过使用与 Prometheus 相同的标签记录流对日志进行索引和分组，这使得日志的扩展和操作效率更高。</li>
-<li>特别适合储存 Kubernetes Pod 日志; 诸如 Pod 标签之类的元数据会被自动删除和编入索引。</li>
-<li>受 Grafana 原生支持。</li>
-</ul>
-<p>Loki 由以下3个部分组成：<br><img data-src="/images/loki.png" alt="Loki"></p>
-<ol>
-<li>loki是主服务器，负责存储日志和处理查询。</li>
-<li>promtail是代理，负责收集日志并将其发送给 loki 。</li>
-<li>Grafana用于 UI 展示。</li>
-</ol>
-<h3 id="Loki安装"><a href="#Loki安装" class="headerlink" title="Loki安装"></a>Loki安装</h3><p>参考<a href="https://github.com/grafana/loki/blob/master/docs/installation/helm.md" target="_blank" rel="noopener">官网</a></p>
-<h4 id="添加-更新helm"><a href="#添加-更新helm" class="headerlink" title="添加/更新helm"></a>添加/更新helm</h4><pre class="line-numbers language-bash"><code class="language-bash">helm repo add loki https://grafana.github.io/loki/charts
-helm repo update<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h4 id="安装loki（使用默认配置）"><a href="#安装loki（使用默认配置）" class="headerlink" title="安装loki（使用默认配置）"></a>安装loki（使用默认配置）</h4><pre class="line-numbers language-bash"><code class="language-bash">helm upgrade --install loki loki/loki-stack<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h4 id="安装loki（设置namespace）"><a href="#安装loki（设置namespace）" class="headerlink" title="安装loki（设置namespace）"></a>安装loki（设置namespace）</h4><pre class="line-numbers language-bash"><code class="language-bash">helm upgrade --install loki --namespace<span class="token operator">=</span>loki loki/loki<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h4 id="安装loki（更改一些配置）"><a href="#安装loki（更改一些配置）" class="headerlink" title="安装loki（更改一些配置）"></a>安装loki（更改一些配置）</h4><pre class="line-numbers language-bash"><code class="language-bash">helm upgrade --install loki loki/loki-stack  --set grafana.enabled<span class="token operator">=</span>true,prometheus.enabled<span class="token operator">=</span>true,prometheus.alertmanager.persistentVolume.enabled<span class="token operator">=</span>false,prometheus.server.persistentVolume.enabled<span class="token operator">=</span>false<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<blockquote>
-<p>这边loki使用的镜像是<code>grafana/loki:v1.2.0</code>，建议提前拉取下来。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker pull grafana/loki:v1.2.0<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>其它一些信息，可以参考官网配置。</p>
-</blockquote>
-<h3 id="Promtail安装"><a href="#Promtail安装" class="headerlink" title="Promtail安装"></a>Promtail安装</h3><p>参考<a href="https://github.com/grafana/loki/blob/master/docs/clients/promtail/installation.md" target="_blank" rel="noopener">官网</a></p>
-<pre class="line-numbers language-bash"><code class="language-bash">helm upgrade --install promtail loki/promtail --set <span class="token string">"loki.serviceName=loki"</span> --namespace<span class="token operator">=</span>loki<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<blockquote>
-<p>这边loki使用的镜像是<code>grafana/promtail:v1.2.0</code>，建议提前拉取下来。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker pull grafana/promtail:v1.2.0<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>其它一些信息，可以参考官网配置。</p>
-</blockquote>
-<h3 id="集成Grafana，实现页面查询日志"><a href="#集成Grafana，实现页面查询日志" class="headerlink" title="集成Grafana，实现页面查询日志"></a>集成Grafana，实现页面查询日志</h3><blockquote>
-<p>前文使用<a href="">Helm一键安装Prometheus Operator</a>已经安装了grafana服务，我们可以直接使用。</p>
-</blockquote>
-<h4 id="登录grafana，选择添加数据源"><a href="#登录grafana，选择添加数据源" class="headerlink" title="登录grafana，选择添加数据源"></a>登录grafana，选择添加数据源</h4><p><img data-src="/images/loki1.jpg" alt="添加Loki数据源"></p>
-<h4 id="数据源列表中选择Loki，配置服务地址"><a href="#数据源列表中选择Loki，配置服务地址" class="headerlink" title="数据源列表中选择Loki，配置服务地址"></a>数据源列表中选择Loki，配置服务地址</h4><blockquote>
-<p>如果<code>grafana</code>与<code>loki</code>在同一个<code>namespace</code>，只需写服务名即可。<br>如果是在不同的<code>namespace</code>，那么要写完整<code>DNS</code>地址。</p>
-</blockquote>
-<p><img data-src="/images/loki2.jpg" alt="添加Loki数据源"></p>
-<h4 id="切换到grafana左侧区域的Explore，进入loki页面"><a href="#切换到grafana左侧区域的Explore，进入loki页面" class="headerlink" title="切换到grafana左侧区域的Explore，进入loki页面"></a>切换到<code>grafana</code>左侧区域的<code>Explore</code>，进入<code>loki</code>页面</h4><p><img data-src="/images/loki3.jpg" alt="添加Loki数据源"></p>
-<p>点击Log labels就可以把当前系统采集的日志标签给显示出来，可以根据这些标签进行日志的过滤查询</p>
-<p><img data-src="/images/loki4.jpg" alt="添加Loki数据源"></p>
-<h3 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h3><pre><code>...........
-level=error ts=2019-12-17T05:43:00.189385282Z caller=filetarget.go:272 msg="failed to tail file, stat failed" error="stat /var/log/pods/kube-system_kube-flannel-ds-amd64-btn7m_5088625c-bba8-41d6-86c8-dc738d3b43ab/kube-flannel/3.log: no such file or directory" filename=/var/log/pods/kube-system_kube-flannel-ds-amd64-btn7m_5088625c-bba8-41d6-86c8-dc738d3b43ab/kube-flannel/3.log
-level=error ts=2019-12-17T05:43:00.192476724Z caller=filetarget.go:272 msg="failed to tail file, stat failed" error="stat /var/log/pods/kube-system_kube-flannel-ds-amd64-btn7m_5088625c-bba8-41d6-86c8-dc738d3b43ab/install-cni/5.log: no such file or directory" filename=/var/log/pods/kube-system_kube-flannel-ds-amd64-btn7m_5088625c-bba8-41d6-86c8-dc738d3b43ab/install-cni/5.log
-......</code></pre><p>提示找不到<code>/var/log/pods</code>目录下的日志文件，无法<code>tail</code>。</p>
-<p>首先我们可以进入<code>promtail</code>容器内，到该目录下查看下是否有该文件，通过<code>cat</code>命令看看是否有日志。</p>
-<p>默认安装<code>promtail</code>，它会将主机<code>/var/log/pods</code>和<code>/var/lib/docker/containers</code>目录通过<code>volumes</code>方式挂载到<code>promtail</code>容器内。如果安装<code>docker</code>和<code>k8s</code>都是采用默认配置，应该不会存在读不到日志的问题。</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"docker"</span><span class="token punctuation">,</span>
-    <span class="token property">"hostPath"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"path"</span><span class="token operator">:</span> <span class="token string">"/var/lib/docker/containers"</span><span class="token punctuation">,</span>
-        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">""</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"pods"</span><span class="token punctuation">,</span>
-    <span class="token property">"hostPath"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"path"</span><span class="token operator">:</span> <span class="token string">"/var/log/pods"</span><span class="token punctuation">,</span>
-        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">""</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>本人因为主机系统盘太小，设置了<code>docker</code>镜像的目录到挂载磁盘<code>/data</code>目录下，所以需要修改默认<code>volumes</code>配置。</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"docker"</span><span class="token punctuation">,</span>
-    <span class="token property">"hostPath"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"path"</span><span class="token operator">:</span> <span class="token string">"/data/docker/containers"</span><span class="token punctuation">,</span>
-        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">""</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"pods"</span><span class="token punctuation">,</span>
-    <span class="token property">"hostPath"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"path"</span><span class="token operator">:</span> <span class="token string">"/var/log/pods"</span><span class="token punctuation">,</span>
-        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">""</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-//注意对应的volumeMounts也要修改
-<span class="token property">"volumeMounts"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
-              <span class="token punctuation">{</span>
-                <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"docker"</span><span class="token punctuation">,</span>
-                <span class="token property">"readOnly"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
-                <span class="token property">"mountPath"</span><span class="token operator">:</span> <span class="token string">"/data/docker/containers"</span>
-              <span class="token punctuation">}</span><span class="token punctuation">,</span>
-              <span class="token punctuation">{</span>
-                <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"pods"</span><span class="token punctuation">,</span>
-                <span class="token property">"readOnly"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
-                <span class="token property">"mountPath"</span><span class="token operator">:</span> <span class="token string">"/var/log/pods"</span>
-              <span class="token punctuation">}</span>
-            <span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>上面<code>volumes</code>和<code>volumeMounts</code>都要修改，因为<code>/var/log/pods</code>目录下的日志文件其实是个软链接，指向的是<code>docker/containers</code>目录下的日志文件。如果只修改了<code>volumes</code>，那么<code>promtail</code>容器内可以找到日志文件，但是打开确实空的，因为它只是个软连接。</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node1 log<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># ll /var/log/pods/monitoring_promtail-bs5cs_5bc5bc90-bac9-480d-b291-4caadeff2236/promtail/</span>
-total 4
-lrwxrwxrwx 1 root root 162 Dec 17 14:04 0.log -<span class="token operator">></span> /data/docker/containers/db45d5118e9508817e1a2efa3c9da68cfe969a2b0a3ed42619ff61a29cc64e5f/db45d5118e9508817e1a2efa3c9da68cfe969a2b0a3ed42619ff61a29cc64e5f-json.log<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1192,7 +1180,7 @@ lrwxrwxrwx 1 root root 162 Dec 17 14:04 0.log -<span class="token operator">></s
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">275</span>
+          <span class="site-state-item-count">276</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
