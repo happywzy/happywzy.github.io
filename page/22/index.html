@@ -203,6 +203,521 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-bu-shu-gao-ke-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flink-bu-shu-gao-ke-yong/" class="post-title-link" itemprop="url">flink部署【高可用】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-06-09 13:38:52 / 修改时间：15:14:25" itemprop="dateCreated datePublished" datetime="2020-06-09T13:38:52+08:00">2020-06-09</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="多机部署Flink-standalone-集群"><a href="#多机部署Flink-standalone-集群" class="headerlink" title="多机部署Flink standalone 集群"></a>多机部署Flink standalone 集群</h2><h3 id="部署前要注意的要点"><a href="#部署前要注意的要点" class="headerlink" title="部署前要注意的要点"></a>部署前要注意的要点</h3><ul>
+<li>每台机器上配置好java以及<code>JAVA_HOME</code>环境变量</li>
+<li>最好挑选一台机器，和其他机器ssh 打通</li>
+<li>每台机器上部署的Flink binary的目录要保证是同一个目录</li>
+<li>如果需要用hdfs，需要配置<code>HADOOP_CONF_DIR</code>环境变量配置上</li>
+</ul>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ul>
+<li>JobManager机器：master</li>
+<li>TaskManager机器：node1,node2,node3</li>
+</ul>
+<p>修改<code>Flink binary</code>目录的<code>conf</code>子目录中的<code>masters</code>和<code>slaves</code>两个文件:</p>
+<pre><code>$cat conf/masters
+master:8081
+$cat conf/slaves
+node1
+node2
+node3</code></pre><p>修改<code>conf/flink-conf.yaml</code>配置</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">jobmanager.rpc.address</span><span class="token punctuation">:</span> master<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>然后把修改后的这三个文件同步到其他机器的相同<code>conf</code>目录下.</p>
+<p>然后启动flink集群:</p>
+<pre><code>./bin/start-cluster.sh</code></pre><p>提交<code>WordCount</code>作业</p>
+<pre><code>./bin/flink run examples/streaming/WordCount.jar</code></pre><p>上传<code>WordCount</code>的<code>input</code>文件：</p>
+<pre><code>hdfs dfs -copyFromLocal story /test_dir/input_dir/story</code></pre><p>提交读写hdfs的WordCount作业：</p>
+<pre><code>./bin/flink run examples/streaming/WordCount.jar --input hdfs:///test_dir/input_dir/story --output
+hdfs:///test_dir/output_dir/output</code></pre><p>增加WordCount作业的并发度（注意输出文件重名会提交失败）：</p>
+<pre><code>./bin/flink run examples/streaming/WordCount.jar --input hdfs:///test_dir/input_dir/story --output
+hdfs:///test_dir/output_dir/output --parallelism 20</code></pre><h2 id="standalone-模式的HighAvailability（HA）部署和配置"><a href="#standalone-模式的HighAvailability（HA）部署和配置" class="headerlink" title="standalone 模式的HighAvailability（HA）部署和配置"></a>standalone 模式的HighAvailability（HA）部署和配置</h2><blockquote>
+<p>JobManager是整个系统中最可能导致系统不可用的角色。一个TaskManager挂了，如果资源足够（空闲TaskSlot足够）的话，则只需要把相关task调度到其他空闲TaskSlot上，然后job从checkpoint中恢复即可。而如果当前集群中只配置了一个JobManager，则一旦JobManager挂了，就必须等待这个JobManager重新恢复，如果恢复时间过长，就可能导致整个job失败。<br><a href="https://ci.apache.org/projects/flink/flink-docs-release-1.10/zh/ops/jobmanager_high_availability.html" target="_blank" rel="noopener">官方HA部署说明</a></p>
+</blockquote>
+<h3 id="所需环境"><a href="#所需环境" class="headerlink" title="所需环境"></a>所需环境</h3><ul>
+<li><code>flink-1.10</code></li>
+<li><code>zookeeper</code></li>
+<li><code>hadoop</code></li>
+</ul>
+<blockquote>
+<p><code>flink</code>内部也提供了<code>zookeeper</code>插件，通过修改<code>/conf/zoo.cfg</code>文件即可，启动命令在<code>/bin/start-zookeeper-quorum.sh</code></p>
+</blockquote>
+<h3 id="配置-1"><a href="#配置-1" class="headerlink" title="配置"></a>配置</h3><ol>
+<li><p><code>conf/flink-conf.yaml</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml"># 高可用相关重要配置
+# 配置high-availability mode
+high-availability: zookeeper
+high-availability.zookeeper.quorum: localhost:2181
+high-availability.zookeeper.path.root: /flink
+high-availability.cluster-id: /cluster_one # important: customize per cluster /可以不配，自动生成
+high-availability.storageDir: hdfs:///flink/recovery
+state.checkpoints.dir:  hdfs:///flink/checkpoints
+state.savepoints.dir: hdfs:///flink/savepoints<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p><code>conf/masters</code>和<code>slaves</code></p>
+</li>
+</ol>
+<pre class="line-numbers language-yml"><code class="language-yml">master1:8081
+master2:8081<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-yml"><code class="language-yml">slave001
+slave002
+slave003<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li><code>conf/zoo.cfg</code></li>
+</ol>
+<pre class="line-numbers language-conf"><code class="language-conf">server.1=slave001:2888:3888
+server.2=slave002:2888:3888
+server.3=slave003:2888:3888<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p><strong>修改完成后，再把这几个文件同步到不同机器到相同conf目录下。</strong></p>
+</blockquote>
+<ol start="4">
+<li>启动zookeeper(如果已经有zookeeper集群可以不使用flink自带的)</li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">$ bin/start-zookeeper-quorum.sh<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="5">
+<li>启动<code>HA-cluster</code></li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">$ bin/start-cluster.sh<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>分别打开：<br><a href="http://master1:8081" target="_blank" rel="noopener">http://master1:8081</a><br><a href="http://master2:8081" target="_blank" rel="noopener">http://master2:8081</a></p>
+<p>可以看到两个页面最后都转到了同一个地址上，这个地址就是当前主JobManager所在机器，另一个就是standby JobManager。<br>当我们知道主JobManager后，我们可以把主JobManager进程kill掉，比如当前主JobManager在matser1这个机器上，就把这个进程杀掉.</p>
+<ol start="6">
+<li>关闭zookeeper和flink</li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">$ bin/stop-cluster.sh<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh">$ bin/stop-zookeeper-quorum.sh<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><h4 id="flink-1-10-0与hadoop集成"><a href="#flink-1-10-0与hadoop集成" class="headerlink" title="flink-1.10.0与hadoop集成"></a><code>flink-1.10.0</code>与<code>hadoop</code>集成</h4><ol>
+<li><p>配置环境变量</p>
+<pre class="line-numbers language-sh"><code class="language-sh">vi /etc/profile
+# 添加如下内容：
+export HADOOP_CONF_DIR=/home/hadoop-2.6.5/etc/hadoop
+# 使环境变量生效
+source /etc/profile<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>添加hadoop依赖<br><a href="https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.6.5-10.0/" target="_blank" rel="noopener">flink-shaded-hadoop-2-uber-2.6.5-10.0.jar</a><br>下载<code>jar</code>包放到<code>/flink-1.10.0/lib</code>目录下.</p>
+</li>
+</ol>
+<blockquote>
+<p><a href="https://blog.csdn.net/cheersmate/article/details/105038479" target="_blank" rel="noopener">参考链接-Flink 1.10.0基于高可用部署</a></p>
+</blockquote>
+<h2 id="使用yarn模式跑flink-job"><a href="#使用yarn模式跑flink-job" class="headerlink" title="使用yarn模式跑flink job"></a>使用yarn模式跑flink job</h2><p>什么情况下适合使用yarn模式跑flink job？<br>相对于standalone模式，yarn模式允许flink job的好处有：  </p>
+<ul>
+<li>资源按需使用，提高集群的资源利用率</li>
+<li>任务有优先级，根据优先级运行作业</li>
+<li>基于YARN调度系统，能够自动化地处理各个角色的failover<ul>
+<li>JobManager进程和TaskManager进程都由Yarn NodeManager监控</li>
+<li>如果JobManager进程异常退出，则Yarn ResourceManager会重新调度JobManager到其他机器</li>
+<li>如果TaskManager进程异常退出，JobManager会收到消息并重新向Yarn ResourceManager申请资源，重新启动TaskManager</li>
+</ul>
+</li>
+</ul>
+<h3 id="在YARN上启动long-running的flink集群（yarn-session）"><a href="#在YARN上启动long-running的flink集群（yarn-session）" class="headerlink" title="在YARN上启动long running的flink集群（yarn session）"></a>在YARN上启动long running的flink集群（yarn session）</h3><ul>
+<li><a href="https://ci.apache.org/projects/flink/flink-docs-release-1.10/zh/ops/jobmanager_high_availability.html#yarn-cluster-high-availability" target="_blank" rel="noopener">Highly Available YARN Session模式</a></li>
+<li>yarn是一个集群资源管理框架。它运行在集群之上运行各种分布式应用程序。flink像其他程序一样，也可以在yarn上运行。用户不需要设置或者安装任何东西，如果已经有一个安装配置好的yarn。</li>
+<li>一个session将会包含所有必须的flink 服务(jobmanager和taskmanager)，这样你就可以向这个集群提交程序了。注意：每个session会话你可以运行多个程序。</li>
+<li><code>YARN Session</code>模式只会启动一个<code>JobManager</code>,如果启动失败会重启.</li>
+<li>启动一个session命令：<code>./bin/yarn-session.sh</code></li>
+</ul>
+<p>命令参数用法：</p>
+<pre class="line-numbers language-sh"><code class="language-sh"># 查看命令参数
+./bin/yarn-session.sh -h
+# 用法:
+   必选
+     -n,--container <arg>   分配多少个yarn容器 (=taskmanager的数量)
+   可选
+     -D <arg>                        动态属性
+     -d,--detached                   独立运行
+     -jm,--jobManagerMemory <arg>    JobManager的内存 [in MB]
+     -nm,--name                     在YARN上为一个自定义的应用设置一个名字
+     -q,--query                      显示yarn中可用的资源 (内存, cpu核数)
+     -qu,--queue <arg>               指定YARN队列.
+     -s,--slots <arg>                每个TaskManager使用的slots数量
+     -tm,--taskManagerMemory <arg>   每个TaskManager的内存 [in MB]
+     -z,--zookeeperNamespace <arg>   针对HA模式在zookeeper上创建NameSpace<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>client必须要设置<code>HADOOP_HOME</code>,<code>YARN_CONF_DIR</code>或者<code>HADOOP_CONF_DIR</code>环境变量，通过这个环境变量来读取<code>YARN</code>和<code>HDFS</code>的配置信息，否则启动会失败。</p>
+</blockquote>
+<p>创建一个YARN模式的flink集群:</p>
+<pre class="line-numbers language-sh"><code class="language-sh">./bin/yarn-session.sh -n 4 -jm 1024m -tm 4096m<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>提交一个flink job到flink集群：</p>
+<pre><code>./bin/flink run examples/streaming/WordCount.jar --input hdfs:///test_dir/input_dir/story --output hdfs:///test_dir/output_dir/output</code></pre><blockquote>
+<p>这次提交<code>flink job</code>，虽然没有指定对应<code>yarn application</code>的信息，确可以提交到对应的flink集群，原因在于<code>/tmp/.yarn-properties-${user}</code>文件中保存了上一次创建yarn session的集群信息。所以如果同一用户在同一机器上再次创建一个<code>yarn session</code>，则这个文件会被覆盖掉。</p>
+</blockquote>
+<blockquote>
+<p>那如果删掉<code>/tmp/.yarn-properties-${user}</code>或者在另一个机器上提交作业能否提交到预期到<code>yarn session</code>中呢？这也是可以的，如果配置了<code>HighAvailability</code>，则可以根据<code>cluster-id</code>，从zookeeper上获取到JobManager的地址和端口，从而提交作业。</p>
+</blockquote>
+<pre><code>high-availability.cluster-id</code></pre><blockquote>
+<p>如果Yarn session没有配置HA，又该如何提交呢？这个时候就必须要在提交flink job的命令中指明YARN上的<code>application id</code>，通过“-yid”参数传入：</p>
+</blockquote>
+<pre><code>/bin/flink run -yid application_1548056325049_0048 examples/streaming/WordCount.jar --
+input hdfs:///test_dir/input_dir/story --output hdfs:///test_dir/output_dir/output</code></pre><blockquote>
+<p>我们可以发现，每次跑完任务不久，<code>TaskManager</code>就没有了，下次在提交任务的时候，<code>TaskManager</code>又会重新拉起来。如果希望<code>TaskManager</code>启动后就持续运行，可以在<code>conf/flink-conf.yaml</code>文件中配置下面这个参数，单位是<code>milliseconds</code>，默认值是<code>30000L</code>，即<code>30秒</code>：</p>
+</blockquote>
+<pre><code>resourcemanager.taskmanager-timeout</code></pre><h3 id="在YARN上运行单个flink-job"><a href="#在YARN上运行单个flink-job" class="headerlink" title="在YARN上运行单个flink job"></a>在YARN上运行单个flink job</h3><p>如果你只想运行单个flink job后就退出，那么可以用下面这个命令：</p>
+<pre><code>./bin/flink run -m yarn-cluster -yn 2 examples/streaming/WordCount.jar --input hdfs:///test_dir/input_dir/story --output hdfs:///test_dir/output_dir/output</code></pre><p>常用的配置有：</p>
+<ul>
+<li>-yn,–yarncontainer <arg> Number of Task Managers</arg></li>
+<li>-yqu,–yarnqueue <arg> Specify YARN queue.</arg></li>
+<li>-ys,–yarnslots <arg> Number of slots per TaskManager</arg></li>
+<li>-yqu,–yarnqueue <arg> Specify YARN queue.<br>可以通过help命令查看run的可用参数：<pre><code>./bin/flink run -h</code></pre></arg></li>
+</ul>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a href="https://blog.csdn.net/xu470438000/article/details/79576989" target="_blank" rel="noopener">https://blog.csdn.net/xu470438000/article/details/79576989</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-bu-shu-shi-yong-k8s-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flink-bu-shu-shi-yong-k8s-bu-shu/" class="post-title-link" itemprop="url">flink部署【使用k8s部署】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-06-09 13:30:00 / 修改时间：13:37:07" itemprop="dateCreated datePublished" datetime="2020-06-09T13:30:00+08:00">2020-06-09</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="准备k8s环境"><a href="#准备k8s环境" class="headerlink" title="准备k8s环境"></a>准备k8s环境</h3><h3 id="准备相关YAML"><a href="#准备相关YAML" class="headerlink" title="准备相关YAML"></a>准备相关YAML</h3><ul>
+<li><p><code>flink-configuration-configmap.yaml</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: ConfigMap
+metadata:
+name: flink-config
+labels:
+  app: flink
+data:
+flink-conf.yaml: |+
+  jobmanager.rpc.address: flink-jobmanager
+  taskmanager.numberOfTaskSlots: 2
+  blob.server.port: 6124
+  jobmanager.rpc.port: 6123
+  taskmanager.rpc.port: 6122
+  jobmanager.heap.size: 1024m
+  taskmanager.memory.process.size: 1024m
+log4j.properties: |+
+  log4j.rootLogger=INFO, file
+  log4j.logger.akka=INFO
+  log4j.logger.org.apache.kafka=INFO
+  log4j.logger.org.apache.hadoop=INFO
+  log4j.logger.org.apache.zookeeper=INFO
+  log4j.appender.console=org.apache.log4j.ConsoleAppender
+  log4j.appender.console.layout=org.apache.log4j.PatternLayout
+  log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+  log4j.appender.file=org.apache.log4j.FileAppender
+  log4j.appender.file.file=${log.file}
+  log4j.appender.file.layout=org.apache.log4j.PatternLayout
+  log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+  log4j.logger.org.apache.flink.shaded.akka.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, file<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p><code>jobmanager-deployment.yaml</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: flink-jobmanager
+spec:
+replicas: 1
+selector:
+  matchLabels:
+    app: flink
+    component: jobmanager
+template:
+  metadata:
+    labels:
+      app: flink
+      component: jobmanager
+  spec:
+    containers:
+    - name: jobmanager
+      image: hub.deri.org.cn/library/flink:latest
+      workingDir: /opt/flink
+      command: ["/bin/bash", "-c", "$FLINK_HOME/bin/jobmanager.sh start;\
+        while :;
+        do
+          if [[ -f $(find log -name '*jobmanager*.log' -print -quit) ]];
+            then tail -f -n +1 log/*jobmanager*.log;
+          fi;
+        done"]
+      ports:
+      - containerPort: 6123
+        name: rpc
+      - containerPort: 6124
+        name: blob
+      - containerPort: 8081
+        name: ui
+      livenessProbe:
+        tcpSocket:
+          port: 6123
+        initialDelaySeconds: 30
+        periodSeconds: 60
+      volumeMounts:
+      - name: flink-config-volume
+        mountPath: /opt/flink/conf
+      securityContext:
+        runAsUser: 9999  # refers to user _flink_ from official flink image, change if necessary
+    volumes:
+    - name: flink-config-volume
+      configMap:
+        name: flink-config
+        items:
+        - key: flink-conf.yaml
+          path: flink-conf.yaml
+        - key: log4j.properties
+          path: log4j.properties<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p><code>jobmanager-rest-service.yaml</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: Service
+metadata:
+name: flink-jobmanager-rest
+spec:
+type: NodePort
+ports:
+- name: rest
+  port: 8081
+  targetPort: 8081
+selector:
+  app: flink
+  component: jobmanager<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p><code>jobmanager-service.yaml</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: Service
+metadata:
+name: flink-jobmanager
+spec:
+type: ClusterIP
+ports:
+- name: rpc
+  port: 6123
+- name: blob
+  port: 6124
+- name: ui
+  port: 8081
+selector:
+  app: flink
+  component: jobmanager<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p><code>taskmanager-deployment.yaml</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: flink-taskmanager
+spec:
+replicas: 2
+selector:
+  matchLabels:
+    app: flink
+    component: taskmanager
+template:
+  metadata:
+    labels:
+      app: flink
+      component: taskmanager
+  spec:
+    containers:
+    - name: taskmanager
+      image: hub.deri.org.cn/library/flink:latest
+      workingDir: /opt/flink
+      command: ["/bin/bash", "-c", "$FLINK_HOME/bin/taskmanager.sh start; \
+        while :;
+        do
+          if [[ -f $(find log -name '*taskmanager*.log' -print -quit) ]];
+            then tail -f -n +1 log/*taskmanager*.log;
+          fi;
+        done"]
+      ports:
+      - containerPort: 6122
+        name: rpc
+      livenessProbe:
+        tcpSocket:
+          port: 6122
+        initialDelaySeconds: 30
+        periodSeconds: 60
+      volumeMounts:
+      - name: flink-config-volume
+        mountPath: /opt/flink/conf/
+      securityContext:
+        runAsUser: 9999  # refers to user _flink_ from official flink image, change if necessary
+    volumes:
+    - name: flink-config-volume
+      configMap:
+        name: flink-config
+        items:
+        - key: flink-conf.yaml
+          path: flink-conf.yaml
+        - key: log4j.properties
+          path: log4j.properties<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<h3 id="在k8s中部署"><a href="#在k8s中部署" class="headerlink" title="在k8s中部署"></a>在k8s中部署</h3><ul>
+<li><p>安装</p>
+<pre class="line-numbers language-sh"><code class="language-sh">kubectl apply -f .<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li><p>卸载</p>
+<pre class="line-numbers language-sh"><code class="language-sh">kubectl delete -f .<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+</ul>
+<h3 id="查看flink-UI"><a href="#查看flink-UI" class="headerlink" title="查看flink UI"></a>查看flink UI</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@master k8s-flink]# kubectl get svc
+NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+flink-jobmanager        ClusterIP   10.100.206.17   <none>        6123/TCP,6124/TCP,8081/TCP   3h47m
+flink-jobmanager-rest   NodePort    10.109.136.52   <none>        8081:30696/TCP               3h47m
+kubernetes              ClusterIP   10.96.0.1       <none>        443/TCP                      4d21h<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中<code>flink-jobmanager-rest</code>对应的<code>30696</code>端口就是<code>UI</code>的访问端口,也可以使用<code>Ingress</code>来访问，这里测试使用<code>NodePort</code>方式.</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-ru-guo-wang-ji-master-jie-dian-init-hou-join-ming-ling-zen-me-ban/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -751,292 +1266,10 @@ reader<span class="token punctuation">.</span><span class="token function">read<
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/dom4j-dui-xiang-ding-yi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/dom4j-dui-xiang-ding-yi/" class="post-title-link" itemprop="url">dom4j对象定义</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-05-19 10:14:10 / 修改时间：10:45:47" itemprop="dateCreated datePublished" datetime="2020-05-19T10:14:10+08:00">2020-05-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="dom4j"><a href="#dom4j" class="headerlink" title="dom4j"></a>dom4j</h3><blockquote>
-<p><code>DOM4J</code>是一个开源<code>XML</code>解析包。<code>DOM4J</code>应用于<code>Java</code>平台，采用了<code>Java</code>集合框架并完全支持<code>DOM</code>、<code>SAX</code>、<code>xpath</code>、<code>JAXP</code>。</p>
-</blockquote>
-<h3 id="dom4j接口说明"><a href="#dom4j接口说明" class="headerlink" title="dom4j接口说明"></a>dom4j接口说明</h3><table>
-<thead>
-<tr>
-<th>接口</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>Attribute</code></td>
-<td>属性</td>
-</tr>
-<tr>
-<td><code>Branch</code></td>
-<td>分支,指能够包含子节点的节点。如<code>Element</code>,<code>(Docuemnts</code>)</td>
-</tr>
-<tr>
-<td><code>CDATA</code></td>
-<td><code>XML CDATA</code>区域</td>
-</tr>
-<tr>
-<td><code>CharacterData</code></td>
-<td>是一个标识接口，标识基于字符的节点。如<code>CDATA</code>，<code>Comment</code>,<code>Text</code></td>
-</tr>
-<tr>
-<td><code>Comment</code></td>
-<td>注释</td>
-</tr>
-<tr>
-<td><code>Document</code></td>
-<td>文档</td>
-</tr>
-<tr>
-<td><code>DocumentType</code></td>
-<td><code>XML DOCTYPE</code> 声明</td>
-</tr>
-<tr>
-<td><code>Element</code></td>
-<td>定义<code>XML</code>元素</td>
-</tr>
-<tr>
-<td><code>ElementHandler</code></td>
-<td><code>Element</code>对象的处理器</td>
-</tr>
-<tr>
-<td><code>ElementPath</code></td>
-<td>被<code>ElementHandler</code>使用，用于取得当前正在处理的路径层次信息</td>
-</tr>
-<tr>
-<td><code>Entity</code></td>
-<td>定义<code>XML entity</code></td>
-</tr>
-<tr>
-<td><code>Node</code></td>
-<td>节点</td>
-</tr>
-<tr>
-<td><code>NodeFilter</code></td>
-<td>节点过滤器</td>
-</tr>
-<tr>
-<td><code>ProcessingInstruction</code></td>
-<td>定义<code>XML</code>处理指令</td>
-</tr>
-<tr>
-<td><code>Text</code></td>
-<td>文本节点</td>
-</tr>
-<tr>
-<td><code>Visitor</code></td>
-<td>用于实现<code>Visitor</code>模式</td>
-</tr>
-<tr>
-<td><code>XPath</code></td>
-<td><code>XPath</code>表达式</td>
-</tr>
-</tbody></table>
-<h3 id="dom4j依赖"><a href="#dom4j依赖" class="headerlink" title="dom4j依赖"></a>dom4j依赖</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token comment" spellcheck="true">&lt;!-- https://mvnrepository.com/artifact/dom4j/dom4j --></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>dom4j<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>dom4j<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.6.1<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span class="token comment" spellcheck="true">&lt;!--dom4j使用xpath依赖的包--></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>jaxen<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>jaxen<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.1.6<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="文档操作"><a href="#文档操作" class="headerlink" title="文档操作"></a>文档操作</h3><pre class="line-numbers language-java"><code class="language-java">SAXReader saxReader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SAXReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-Document document <span class="token operator">=</span> saxReader<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">File</span><span class="token punctuation">(</span>filename<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment" spellcheck="true">//读取XML文件,获得document对象</span>
-<span class="token comment" spellcheck="true">// Document document = saxReader.read(url);</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/linux-wen-jian-nei-rong-bi-jiao-diff-ming-ling/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/linux-wen-jian-nei-rong-bi-jiao-diff-ming-ling/" class="post-title-link" itemprop="url">linux文件内容比较-diff命令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-05-18 13:42:48 / 修改时间：13:50:51" itemprop="dateCreated datePublished" datetime="2020-05-18T13:42:48+08:00">2020-05-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="diff命令说明"><a href="#diff命令说明" class="headerlink" title="diff命令说明"></a>diff命令说明</h3><p>Linux diff命令用于比较文件的差异。</p>
-<p>diff以逐行的方式，比较文本文件的异同处。如果指定要比较目录，则diff会比较目录中相同文件名的文件，但不会比较其中子目录。</p>
-<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><pre class="line-numbers language-sh"><code class="language-sh">diff <文件1> <文件2> [附加参数]<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><pre class="line-numbers language-sh"><code class="language-sh">diff test1.txt test2.txt<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="常用参数"><a href="#常用参数" class="headerlink" title="常用参数"></a>常用参数</h3><ul>
-<li><code>-b</code>或<code>--ignore-space-change</code> 　不检查空格字符的不同</li>
-<li><code>-B</code>或<code>--ignore-blank-lines</code> 　不检查空白行</li>
-<li><code>-c</code>　显示全部内文，并标出不同之处</li>
-<li><code>-H</code>或<code>--speed-large-files</code>　比较大文件时，可加快速度</li>
-<li><code>-i</code>或<code>--ignore-case</code> 　不检查大小写的不同</li>
-<li><code>-y</code>或<code>--side-by-side</code> 　以并列的方式显示文件的异同之处</li>
-<li><code>-W</code>&lt;宽度&gt;或<code>--width</code>&lt;宽度&gt; 　在使用-y参数时，指定栏宽</li>
-</ul>
-<h3 id="结果说明"><a href="#结果说明" class="headerlink" title="结果说明"></a>结果说明</h3><ul>
-<li><code>|</code>表示前后2个文件内容有不同</li>
-<li><code>&lt;</code>表示后面文件比前面文件少了1行内容</li>
-<li><code>&gt;</code>表示后面文件比前面文件多了1行内容</li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/21/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/21/">21</a><span class="page-number current">22</span><a class="page-number" href="/page/23/">23</a><span class="space">&hellip;</span><a class="page-number" href="/page/46/">46</a><a class="extend next" rel="next" href="/page/23/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/21/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/21/">21</a><span class="page-number current">22</span><a class="page-number" href="/page/23/">23</a><span class="space">&hellip;</span><a class="page-number" href="/page/47/">47</a><a class="extend next" rel="next" href="/page/23/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1104,20 +1337,20 @@ Document document <span class="token operator">=</span> saxReader<span class="to
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">276</span>
+          <span class="site-state-item-count">278</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-count">31</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">187</span>
+        <span class="site-state-item-count">188</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
