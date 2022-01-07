@@ -203,6 +203,207 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-sidecar-zhu-ru/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-shi-yong-sidecar-zhu-ru/" class="post-title-link" itemprop="url">Istio使用【sidecar注入】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-25 11:29:41" itemprop="dateCreated datePublished" datetime="2019-12-25T11:29:41+08:00">2019-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-01-09 15:04:42" itemprop="dateModified" datetime="2020-01-09T15:04:42+08:00">2020-01-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p><strong>本文使用的istio版本：<code>1.4.2</code></strong></p>
+</blockquote>
+<h3 id="查看默认sidecar配置"><a href="#查看默认sidecar配置" class="headerlink" title="查看默认sidecar配置"></a>查看默认sidecar配置</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml <span class="token operator">|</span> <span class="token function">grep</span> <span class="token string">"namespaceSelector:"</span> -A5
+
+  namespaceSelector:
+    matchLabels:
+      istio-injection: enabled
+  objectSelector: <span class="token punctuation">{</span><span class="token punctuation">}</span>
+  reinvocationPolicy: Never
+  rules:<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看出，<code>istio</code>默认<code>sidecar</code>注入规则是，<code>namespace</code>带有标签<code>istio-injection: enabled</code>才会注入sidecar。</p>
+<p>查看哪些<code>namespace</code>已经配置注入：</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get namespace -L istio-injection</span>
+NAME              STATUS   AGE   ISTIO-INJECTION
+default           Active   70d   
+ingress-nginx     Active   69d   
+istio-system      Active   19h   
+kube-node-lease   Active   70d   
+kube-public       Active   70d   
+kube-system       Active   70d   
+naftis            Active   19h   
+test-deri         Active   47d <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>为<code>namespace</code>打上注入<code>sidecar</code>标签：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection<span class="token operator">=</span>enabled --overwrite<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>默认情况，是没有设置。</p>
+<h3 id="为namespace设置不注入sidecar"><a href="#为namespace设置不注入sidecar" class="headerlink" title="为namespace设置不注入sidecar"></a>为namespace设置不注入sidecar</h3><p>有些k8s系统组件<code>namespace</code>不应该注入<code>sidecar</code>，如<code>kube-system</code>等，参考如下设置</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml <span class="token operator">|</span> <span class="token function">grep</span> <span class="token string">"namespaceSelector:"</span> -A5
+
+  namespaceSelector:
+    matchExpressions:
+    - key: istio-injection
+      operator: NotIn
+      values:
+      - disabled
+  rules:
+  - apiGroups:
+    - <span class="token string">""</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>为<code>namespace</code>打上不注入<code>sidecar</code>标签:</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace istio-system istio-injection<span class="token operator">=</span>disabled --overwrite<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl get namespace -L istio-injection
+NAME           STATUS    AGE       ISTIO-INJECTION
+default        Active    18d
+istio-system   Active    3d        disabled
+kube-public    Active    18d       disabled
+kube-system    Active    18d       disabled<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="查看sidecar配置策略"><a href="#查看sidecar配置策略" class="headerlink" title="查看sidecar配置策略"></a>查看sidecar配置策略</h3><p><code>sidecar</code>配置保存在<code>configmap-istio-sidecar-injector</code>中，更多配置可以在<code>install/kubernetes/helm/istio/charts/sidecarInjectorWebhook/values.yaml</code>中查看。</p>
+<p>主要配置，默认策略：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl -n istio-system get configmap istio-sidecar-injector -o jsonpath<span class="token operator">=</span><span class="token string">'{.data.config}'</span> <span class="token operator">|</span> <span class="token function">grep</span> policy:<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>允许的值为<code>disabled</code>和<code>enabled</code>。仅当<code>Webhook namespaceSelector</code>匹配目标名称空间时，才应用默认策略。无法识别的策略导致注入被完全禁用。</p>
+<blockquote>
+<p><font color="red">注意</font>：①策略为<code>disabled</code>，但是想要为POD注入<code>sidecar</code>，增加<code>annotation sidecar.istio.io/inject: "true"</code>即可<br> ②策略为<code>enabled</code>，但是不想要为POD注入<code>sidecar</code>，增加<code>annotation sidecar.istio.io/inject: "false"</code>即可</p>
+</blockquote>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> ignored
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+      <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+        <span class="token key atrule">sidecar.istio.io/inject</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ignored
+        <span class="token key atrule">image</span><span class="token punctuation">:</span> tutum/curl
+        <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sleep"</span><span class="token punctuation">,</span><span class="token string">"infinity"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="手动注入sidecar"><a href="#手动注入sidecar" class="headerlink" title="手动注入sidecar"></a>手动注入<code>sidecar</code></h3><p>为一个写好的yaml文件手动注入sidecar，我们可以使用<code>istioctl kube-inject</code>:</p>
+<pre class="line-numbers language-bash"><code class="language-bash">istioctl kube-inject -f samples/sleep/sleep.yaml <span class="token operator">|</span> kubectl apply -f -<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>默认情况下，这将使用集群内配置。或者，可以使用配置的本地副本来完成注入。下面命令可以将默认配置导出到文件：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl -n istio-system get configmap istio-sidecar-injector -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.config}'</span> <span class="token operator">></span> inject-config.yaml
+kubectl -n istio-system get configmap istio-sidecar-injector -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.values}'</span> <span class="token operator">></span> inject-values.yaml
+kubectl -n istio-system get configmap istio -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.mesh}'</span> <span class="token operator">></span> mesh-config.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>然后再将文件中配置注入到已建好的<code>YAML</code>中并运行：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">istioctl kube-inject \
+    --injectConfigFile inject-config.yaml \
+    --meshConfigFile mesh-config.yaml \
+    --valuesFile inject-values.yaml \
+    --filename samples/sleep/sleep.yaml \
+    <span class="token operator">|</span> kubectl apply -f -<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这和第一条命令效果一样。验证<code>sidecar</code>已经注入：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl get pod  -l app<span class="token operator">=</span>sleep
+NAME                     READY   STATUS    RESTARTS   AGE
+sleep-64c6f57bc8-f5n4x   2/2     Running   0          24s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="其它配置：neverInjectSelector-alwaysInjectSelector"><a href="#其它配置：neverInjectSelector-alwaysInjectSelector" class="headerlink" title="其它配置：neverInjectSelector/alwaysInjectSelector"></a>其它配置：<code>neverInjectSelector/alwaysInjectSelector</code></h3><p>参考<a href="https://istio.io/docs/setup/additional-setup/sidecar-injection/#more-control-adding-exceptions" target="_blank" rel="noopener">官网</a></p>
+<p>示例：</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> ConfigMap
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> istio<span class="token punctuation">-</span>sidecar<span class="token punctuation">-</span>injector
+<span class="token key atrule">data</span><span class="token punctuation">:</span>
+  <span class="token key atrule">config</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token punctuation">-</span>
+    <span class="token key atrule">policy</span><span class="token punctuation">:</span> enabled
+    <span class="token key atrule">neverInjectSelector</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">matchExpressions</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">{</span><span class="token key atrule">key</span><span class="token punctuation">:</span> openshift.io/build.name<span class="token punctuation">,</span> <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists<span class="token punctuation">}</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">matchExpressions</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">{</span><span class="token key atrule">key</span><span class="token punctuation">:</span> openshift.io/deployer<span class="token punctuation">-</span>pod<span class="token punctuation">-</span>for.name<span class="token punctuation">,</span> <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists<span class="token punctuation">}</span>
+    <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token punctuation">-</span>
+      <span class="token key atrule">initContainers</span><span class="token punctuation">:</span>
+<span class="token punctuation">...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置优先级"><a href="#配置优先级" class="headerlink" title="配置优先级"></a>配置优先级</h3><p>如果<code>POD</code>配置了<code>注解</code>、<code>neverInjectSelector/alwaysInjectSelector</code>也都配置了，默认策略也配置了，那么他们之间的优先级参考如下：</p>
+<pre><code>Pod Annotations → NeverInjectSelector → AlwaysInjectSelector → Default Policy</code></pre><h3 id="卸载自动注入sidecar"><a href="#卸载自动注入sidecar" class="headerlink" title="卸载自动注入sidecar"></a>卸载自动注入sidecar</h3><h4 id="卸载istio中sidecar组件"><a href="#卸载istio中sidecar组件" class="headerlink" title="卸载istio中sidecar组件"></a>卸载istio中sidecar组件</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl delete mutatingwebhookconfiguration istio-sidecar-injector
+kubectl -n istio-system delete <span class="token function">service</span> istio-sidecar-injector
+kubectl -n istio-system delete deployment istio-sidecar-injector
+kubectl -n istio-system delete serviceaccount istio-sidecar-injector-service-account
+kubectl delete clusterrole istio-sidecar-injector-istio-system
+kubectl delete clusterrolebinding istio-sidecar-injector-admin-role-binding-istio-system<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="删除某个namespace自动注入"><a href="#删除某个namespace自动注入" class="headerlink" title="删除某个namespace自动注入"></a>删除某个namespace自动注入</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="sidecar注入问题"><a href="#sidecar注入问题" class="headerlink" title="sidecar注入问题"></a>sidecar注入问题</h3><p>更多可以参考<a href="https://istio.io/docs/ops/common-problems/injection/" target="_blank" rel="noopener">官网</a>.</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-an-zhuang-pei-zhi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -882,192 +1083,6 @@ provisioner: cluster.local/test-storageclass-nfs-client-provisioner<span aria-hi
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-zhong-shi-qu-wen-ti-shi-yong-podpreset-fang-fa/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-zhong-shi-qu-wen-ti-shi-yong-podpreset-fang-fa/" class="post-title-link" itemprop="url">K8s中时区问题【使用PodPreset方法】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-16 16:03:40" itemprop="dateCreated datePublished" datetime="2019-12-16T16:03:40+08:00">2019-12-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 11:05:54" itemprop="dateModified" datetime="2020-04-15T11:05:54+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>K8S启动的POD，默认时区与中国相差8小时，在排查问题或者查看日志时非常不方便。</p>
-</blockquote>
-<h3 id="增加容器环境变量，指定时区"><a href="#增加容器环境变量，指定时区" class="headerlink" title="增加容器环境变量，指定时区"></a>增加容器环境变量，指定时区</h3><pre class="line-numbers language-sh"><code class="language-sh">docker run -it --rm -e "TZ=Asia/Shanghai" centos<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>对应k8s中配置:</p>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
-kind: Pod
-metadata:
-  name: pod-env-tz
-spec:
-  containers:
-  - name: ngx
-    image: nginx:latest
-    imagePullPolicy: IfNotPresent
-    env:
-      - name: TZ
-        value: Asia/Shanghai<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="容器启动时，挂载到宿主机时区文件"><a href="#容器启动时，挂载到宿主机时区文件" class="headerlink" title="容器启动时，挂载到宿主机时区文件"></a>容器启动时，挂载到宿主机时区文件</h3><pre><code>docker run -it --rm -v /etc/localtime:/etc/localtime  centos</code></pre><p>对应k8s中配置</p>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
-kind: Pod
-metadata:
-  name: pod-vol-tz
-spec:
-  containers:
-  - name: ngx
-    image: nginx:latest
-    imagePullPolicy: IfNotPresent
-    volumeMounts:
-    - name: tz-config
-      mountPath: /etc/localtime
-      readOnly: true
-  volumes:
-  - name: tz-config
-    hostPath:
-      path: /etc/localtime<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>以上两种方法都可以解决问题，但是<strong>缺点明显</strong>，每次新建<code>POD</code>都需要指定。</p>
-<h3 id="推荐使用PodPreset方式"><a href="#推荐使用PodPreset方式" class="headerlink" title="推荐使用PodPreset方式"></a>推荐使用PodPreset方式</h3><h4 id="PodPreset（参考中文文档）"><a href="#PodPreset（参考中文文档）" class="headerlink" title="PodPreset（参考中文文档）"></a>PodPreset（<a href="https://www.kubernetes.org.cn/podpreset" target="_blank" rel="noopener">参考中文文档</a>）</h4><p>PodPreset用来给指定标签的Pod注入额外的信息，如环境变量、存储卷等。这样，Pod模板就不需要为每个Pod都显式设置重复的信息。</p>
-<h4 id="开启PodPreset"><a href="#开启PodPreset" class="headerlink" title="开启PodPreset"></a>开启PodPreset</h4><ul>
-<li>开启<code>API</code> <code>settings.k8s.io/v1alpha1/podpreset</code></li>
-<li>开启准入控制 <code>PodPreset</code></li>
-</ul>
-<h4 id="默认情况下PodPreset不可用"><a href="#默认情况下PodPreset不可用" class="headerlink" title="默认情况下PodPreset不可用"></a>默认情况下PodPreset不可用</h4><pre class="line-numbers language-sh"><code class="language-sh">[root@k8s-master ~]# kubectl get podpreset
-error: the server doesn't have a resource type "podpreset"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h4 id="开启之后应该是"><a href="#开启之后应该是" class="headerlink" title="开启之后应该是"></a>开启之后应该是</h4><pre class="line-numbers language-sh"><code class="language-sh">[root@k8s-master ~]# kubectl get podpreset
-No resources found.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="如何开启PodPreset？"><a href="#如何开启PodPreset？" class="headerlink" title="如何开启PodPreset？"></a>如何开启PodPreset？</h3><p>编辑<code>/etc/kubernetes/manifests/kube-apiserver.yaml</code></p>
-<pre class="line-numbers language-yml"><code class="language-yml">spec:
-  containers:
-  - command:
-    - kube-apiserver
-    - --advertise-address=192.168.1.210
-    - --allow-privileged=true
-    - --authorization-mode=Node,RBAC
-    - --client-ca-file=/etc/kubernetes/pki/ca.crt
-    - --enable-admission-plugins=NodeRestriction,PodPreset
-    - --enable-bootstrap-token-auth=true
-    - --runtime-config=settings.k8s.io/v1alpha1=true
-    - --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>添加一行配置<code>- --runtime-config=settings.k8s.io/v1alpha1=true，enable-admission-plugins后面增加PodPreset</code>。</p>
-<p>等待<code>ApiServer</code><strong>自动重启</strong>完成。</p>
-<h3 id="创建PodPreset"><a href="#创建PodPreset" class="headerlink" title="创建PodPreset"></a>创建PodPreset</h3><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: settings.k8s.io/v1alpha1
-kind: PodPreset
-metadata:
-  name: allow-tz-env
-  namespace: default
-spec:
-  selector:
-    matchLabels:
-  env:
-    - name: TZ
-      value: Asia/Shanghai<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-sh"><code class="language-sh">[root@k8s-master ~]# kubectl get podpresets
-NAME           CREATED AT
-allow-tz-env   2019-12-16T07:57:54Z<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>现在创建一个新的POD，查看其环境变量。</p>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>我这边简单测试，删除一个已有的<code>consul容器</code>，等它重启之后，查看它的环境变量<br><img data-src="/images/k8s8.png" alt="consul"></p>
-<p>可以看到，容器最后环境变量确实增加的时区配置。</p>
-<h3 id="busybox通过时区设置时间不生效问题"><a href="#busybox通过时区设置时间不生效问题" class="headerlink" title="busybox通过时区设置时间不生效问题"></a>busybox通过时区设置时间不生效问题</h3><p>原因参考<a href="https://blog.csdn.net/vc66vcc/article/details/78747815" target="_blank" rel="noopener">这篇</a>。</p>
-<p>解决办法，通过挂载磁盘<code>/etc/localtime</code>，也可以通过<code>PodPreset</code>方式，为每个创建的<code>POD自动添加挂载</code>。</p>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: settings.k8s.io/v1alpha1
-kind: PodPreset
-metadata:
-  name: allow-tz-env
-spec:
-  selector:
-    matchLabels:
-  volumeMounts:
-    - mountPath: /etc/localtime
-      name: tz-config
-      readOnly: true
-  volumes:
-    - name: tz-config
-      hostPath: 
-        path: /etc/localtime<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>这样新增的<code>POD</code>会自动挂载宿主机上的时间文件。</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1139,7 +1154,7 @@ spec:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">279</span>
+          <span class="site-state-item-count">280</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1152,7 +1167,7 @@ spec:
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">188</span>
+        <span class="site-state-item-count">189</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1200,7 +1215,7 @@ spec:
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

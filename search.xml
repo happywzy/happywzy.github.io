@@ -30217,14 +30217,11 @@ nfs-client <span class="token punctuation">(</span>default<span class="token pun
 <span class="token key atrule">containers</span><span class="token punctuation">:</span>
 <span class="token punctuation">-</span> <span class="token key atrule">command</span><span class="token punctuation">:</span>
  <span class="token punctuation">-</span> kube<span class="token punctuation">-</span>apiserver<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-添加这一行：<br>```yaml</li>
+添加这一行：<br><code>- --feature-gates=RemoveSelfLink=false</code></li>
 </ol>
-<ul>
-<li>–feature-gates=RemoveSelfLink=false<pre><code>然后应用它，即可
-```bash
-kubectl apply -f /etc/kubernetes/manifests/kube-apiserver.yaml</code></pre></li>
-</ul>
-<ol start="2">
+<p>然后应用它，即可</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f /etc/kubernetes/manifests/kube-apiserver.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol>
 <li>解决方案<br>参考<a href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/issues/25" target="_blank" rel="noopener">issue</a>，升级<code>nfs-client-provisioner</code>镜像到<code>v4.0</code>以上版本.<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 一个可用的版本</span>
 easzlab/nfs-subdir-external-provisioner:v4.0.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 </li>
@@ -30253,6 +30250,50 @@ easzlab/nfs-subdir-external-provisioner:v4.0.1<span aria-hidden="true" class="li
       </categories>
       <tags>
         <tag>nfs-client</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>华为云裸机k8s集群使用LoadBalancer</title>
+    <url>/hua-wei-yun-luo-ji-k8s-ji-qun-shi-yong-loadbalancer/</url>
+    <content><![CDATA[<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>一般在机房或者云上使用<code>ECS</code>自建<code>Kubernetes</code>集群是无法使用<code>LoadBalancer</code>类型的<code>Service</code>。因为<code>Kubernetes</code>本身没有为裸机群集提供网络<code>负载均衡器</code>的实现。自建的<code>Kubernetes</code>集群暴露让外网访问，目前只能使用<code>NodePort</code>或<code>Ingress</code>等的方法进行服务暴露.<br>有没有方法，让自建的<code>Kubernetes</code>集群也能使用<code>LoadBalancer</code>类型的<code>Service</code>？这里使用<code>OPENELB</code>实现这个功能.</p>
+<h3 id="OPENELB部署"><a href="#OPENELB部署" class="headerlink" title="OPENELB部署"></a>OPENELB部署</h3><ul>
+<li><a href="https://porterlb.io/docs/getting-started/installation/" target="_blank" rel="noopener">参考链接</a></li>
+</ul>
+<h3 id="OPENELB使用"><a href="#OPENELB使用" class="headerlink" title="OPENELB使用"></a>OPENELB使用</h3><ul>
+<li><a href="https://porterlb.io/docs/getting-started/usage/" target="_blank" rel="noopener">参考链接</a></li>
+</ul>
+<h3 id="两种模式"><a href="#两种模式" class="headerlink" title="两种模式"></a>两种模式</h3><ul>
+<li>Layer 2 模式</li>
+<li>BGP 模式</li>
+</ul>
+<h3 id="华为云使用"><a href="#华为云使用" class="headerlink" title="华为云使用"></a>华为云使用</h3><p><code>网络控制台</code> -&gt; <code>子网</code> -&gt; <code>选择自己的子网</code> -&gt; <code>IP地址管理</code> -&gt; <code>申请虚拟IP地址</code>.<br>申请好虚拟IP地址后,就可以在<code>OPENELB</code>创建<code>EIP池</code>时填上申请的<code>虚拟IP</code>.</p>
+<blockquote>
+<p>参考<code>Layer2</code>模式为<code>service</code>分配了IP后,在华为云上还只能在内网访问,如果想公网访问还需要为这个<code>虚拟IP</code>绑定<code>公网IP</code>并<code>绑定服务器网卡</code>.</p>
+</blockquote>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>LoadBalancer</tag>
       </tags>
   </entry>
 </search>

@@ -203,6 +203,119 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/spring-boot-li-yong-xi-tong-bian-liang-he-pei-zhi-wen-jian-shi-xian-ling-huo-pei-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/spring-boot-li-yong-xi-tong-bian-liang-he-pei-zhi-wen-jian-shi-xian-ling-huo-pei-zhi/" class="post-title-link" itemprop="url">springboot利用系统变量和配置文件实现灵活配置</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-31 16:06:14" itemprop="dateCreated datePublished" datetime="2020-03-31T16:06:14+08:00">2020-03-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-14 13:58:25" itemprop="dateModified" datetime="2020-04-14T13:58:25+08:00">2020-04-14</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="静态方式"><a href="#静态方式" class="headerlink" title="静态方式"></a>静态方式</h3><p>直接在<code>bootstrap.yml</code>或者<code>application.yml</code>中写死；</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spring</span><span class="token punctuation">:</span>
+  <span class="token comment" spellcheck="true">#mysql数据配置</span>
+  <span class="token key atrule">datasource</span><span class="token punctuation">:</span>
+    <span class="token key atrule">driver-class-name</span><span class="token punctuation">:</span> com.mysql.jdbc.Driver
+    <span class="token key atrule">username</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+    <span class="token key atrule">url</span><span class="token punctuation">:</span> jdbc<span class="token punctuation">:</span>mysql<span class="token punctuation">:</span>//192.168.41.128<span class="token punctuation">:</span>3306/gw<span class="token punctuation">?</span>useUnicode=true<span class="token important">&amp;characterEncoding</span>=utf8<span class="token important">&amp;useSSL</span>=false<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>缺点是参数需要改变时，需要重新改写配置，再打包。特别docker部署时，环境变化了，配置改动麻烦。</p>
+<h3 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h3><p>在<code>yml</code>文件中，通过<code>${Envirment_variable}</code>的方式可以获取系统环境变量中的值；如上面的配置改写成：</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spring</span><span class="token punctuation">:</span>
+  <span class="token comment" spellcheck="true">#mysql数据配置</span>
+  <span class="token key atrule">datasource</span><span class="token punctuation">:</span>
+    <span class="token key atrule">driver-class-name</span><span class="token punctuation">:</span> com.mysql.jdbc.Driver
+    <span class="token key atrule">username</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span>USER_NAME<span class="token punctuation">:</span>root<span class="token punctuation">}</span>
+    <span class="token key atrule">password</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span>PASSWORD<span class="token punctuation">:</span><span class="token number">123456</span><span class="token punctuation">}</span>
+    <span class="token key atrule">url</span><span class="token punctuation">:</span> jdbc<span class="token punctuation">:</span>mysql<span class="token punctuation">:</span>//$<span class="token punctuation">{</span>IP<span class="token punctuation">:</span>192.168.41.128<span class="token punctuation">:</span><span class="token number">3306</span><span class="token punctuation">}</span>/gw<span class="token punctuation">?</span>useUnicode=true<span class="token important">&amp;characterEncoding</span>=utf8<span class="token important">&amp;useSSL</span>=false<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以上配置，优先设置系统环境变量（USER_NAME、PASSWORD、IP）的值，如果没有，才会使用默认值。</p>
+<h3 id="docker部署传入环境变量"><a href="#docker部署传入环境变量" class="headerlink" title="docker部署传入环境变量"></a>docker部署传入环境变量</h3><ul>
+<li>通过<code>-e</code>可以传入环境变量;</li>
+<li><code>docker-compose</code>可以通过<code>environment</code>传入系统环境变量;</li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/flinksql-client-chu-ti-yan/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1050,236 +1163,6 @@ username<span class="token punctuation">,</span>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flinksql-shi-jian-chuo-zhuan-huan-cheng-ri-qi-ge-shi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/flinksql-shi-jian-chuo-zhuan-huan-cheng-ri-qi-ge-shi/" class="post-title-link" itemprop="url">flinkSQL时间戳转换成日期格式</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-25 16:44:28" itemprop="dateCreated datePublished" datetime="2020-03-25T16:44:28+08:00">2020-03-25</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-03-26 14:30:54" itemprop="dateModified" datetime="2020-03-26T14:30:54+08:00">2020-03-26</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span><span class="token property">"id"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token property">"price"</span><span class="token operator">:</span><span class="token number">40</span><span class="token punctuation">,</span><span class="token property">"ts"</span><span class="token operator">:</span><span class="token number">1585125854697</span><span class="token punctuation">,</span><span class="token property">"type"</span><span class="token operator">:</span><span class="token string">"math"</span><span class="token punctuation">}</span>
-<span class="token punctuation">{</span><span class="token property">"id"</span><span class="token operator">:</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token property">"price"</span><span class="token operator">:</span><span class="token number">60</span><span class="token punctuation">,</span><span class="token property">"ts"</span><span class="token operator">:</span><span class="token number">1585125861687</span><span class="token punctuation">,</span><span class="token property">"type"</span><span class="token operator">:</span><span class="token string">"ph"</span><span class="token punctuation">}</span>
-<span class="token punctuation">{</span><span class="token property">"id"</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token property">"price"</span><span class="token operator">:</span><span class="token number">80</span><span class="token punctuation">,</span><span class="token property">"ts"</span><span class="token operator">:</span><span class="token number">1585125862380</span><span class="token punctuation">,</span><span class="token property">"type"</span><span class="token operator">:</span><span class="token string">"cs"</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>模拟数据如上所示，时间字段是13位时间戳格式，在flink sql中直接转成TIMESTAMP格式会有问题。</p>
-<p>参考<a href="https://helpcdn.aliyun.com/knowledge_list/62717.html?spm=a2c4g.11186623.6.662.3f6ba3c50vKfDl" target="_blank" rel="noopener">阿里云日期函数</a><code>TO_TIMESTAMP</code>，文档中示例支持三种入参，</p>
-<pre class="line-numbers language-SQL"><code class="language-SQL">TIMESTAMP TO_TIMESTAMP(BIGINT time)
-TIMESTAMP TO_TIMESTAMP(VARCHAR date)
-TIMESTAMP TO_TIMESTAMP(VARCHAR date, VARCHAR format)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>实际使用<code>flink 1.10</code>版本测试，<code>TO_TIMESTAMP</code>不能直接将<code>BIGINT</code>转成<code>TIMESTAMP</code>.</p>
-<pre class="line-numbers language-s"><code class="language-s">[ERROR] Could not execute SQL statement. Reason:
-org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAMP' to arguments of type 'TO_TIMESTAMP(<BIGINT>)'. Supported form(s): 'TO_TIMESTAMP(<CHARACTER>)' 'TO_TIMESTAMP(<CHARACTER>, <CHARACTER>)'<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="创建UDF，并用SQL-client测试"><a href="#创建UDF，并用SQL-client测试" class="headerlink" title="创建UDF，并用SQL client测试"></a>创建UDF，并用SQL client测试</h3><p>创建一个<code>UDF</code>,传入一个<code>Long</code>型时间戳，返回<code>Timestamp</code>格式</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TimeUdf</span> <span class="token keyword">extends</span> <span class="token class-name">ScalarFunction</span> <span class="token punctuation">{</span>
-
-    <span class="token keyword">private</span> Long timestamp<span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token function">TimeUdf</span><span class="token punctuation">(</span>Long timestamp<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>timestamp <span class="token operator">=</span> timestamp<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> Timestamp <span class="token function">eval</span><span class="token punctuation">(</span>Long timestamp<span class="token punctuation">)</span><span class="token punctuation">{</span>
-        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Timestamp</span><span class="token punctuation">(</span>timestamp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>UDF需要的依赖</p>
-<pre class="line-numbers language-xml"><code class="language-xml"><span class="token comment" spellcheck="true">&lt;!--Table Program Dependencies--></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.apache.flink<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>flink-table-api-java-bridge_2.11<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.10.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>scope</span><span class="token punctuation">></span></span>provided<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>scope</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.apache.flink<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>flink-table-planner-blink_2.11<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.10.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>scope</span><span class="token punctuation">></span></span>provided<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>scope</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.apache.flink<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>flink-streaming-scala_2.11<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.10.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>scope</span><span class="token punctuation">></span></span>provided<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>scope</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.apache.flink<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>flink-table-common<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.10.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>scope</span><span class="token punctuation">></span></span>provided<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>scope</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>使用maven打包成jar，并拷贝到flink目录lib中，重启flink。</p>
-<pre class="line-numbers language-sh"><code class="language-sh">mvn clean package<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>修改<code>sql-client-defaults.yaml</code>配置</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token punctuation">...</span>
-<span class="token comment" spellcheck="true">#创建表</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> bookpojo
-    <span class="token key atrule">type</span><span class="token punctuation">:</span> source<span class="token punctuation">-</span>table
-    <span class="token key atrule">connector</span><span class="token punctuation">:</span> 
-      <span class="token key atrule">property-version</span><span class="token punctuation">:</span> <span class="token number">1</span>
-      <span class="token key atrule">type</span><span class="token punctuation">:</span> kafka
-      <span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">"universal"</span>
-      <span class="token key atrule">topic</span><span class="token punctuation">:</span> pojo
-      <span class="token key atrule">startup-mode</span><span class="token punctuation">:</span> earliest<span class="token punctuation">-</span>offset
-      <span class="token key atrule">properties</span><span class="token punctuation">:</span>
-        <span class="token key atrule">zookeeper.connect</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">2181</span>
-        <span class="token key atrule">bootstrap.servers</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">9092</span>
-        <span class="token key atrule">group.id</span><span class="token punctuation">:</span> testGroup
-    <span class="token key atrule">format</span><span class="token punctuation">:</span> 
-      <span class="token key atrule">property-version</span><span class="token punctuation">:</span> <span class="token number">1</span>
-      <span class="token key atrule">type</span><span class="token punctuation">:</span> json
-      <span class="token comment" spellcheck="true"># derive-schema: true</span>
-      <span class="token key atrule">schema</span><span class="token punctuation">:</span> <span class="token string">"ROW&lt;id INT, type STRING, price INT, ts BIGINT>"</span>
-    <span class="token key atrule">schema</span><span class="token punctuation">:</span> 
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> id
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> INT
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> type
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> STRING
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> price
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> INT
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ts
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> BIGINT
-
-<span class="token comment" spellcheck="true"># 创建UDF</span>
-<span class="token key atrule">functions</span><span class="token punctuation">:</span> 
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> TimeUdf
-    <span class="token key atrule">from</span><span class="token punctuation">:</span> class
-    <span class="token key atrule">class</span><span class="token punctuation">:</span> com.deri.udx.TimeUdf
-    <span class="token key atrule">constructor</span><span class="token punctuation">:</span> 
-      <span class="token punctuation">-</span> <span class="token key atrule">type</span><span class="token punctuation">:</span> BIGINT
-        <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token number">111111111</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>启动<code>SQL client</code></p>
-<pre class="line-numbers language-sh"><code class="language-sh">./bin/sql-client.sh embedded<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>SQL查询</p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 时间戳</span>
-<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> bookpojo<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 转成日期</span>
-<span class="token keyword">select</span> id<span class="token punctuation">,</span>price<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">,</span>TimeUdf<span class="token punctuation">(</span>ts<span class="token punctuation">)</span> <span class="token keyword">AS</span> ts <span class="token keyword">from</span> bookpojo<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="最新研究：LONG型时间戳可以直接转成TIMESTAMP格式"><a href="#最新研究：LONG型时间戳可以直接转成TIMESTAMP格式" class="headerlink" title="最新研究：LONG型时间戳可以直接转成TIMESTAMP格式"></a>最新研究：LONG型时间戳可以直接转成TIMESTAMP格式</h3><p>需要在ROW中定义为LONG，Schema中定义为TIMESTAMP</p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t<span class="token punctuation">`</span> <span class="token punctuation">(</span>
-   ctm <span class="token keyword">TIMESTAMP</span><span class="token punctuation">,</span>
-<span class="token punctuation">)</span> <span class="token keyword">WITH</span> <span class="token punctuation">(</span>
-  <span class="token string">'format.schema'</span> <span class="token operator">=</span> <span class="token string">'ROW&lt;ctm LONG>'</span>
-<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p><code>sql-client-defaults.yaml</code>中详细配置，测试成功</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">tables</span><span class="token punctuation">:</span> 
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> bookpojo
-    <span class="token key atrule">type</span><span class="token punctuation">:</span> source<span class="token punctuation">-</span>table
-    <span class="token key atrule">update-mode</span><span class="token punctuation">:</span> append
-    <span class="token key atrule">connector</span><span class="token punctuation">:</span> 
-      <span class="token key atrule">property-version</span><span class="token punctuation">:</span> <span class="token number">1</span>
-      <span class="token key atrule">type</span><span class="token punctuation">:</span> kafka
-      <span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">"universal"</span>
-      <span class="token key atrule">topic</span><span class="token punctuation">:</span> pojo
-      <span class="token key atrule">startup-mode</span><span class="token punctuation">:</span> earliest<span class="token punctuation">-</span>offset
-      <span class="token key atrule">properties</span><span class="token punctuation">:</span>
-        <span class="token key atrule">zookeeper.connect</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">2181</span>
-        <span class="token key atrule">bootstrap.servers</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">9092</span>
-        <span class="token key atrule">group.id</span><span class="token punctuation">:</span> testGroup
-    <span class="token key atrule">format</span><span class="token punctuation">:</span> 
-      <span class="token key atrule">property-version</span><span class="token punctuation">:</span> <span class="token number">1</span>
-      <span class="token key atrule">type</span><span class="token punctuation">:</span> json
-      <span class="token key atrule">schema</span><span class="token punctuation">:</span> <span class="token string">"ROW&lt;id INT, type STRING, price INT, ts LONG>"</span>
-    <span class="token key atrule">schema</span><span class="token punctuation">:</span> 
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> id
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> INT
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> type
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> STRING
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> price
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> INT
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> tss
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> TIMESTAMP
-        <span class="token key atrule">rowtime</span><span class="token punctuation">:</span>
-          <span class="token key atrule">timestamps</span><span class="token punctuation">:</span>
-            <span class="token key atrule">type</span><span class="token punctuation">:</span> <span class="token string">"from-field"</span>
-            <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token string">"ts"</span>
-          <span class="token key atrule">watermarks</span><span class="token punctuation">:</span>
-            <span class="token key atrule">type</span><span class="token punctuation">:</span> <span class="token string">"periodic-bounded"</span>
-            <span class="token key atrule">delay</span><span class="token punctuation">:</span> <span class="token string">"60000"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1351,7 +1234,7 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">279</span>
+          <span class="site-state-item-count">280</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1364,7 +1247,7 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">188</span>
+        <span class="site-state-item-count">189</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1412,7 +1295,7 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
