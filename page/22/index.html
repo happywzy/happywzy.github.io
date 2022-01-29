@@ -203,6 +203,164 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-mo-hu-cha-xun/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-mo-hu-cha-xun/" class="post-title-link" itemprop="url">mysql几种模糊查询方法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-06-18 15:07:38 / 修改时间：15:21:30" itemprop="dateCreated datePublished" datetime="2020-06-18T15:07:38+08:00">2020-06-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="like"><a href="#like" class="headerlink" title="like"></a>like</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 没有用到索引</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">where</span> user_name <span class="token operator">like</span> <span class="token string">'%test%'</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 用到索引但是不通用</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">where</span> user_name <span class="token operator">like</span> <span class="token string">'test%'</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="locate"><a href="#locate" class="headerlink" title="locate"></a>locate</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- LOCATE('substr',str,pos)</span>
+<span class="token comment" spellcheck="true">-- pos不填:返回substr在str中第一次出现的位置，如果不存在，返回值为0</span>
+<span class="token comment" spellcheck="true">-- pos存在:返回pos之后第一次出现的位置</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">where</span> locate<span class="token punctuation">(</span><span class="token string">'test'</span><span class="token punctuation">,</span>user_name<span class="token punctuation">)</span><span class="token operator">></span><span class="token number">0</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="position"><a href="#position" class="headerlink" title="position"></a>position</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 同locate</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">where</span> position<span class="token punctuation">(</span><span class="token string">'test'</span> <span class="token operator">in</span> user_name<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="instr"><a href="#instr" class="headerlink" title="instr"></a>instr</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查找一个字符串在另一个字符串中首次出现的位置</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">where</span> instr<span class="token punctuation">(</span>user_name<span class="token punctuation">,</span><span class="token string">'test'</span><span class="token punctuation">)</span><span class="token operator">></span><span class="token number">0</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="find-in-set"><a href="#find-in-set" class="headerlink" title="find_in_set"></a>find_in_set</h3><p><code>FIND_IN_SET(str,strList)</code></p>
+<ul>
+<li><code>str</code> 要查询的字符串</li>
+<li><code>strList</code> 字段名，参数以 <code>,</code> 分隔，如 <code>(1,2,6,8)</code></li>
+</ul>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 测试及结果</span>
+mysql<span class="token operator">></span> <span class="token keyword">select</span> find_in_set<span class="token punctuation">(</span><span class="token string">'1'</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token operator">|</span> find_in_set<span class="token punctuation">(</span><span class="token string">'1'</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token operator">|</span>                              <span class="token number">1</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+
+mysql<span class="token operator">></span> <span class="token keyword">select</span> find_in_set<span class="token punctuation">(</span><span class="token string">'2'</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token operator">|</span> find_in_set<span class="token punctuation">(</span><span class="token string">'2'</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token operator">|</span>                              <span class="token number">2</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+
+mysql<span class="token operator">></span> <span class="token keyword">select</span> find_in_set<span class="token punctuation">(</span><span class="token string">''</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+</span>
+<span class="token operator">|</span> find_in_set<span class="token punctuation">(</span><span class="token string">''</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+</span>
+<span class="token operator">|</span>                             <span class="token number">0</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+
+mysql<span class="token operator">></span> <span class="token keyword">select</span> find_in_set<span class="token punctuation">(</span><span class="token string">'2'</span><span class="token punctuation">,</span><span class="token string">''</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+</span>
+<span class="token operator">|</span> find_in_set<span class="token punctuation">(</span><span class="token string">'2'</span><span class="token punctuation">,</span><span class="token string">''</span><span class="token punctuation">)</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+</span>
+<span class="token operator">|</span>                   <span class="token number">0</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+
+mysql<span class="token operator">></span> <span class="token keyword">select</span> find_in_set<span class="token punctuation">(</span><span class="token string">'7'</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token operator">|</span> find_in_set<span class="token punctuation">(</span><span class="token string">'7'</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token operator">|</span>                              <span class="token number">0</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+
+mysql<span class="token operator">></span> <span class="token keyword">select</span> find_in_set<span class="token punctuation">(</span><span class="token boolean">null</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------------------+</span>
+<span class="token operator">|</span> find_in_set<span class="token punctuation">(</span><span class="token boolean">null</span><span class="token punctuation">,</span><span class="token string">'1,2,3,4,5,6'</span><span class="token punctuation">)</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------------------+</span>
+<span class="token operator">|</span> <span class="token boolean">NULL</span>                            <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+
+mysql<span class="token operator">></span> <span class="token keyword">select</span> find_in_set<span class="token punctuation">(</span><span class="token string">'7'</span><span class="token punctuation">,</span><span class="token boolean">null</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------+</span>
+<span class="token operator">|</span> find_in_set<span class="token punctuation">(</span><span class="token string">'7'</span><span class="token punctuation">,</span><span class="token boolean">null</span><span class="token punctuation">)</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------+</span>
+<span class="token operator">|</span> <span class="token boolean">NULL</span>                  <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/vmware-xu-ni-ji-yi-wai-guan-ji-hou-qi-dong-bao-cuo/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1019,177 +1177,6 @@ xh7hwq.a62kp9myjdde3nif   22h       2020-06-05T15:54:14+08:00   authentication,s
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-poststart-gou-zi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-poststart-gou-zi/" class="post-title-link" itemprop="url">k8s【PostStart钩子】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-06-04 14:20:38 / 修改时间：14:28:47" itemprop="dateCreated datePublished" datetime="2020-06-04T14:20:38+08:00">2020-06-04</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="PostStart"><a href="#PostStart" class="headerlink" title="PostStart"></a>PostStart</h3><p>容器生命周期钩子（<code>Container Lifecycle Hooks</code>）监听容器生命周期的特定事件，并在事件发生时</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> lifecycle<span class="token punctuation">-</span>demo<span class="token punctuation">-</span>container
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx
-    <span class="token key atrule">lifecycle</span><span class="token punctuation">:</span>
-      <span class="token key atrule">postStart</span><span class="token punctuation">:</span>
-        <span class="token key atrule">exec</span><span class="token punctuation">:</span>
-          <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sh"</span><span class="token punctuation">,</span> <span class="token string">"-c"</span><span class="token punctuation">,</span> <span class="token string">"echo Hello from the postStart handler > /usr/share/message"</span><span class="token punctuation">]</span>
-      <span class="token key atrule">preStop</span><span class="token punctuation">:</span>
-        <span class="token key atrule">exec</span><span class="token punctuation">:</span>
-          <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/usr/sbin/nginx"</span><span class="token punctuation">,</span><span class="token string">"-s"</span><span class="token punctuation">,</span><span class="token string">"quit"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>执行已注册的回调函数。支持两种钩子：</p>
-<ul>
-<li><code>postStart</code>： 容器启动后执行，注意由于是<strong>异步执行</strong>，它无法保证一定在ENTRYPOINT之后运行。如果失败，容器会被杀死，并根据RestartPolicy决定是否重启</li>
-<li><code>preStop</code>：容器停止前执行，常用于资源清理。如果失败，容器同样也会被杀死</li>
-</ul>
-<p>而钩子的回调函数支持两种方式：</p>
-<ul>
-<li><code>exec</code>：在容器内执行命令</li>
-<li><code>httpGet</code>：向指定URL发起GET请求</li>
-</ul>
-<h3 id="关于postStart异步执行测试"><a href="#关于postStart异步执行测试" class="headerlink" title="关于postStart异步执行测试"></a>关于<code>postStart</code><strong>异步执行</strong>测试</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>post<span class="token punctuation">-</span>start
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>post<span class="token punctuation">-</span>start<span class="token punctuation">-</span>container
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> busybox
-    <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sh"</span><span class="token punctuation">,</span> <span class="token string">"-c"</span><span class="token punctuation">,</span> <span class="token string">"sleep 5 &amp;&amp; echo $(date) 'written by entrypoint' >> log.log &amp;&amp; sleep 600"</span><span class="token punctuation">]</span>
-    <span class="token key atrule">lifecycle</span><span class="token punctuation">:</span>
-      <span class="token key atrule">postStart</span><span class="token punctuation">:</span>
-        <span class="token key atrule">exec</span><span class="token punctuation">:</span>
-          <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sh"</span><span class="token punctuation">,</span> <span class="token string">"-c"</span><span class="token punctuation">,</span> <span class="token string">"sleep 10 &amp;&amp; echo $(date) 'written by post start' >> log.log"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>创建上面的<code>pod</code>，通过进入<code>pod</code>，查看<code>log.log</code>打印日志，证明：</p>
-<ul>
-<li>PostStart是否会挡住主进程的启动</li>
-<li>PostStart是否是异步执行</li>
-</ul>
-<p>如果 PostStart 会阻挡 ENTRYPOINT 的启动，则日志文件内容应该是：</p>
-<pre class="line-numbers language-log"><code class="language-log">（时间点 T）written by post start
-（时间点 T + 约 10 秒）written by entrypoint<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>否则内容应该是：</p>
-<pre class="line-numbers language-log"><code class="language-log">（时间点 T）written by entrypoint
-（时间点 T + 约 5 秒）written by post start
-```log
-
-实验结果：
-```log
-/ # cat log.log
-Thu Jun 4 06:14:50 UTC 2020 written by entrypoint
-Thu Jun 4 06:14:55 UTC 2020 written by post start<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>修改YML</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>post<span class="token punctuation">-</span>start
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>post<span class="token punctuation">-</span>start<span class="token punctuation">-</span>container
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> busybox
-    <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sh"</span><span class="token punctuation">,</span> <span class="token string">"-c"</span><span class="token punctuation">,</span> <span class="token string">"sleep 15 &amp;&amp; echo $(date) 'written by entrypoint' >> log.log &amp;&amp; sleep 600"</span><span class="token punctuation">]</span>
-    <span class="token key atrule">lifecycle</span><span class="token punctuation">:</span>
-      <span class="token key atrule">postStart</span><span class="token punctuation">:</span>
-        <span class="token key atrule">exec</span><span class="token punctuation">:</span>
-          <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sh"</span><span class="token punctuation">,</span> <span class="token string">"-c"</span><span class="token punctuation">,</span> <span class="token string">"sleep 10 &amp;&amp; echo $(date) 'written by post start' >> log.log"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>如果 PostStart 不是异步执行，则日志文件内容应该是：</p>
-<pre class="line-numbers language-log"><code class="language-log">（时间点 T）written by entrypoint
-（时间点 T + 约 5 秒）written by post start
-```log
-
-否则内容应该是：
-```log
-（时间点 T）written by post start
-（时间点 T + 约 5 秒）written by entrypoint<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>实验结果：</p>
-<pre class="line-numbers language-log"><code class="language-log">[root@master k8s]# kubectl exec -it test-post-start sh
-/ # cat log.log
-Thu Jun 4 06:17:54 UTC 2020 written by post start
-Thu Jun 4 06:17:59 UTC 2020 written by entrypoint
-/ # <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="实验结论"><a href="#实验结论" class="headerlink" title="实验结论"></a>实验结论</h4><ul>
-<li>PostStart不会挡住主进程的启动</li>
-<li>PostStart是异步执行</li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1261,7 +1248,7 @@ Thu Jun 4 06:17:59 UTC 2020 written by entrypoint
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">280</span>
+          <span class="site-state-item-count">281</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1274,7 +1261,7 @@ Thu Jun 4 06:17:59 UTC 2020 written by entrypoint
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">189</span>
+        <span class="site-state-item-count">190</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

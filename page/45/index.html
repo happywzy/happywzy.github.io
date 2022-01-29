@@ -203,6 +203,197 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-duo-tai-ji-qi-docker-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/consul-duo-tai-ji-qi-docker-bu-shu/" class="post-title-link" itemprop="url">consul【多台机器docker部署】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-11 12:13:40" itemprop="dateCreated datePublished" datetime="2019-10-11T12:13:40+08:00">2019-10-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-14 15:46:58" itemprop="dateModified" datetime="2020-04-14T15:46:58+08:00">2020-04-14</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题1：ip问题"><a href="#问题1：ip问题" class="headerlink" title="问题1：ip问题"></a>问题1：ip问题</h3><p><img data-src="/images/consul22.png" alt="consul"><br>使用容器方式在主机上部署后，consul节点的ip为容器IP，如上图所示，主机外不能访问到该服务，需要配置内网或公网IP。</p>
+<h4 id="使用docker"><a href="#使用docker" class="headerlink" title="使用docker"></a>使用docker</h4><p>使用docker run命令启动consul只需要在run后增加 <code>--net = "host"</code> ，这相当于使用主机上的IP。</p>
+<pre class="line-numbers language-sh"><code class="language-sh">#注意1是要指定net为host，2是网卡为主机上的网卡，该网卡主机外服务能访问到，可以使用ifconfig看看网卡具体的名字
+docker run --net = "host" --name ** -e CONSUL_BIND_INTERFACE='eth0' ....(省略)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h4 id="使用docker-compose"><a href="#使用docker-compose" class="headerlink" title="使用docker-compose"></a>使用docker-compose</h4><p>使用<code>docker-compose</code>启动docker，需要指定<code>network_mode</code>为<code>host</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">#原本配置，eth0为容器内网卡
+  consul_server_2:
+    container_name: consul_server_2
+    image: consul:1.6.0
+    networks: 
+      consul:
+        ipv4_address: 172.20.0.3
+    volumes:
+      - /docker/consul/server2/config:/consul/config
+      - /docker/consul/server2/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+      - CONSUL_HTTP_TOKEN=db98c304-4d38-8660-fafe-6a4be56a40d0
+    restart: always
+    command: [
+      'agent'
+    ]
+
+
+#优化后，映射端口不需要了，因为是直接使用主机ens33网卡了
+  consul_server_1:
+    container_name: consul_server_1
+    image: consul:1.6.0
+    network_mode: host
+    volumes:
+      - /docker/consul/server1/config:/consul/config
+      - /docker/consul/server1/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=ens33
+      - TZ=Asia/Shanghai
+      - CONSUL_HTTP_TOKEN=db98c304-4d38-8660-fafe-6a4be56a40d0
+    restart: always
+    command: [
+      'agent'
+    ]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这样启动后consul服务的ip会变成主机的ip，外面的服务可以访问，跨机器部署consul集群通信也不会有问题了<br><img data-src="/images/consul23.png" alt="consul"></p>
+<p>但是以上办法一台机器只能启动一个consul容器，多了会有端口占用的问题，如果想要单机部署多个consul节点，可以考虑修改consul端口。</p>
+<pre class="line-numbers language-json"><code class="language-json">//新增ports.json放到consul的配置目录下即可。配置目录下所有.json配置都会加载
+//默认端口参考官网：https<span class="token operator">:</span>//www.consul.io/docs/agent/options.html#ports
+<span class="token punctuation">{</span>
+  <span class="token property">"ports"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"dns"</span><span class="token operator">:</span><span class="token number">9600</span><span class="token punctuation">,</span>
+    <span class="token property">"http"</span><span class="token operator">:</span><span class="token number">9500</span><span class="token punctuation">,</span>
+    <span class="token property">"serf_lan"</span><span class="token operator">:</span><span class="token number">9301</span><span class="token punctuation">,</span>
+    <span class="token property">"serf_wan"</span><span class="token operator">:</span><span class="token number">9302</span><span class="token punctuation">,</span>
+    <span class="token property">"server"</span><span class="token operator">:</span><span class="token number">9300</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>启动后同一台机器上两个consul都启动了，占用不同端口，类似可以继续增加consul节点数量，他们的IP都是一样的</p>
+<p><img data-src="/images/consul24.png" alt="consul"><br><img data-src="/images/consul25.png" alt="consul"></p>
+<h3 id="问题2：跨机器加入集群报错"><a href="#问题2：跨机器加入集群报错" class="headerlink" title="问题2：跨机器加入集群报错"></a>问题2：跨机器加入集群报错</h3><pre class="line-numbers language-log"><code class="language-log">#client
+2019/10/11 03:48:01 [INFO] agent: (LAN) joining: [192.168.41.128]
+consul_client_2    | ==> 1 error occurred:
+consul_client_2    |     * Failed to join 192.168.41.128: No installed keys could decrypt the message
+
+#server端
+consul_server_1    |     2019/10/11 03:48:18 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48362
+consul_server_1    |     2019/10/11 03:48:18 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48364
+consul_server_1    |     2019/10/11 03:48:31 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48438
+consul_server_1    |     2019/10/11 03:48:31 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48440
+consul_server_1    |     2019/10/11 03:48:57 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48598
+consul_server_1    |     2019/10/11 03:48:57 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48600<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre><code>所有consul节点加入配置
+"encrypt":"Cwqvm4elg0SIaF6xanFxZ3OFYadEiQtZ71xY1mJTUbk="
+
+此encrypt官方解释是用与集群通信加密的，生成方式 consul keygen
+
+依然报错不能解决</code></pre><pre class="line-numbers language-json"><code class="language-json">//所有节点加入以下配置，删除encrypt，下面的配置字面意思，出入的通信都不在验证，问题解决，不在报错
+    <span class="token property">"encrypt_verify_incoming"</span><span class="token operator">:</span><span class="token boolean">false</span>
+    <span class="token property">"encrypt_verify_outgoing"</span><span class="token operator">:</span><span class="token boolean">false</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>上面的配置是把验证功能关掉了，有安全隐患，官网还有另一个配置<code>disable_keyring_file</code>，（<code>https://github.com/hashicorp/consul/issues/4163</code>）有人可以解决，但是我尝试没有成功，后面继续研究有没有两全其美的办法。。</p>
+<h3 id="start-join、retry-join的格式"><a href="#start-join、retry-join的格式" class="headerlink" title="start_join、retry_join的格式"></a>start_join、retry_join的格式</h3><pre class="line-numbers language-sh"><code class="language-sh">-join-启动时要加入的另一个代理的地址。可以多次指定，以指定要加入的多个代理。如果Consul无法加入任何指定地址，则代理启动将失败。默认情况下，代理在启动时不会加入任何节点。请注意，retry_join在Consul群集部署自动化时，使用 更为合适的方法有助于减轻节点启动竞争条件。
+
+
+-retry-join-与类似，-join但如果第一次尝试失败，则允许重试连接。在您知道该地址最终可用的情况下，这很有用。该列表可以包含IPv4，IPv6或DNS地址。在Consul 1.1.0及更高版本中，可以将其设置为 go-sockaddr 模板。如果Consul在非默认的Serf LAN端口上运行，则也必须指定此端口。IPv6必须使用“括弧式”语法。如果给出了多个值，则按照列出的顺序尝试并重试它们，直到第一个成功。这里有些例子：
+
+# Using a DNS entry
+$ consul agent -retry-join "consul.domain.internal"
+
+# Using IPv4，只有IP
+$ consul agent -retry-join "10.0.4.67"
+
+# Using IPv6,带端口
+$ consul agent -retry-join "[::1]:8301"
+
+#配置文件中格式
+    "start_join":[
+        "192.168.41.128:8301"
+    ],
+    "retry_join":[
+        "192.168.41.128:8301"
+    ],<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="问题：No-installed-keys-could-decrypt-the-message-报错解决"><a href="#问题：No-installed-keys-could-decrypt-the-message-报错解决" class="headerlink" title="问题：No installed keys could decrypt the message 报错解决"></a>问题：No installed keys could decrypt the message 报错解决</h3><p>新加入的consul节点需要配置<code>encrypt</code>，这个值是需要跟server端一样的，值保存在<code>/consul/data/serf/local.keyring</code>文件中，如果文件中已存在内容，是不是会更新的，需要删掉，或者手动填入，然后重启服务。如果文件中已经有了，那么启动配置中encrypt参数就可以删了，不会产生影响。<code>-disable-keyring-file</code>这个参数作用是是否持久化这个<code>encrypt</code>，默认持久化，可以选择不持久化，缺点是就要在启动配置里显式填写，优点是更好的排查所有节点是否一样。例如文件中和你启动参数中不一样，问题就出来了。</p>
+<p>可以先在原有的集群中找到<code>local.keyring</code>文件中找到该<code>encrypt</code>，所有节点保持一致即可。</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-jie-he-spring-cloud-shi-yong-consul-pei-zhi-zhong-xin-bing-zi-dong-shua-xin/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1708,150 +1899,6 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-kai-qi-acl/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/consul-kai-qi-acl/" class="post-title-link" itemprop="url">consul【开启ACL】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-09-05 17:25:11" itemprop="dateCreated datePublished" datetime="2019-09-05T17:25:11+08:00">2019-09-05</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-14 14:53:17" itemprop="dateModified" datetime="2020-04-14T14:53:17+08:00">2020-04-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="开启acl"><a href="#开启acl" class="headerlink" title="开启acl"></a>开启acl</h3><pre class="line-numbers language-json"><code class="language-json">// 这里的master token是用UUID生成的，保证三个server的acl配置一样
-<span class="token property">"acl"</span><span class="token operator">:</span><span class="token punctuation">{</span>
-    <span class="token property">"enabled"</span><span class="token operator">:</span><span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"default_policy"</span><span class="token operator">:</span><span class="token string">"deny"</span><span class="token punctuation">,</span>
-    <span class="token property">"enable_token_persistence"</span><span class="token operator">:</span><span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"tokens"</span><span class="token operator">:</span><span class="token punctuation">{</span>
-        <span class="token property">"master"</span><span class="token operator">:</span><span class="token string">"14d54c5e-24ca-41cc-8c9e-987ba7a96ffb"</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="启动docker-compose-up"><a href="#启动docker-compose-up" class="headerlink" title="启动docker-compose up"></a>启动docker-compose up</h3><p>后台报大量错误</p>
-<pre><code>agent: Coordinate update blocked by ACLs</code></pre><p>解决办法:<code>创建一个token</code></p>
-<pre><code>#使用POSTMAN，请求方法
-PUT
-#请求路径
-http://192.168.41.128:8500/v1/acl/create
-#请求JSON参数
-{
-  "Name": "Agent Token",
-  "Type": "client",
-  "Rules": "node \"\" { policy = \"write\" } service \"\" { policy = \"read\" }"
-}
-
-#Headers加上X-Consul-Token，值为master的值
-14d54c5e-24ca-41cc-8c9e-987ba7a96ffb
-
-#返回结果
-{
-    "ID": "db98c304-4d38-8660-fafe-6a4be56a40d0"
-}</code></pre><p>将返回的ID贴到consul节点配置中</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token property">"acl"</span><span class="token operator">:</span><span class="token punctuation">{</span>
-    <span class="token property">"enabled"</span><span class="token operator">:</span><span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"default_policy"</span><span class="token operator">:</span><span class="token string">"deny"</span><span class="token punctuation">,</span>
-    <span class="token property">"enable_token_persistence"</span><span class="token operator">:</span><span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"tokens"</span><span class="token operator">:</span><span class="token punctuation">{</span>
-        <span class="token property">"master"</span><span class="token operator">:</span><span class="token string">"14d54c5e-24ca-41cc-8c9e-987ba7a96ffb"</span><span class="token punctuation">,</span>
-        <span class="token property">"agent"</span><span class="token operator">:</span><span class="token string">"db98c304-4d38-8660-fafe-6a4be56a40d0"</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>重新启动，问题解决。</p>
-<h3 id="配置环境变量"><a href="#配置环境变量" class="headerlink" title="配置环境变量"></a>配置环境变量</h3><pre><code>docker exec consul_server_1 consul members</code></pre><p>执行上面命令查看members的时候，发现返回为空<br><img data-src="/images/consul15.png" alt="consul"></p>
-<p>配置<code>CONSUL_HTTP_TOKEN</code>环境变量，值为刚刚PUT请求获取的token即可。</p>
-<p>修改<code>docker-compose.yml</code>配置，所有节点增加环境变量</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml">    <span class="token key atrule">environment</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> CONSUL_BIND_INTERFACE=eth0
-      <span class="token punctuation">-</span> TZ=Asia/Shanghai
-      <span class="token punctuation">-</span> CONSUL_HTTP_TOKEN=db98c304<span class="token punctuation">-</span>4d38<span class="token punctuation">-</span>8660<span class="token punctuation">-</span>fafe<span class="token punctuation">-</span>6a4be56a40d0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<p>重新启动docker-compose up，再次查看members<br><img data-src="/images/consul16.png" alt="consul"></p>
-<p>问题解决。</p>
-<h3 id="登录web-ui"><a href="#登录web-ui" class="headerlink" title="登录web ui"></a>登录web ui</h3><p>打开后发现啥都没有，需要点击ACL，输入<code>master</code>中的值</p>
-<p><img data-src="/images/consul17.png" alt="consul"></p>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://blog.csdn.net/YellowStar5/article/details/90728468" target="_blank" rel="noopener">https://blog.csdn.net/YellowStar5/article/details/90728468</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1923,7 +1970,7 @@ http://192.168.41.128:8500/v1/acl/create
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">280</span>
+          <span class="site-state-item-count">281</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1936,7 +1983,7 @@ http://192.168.41.128:8500/v1/acl/create
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">189</span>
+        <span class="site-state-item-count">190</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
