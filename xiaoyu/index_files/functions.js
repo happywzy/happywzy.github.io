@@ -10,7 +10,7 @@ var clientHeight = $win.height();
 $(window).resize(function() {
     var newWidth = $win.width();
     var newHeight = $win.height();
-    if (newWidth != clientWidth &amp;&amp; newHeight != clientHeight) {
+    if (newWidth != clientWidth && newHeight != clientHeight) {
         location.replace(location);
     }
 });
@@ -22,13 +22,13 @@ $(window).resize(function() {
 			$ele.html('');
 			var timer = setInterval(function() {
 				var current = str.substr(progress, 1);
-				if (current == '&lt;') {
-					progress = str.indexOf('&gt;', progress) + 1;
+				if (current == '<') {
+					progress = str.indexOf('>', progress) + 1;
 				} else {
 					progress++;
 				}
-				$ele.html(str.substring(0, progress) + (progress &amp; 1 ? '_' : ''));
-				if (progress &gt;= str.length) {
+				$ele.html(str.substring(0, progress) + (progress & 1 ? '_' : ''));
+				if (progress >= str.length) {
 					clearInterval(timer);
 				}
 			}, 75);
@@ -43,37 +43,18 @@ function timeElapse(date){
 	var days = Math.floor(seconds / (3600 * 24));
 	seconds = seconds % (3600 * 24);
 	var hours = Math.floor(seconds / 3600);
-	if (hours &lt; 10) {
+	if (hours < 10) {
 		hours = "0" + hours;
 	}
 	seconds = seconds % 3600;
 	var minutes = Math.floor(seconds / 60);
-	if (minutes &lt; 10) {
+	if (minutes < 10) {
 		minutes = "0" + minutes;
 	}
 	seconds = seconds % 60;
-	if (seconds &lt; 10) {
+	if (seconds < 10) {
 		seconds = "0" + seconds;
 	}
-	var result = "第 <span class="\&quot;digit\&quot;">" + days + "</span> 天 <span class="\&quot;digit\&quot;">" + hours + "</span> 小时 <span class="\&quot;digit\&quot;">" + minutes + "</span> 分钟 <span class="\&quot;digit\&quot;">" + seconds + "</span> 秒"; 
+	var result = "第 <span class=\"digit\">" + days + "</span> 天 <span class=\"digit\">" + hours + "</span> 小时 <span class=\"digit\">" + minutes + "</span> 分钟 <span class=\"digit\">" + seconds + "</span> 秒"; 
 	$("#clock").html(result);
 }
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>

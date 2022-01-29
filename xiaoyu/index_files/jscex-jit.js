@@ -5,7 +5,7 @@
         function (code) { return "false || " + code; };
         
     // support string type only.
-    var stringify = (typeof JSON !== "undefined" &amp;&amp; JSON.stringify) ?
+    var stringify = (typeof JSON !== "undefined" && JSON.stringify) ?
         function (s) { return JSON.stringify(s); } :
         (function () {
             // Implementation comes from JSON2 (http://www.json.org/js.html)
@@ -72,7 +72,7 @@
                     var expr = stmt[1];
                     if (expr[0] == "call") {
                         var callee = expr[1];
-                        if (callee[0] == "name" &amp;&amp; callee[1] == this._binder &amp;&amp; expr[2].length == 1) {
+                        if (callee[0] == "name" && callee[1] == this._binder && expr[2].length == 1) {
                             return {
                                 expression: expr[2][0],
                                 argName: "",
@@ -84,7 +84,7 @@
                         expr = expr[3];
                         if (expr[0] == "call") {
                             var callee = expr[1];
-                            if (callee[0] == "name" &amp;&amp; callee[1] == this._binder &amp;&amp; expr[2].length == 1) {
+                            if (callee[0] == "name" && callee[1] == this._binder && expr[2].length == 1) {
                                 return {
                                     expression: expr[2][0],
                                     argName: "$$_result_$$",
@@ -99,9 +99,9 @@
                         var item = defs[0];
                         var name = item[0];
                         var expr = item[1];
-                        if (expr &amp;&amp; expr[0] == "call") {
+                        if (expr && expr[0] == "call") {
                             var callee = expr[1];
-                            if (callee[0] == "name" &amp;&amp; callee[1] == this._binder &amp;&amp; expr[2].length == 1) {
+                            if (callee[0] == "name" && callee[1] == this._binder && expr[2].length == 1) {
                                 return {
                                     expression: expr[2][0],
                                     argName: name,
@@ -112,9 +112,9 @@
                     }
                 } else if (type == "return") {
                     var expr = stmt[1];
-                    if (expr &amp;&amp; expr[0] == "call") {
+                    if (expr && expr[0] == "call") {
                         var callee = expr[1];
-                        if (callee[0] == "name" &amp;&amp; callee[1] == this._binder &amp;&amp; expr[2].length == 1) {
+                        if (callee[0] == "name" && callee[1] == this._binder && expr[2].length == 1) {
                             return {
                                 expression: expr[2][0],
                                 argName: "$$_result_$$",
@@ -128,9 +128,9 @@
             },
 
             _visitStatements: function (statements, stmts, index) {
-                if (arguments.length &lt;= 2) index = 0;
+                if (arguments.length <= 2) index = 0;
 
-                if (index &gt;= statements.length) {
+                if (index >= statements.length) {
                     stmts.push({ type: "normal" });
                     return this;
                 }
@@ -230,9 +230,9 @@
             _collectCaseStatements: function (cases, index) {
                 var res = [];
 
-                for (var i = index; i &lt; cases.length; i++) {
+                for (var i = index; i < cases.length; i++) {
                     var rawStmts = cases[i][1];
-                    for (var j = 0; j &lt; rawStmts.length; j++) {
+                    for (var j = 0; j < rawStmts.length; j++) {
                         if (rawStmts[j][0] == "break") {
                             return res
                         }
@@ -321,8 +321,8 @@
                         stmt: root.parse("var " + indexVar + " = 0;")[1][0]
                     });
 
-                    // index &lt; members.length
-                    var condition = root.parse(indexVar + " &lt; " + keysVar + ".length")[1][0][1];
+                    // index < members.length
+                    var condition = root.parse(indexVar + " < " + keysVar + ".length")[1][0][1];
 
                     // index++
                     var update = root.parse(indexVar + "++")[1][0][1];
@@ -396,13 +396,13 @@
                     var switchStmt = { type: "switch", item: ast[1], caseStmts: [] };
 
                     var cases = ast[2];
-                    for (var i = 0; i &lt; cases.length; i++) {                    
+                    for (var i = 0; i < cases.length; i++) {                    
                         var caseStmt = { item: cases[i][0], stmts: [] };
                         switchStmt.caseStmts.push(caseStmt);
 
                         var statements = this._collectCaseStatements(cases, i);
                         this._visitStatements(statements, caseStmt.stmts);
-                        noBinding = noBinding &amp;&amp; this._noBinding(caseStmt.stmts);
+                        noBinding = noBinding && this._noBinding(caseStmt.stmts);
                     }
 
                     if (noBinding) {
@@ -427,10 +427,10 @@
                         var thenPart = currAst[2];
                         this._visitBody(thenPart, condStmt.stmts);
 
-                        noBinding = noBinding &amp;&amp; this._noBinding(condStmt.stmts);
+                        noBinding = noBinding && this._noBinding(condStmt.stmts);
 
                         var elsePart = currAst[3];
-                        if (elsePart &amp;&amp; elsePart[0] == "if") {
+                        if (elsePart && elsePart[0] == "if") {
                             currAst = elsePart;
                         } else {
                             break;
@@ -443,7 +443,7 @@
 
                         this._visitBody(elsePart, ifStmt.elseStmts);
                         
-                        noBinding = noBinding &amp;&amp; this._noBinding(ifStmt.elseStmts);
+                        noBinding = noBinding && this._noBinding(ifStmt.elseStmts);
                     }
 
                     if (noBinding) {
@@ -471,7 +471,7 @@
 
                         this._visitStatements(catchClause[1], tryStmt.catchStmts);
 
-                        noBinding = noBinding &amp;&amp; this._noBinding(tryStmt.catchStmts);
+                        noBinding = noBinding && this._noBinding(tryStmt.catchStmts);
                     }
 
                     var finallyStatements = ast[3];
@@ -480,7 +480,7 @@
 
                         this._visitStatements(finallyStatements, tryStmt.finallyStmt.stmts);
 
-                        noBinding = noBinding &amp;&amp; this._noBinding(tryStmt.finallyStmt.stmts);
+                        noBinding = noBinding && this._noBinding(tryStmt.finallyStmt.stmts);
                     }
 
                     if (noBinding) {
@@ -512,11 +512,11 @@
             },
 
             _writeIndents: function () {
-                for (var i = 0; i &lt; this._indent; i++) {
+                for (var i = 0; i < this._indent; i++) {
                     this._write(" ");
                 }
 
-                for (var i = 0; i &lt; this._indentLevel; i++) {
+                for (var i = 0; i < this._indentLevel; i++) {
                     this._write("    ");
                 }
                 return this;
@@ -576,7 +576,7 @@
             },
 
             _visitJscexStatements: function (statements) {
-                for (var i = 0; i &lt; statements.length; i++) {
+                for (var i = 0; i < statements.length; i++) {
                     var stmt = statements[i];
 
                     if (stmt.type == "raw" || stmt.type == "if" || stmt.type == "switch") {
@@ -592,7 +592,7 @@
             },
 
             _visitRawStatements: function (statements) {
-                for (var i = 0; i &lt; statements.length; i++) {
+                for (var i = 0; i < statements.length; i++) {
                     var s = statements[i];
 
                     this._writeIndents()
@@ -762,7 +762,7 @@
 
                 "if": function (ast) {
 
-                    for (var i = 0; i &lt; ast.conditionStmts.length; i++) {
+                    for (var i = 0; i < ast.conditionStmts.length; i++) {
                         var stmt = ast.conditionStmts[i];
                         
                         this._write("if (")._visitRaw(stmt.cond)._writeLine(") {");
@@ -795,7 +795,7 @@
                     this._write("switch (")._visitRaw(ast.item)._writeLine(") {");
                     this._indentLevel++;
 
-                    for (var i = 0; i &lt; ast.caseStmts.length; i++) {
+                    for (var i = 0; i < ast.caseStmts.length; i++) {
                         var caseStmt = ast.caseStmts[i];
 
                         if (caseStmt.item) {
@@ -877,21 +877,21 @@
                     this._write("var ");
 
                     var items = ast[1];
-                    for (var i = 0; i &lt; items.length; i++) {
+                    for (var i = 0; i < items.length; i++) {
                         this._write(items[i][0]);
-                        if (items[i].length &gt; 1) {
+                        if (items[i].length > 1) {
                             this._write(" = ")._visitRaw(items[i][1]);
                         }
-                        if (i &lt; items.length - 1) this._write(", ");
+                        if (i < items.length - 1) this._write(", ");
                     }
 
                     this._write(";");
                 },
 
                 "seq": function (ast) {
-                    for (var i = 1; i &lt; ast.length; i++) {
+                    for (var i = 1; i < ast.length; i++) {
                         this._visitRaw(ast[i]);
-                        if (i &lt; ast.length - 1) this._write(", "); 
+                        if (i < ast.length - 1) this._write(", "); 
                     }
                 },
 
@@ -986,9 +986,9 @@
                     this._write("new ")._visitRaw(ctor)._write("(");
 
                     var args = ast[2];
-                    for (var i = 0, len = args.length; i &lt; len; i++) {
+                    for (var i = 0, len = args.length; i < len; i++) {
                         this._visitRaw(args[i]);
-                        if (i &lt; len - 1) this._write(", ");
+                        if (i < len - 1) this._write(", ");
                     }
 
                     this._write(")");
@@ -1002,7 +1002,7 @@
                         this._write(newCode);
                     } else {
 
-                        var invalidBind = (ast[1][0] == "name") &amp;&amp; (ast[1][1] == this._binder);
+                        var invalidBind = (ast[1][0] == "name") && (ast[1][1] == this._binder);
                         if (invalidBind) {
                             this._pos = { inFunction: true };
                             this._buffer = [];
@@ -1011,9 +1011,9 @@
                         this._visitRaw(ast[1])._write("(");
 
                         var args = ast[2];
-                        for (var i = 0; i &lt; args.length; i++) {
+                        for (var i = 0; i < args.length; i++) {
                             this._visitRaw(args[i]);
-                            if (i &lt; args.length - 1) this._write(", ");
+                            if (i < args.length - 1) this._write(", ");
                         }
 
                         this._write(")");
@@ -1030,18 +1030,18 @@
 
                 "object": function (ast) {
                     var items = ast[1];
-                    if (items.length &lt;= 0) {
+                    if (items.length <= 0) {
                         this._write("{ }");
                     } else {
                         this._writeLine("{");
                         this._indentLevel++;
                         
-                        for (var i = 0; i &lt; items.length; i++) {
+                        for (var i = 0; i < items.length; i++) {
                             this._writeIndents()
                                 ._write(stringify(items[i][0]) + ": ")
                                 ._visitRaw(items[i][1]);
                             
-                            if (i &lt; items.length - 1) {
+                            if (i < items.length - 1) {
                                 this._writeLine(",");
                             } else {
                                 this._writeLine("");
@@ -1057,9 +1057,9 @@
                     this._write("[");
 
                     var items = ast[1];
-                    for (var i = 0; i &lt; items.length; i++) {
+                    for (var i = 0; i < items.length; i++) {
                         this._visitRaw(items[i]);
-                        if (i &lt; items.length - 1) this._write(", ");
+                        if (i < items.length - 1) this._write(", ");
                     }
 
                     this._write("]");
@@ -1285,7 +1285,7 @@
                     this._pos.inSwitch = true;
 
                     var cases = ast[2];
-                    for (var i = 0; i &lt; cases.length; i++) {
+                    for (var i = 0; i < cases.length; i++) {
                         var c = cases[i];
                         this._writeIndents();
 
@@ -1358,7 +1358,7 @@
             var evalAst = evalCodeAst[1][0][1];
             var newCode = _compileJscexPattern(evalAst, 0);
 
-            root.logger.debug(funcCode + "\n\n&gt;&gt;&gt;\n\n" + newCode);
+            root.logger.debug(funcCode + "\n\n>>>\n\n" + newCode);
             
             return codeGenerator(newCode);
         };
@@ -1368,8 +1368,8 @@
         root.modules["jit"] = true;
     }
     
-    var isCommonJS = (typeof require !== "undefined" &amp;&amp; typeof module !== "undefined" &amp;&amp; module.exports);
-    var isAmd = (typeof define !== "undefined" &amp;&amp; define.amd);
+    var isCommonJS = (typeof require !== "undefined" && typeof module !== "undefined" && module.exports);
+    var isAmd = (typeof define !== "undefined" && define.amd);
     
     if (isCommonJS) {
         module.exports.init = function (root) {
@@ -1404,22 +1404,3 @@
     }
 
 })();
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>

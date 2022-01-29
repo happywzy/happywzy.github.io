@@ -138,7 +138,7 @@ var KEYWORDS_ATOM = array_to_hash([
         "undefined"
 ]);
 
-var OPERATOR_CHARS = array_to_hash(characters("+-*&amp;%=&lt;&gt;!?|~^"));
+var OPERATOR_CHARS = array_to_hash(characters("+-*&%=<>!?|~^"));
 
 var RE_HEX_NUMBER = /^0x[0-9a-f]+$/i;
 var RE_OCT_NUMBER = /^0[0-7]+$/;
@@ -157,19 +157,19 @@ var OPERATORS = array_to_hash([
         "-",
         "!",
         "~",
-        "&amp;",
+        "&",
         "|",
         "^",
         "*",
         "/",
         "%",
-        "&gt;&gt;",
-        "&lt;&lt;",
-        "&gt;&gt;&gt;",
-        "&lt;",
-        "&gt;",
-        "&lt;=",
-        "&gt;=",
+        ">>",
+        "<<",
+        ">>>",
+        "<",
+        ">",
+        "<=",
+        ">=",
         "==",
         "===",
         "!=",
@@ -181,13 +181,13 @@ var OPERATORS = array_to_hash([
         "/=",
         "*=",
         "%=",
-        "&gt;&gt;=",
-        "&lt;&lt;=",
-        "&gt;&gt;&gt;=",
+        ">>=",
+        "<<=",
+        ">>>=",
         "|=",
         "^=",
-        "&amp;=",
-        "&amp;&amp;",
+        "&=",
+        "&&",
         "||"
 ]);
 
@@ -215,7 +215,7 @@ function is_letter(ch) {
 
 function is_digit(ch) {
         ch = ch.charCodeAt(0);
-        return ch &gt;= 48 &amp;&amp; ch &lt;= 57; //XXX: find out if "UnicodeDigit" means something else than 0..9
+        return ch >= 48 && ch <= 57; //XXX: find out if "UnicodeDigit" means something else than 0..9
 };
 
 function is_alphanumeric_char(ch) {
@@ -239,8 +239,8 @@ function is_identifier_char(ch) {
                 || is_unicode_combining_mark(ch)
                 || is_digit(ch)
                 || is_unicode_connector_punctuation(ch)
-                || ch == "\u200c" // zero-width non-joiner <zwnj>
-                || ch == "\u200d" // zero-width joiner <zwj> (in my ECMA-262 PDF, this is also 200c)
+                || ch == "\u200c" // zero-width non-joiner <ZWNJ>
+                || ch == "\u200d" // zero-width joiner <ZWJ> (in my ECMA-262 PDF, this is also 200c)
         ;
 };
 
@@ -275,7 +275,7 @@ function js_error(message, line, col, pos) {
 };
 
 function is_token(token, type, val) {
-        return token.type == type &amp;&amp; (val == null || token.value == val);
+        return token.type == type && (val == null || token.value == val);
 };
 
 var EX_EOF = {};
@@ -299,7 +299,7 @@ function tokenizer($TEXT) {
 
         function next(signal_eof) {
                 var ch = S.text.charAt(S.pos++);
-                if (signal_eof &amp;&amp; !ch)
+                if (signal_eof && !ch)
                         throw EX_EOF;
                 if (ch == "\n") {
                         S.newline_before = true;
@@ -317,7 +317,7 @@ function tokenizer($TEXT) {
 
         function find(what, signal_eof) {
                 var pos = S.text.indexOf(what, S.pos);
-                if (signal_eof &amp;&amp; pos == -1) throw EX_EOF;
+                if (signal_eof && pos == -1) throw EX_EOF;
                 return pos;
         };
 
@@ -328,9 +328,9 @@ function tokenizer($TEXT) {
         };
 
         function token(type, value, is_comment) {
-                S.regex_allowed = ((type == "operator" &amp;&amp; !HOP(UNARY_POSTFIX, value)) ||
-                                   (type == "keyword" &amp;&amp; HOP(KEYWORDS_BEFORE_EXPRESSION, value)) ||
-                                   (type == "punc" &amp;&amp; HOP(PUNC_BEFORE_EXPRESSION, value)));
+                S.regex_allowed = ((type == "operator" && !HOP(UNARY_POSTFIX, value)) ||
+                                   (type == "keyword" && HOP(KEYWORDS_BEFORE_EXPRESSION, value)) ||
+                                   (type == "punc" && HOP(PUNC_BEFORE_EXPRESSION, value)));
                 var ret = {
                         type  : type,
                         value : value,
@@ -354,7 +354,7 @@ function tokenizer($TEXT) {
 
         function read_while(pred) {
                 var ret = "", ch = peek(), i = 0;
-                while (ch &amp;&amp; pred(ch, i++)) {
+                while (ch && pred(ch, i++)) {
                         ret += next();
                         ch = peek();
                 }
@@ -372,18 +372,18 @@ function tokenizer($TEXT) {
                                 if (has_x) return false;
                                 return has_x = true;
                         }
-                        if (!has_x &amp;&amp; (ch == "E" || ch == "e")) {
+                        if (!has_x && (ch == "E" || ch == "e")) {
                                 if (has_e) return false;
                                 return has_e = after_e = true;
                         }
                         if (ch == "-") {
-                                if (after_e || (i == 0 &amp;&amp; !prefix)) return true;
+                                if (after_e || (i == 0 && !prefix)) return true;
                                 return false;
                         }
                         if (ch == "+") return after_e;
                         after_e = false;
                         if (ch == ".") {
-                                if (!has_dot &amp;&amp; !has_x)
+                                if (!has_dot && !has_x)
                                         return has_dot = true;
                                 return false;
                         }
@@ -417,11 +417,11 @@ function tokenizer($TEXT) {
 
         function hex_bytes(n) {
                 var num = 0;
-                for (; n &gt; 0; --n) {
+                for (; n > 0; --n) {
                         var digit = parseInt(next(true), 16);
                         if (isNaN(digit))
                                 parse_error("Invalid hex-character pattern in string");
-                        num = (num &lt;&lt; 4) | digit;
+                        num = (num << 4) | digit;
                 }
                 return num;
         };
@@ -460,7 +460,7 @@ function tokenizer($TEXT) {
                             tok = token("comment2", text, true);
                         S.pos = i + 2;
                         S.line += text.split("\n").length - 1;
-                        S.newline_before = text.indexOf("\n") &gt;= 0;
+                        S.newline_before = text.indexOf("\n") >= 0;
 
                         // https://github.com/mishoo/UglifyJS/issues/#issue/100
                         if (/^@cc_on/i.test(text)) {
@@ -501,10 +501,10 @@ function tokenizer($TEXT) {
                         } else if (ch == "[") {
                                 in_class = true;
                                 regexp += ch;
-                        } else if (ch == "]" &amp;&amp; in_class) {
+                        } else if (ch == "]" && in_class) {
                                 in_class = false;
                                 regexp += ch;
-                        } else if (ch == "/" &amp;&amp; !in_class) {
+                        } else if (ch == "/" && !in_class) {
                                 break;
                         } else if (ch == "\\") {
                                 prev_backslash = true;
@@ -616,21 +616,21 @@ var UNARY_PREFIX = array_to_hash([
 var UNARY_POSTFIX = array_to_hash([ "--", "++" ]);
 
 var ASSIGNMENT = (function(a, ret, i){
-        while (i &lt; a.length) {
+        while (i < a.length) {
                 ret[a[i]] = a[i].substr(0, a[i].length - 1);
                 i++;
         }
         return ret;
 })(
-        ["+=", "-=", "/=", "*=", "%=", "&gt;&gt;=", "&lt;&lt;=", "&gt;&gt;&gt;=", "|=", "^=", "&amp;="],
+        ["+=", "-=", "/=", "*=", "%=", ">>=", "<<=", ">>>=", "|=", "^=", "&="],
         { "=": true },
         0
 );
 
 var PRECEDENCE = (function(a, ret){
-        for (var i = 0, n = 1; i &lt; a.length; ++i, ++n) {
+        for (var i = 0, n = 1; i < a.length; ++i, ++n) {
                 var b = a[i];
-                for (var j = 0; j &lt; b.length; ++j) {
+                for (var j = 0; j < b.length; ++j) {
                         ret[b[j]] = n;
                 }
         }
@@ -638,13 +638,13 @@ var PRECEDENCE = (function(a, ret){
 })(
         [
                 ["||"],
-                ["&amp;&amp;"],
+                ["&&"],
                 ["|"],
                 ["^"],
-                ["&amp;"],
+                ["&"],
                 ["==", "===", "!=", "!=="],
-                ["&lt;", "&gt;", "&lt;=", "&gt;=", "in", "instanceof"],
-                ["&gt;&gt;", "&lt;&lt;", "&gt;&gt;&gt;"],
+                ["<", ">", "<=", ">=", "in", "instanceof"],
+                [">>", "<<", ">>>"],
                 ["+", "-"],
                 ["*", "/", "%"]
         ],
@@ -728,7 +728,7 @@ function parse($TEXT, exigent_mode, embed_tokens) {
         function expect(punc) { return expect_token("punc", punc); };
 
         function can_insert_semicolon() {
-                return !exigent_mode &amp;&amp; (
+                return !exigent_mode && (
                         S.token.nlb || is("eof") || is("punc", "}")
                 );
         };
@@ -859,7 +859,7 @@ function parse($TEXT, exigent_mode, embed_tokens) {
         function labeled_statement(label) {
                 S.labels.push(label);
                 var start = S.token, stat = statement();
-                if (exigent_mode &amp;&amp; !HOP(STATEMENTS_WITH_LABELS, stat[0]))
+                if (exigent_mode && !HOP(STATEMENTS_WITH_LABELS, stat[0]))
                         unexpected(start);
                 S.labels.pop();
                 return as("label", label, stat);
@@ -921,7 +921,7 @@ function parse($TEXT, exigent_mode, embed_tokens) {
 
         function $function_(in_statement) {
                 var name = is("name") ? prog1(S.token.value, next) : null;
-                if (in_statement &amp;&amp; !name)
+                if (in_statement && !name)
                         unexpected();
                 expect("(");
                 return as(in_statement ? "defun" : "function",
@@ -1011,7 +1011,7 @@ function parse($TEXT, exigent_mode, embed_tokens) {
                         next();
                         bfinally = block_();
                 }
-                if (!bcatch &amp;&amp; !bfinally)
+                if (!bcatch && !bfinally)
                         croak("Missing catch/finally blocks");
                 return as("try", body, bcatch, bfinally);
         };
@@ -1060,7 +1060,7 @@ function parse($TEXT, exigent_mode, embed_tokens) {
                         next();
                         return new_();
                 }
-                if (is("operator") &amp;&amp; HOP(UNARY_PREFIX, S.token.value)) {
+                if (is("operator") && HOP(UNARY_PREFIX, S.token.value)) {
                         return make_unary("unary-prefix",
                                           prog1(S.token.value, next),
                                           expr_atom(allow_calls));
@@ -1096,8 +1096,8 @@ function parse($TEXT, exigent_mode, embed_tokens) {
                 var first = true, a = [];
                 while (!is("punc", closing)) {
                         if (first) first = false; else expect(",");
-                        if (allow_trailing_comma &amp;&amp; is("punc", closing)) break;
-                        if (is("punc", ",") &amp;&amp; allow_empty) {
+                        if (allow_trailing_comma && is("punc", closing)) break;
+                        if (is("punc", ",") && allow_empty) {
                                 a.push([ "atom", "undefined" ]);
                         } else {
                                 a.push(expression(false));
@@ -1115,12 +1115,12 @@ function parse($TEXT, exigent_mode, embed_tokens) {
                 var first = true, a = [];
                 while (!is("punc", "}")) {
                         if (first) first = false; else expect(",");
-                        if (!exigent_mode &amp;&amp; is("punc", "}"))
+                        if (!exigent_mode && is("punc", "}"))
                                 // allow trailing comma
                                 break;
                         var type = S.token.type;
                         var name = as_property_name();
-                        if (type == "name" &amp;&amp; (name == "get" || name == "set") &amp;&amp; !is("punc", ":")) {
+                        if (type == "name" && (name == "get" || name == "set") && !is("punc", ":")) {
                                 a.push([ as_name(), function_(false), name ]);
                         } else {
                                 expect(":");
@@ -1161,11 +1161,11 @@ function parse($TEXT, exigent_mode, embed_tokens) {
                         next();
                         return subscripts(as("sub", expr, prog1(expression, curry(expect, "]"))), allow_calls);
                 }
-                if (allow_calls &amp;&amp; is("punc", "(")) {
+                if (allow_calls && is("punc", "(")) {
                         next();
                         return subscripts(as("call", expr, expr_list(")")), true);
                 }
-                if (allow_calls &amp;&amp; is("operator") &amp;&amp; HOP(UNARY_POSTFIX, S.token.value)) {
+                if (allow_calls && is("operator") && HOP(UNARY_POSTFIX, S.token.value)) {
                         return prog1(curry(make_unary, "unary-postfix", S.token.value, expr),
                                      next);
                 }
@@ -1173,16 +1173,16 @@ function parse($TEXT, exigent_mode, embed_tokens) {
         };
 
         function make_unary(tag, op, expr) {
-                if ((op == "++" || op == "--") &amp;&amp; !is_assignable(expr))
+                if ((op == "++" || op == "--") && !is_assignable(expr))
                         croak("Invalid use of " + op + " operator");
                 return as(tag, op, expr);
         };
 
         function expr_op(left, min_prec, no_in) {
                 var op = is("operator") ? S.token.value : null;
-                if (op &amp;&amp; op == "in" &amp;&amp; no_in) op = null;
+                if (op && op == "in" && no_in) op = null;
                 var prec = op != null ? PRECEDENCE[op] : null;
-                if (prec != null &amp;&amp; prec &gt; min_prec) {
+                if (prec != null && prec > min_prec) {
                         next();
                         var right = expr_op(expr_atom(true), prec, no_in);
                         return expr_op(as("binary", op, left, right), min_prec, no_in);
@@ -1220,7 +1220,7 @@ function parse($TEXT, exigent_mode, embed_tokens) {
 
         function maybe_assign(no_in) {
                 var left = maybe_conditional(no_in), val = S.token.value;
-                if (is("operator") &amp;&amp; HOP(ASSIGNMENT, val)) {
+                if (is("operator") && HOP(ASSIGNMENT, val)) {
                         if (is_assignable(left)) {
                                 next();
                                 return as("assign", ASSIGNMENT[val], left, maybe_assign(no_in));
@@ -1234,7 +1234,7 @@ function parse($TEXT, exigent_mode, embed_tokens) {
                 if (arguments.length == 0)
                         commas = true;
                 var expr = maybe_assign(no_in);
-                if (commas &amp;&amp; is("punc", ",")) {
+                if (commas && is("punc", ",")) {
                         next();
                         return as("seq", expr, expression(true, no_in));
                 }
@@ -1268,14 +1268,14 @@ function curry(f) {
 function prog1(ret) {
         if (ret instanceof Function)
                 ret = ret();
-        for (var i = 1, n = arguments.length; --n &gt; 0; ++i)
+        for (var i = 1, n = arguments.length; --n > 0; ++i)
                 arguments[i]();
         return ret;
 };
 
 function array_to_hash(a) {
         var ret = {};
-        for (var i = 0; i &lt; a.length; ++i)
+        for (var i = 0; i < a.length; ++i)
                 ret[a[i]] = true;
         return ret;
 };
@@ -1289,7 +1289,7 @@ function characters(str) {
 };
 
 function member(name, array) {
-        for (var i = array.length; --i &gt;= 0;)
+        for (var i = array.length; --i >= 0;)
                 if (array[i] === name)
                         return true;
         return false;
@@ -1313,8 +1313,8 @@ var init = function (root) {
     root.modules["parser"] = true;
 }
 
-var isCommonJS = (typeof require !== "undefined" &amp;&amp; typeof module !== "undefined" &amp;&amp; module.exports);
-var isAmd = (typeof define !== "undefined" &amp;&amp; define.amd);
+var isCommonJS = (typeof require !== "undefined" && typeof module !== "undefined" && module.exports);
+var isAmd = (typeof define !== "undefined" && define.amd);
 
 if (isCommonJS) {
     module.exports.init = init;
@@ -1349,22 +1349,4 @@ scope.set_logger = function (logger) {
 };
 */
 
-})();</zwj></zwnj></mihai.bazon@gmail.com></mihai.bazon@gmail.com><script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+})();
