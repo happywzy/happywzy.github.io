@@ -30343,4 +30343,114 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true
         <tag>民法典</tag>
       </tags>
   </entry>
+  <entry>
+    <title>mysql慢查询日志总结</title>
+    <url>/mysql-man-cha-xun-ri-zhi-zong-jie/</url>
+    <content><![CDATA[<h3 id="开启慢查询日志"><a href="#开启慢查询日志" class="headerlink" title="开启慢查询日志"></a>开启慢查询日志</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查询慢查询日志开启状态</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'slow_query%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+-------------------------------+</span>
+<span class="token operator">|</span> Variable_name       <span class="token operator">|</span> <span class="token keyword">Value</span>                         <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+-------------------------------+</span>
+<span class="token operator">|</span> slow_query_log      <span class="token operator">|</span> <span class="token keyword">ON</span>                            <span class="token operator">|</span>
+<span class="token operator">|</span> slow_query_log_file <span class="token operator">|</span> <span class="token operator">/</span>var<span class="token operator">/</span>lib<span class="token operator">/</span>mysql<span class="token operator">/</span>data3<span class="token operator">-</span>slow<span class="token punctuation">.</span>log <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+-------------------------------+</span>
+<span class="token number">2</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+<span class="token comment" spellcheck="true">-- 开启慢查询日志记录</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span> slow_query_log<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查询慢查询时间</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'long_query_time%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token operator">|</span> Variable_name   <span class="token operator">|</span> <span class="token keyword">Value</span>     <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token operator">|</span> long_query_time <span class="token operator">|</span> <span class="token number">10.000000</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true">-- 修改慢查询时间,修改后需要重新建立会话才能看到最新设置的值</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span> long_query_time<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="慢查询输出"><a href="#慢查询输出" class="headerlink" title="慢查询输出"></a>慢查询输出</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看默认输出,默认输出到文件,性能较高</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%log_output%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-------+</span>
+<span class="token operator">|</span> Variable_name <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-------+</span>
+<span class="token operator">|</span> log_output    <span class="token operator">|</span> <span class="token keyword">FILE</span>  <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+<span class="token comment" spellcheck="true">-- 可以设置输出到表</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span> log_output<span class="token operator">=</span><span class="token string">'TABLE'</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> mysql<span class="token punctuation">.</span>slow_log<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="其它配置"><a href="#其它配置" class="headerlink" title="其它配置"></a>其它配置</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 开启这个配置,可以将未使用索引的查询也记录到日志</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'log_queries_not_using_indexes'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token operator">|</span> Variable_name                 <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token operator">|</span> log_queries_not_using_indexes <span class="token operator">|</span> <span class="token keyword">OFF</span>   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true">-- 开启配置</span>
+mysql<span class="token operator">></span> <span class="token keyword">set</span> <span class="token keyword">global</span> log_queries_not_using_indexes<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>mysql</category>
+      </categories>
+      <tags>
+        <tag>慢查询</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>istio代理接口503报错排查分析</title>
+    <url>/istio-dai-li-jie-kou-503-bao-cuo-pai-cha-fen-xi/</url>
+    <content><![CDATA[<h3 id="获取istio-proxy所有配置"><a href="#获取istio-proxy所有配置" class="headerlink" title="获取istio-proxy所有配置"></a>获取istio-proxy所有配置</h3><pre><code>kubectl -n test exec auhss-v1-769dc687ff-479r4 -c istio-proxy -- curl http://localhost:15000/config_dump &gt; test.json</code></pre><h3 id="配置istio-proxy日志级别为debug"><a href="#配置istio-proxy日志级别为debug" class="headerlink" title="配置istio-proxy日志级别为debug"></a>配置istio-proxy日志级别为debug</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># -n 名空间</span>
+<span class="token comment" spellcheck="true"># server-v1-6dfd6b9846-c2ch6 容器名</span>
+kubectl -n mgec  <span class="token function">exec</span> server-v1-6dfd6b9846-c2ch6  -c istio-proxy -- curl -XPOST -s -o /dev/null http://localhost:15000/logging?level<span class="token operator">=</span>debug
+<span class="token comment" spellcheck="true"># 通过pod注解方式设置日志级别</span>
+template:
+    metadata:
+      annotations:
+        sidecar.istio.io/logLevel: debug<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="查看Prometheus收集的istio指标"><a href="#查看Prometheus收集的istio指标" class="headerlink" title="查看Prometheus收集的istio指标"></a>查看Prometheus收集的istio指标</h3><pre><code>istio_requests_total{response_flags="UC", response_code="503", reporter="destination"}</code></pre><script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>istio</category>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>istio</tag>
+        <tag>istio-proxy</tag>
+      </tags>
+  </entry>
 </search>
