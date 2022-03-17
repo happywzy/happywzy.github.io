@@ -203,6 +203,139 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-fu-zhi-chu-xian-wen-ti-gtid-mo-shi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-fu-zhi-chu-xian-wen-ti-gtid-mo-shi/" class="post-title-link" itemprop="url">mysql复制出现问题【GTID模式】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-07-29 14:08:48 / 修改时间：14:28:39" itemprop="dateCreated datePublished" datetime="2020-07-29T14:08:48+08:00">2020-07-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="非GTID模式下"><a href="#非GTID模式下" class="headerlink" title="非GTID模式下"></a>非GTID模式下</h3><p>当<code>BIN-LOG</code>里面出现错误导致主从不能同步的时候,</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 错误状态的部分截图</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> slave <span class="token keyword">status</span>\G
+<span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span> <span class="token number">1</span><span class="token punctuation">.</span> <span class="token keyword">row</span> <span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span>
+               Slave_IO_State: Waiting <span class="token keyword">for</span> master <span class="token keyword">to</span> send event
+                  Master_Host: <span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">41.141</span>
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: <span class="token keyword">No</span>
+              Replicate_Do_DB:  
+                   Last_Errno: <span class="token number">1032</span>
+                   Last_Error: Could <span class="token operator">not</span> <span class="token keyword">execute</span> Update_rows event <span class="token keyword">on</span> <span class="token keyword">table</span> test<span class="token punctuation">.</span>testttt<span class="token punctuation">;</span> Can<span class="token string">'t find record in '</span>testttt<span class="token string">', Error_code: 1032; handler error HA_ERR_END_OF_FILE; the event'</span>s master log mysql<span class="token operator">-</span>bin<span class="token number">.000004</span><span class="token punctuation">,</span> end_log_pos <span class="token number">404</span>
+                 Skip_Counter: <span class="token number">0</span>
+               Last_SQL_Errno: <span class="token number">1032</span>
+               Last_SQL_Error: Could <span class="token operator">not</span> <span class="token keyword">execute</span> Update_rows event <span class="token keyword">on</span> <span class="token keyword">table</span> test<span class="token punctuation">.</span>testttt<span class="token punctuation">;</span> Can<span class="token string">'t find record in '</span>testttt<span class="token string">', Error_code: 1032; handler error HA_ERR_END_OF_FILE; the event'</span>s master log mysql<span class="token operator">-</span>bin<span class="token number">.000004</span><span class="token punctuation">,</span> end_log_pos <span class="token number">404</span>
+  Replicate_Ignore_Server_Ids: 
+           Retrieved_Gtid_Set: <span class="token number">69a5d660</span><span class="token operator">-</span><span class="token number">cfd9</span><span class="token operator">-</span><span class="token number">11ea</span><span class="token operator">-</span><span class="token number">8174</span><span class="token operator">-</span><span class="token number">00505626c27e</span>:<span class="token number">1</span><span class="token operator">-</span><span class="token number">5</span>
+            Executed_Gtid_Set: <span class="token number">69a5d660</span><span class="token operator">-</span><span class="token number">cfd9</span><span class="token operator">-</span><span class="token number">11ea</span><span class="token operator">-</span><span class="token number">8174</span><span class="token operator">-</span><span class="token number">00505626c27e</span>:<span class="token number">4</span><span class="token punctuation">,</span>
+<span class="token number">b3802ae3</span><span class="token operator">-</span><span class="token number">cfd8</span><span class="token operator">-</span><span class="token number">11ea</span><span class="token operator">-</span><span class="token number">85e8</span><span class="token operator">-</span><span class="token number">00505630c9f5</span>:<span class="token number">1</span><span class="token operator">-</span><span class="token number">2</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以用下面方法掠过该错误语句行,继续同步:</p>
+<pre class="line-numbers language-sql"><code class="language-sql">stop slave<span class="token punctuation">;</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span> sql_slave_skip_counter<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">start</span> slave<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>当<code>set global sql_slave_skip_counter=1;</code>是可能会出现一下错误:不支持<code>GTID_MODE</code>模式运行的数据库</p>
+<pre class="line-numbers language-log"><code class="language-log">ERROR 1858 (HY000): sql_slave_skip_counter can not be set when the server is running with GTID_MODE = ON. Instead, for each transaction that you want to skip, generate an empty transaction with the same GTID as the transaction<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="GTID模式下"><a href="#GTID模式下" class="headerlink" title="GTID模式下"></a>GTID模式下</h3><ol>
+<li>找到错误点<br>```sql<br>show slave status\G</li>
+</ol>
+<p>– 找到这一行<br>Executed_Gtid_Set: 69a5d660-cfd9-11ea-8174-00505626c27e:1-5</p>
+<pre><code>
+2. 重置master和slave
+```sql
+reset master;
+stop slave;
+reset slave;</code></pre><ol start="3">
+<li>设置跳过错误点<br>```sql</li>
+</ol>
+<p>– 1-5 可能出错,ID加1,1-6<br>set global gtid_purged=’69a5d660-cfd9-11ea-8174-00505626c27e:1-6’;</p>
+<pre><code>
+&gt; `set global gtid_purged='xxxxx';`要求`GTID_EXECUTED`为空,所以需要第二部重置操作.
+
+4. 重启复制
+```sql
+change master to master_host='192.168.41.141',master_port=3306,master_user='slave',master_password='123456',master_auto_position=1;
+start slave;</code></pre><ol start="5">
+<li>查看<br>```sql</li>
+</ol>
+<p>– 确认Slave_IO_Running,Slave_SQL_Running,Last_Error,Last_SQL_Error等是否有错<br>– 如果还有错但和上面的错误ID不一样,需要重复1~4<br>show slave status\G</p>
+<pre><code>&gt; `双主`模式更麻烦,需要两边都要做`1~4`操作,确认没有错误.</code></pre><script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-shuang-zhu-mo-shi-haproxy-keepalived-gao-ke-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1109,138 +1242,6 @@ flush <span class="token keyword">privileges</span><span class="token punctuatio
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ladp-jian-jie/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ladp-jian-jie/" class="post-title-link" itemprop="url">ladp简介</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-07-27 11:31:26 / 修改时间：11:40:54" itemprop="dateCreated datePublished" datetime="2020-07-27T11:31:26+08:00">2020-07-27</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/ldap/" itemprop="url" rel="index"><span itemprop="name">ldap</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="ladp简介"><a href="#ladp简介" class="headerlink" title="ladp简介"></a>ladp简介</h3><ul>
-<li><a href="http://www.ldap.org.cn/" target="_blank" rel="noopener">LDAP中文网</a>  </li>
-</ul>
-<p><code>LDAP</code>是<code>轻量目录访问协议</code>，英文全称是<code>LIGHTWEIGHT DIRECTORY ACCESS PROTOCOL</code>，一般都简称为<code>LDAP</code>.</p>
-<h3 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h3><ul>
-<li>读写效率非常高</li>
-</ul>
-<p>对读操作进行优化的一种数据库，在读写比例大于7比1的情况下，LDAP会体现出极高的性能。这个特性正适合了身份认证的需要。</p>
-<ul>
-<li>开放的标准协议</li>
-</ul>
-<p>不同于SQL数据库，LDAP的客户端是跨平台的，并且对几乎所有的程序语言都有标准的API接口。即使是改变了LDAP数据库产品的提供厂商，开发人员也不用担心需要修改程序才能适应新的数据库产品。这个优势是使用SQL语言进行查询的关系型数据库难以达到的。</p>
-<ul>
-<li>强认证方式</li>
-</ul>
-<p>可以达到很高的安全级别。在国际化方面，LDAP使用了UTF-8编码来存储各种语言的字符。</p>
-<ul>
-<li><strong>OpenLDAP</strong>开源实现</li>
-</ul>
-<p>OpenLDAP是其中最轻便且消耗系统资源最少的一个。OpenLDAP是开源软件，近年国内很多公司开发的LDAP产品都是基于OpenLDAP开发的。</p>
-<ul>
-<li>灵活添加数据类型</li>
-</ul>
-<p>LDAP是根据schema的内容定义各种属性之间的从属关系及匹配模式的。例如在关系型数据库中如果要为用户增加一个属性，就要在用户表中增加一个字段，在拥有庞大数量用户的情况下是十分困难的，需要改变表结构。但LDAP只需要在schema中加入新的属性，不会由于用户的属性增多而影响查询性能</p>
-<ul>
-<li>数据存储是树结构</li>
-</ul>
-<p>整棵树的任何一个分支都可以单独放在一个服务器中进行分布式管理，不仅有利于做服务器的负载均衡，还方便了跨地域的服务器部署。这个优势在查询负载大或企业在不同地域都设有分公司的时候体现尤为明显</p>
-<ul>
-<li>总结<ul>
-<li>LDAP 是一种网络协议而不是数据库，而且LDAP的目录不是关系型的，没有RDBMS那么复杂，</li>
-<li>LDAP不支持数据库的Transaction机制，纯粹的无状态、请求-响应的工作模式。</li>
-<li>LDAP不能存储BLOB，LDAP的读写操作是非对称的，读非常方便，写比较麻烦，</li>
-<li>LDAP支持复杂的查询过滤器(filter)，可以完成很多类似数据库的查询功能。</li>
-<li>LDAP使用树状结构，接近于公司组织结构、文件目录结构、域名结构等我们耳熟能详的东东。 </li>
-<li>LDAP使用简单、接口标准，并支持SSL访问。</li>
-</ul>
-</li>
-</ul>
-<h3 id="ldap应用场景"><a href="#ldap应用场景" class="headerlink" title="ldap应用场景"></a>ldap应用场景</h3><ol>
-<li>网络服务：DNS服务</li>
-<li>统一认证服务：Linux PAM (ssh, login, cvs. . . )</li>
-<li>Apache访问控制</li>
-<li>各种服务登录(ftpd, php based, perl based, python based. . . )</li>
-<li>个人信息类，如地址簿</li>
-<li>服务器信息，如帐号管理、邮件服务等</li>
-</ol>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1312,14 +1313,14 @@ flush <span class="token keyword">privileges</span><span class="token punctuatio
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">284</span>
+          <span class="site-state-item-count">285</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-count">33</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">

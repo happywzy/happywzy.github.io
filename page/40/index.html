@@ -203,6 +203,165 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-an-zhuang-pei-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-shi-yong-an-zhuang-pei-zhi/" class="post-title-link" itemprop="url">istio使用【安装配置】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-25 10:32:38" itemprop="dateCreated datePublished" datetime="2019-12-25T10:32:38+08:00">2019-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 11:30:14" itemprop="dateModified" datetime="2020-04-15T11:30:14+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>本文使用的版本号：<code>1.4.2</code></p>
+</blockquote>
+<h3 id="自定义安装组件"><a href="#自定义安装组件" class="headerlink" title="自定义安装组件"></a>自定义安装组件</h3><p>参考<a href="https://istio.io/docs/setup/install/helm/" target="_blank" rel="noopener">安装页面</a>，官网给配置分了几个级别，</p>
+<p><img data-src="/images/k8s9.png" alt="istio"></p>
+<p>分别代表：</p>
+<ul>
+<li>default：根据IstioControlPlaneAPI的默认设置启用组件 （建议用于生产部署）。您可以通过运行命令显示默认设置istioctl profile dump。</li>
+<li>demo：旨在展示Istio功能且资源需求适中的配置。适合运行Bookinfo应用程序和相关任务。这是随快速入门说明一起安装的配置，但是 如果您想探索更高级的任务，则可以稍后自定义配置以启用其他功能。<blockquote>
+<p>此配置文件可实现高级别的跟踪和访问日志记录，因此不适合进行性能测试。</p>
+</blockquote>
+</li>
+<li>minimal：使用Istio的流量管理功能所需的最少组件集。</li>
+<li>sds：类似于默认配置文件，但也启用Istio的SDS（​​秘密发现服务）。此配置文件附带默认情况下启用的其他身份验证功能（严格双向TLS）。</li>
+<li>remote：用于配置共享控制平面的多集群服务网格multicluster mesh。</li>
+</ul>
+<p>不同配置安装的的组件也不一样，参考<a href="https://istio.io/docs/setup/additional-setup/config-profiles/" target="_blank" rel="noopener">配置</a>，打<code>X</code>是要安装的<br><img data-src="/images/k8s10.png" alt="istio"></p>
+<p>当然我们也可以自定义安装组件</p>
+<pre><code>cd install/kubernetes/helm/istio
+vim values.yaml</code></pre><pre class="line-numbers language-yml"><code class="language-yml">gateways:
+  enabled: true
+
+sidecarInjectorWebhook:
+  enabled: true
+
+galley:
+  enabled: true
+
+mixer:
+  policy:
+    enabled: true
+
+  telemetry:
+    enabled: true
+
+pilot:
+  enabled: true
+
+security:
+  enabled: true
+
+nodeagent:
+  enabled: false
+
+grafana:
+  enabled: false
+
+prometheus:
+  enabled: true
+
+tracing:
+  enabled: false
+
+kiali:
+  enabled: false
+
+certmanager:
+  enabled: false
+
+istio_cni:
+  enabled: false
+
+istiocoredns:
+  enabled: false
+
+# ...<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以将我们需要安装的组件定义为<code>true</code>之后，参考<a href="">部署</a>再安装。</p>
+<p>所有的配置说明参考<a href="https://istio.io/docs/reference/config/installation-options/" target="_blank" rel="noopener">官网配置选项</a>.</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-bu-shu-zai-kubernetes-shang-bu-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -909,182 +1068,6 @@ spec:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-wen-ti-flannel-yi-zhi-chong-qi-wen-ti-crashloopbackoff/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-wen-ti-flannel-yi-zhi-chong-qi-wen-ti-crashloopbackoff/" class="post-title-link" itemprop="url">K8s问题【flannel一直重启问题-CrashLoopBackOff】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-16 15:05:03" itemprop="dateCreated datePublished" datetime="2019-12-16T15:05:03+08:00">2019-12-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 10:59:11" itemprop="dateModified" datetime="2020-04-15T10:59:11+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="kubectl-describe-命令查看"><a href="#kubectl-describe-命令查看" class="headerlink" title="kubectl describe 命令查看"></a>kubectl describe 命令查看</h3><pre class="line-numbers language-log"><code class="language-log">Events:
-  Type     Reason     Age                   From               Message
-  ----     ------     ----                  ----               -------
-  Normal   Scheduled  13m                   default-scheduler  Successfully assigned kube-system/kube-flannel-ds-amd64-vfhnj to node-d1
-  Normal   Pulled     13m                   kubelet, node-d1   Container image "quay.io/coreos/flannel:v0.11.0-amd64" already present on machine
-  Normal   Created    13m                   kubelet, node-d1   Created container install-cni
-  Normal   Started    13m                   kubelet, node-d1   Started container install-cni
-  Normal   Pulled     10m (x5 over 13m)     kubelet, node-d1   Container image "quay.io/coreos/flannel:v0.11.0-amd64" already present on machine
-  Normal   Created    10m (x5 over 13m)     kubelet, node-d1   Created container kube-flannel
-  Normal   Started    10m (x5 over 13m)     kubelet, node-d1   Started container kube-flannel
-  Warning  BackOff    3m39s (x30 over 12m)  kubelet, node-d1   Back-off restarting failed container<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="kubectl-logs命令查看"><a href="#kubectl-logs命令查看" class="headerlink" title="kubectl logs命令查看"></a>kubectl logs命令查看</h3><pre class="line-numbers language-log"><code class="language-log">[root@master ~]# kubectl logs  kube-flannel-ds-amd64-9w5nq -n kube-system
-I1216 05:59:40.055608       1 main.go:527] Using interface with name eth0 and address 192.168.1.82
-I1216 05:59:40.055666       1 main.go:544] Defaulting external address to interface address (192.168.1.82)
-E1216 06:00:10.056546       1 main.go:241] Failed to create SubnetManager: error retrieving pod spec for 'kube-system/kube-flannel-ds-amd64-9w5nq': Get https://10.96.0.1:443/api/v1/namespaces/kube-system/pods/kube-flannel-ds-amd64-9w5nq: dial tcp 10.96.0.1:443: i/o timeout<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>问题排查<br>网络问题？<br>通过curl命令测试，网络没有问题。</p>
-</blockquote>
-<h3 id="测试kube-proxy"><a href="#测试kube-proxy" class="headerlink" title="测试kube-proxy"></a>测试kube-proxy</h3><p>重启该节点上的<code>kube-proxy</code>容器，并查看日志</p>
-<pre><code>kubectl delete pod kube-proxy-vtd27 -n kube-system</code></pre><pre class="line-numbers language-log"><code class="language-log">[root@master ~]# kubectl logs kube-proxy-pljct -n kube-system
-W1216 06:30:51.741835       1 proxier.go:513] Failed to load kernel module ip_vs_wrr with modprobe. You can ignore this message when kube-proxy is running inside container without mounting /lib/modules
-W1216 06:30:51.742536       1 proxier.go:513] Failed to load kernel module ip_vs_sh with modprobe. You can ignore this message when kube-proxy is running inside container without mounting /lib/modules
-W1216 06:30:51.748495       1 proxier.go:513] Failed to load kernel module ip_vs_wrr with modprobe. You can ignore this message when kube-proxy is running inside container without mounting /lib/modules
-W1216 06:30:51.749223       1 proxier.go:513] Failed to load kernel module ip_vs_sh with modprobe. You can ignore this message when kube-proxy is running inside container without mounting /lib/modules
-E1216 06:30:51.750805       1 server_others.go:259] can't determine whether to use ipvs proxy, error: IPVS proxier will not be used because the following required kernel modules are not loaded: [ip_vs_wrr ip_vs_sh]
-I1216 06:30:51.757054       1 server_others.go:143] Using iptables Proxier.
-W1216 06:30:51.757122       1 proxier.go:321] clusterCIDR not specified, unable to distinguish between internal and external traffic
-I1216 06:30:51.757338       1 server.go:534] Version: v1.15.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h4><p>这里明显有个问题。一些需要的内核模块加载失败，参考安装文档，已经配置过内核模块。重新尝试，问题依然存在。</p>
-<pre class="line-numbers language-sh"><code class="language-sh">[root@master ~]# cat > /etc/sysconfig/modules/ipvs.modules <<EOF
-> #!/bin/bash
-> modprobe -- ip_vs
-> modprobe -- ip_vs_rr
-> modprobe -- ip_vs_wrr
-> modprobe -- ip_vs_sh
-> modprobe -- nf_conntrack_ipv4
-> EOF
-[root@master ~]# chmod 755 /etc/sysconfig/modules/ipvs.modules && bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep -e ip_vs -e nf_conntrack_ipv4
-ip_vs_sh               12688  0 
-ip_vs_wrr              12697  0 
-ip_vs_rr               12600  150 
-ip_vs                 145497  156 ip_vs_rr,ip_vs_sh,ip_vs_wrr
-nf_conntrack_ipv4      15053  6 
-nf_defrag_ipv4         12729  1 nf_conntrack_ipv4
-nf_conntrack          139224  9 ip_vs,nf_nat,nf_nat_ipv4,nf_nat_ipv6,xt_conntrack,nf_nat_masquerade_ipv4,nf_conntrack_netlink,nf_conntrack_ipv4,nf_conntrack_ipv6
-libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack
-[root@master ~]# lsmod | grep -e ip_vs -e nf_conntrack_ipv4
-ip_vs_sh               12688  0 
-ip_vs_wrr              12697  0 
-ip_vs_rr               12600  150 
-ip_vs                 145497  156 ip_vs_rr,ip_vs_sh,ip_vs_wrr
-nf_conntrack_ipv4      15053  6 
-nf_defrag_ipv4         12729  1 nf_conntrack_ipv4
-nf_conntrack          139224  9 ip_vs,nf_nat,nf_nat_ipv4,nf_nat_ipv6,xt_conntrack,nf_nat_masquerade_ipv4,nf_conntrack_netlink,nf_conntrack_ipv4,nf_conntrack_ipv6
-libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h4><p>由于<code>ipvs</code>已经加入到内核主干，所以需要内核模块支持，请确保内核已经加载了相应模块；如不确定，执行以下脚本，以确保内核加载相应模块，否则会出现<code>failed to load kernel modules: [ip_vs_rr ip_vs_sh ip_vs_wrr]</code>错误</p>
-<pre class="line-numbers language-sh"><code class="language-sh">cat > /etc/sysconfig/modules/ipvs.modules <<EOF
-#!/bin/bash
-ipvs_modules="ip_vs ip_vs_lc ip_vs_wlc ip_vs_rr ip_vs_wrr ip_vs_lblc ip_vs_lblcr ip_vs_dh ip_vs_sh ip_vs_fo ip_vs_nq ip_vs_sed ip_vs_ftp nf_conntrack_ipv4"
-for kernel_module in \${ipvs_modules}; do
-    /sbin/modinfo -F filename \${kernel_module} > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        /sbin/modprobe \${kernel_module}
-    fi
-done
-EOF
-chmod 755 /etc/sysconfig/modules/ipvs.modules && bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep ip_vs<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>执行后应该如下图所示，如果<code>lsmod | grep ip_vs</code>并未出现 <code>ip_vs_rr</code> 等模块；</p>
-<pre class="line-numbers language-sh"><code class="language-sh">[root@node-d1 ~]# lsmod | grep ip_vs
-ip_vs_ftp              13079  0 
-ip_vs_sed              12519  0 
-ip_vs_nq               12516  0 
-ip_vs_sh               12688  0 
-ip_vs_dh               12688  0 
-ip_vs_lblcr            12922  0 
-ip_vs_lblc             12819  0 
-ip_vs_wrr              12697  0 
-ip_vs_wlc              12519  0 
-ip_vs_lc               12516  0 
-nf_nat                 26583  5 ip_vs_ftp,nf_nat_ipv4,nf_nat_ipv6,xt_nat,nf_nat_masquerade_ipv4
-ip_vs_rr               12600  136 
-ip_vs                 145497  162 ip_vs_dh,ip_vs_lc,ip_vs_nq,ip_vs_rr,ip_vs_sh,ip_vs_ftp,ip_vs_sed,ip_vs_wlc,ip_vs_wrr,ip_vs_lblcr,ip_vs_lblc
-nf_conntrack          139224  9 ip_vs,nf_nat,nf_nat_ipv4,nf_nat_ipv6,xt_conntrack,nf_nat_masquerade_ipv4,nf_conntrack_netlink,nf_conntrack_ipv4,nf_conntrack_ipv6
-libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>最后重启<code>Kube-proxy</code>和<code>flannel</code>容器，问题解决。</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1156,14 +1139,14 @@ libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack<span aria-hidden="true
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">284</span>
+          <span class="site-state-item-count">285</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-count">33</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
