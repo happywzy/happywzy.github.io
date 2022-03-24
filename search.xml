@@ -30686,4 +30686,65 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true
         <tag>民法典</tag>
       </tags>
   </entry>
+  <entry>
+    <title>logrotate配置与使用</title>
+    <url>/logrotate-pei-zhi-yu-shi-yong/</url>
+    <content><![CDATA[<h3 id="logrotate"><a href="#logrotate" class="headerlink" title="logrotate"></a>logrotate</h3><p><code>logrotate</code>是linux自带的一个日志轮转工具,可以自动对日志进行截断（或轮循）、压缩以及删除旧的日志文件。如：配置<code>/var/log/nginx.log</code>每周轮询并删除3周前的日志.</p>
+<h3 id="logrotate配置"><a href="#logrotate配置" class="headerlink" title="logrotate配置"></a>logrotate配置</h3><blockquote>
+<p><code>logrotate</code>默认配置文件：<code>/etc/logrotate.conf</code></p>
+</blockquote>
+<h3 id="需求：配置对docker容器日志轮询"><a href="#需求：配置对docker容器日志轮询" class="headerlink" title="需求：配置对docker容器日志轮询"></a>需求：配置对docker容器日志轮询</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 进入到/etc/logrotate.d/目录下,该目录下有logrotate默认配置的一些规则</span>
+<span class="token comment" spellcheck="true"># 创建一个新的文件container</span>
+<span class="token comment" spellcheck="true"># 配置规则,更多规则可以自行搜索</span>
+/var/lib/docker/containers/*/*-json.log
+<span class="token punctuation">{</span>
+    create 644 root root
+    missingok
+    weekly
+    copytruncate
+    rotate 3
+    size<span class="token operator">=</span>100M
+    notifempty
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>限制docker容器日志大小的方式不仅仅只有logrotate方式,此处仅以容器日志为例.</p>
+</blockquote>
+<h3 id="限制docker容器日志"><a href="#限制docker容器日志" class="headerlink" title="限制docker容器日志"></a>限制docker容器日志</h3><ol>
+<li><p>统一限制</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改docker配置：vim /etc/docker/daemon.json</span>
+<span class="token punctuation">{</span>
+<span class="token string">"log-driver"</span><span class="token keyword">:</span><span class="token string">"json-file"</span>,
+<span class="token string">"log-opts"</span><span class="token keyword">:</span> <span class="token punctuation">{</span><span class="token string">"max-size"</span><span class="token keyword">:</span><span class="token string">"500m"</span>, <span class="token string">"max-file"</span><span class="token keyword">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment" spellcheck="true"># 重启</span>
+systemctl daemon-reload
+systemctl restart docker<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>单独限制</p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run --name <span class="token function">test</span> --log-opt max-size<span class="token operator">=</span>100m --log-opt max-file<span class="token operator">=</span>2 -d nginx<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+</ol>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>log</category>
+      </categories>
+  </entry>
 </search>
