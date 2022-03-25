@@ -226,10 +226,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-03-24 17:17:54 / 修改时间：18:26:23" itemprop="dateCreated datePublished" datetime="2022-03-24T17:17:54+08:00">2022-03-24</time>
+              <time title="创建时间：2022-03-24 17:17:54" itemprop="dateCreated datePublished" datetime="2022-03-24T17:17:54+08:00">2022-03-24</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-25 10:57:04" itemprop="dateModified" datetime="2022-03-25T10:57:04+08:00">2022-03-25</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -278,6 +284,22 @@
 <td><code>git remote set-url --push [name] [newUrl]</code></td>
 <td>修改远程仓库</td>
 </tr>
+<tr>
+<td><code>git push -u -f origin</code></td>
+<td>仓库迁移</td>
+</tr>
+<tr>
+<td><code>git push -u -f origin --all</code></td>
+<td>把所有分支迁移过去</td>
+</tr>
+<tr>
+<td><code>git push -u -f origin --tags</code></td>
+<td>把所有tag迁移过去</td>
+</tr>
+<tr>
+<td><code>git fetch</code></td>
+<td>更新remote索引</td>
+</tr>
 </tbody></table>
 <h3 id="分支相关操作"><a href="#分支相关操作" class="headerlink" title="分支相关操作"></a>分支相关操作</h3><table>
 <thead>
@@ -309,6 +331,10 @@
 <tr>
 <td><code>git checkout -b [name]</code></td>
 <td>创建分支并切换</td>
+</tr>
+<tr>
+<td><code>git checkout [name] -f</code></td>
+<td><code>--force</code>或者<code>-f</code>,强制切换分支,未提交的会被丢弃</td>
 </tr>
 <tr>
 <td><code>git branch -d [name]</code></td>
@@ -390,6 +416,10 @@
 <td><code>git show [name]</code></td>
 <td>查询tag具体信息</td>
 </tr>
+<tr>
+<td><code>git pull --tags</code></td>
+<td>拉取远程仓库标签</td>
+</tr>
 </tbody></table>
 <h3 id="提交"><a href="#提交" class="headerlink" title="提交"></a>提交</h3><table>
 <thead>
@@ -400,6 +430,14 @@
 </thead>
 <tbody><tr>
 <td><code>git status</code></td>
+<td>查看当前分支状态</td>
+</tr>
+<tr>
+<td><code>git status -sb</code></td>
+<td>简洁输出当前分支状态,<code>short branch</code></td>
+</tr>
+<tr>
+<td><code>git show --stat</code></td>
 <td>查看当前状态</td>
 </tr>
 <tr>
@@ -423,7 +461,35 @@
 <td>删除文件</td>
 </tr>
 </tbody></table>
-<h3 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h3><table>
+<h3 id="暂存区"><a href="#暂存区" class="headerlink" title="暂存区"></a>暂存区</h3><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>git stash</code></td>
+<td>存到暂存区,如果有修改没有提交无法切换分支,可以先暂存</td>
+</tr>
+<tr>
+<td><code>git stash list</code></td>
+<td>查看暂存区</td>
+</tr>
+<tr>
+<td><code>git stash pop</code></td>
+<td>从暂存区取出,暂存区删除</td>
+</tr>
+<tr>
+<td><code>git stash apply</code></td>
+<td>从暂存区取出,暂存区不删除</td>
+</tr>
+<tr>
+<td><code>git stash clear</code></td>
+<td>删除所有缓存</td>
+</tr>
+</tbody></table>
+<h3 id="回退"><a href="#回退" class="headerlink" title="回退"></a>回退</h3><table>
 <thead>
 <tr>
 <th>命令</th>
@@ -435,12 +501,71 @@
 <td>初始化</td>
 </tr>
 <tr>
-<td><code>git log</code></td>
-<td>查看日志</td>
-</tr>
-<tr>
 <td><code>git diff</code></td>
 <td>查看尚未暂存的更新</td>
+</tr>
+<tr>
+<td><code>git clean [-n]</code></td>
+<td>显示当前目录下没有被add的文件</td>
+</tr>
+<tr>
+<td><code>git clean [-f]</code></td>
+<td>删除当前目录下没有被add的文件</td>
+</tr>
+<tr>
+<td><code>git reset --hard [commitid]</code></td>
+<td>回退到上一个commit,所有提交都被删除</td>
+</tr>
+<tr>
+<td><code>git reset --soft [commitid]</code></td>
+<td>回退到上一个commit,所有提交都保留</td>
+</tr>
+<tr>
+<td><code>git reset --mixed [commitid]</code></td>
+<td>回退到上一个commit,所有提交都保留</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>git reset --soft</code>和<code>--mixed</code>区别在于如果当前commit和上一个commit之间有新增的文件,<code>--soft</code>回退之后该文件处于已add的状态,<code>--mixed</code>回退之后该文件处于未add的状态,需要在执行<code>git add</code>.</p>
+</blockquote>
+<h3 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h3><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>git log</code></td>
+<td>查看所有日志</td>
+</tr>
+<tr>
+<td><code>git log -n 5</code></td>
+<td>查看前5条日志</td>
+</tr>
+<tr>
+<td><code>git log --stat -n 5</code></td>
+<td>查看前5条日志,并简要显示增改行数</td>
+</tr>
+<tr>
+<td><code>git log --since=2.days</code></td>
+<td>查看最近2天的日志</td>
+</tr>
+<tr>
+<td><code>git log --grep=test</code></td>
+<td>查看关键字包含为<code>test</code>的日志</td>
+</tr>
+<tr>
+<td><code>git log --author=Wuzhiyong</code></td>
+<td>查看指定作者的日志</td>
+</tr>
+<tr>
+<td><code>git log --committer=Wuzhiyong</code></td>
+<td>查看指定作者的日志</td>
+</tr>
+<tr>
+<td><code>git show [commitid]</code></td>
+<td>查看某次commit的修改</td>
 </tr>
 </tbody></table>
 <script>
