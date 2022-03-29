@@ -28,7 +28,7 @@
 <meta property="og:description" content="config   命令 说明    git config -l 查看当前config配置   git config --global user.name &quot;username&quot; 设置用户名   git config --global user.email &quot;email@gmail.com&quot; 设置邮箱   远程仓库   命令 说明    git clone [url] 检出仓库   git remot">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-03-24T09:17:54.000Z">
-<meta property="article:modified_time" content="2022-03-29T06:30:21.042Z">
+<meta property="article:modified_time" content="2022-03-29T07:24:59.891Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="spring boot">
 <meta property="article:tag" content="java">
@@ -236,7 +236,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-03-29 14:30:21" itemprop="dateModified" datetime="2022-03-29T14:30:21+08:00">2022-03-29</time>
+                <time title="修改时间：2022-03-29 15:24:59" itemprop="dateModified" datetime="2022-03-29T15:24:59+08:00">2022-03-29</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -423,36 +423,6 @@
 <td>从开始到结束复制到name分支,注意:<code>前开后闭</code></td>
 </tr>
 </tbody></table>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 目标希望将fd75768和e87d4921两个连续的提交rebase到master分支</span>
-<span class="token comment" spellcheck="true"># 因为是前开后闭,这里start通过^向前指定了一个区间</span>
-<span class="token comment" spellcheck="true"># 也可以start设置为fd75768前一个commitid</span>
-$ <span class="token function">git</span> rebase fd75768^ e87d4921 --onto master
-fatal: It seems that there is already a rebase-merge directory, and
-I wonder <span class="token keyword">if</span> you are <span class="token keyword">in</span> the middle of another rebase.  If that is the
-case, please try
-        <span class="token function">git</span> rebase <span class="token punctuation">(</span>--continue <span class="token operator">|</span> --abort <span class="token operator">|</span> --skip<span class="token punctuation">)</span>
-If that is not the case, please
-        <span class="token function">rm</span> -fr <span class="token string">".git/rebase-merge"</span>
-and run me again.  I am stopping <span class="token keyword">in</span> <span class="token keyword">case</span> you still have something
-valuable there.
-<span class="token comment" spellcheck="true"># 上面提示已经存在一个rebase-merge目录,先删除了</span>
-$ <span class="token function">rm</span> -fr <span class="token string">".git/rebase-merge"</span>
-<span class="token comment" spellcheck="true"># 再次执行</span>
-$ <span class="token function">git</span> rebase fd75768^ e87d4921 --onto master
-Successfully rebased and updated detached HEAD.
-<span class="token comment" spellcheck="true"># 切换到master分支,提示刚刚复制了两个提交,即HEAD后面还有两个提交</span>
-$ <span class="token function">git</span> checkout master
-Warning: you are leaving 2 commits behind, not connected to
-any of your branches:
-  b9bb17a step 5
-  f2d9256 step 4
-If you want to keep them by creating a new branch, this may be a good <span class="token function">time</span>
-to <span class="token keyword">do</span> so with:
- <span class="token function">git</span> branch <span class="token operator">&lt;</span>new-branch-name<span class="token operator">></span> b9bb17a
-Switched to branch <span class="token string">'master'</span>
-<span class="token comment" spellcheck="true"># 现在切回master看不到复制过来的提交</span>
-<span class="token comment" spellcheck="true"># 通过下面的命令可以将HEAD重置到最新提交,即可看到rebase过来的2个提交</span>
-$ <span class="token function">git</span> reset --hard b9bb17a<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="tag"><a href="#tag" class="headerlink" title="tag"></a>tag</h3><table>
 <thead>
 <tr>
@@ -521,6 +491,9 @@ $ <span class="token function">git</span> reset --hard b9bb17a<span aria-hidden=
 <td>创建新的分支并切换到tag的位置,<code>[name]</code>非必须</td>
 </tr>
 </tbody></table>
+<blockquote>
+<p>如果创建的不是轻量tag,推送到远程后用<code>git ls-remote --tags origin</code>命令查看会产生一个后缀为<code>^{}</code>的同名tag.</p>
+</blockquote>
 <h3 id="switch"><a href="#switch" class="headerlink" title="switch"></a>switch</h3><table>
 <thead>
 <tr>
@@ -715,9 +688,14 @@ $ <span class="token function">git</span> reset --hard b9bb17a<span aria-hidden=
 <td><code>git log --graph --oneline --decorate --simplify-by-decoration --all</code></td>
 <td>查看分支图</td>
 </tr>
+<tr>
+<td><code>git show-ref</code></td>
+<td>查看本地refs,添加<code>--tags</code>查看本地tag,<code>--heads</code>查看本地分支</td>
+</tr>
 </tbody></table>
 <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><ul>
-<li>配置公钥<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成公钥,过程中按3次回车</span>
+<li><p>配置公钥</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成公钥,过程中按3次回车</span>
 ssh-keygen -t ed25519 -C <span class="token string">"xxxxx@xxxxx.com"</span> 
 <span class="token comment" spellcheck="true"># 进入gitee添加公钥</span>
 <span class="token comment" spellcheck="true"># 测试公钥是否能用</span>
@@ -727,6 +705,38 @@ Hi XXX<span class="token operator">!</span> You've successfully authenticated, b
 <blockquote>
 <p>如果配置正确还是让输入用户密码,首先<code>git remote -v</code>检查远程地址是<code>https</code>还是<code>ssh</code>.使用<code>git remote set-url origin git@gitee.com:happywzy/xxxx.git</code>修改.</p>
 </blockquote>
+</li>
+<li><p>rebase操作</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 目标希望将fd75768和e87d4921两个连续的提交rebase到master分支</span>
+<span class="token comment" spellcheck="true"># 因为是前开后闭,这里start通过^向前指定了一个区间</span>
+<span class="token comment" spellcheck="true"># 也可以start设置为fd75768前一个commitid</span>
+$ <span class="token function">git</span> rebase fd75768^ e87d4921 --onto master
+fatal: It seems that there is already a rebase-merge directory, and
+I wonder <span class="token keyword">if</span> you are <span class="token keyword">in</span> the middle of another rebase.  If that is the
+case, please try
+      <span class="token function">git</span> rebase <span class="token punctuation">(</span>--continue <span class="token operator">|</span> --abort <span class="token operator">|</span> --skip<span class="token punctuation">)</span>
+If that is not the case, please
+      <span class="token function">rm</span> -fr <span class="token string">".git/rebase-merge"</span>
+and run me again.  I am stopping <span class="token keyword">in</span> <span class="token keyword">case</span> you still have something
+valuable there.
+<span class="token comment" spellcheck="true"># 上面提示已经存在一个rebase-merge目录,先删除了</span>
+$ <span class="token function">rm</span> -fr <span class="token string">".git/rebase-merge"</span>
+<span class="token comment" spellcheck="true"># 再次执行</span>
+$ <span class="token function">git</span> rebase fd75768^ e87d4921 --onto master
+Successfully rebased and updated detached HEAD.
+<span class="token comment" spellcheck="true"># 切换到master分支,提示刚刚复制了两个提交,即HEAD后面还有两个提交</span>
+$ <span class="token function">git</span> checkout master
+Warning: you are leaving 2 commits behind, not connected to
+any of your branches:
+b9bb17a step 5
+f2d9256 step 4
+If you want to keep them by creating a new branch, this may be a good <span class="token function">time</span>
+to <span class="token keyword">do</span> so with:
+<span class="token function">git</span> branch <span class="token operator">&lt;</span>new-branch-name<span class="token operator">></span> b9bb17a
+Switched to branch <span class="token string">'master'</span>
+<span class="token comment" spellcheck="true"># 现在切回master看不到复制过来的提交</span>
+<span class="token comment" spellcheck="true"># 通过下面的命令可以将HEAD重置到最新提交,即可看到rebase过来的2个提交</span>
+$ <span class="token function">git</span> reset --hard b9bb17a<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 </li>
 </ul>
 <script>
