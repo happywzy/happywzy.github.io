@@ -203,6 +203,149 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb2-0-k8s-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/influxdb2-0-k8s-bu-shu/" class="post-title-link" itemprop="url">influxdb2.0-k8s部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-02-25 16:37:46 / 修改时间：16:40:49" itemprop="dateCreated datePublished" datetime="2020-02-25T16:37:46+08:00">2020-02-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre><code>kubectl apply -f https://raw.githubusercontent.com/influxdata/docs-v2/master/static/downloads/influxdb-k8-minikube.yaml</code></pre><pre><code>kubectl get pods -n influxdb</code></pre><pre><code>kubectl describe service -n influxdb influxdb</code></pre><pre><code>kubectl port-forward -n influxdb service/influxdb 9999:9999</code></pre><h3 id="yaml"><a href="#yaml" class="headerlink" title="yaml"></a>yaml</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Namespace
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> influxdb
+<span class="token punctuation">---</span>
+<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> StatefulSet
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+        <span class="token key atrule">app</span><span class="token punctuation">:</span> influxdb
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> influxdb
+    <span class="token key atrule">namespace</span><span class="token punctuation">:</span> influxdb
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+    <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">1</span>
+    <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+        <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+            <span class="token key atrule">app</span><span class="token punctuation">:</span> influxdb
+    <span class="token key atrule">serviceName</span><span class="token punctuation">:</span> influxdb
+    <span class="token key atrule">template</span><span class="token punctuation">:</span>
+        <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+            <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+                <span class="token key atrule">app</span><span class="token punctuation">:</span> influxdb
+        <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+            <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+              <span class="token punctuation">-</span> <span class="token key atrule">image</span><span class="token punctuation">:</span> quay.io/influxdb/influxdb<span class="token punctuation">:</span>2.0.0<span class="token punctuation">-</span>beta
+                <span class="token key atrule">name</span><span class="token punctuation">:</span> influxdb
+                <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+                  <span class="token punctuation">-</span> <span class="token key atrule">containerPort</span><span class="token punctuation">:</span> <span class="token number">9999</span>
+                    <span class="token key atrule">name</span><span class="token punctuation">:</span> influxdb
+                <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+                  <span class="token punctuation">-</span> <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /root/.influxdbv2
+                    <span class="token key atrule">name</span><span class="token punctuation">:</span> data
+    <span class="token key atrule">volumeClaimTemplates</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+            <span class="token key atrule">name</span><span class="token punctuation">:</span> data
+            <span class="token key atrule">namespace</span><span class="token punctuation">:</span> influxdb
+        <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+            <span class="token key atrule">accessModes</span><span class="token punctuation">:</span>
+              <span class="token punctuation">-</span> ReadWriteOnce
+            <span class="token key atrule">resources</span><span class="token punctuation">:</span>
+                <span class="token key atrule">requests</span><span class="token punctuation">:</span>
+                    <span class="token key atrule">storage</span><span class="token punctuation">:</span> 10G
+<span class="token punctuation">---</span>
+<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> influxdb
+    <span class="token key atrule">namespace</span><span class="token punctuation">:</span> influxdb
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> influxdb
+        <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9999</span>
+        <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">9999</span>
+    <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+        <span class="token key atrule">app</span><span class="token punctuation">:</span> influxdb
+    <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb2-0-docker-bu-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -730,95 +873,10 @@ Average Query Response Time: 3.372889ms</code></pre><script>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-cha-xun-han-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/influxdb-cha-xun-han-shu/" class="post-title-link" itemprop="url">influxdb-查询函数</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-02-25 16:36:32 / 修改时间：16:39:00" itemprop="dateCreated datePublished" datetime="2020-02-25T16:36:32+08:00">2020-02-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="COUNT计数"><a href="#COUNT计数" class="headerlink" title="COUNT计数"></a>COUNT计数</h3><h3 id="DISTINCT查找不同"><a href="#DISTINCT查找不同" class="headerlink" title="DISTINCT查找不同"></a>DISTINCT查找不同</h3><h3 id="INTEGRAL积分"><a href="#INTEGRAL积分" class="headerlink" title="INTEGRAL积分"></a>INTEGRAL积分</h3><h3 id="MEAN平均值"><a href="#MEAN平均值" class="headerlink" title="MEAN平均值"></a>MEAN平均值</h3><h3 id="MEDIAN中位数"><a href="#MEDIAN中位数" class="headerlink" title="MEDIAN中位数"></a>MEDIAN中位数</h3><h3 id="MODE频率最高的数"><a href="#MODE频率最高的数" class="headerlink" title="MODE频率最高的数"></a>MODE频率最高的数</h3><h3 id="SPREAD最大和最小差值"><a href="#SPREAD最大和最小差值" class="headerlink" title="SPREAD最大和最小差值"></a>SPREAD最大和最小差值</h3><h3 id="STDDEV标准差"><a href="#STDDEV标准差" class="headerlink" title="STDDEV标准差"></a>STDDEV标准差</h3><h3 id="SUM求和"><a href="#SUM求和" class="headerlink" title="SUM求和"></a>SUM求和</h3><h3 id="BOTTOM返回最小的N个数"><a href="#BOTTOM返回最小的N个数" class="headerlink" title="BOTTOM返回最小的N个数"></a>BOTTOM返回最小的N个数</h3><h3 id="TOP返回最大的N个field值"><a href="#TOP返回最大的N个field值" class="headerlink" title="TOP返回最大的N个field值"></a>TOP返回最大的N个field值</h3><h3 id="FIRST返回时间戳最早的数"><a href="#FIRST返回时间戳最早的数" class="headerlink" title="FIRST返回时间戳最早的数"></a>FIRST返回时间戳最早的数</h3><h3 id="LAST返回时间戳最近的数"><a href="#LAST返回时间戳最近的数" class="headerlink" title="LAST返回时间戳最近的数"></a>LAST返回时间戳最近的数</h3><h3 id="MAX最大值"><a href="#MAX最大值" class="headerlink" title="MAX最大值"></a>MAX最大值</h3><h3 id="MIN最小值"><a href="#MIN最小值" class="headerlink" title="MIN最小值"></a>MIN最小值</h3><h3 id="PERCENTILE返回较大百分之N的字段值"><a href="#PERCENTILE返回较大百分之N的字段值" class="headerlink" title="PERCENTILE返回较大百分之N的字段值"></a>PERCENTILE返回较大百分之N的字段值</h3><h3 id="SAMPLE返回N个随机抽样的字段值"><a href="#SAMPLE返回N个随机抽样的字段值" class="headerlink" title="SAMPLE返回N个随机抽样的字段值"></a>SAMPLE返回N个随机抽样的字段值</h3><h3 id="CUMULATIVE-SUM返回字段实时前序字段值的和"><a href="#CUMULATIVE-SUM返回字段实时前序字段值的和" class="headerlink" title="CUMULATIVE_SUM返回字段实时前序字段值的和"></a>CUMULATIVE_SUM返回字段实时前序字段值的和</h3><h3 id="DERIVATIVE返回字段的相邻两个点的变化率"><a href="#DERIVATIVE返回字段的相邻两个点的变化率" class="headerlink" title="DERIVATIVE返回字段的相邻两个点的变化率"></a>DERIVATIVE返回字段的相邻两个点的变化率</h3><script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/34/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/34/">34</a><span class="page-number current">35</span><a class="page-number" href="/page/36/">36</a><span class="space">&hellip;</span><a class="page-number" href="/page/48/">48</a><a class="extend next" rel="next" href="/page/36/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/34/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/34/">34</a><span class="page-number current">35</span><a class="page-number" href="/page/36/">36</a><span class="space">&hellip;</span><a class="page-number" href="/page/49/">49</a><a class="extend next" rel="next" href="/page/36/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -886,7 +944,7 @@ Average Query Response Time: 3.372889ms</code></pre><script>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">288</span>
+          <span class="site-state-item-count">289</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
