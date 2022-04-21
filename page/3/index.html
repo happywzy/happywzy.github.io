@@ -203,6 +203,229 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nfs-client-an-zhuang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/nfs-client-an-zhuang/" class="post-title-link" itemprop="url">nfs-client安装</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-12-30 17:50:30" itemprop="dateCreated datePublished" datetime="2021-12-30T17:50:30+08:00">2021-12-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-01-05 11:48:48" itemprop="dateModified" datetime="2022-01-05T11:48:48+08:00">2022-01-05</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>nfs-client</code>的chart已经迁移到<code>https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/</code>，但是该chart对应的镜像都放在<code>k8s.gcr.io</code>，国内不方便下载.</p>
+<p>本文继续使用以前的<a href="https://github.com/kubernetes-retired/external-storage/tree/master/nfs-client" target="_blank" rel="noopener">chart</a>.</p>
+<h3 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h3><ol>
+<li>添加repo<pre class="line-numbers language-bash"><code class="language-bash">helm repo add stable https://charts.helm.sh/stable<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li>更新repo<pre class="line-numbers language-bash"><code class="language-bash">helm repo update<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li>安装nfs-client<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 这里nfs server参考centos nfs安装</span>
+helm <span class="token function">install</span> nfs  stable/nfs-client-provisioner  --set nfs.server<span class="token operator">=</span>172.16.100.13 --set nfs.path<span class="token operator">=</span>/data/nfs<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+<li>设置nfs为默认存储<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get sc</span>
+NAME         PROVISIONER                                RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client   cluster.local/nfs-nfs-client-provisioner   Delete          Immediate           <span class="token boolean">true</span>                   30s
+<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl patch storageclass nfs-client -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'</span>
+storageclass.storage.k8s.io/nfs-client patched
+<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get sc</span>
+NAME                   PROVISIONER                                RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client <span class="token punctuation">(</span>default<span class="token punctuation">)</span>   cluster.local/nfs-nfs-client-provisioner   Delete          Immediate           <span class="token boolean">true</span>                   118s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<h3 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h3><p><code>k8s-v1.21.5</code>版本安装完<code>nfs-client</code>，创建pvc会一直在pending状态,<code>kubectl logs nfs-client-provisioner</code>后台有报错</p>
+<pre class="line-numbers language-log"><code class="language-log">unexpected error getting claim reference: selfLink was empty, can't make reference<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol>
+<li>临时解决方法：<br>编辑<code>/etc/kubernetes/manifests/kube-apiserver.yaml</code>,在这里：<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+<span class="token key atrule">containers</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token key atrule">command</span><span class="token punctuation">:</span>
+ <span class="token punctuation">-</span> kube<span class="token punctuation">-</span>apiserver<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+添加这一行：<br><code>- --feature-gates=RemoveSelfLink=false</code></li>
+</ol>
+<p>然后应用它，即可</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f /etc/kubernetes/manifests/kube-apiserver.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol>
+<li>解决方案<br>参考<a href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/issues/25" target="_blank" rel="noopener">issue</a>，升级<code>nfs-client-provisioner</code>镜像到<code>v4.0</code>以上版本.<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 一个可用的版本</span>
+easzlab/nfs-subdir-external-provisioner:v4.0.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/helm-ban-ben-hui-tui/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/helm-ban-ben-hui-tui/" class="post-title-link" itemprop="url">helm版本回退</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-12-08 10:13:37 / 修改时间：10:15:07" itemprop="dateCreated datePublished" datetime="2021-12-08T10:13:37+08:00">2021-12-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># helm list -n  istio-system</span>
+NAME               NAMESPACE       REVISION    UPDATED                                    STATUS      CHART                     APP VERSION
+jaeger-operator    istio-system    7           2021-11-18 15:49:10.783153039 +0800 CST    deployed    jaeger-operator-2.26.0    1.27.0     
+kiali-operator     istio-system    4           2021-11-18 15:36:24.945838387 +0800 CST    deployed    kiali-operator-1.38.1     v1.38.1    
+<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># helm history -n istio-system jaeger-operator</span>
+REVISION    UPDATED                     STATUS        CHART                     APP VERSION    DESCRIPTION    
+1           Wed Aug 25 13:39:38 2021    superseded    jaeger-operator-2.14.2    1.17.1         Install complete              
+2           Mon Nov 15 11:11:58 2021    superseded    jaeger-operator-2.26.0    1.27.0         Upgrade complete     
+3           Thu Nov 18 15:37:13 2021    superseded    jaeger-operator-2.14.2    1.17.1         Rollback to 1      
+<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true">#  helm rollback -n istio-system jaeger-operator 2</span>
+Rollback was a success<span class="token operator">!</span> Happy Helming<span class="token operator">!</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/centos-xi-tong-pan-kuo-rong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -887,263 +1110,6 @@ POST index/_search
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-an-quan-yan-zheng/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/elasticsearch-an-quan-yan-zheng/" class="post-title-link" itemprop="url">Elasticsearch安全验证</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-11-02 12:01:00" itemprop="dateCreated datePublished" datetime="2021-11-02T12:01:00+08:00">2021-11-02</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-05 11:31:19" itemprop="dateModified" datetime="2021-11-05T11:31:19+08:00">2021-11-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="1-创建证书"><a href="#1-创建证书" class="headerlink" title="1.创建证书"></a>1.创建证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动一个单机的es</span>
-<span class="token comment" spellcheck="true"># 进入容器执行下面命令</span>
-bin/elasticsearch-certutil cert -out config/elastic-certificates.p12 -pass <span class="token string">""</span>
-<span class="token comment" spellcheck="true"># 证书拷出容器</span>
-docker <span class="token function">cp</span> es:/usr/share/elasticsearch/config/elastic-certificates.p12 <span class="token keyword">.</span>
-<span class="token comment" spellcheck="true"># 将证书拷贝到各个节点</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="2-各个节点准备es配置文件"><a href="#2-各个节点准备es配置文件" class="headerlink" title="2.各个节点准备es配置文件"></a>2.各个节点准备es配置文件</h3><pre class="line-numbers language-yml"><code class="language-yml"># 集群名称保持一致
-cluster.name: elasticsearch-cluster
-# 集群内唯一
-node.name: es-node1
-network.bind_host: 0.0.0.0
-# 本节点IP
-network.publish_host: 192.168.3.17
-http.port: 9200
-transport.tcp.port: 9300
-http.cors.enabled: true
-http.cors.allow-origin: "*"
-node.master: true
-node.data: true
-# 这些节点争抢master
-cluster.initial_master_nodes: 192.168.3.17,192.168.3.19,192.168.3.20
-discovery.seed_hosts: 192.168.3.19,192.168.3.20
-# 安全验证相关的
-xpack.security.enabled: true
-xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.verification_mode: certificate
-xpack.security.transport.ssl.keystore.path: /usr/share/elasticsearch/config/elastic-certificates.p12
-xpack.security.transport.ssl.truststore.path: /usr/share/elasticsearch/config/elastic-certificates.p12<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="3-准备data目录"><a href="#3-准备data目录" class="headerlink" title="3.准备data目录"></a>3.准备data目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 用于保存es数据,需要是777权限</span>
-<span class="token function">mkdir</span> data
-<span class="token function">chmod</span> 777 -R data/<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="4-启动"><a href="#4-启动" class="headerlink" title="4.启动"></a>4.启动</h3><pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name es --net host \
--v /root/es/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
--v /root/es/elastic-certificates.p12:/usr/share/elasticsearch/config/elastic-certificates.p12 \
--v /root/es/data:/usr/share/elasticsearch/data \
-elasticsearch:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="5-创建用户"><a href="#5-创建用户" class="headerlink" title="5.创建用户"></a>5.创建用户</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 登录一台es容器内</span>
-<span class="token comment" spellcheck="true"># 自动生成好默认用户和密码</span>
-bin/elasticsearch-setup-passwords auto
-<span class="token comment" spellcheck="true"># 手动输入密码</span>
-<span class="token punctuation">[</span>root@data1 bin<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># elasticsearch-setup-passwords interactive</span>
-Initiating the setup of passwords <span class="token keyword">for</span> reserved <span class="token function">users</span> elastic,apm_system,kibana,logstash_system,beats_system,remote_monitoring_user.
-You will be prompted to enter passwords as the process progresses.
-Please confirm that you would like to <span class="token keyword">continue</span> <span class="token punctuation">[</span>y/N<span class="token punctuation">]</span>y
-Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>elastic<span class="token punctuation">]</span>: 
-Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>elastic<span class="token punctuation">]</span>: 
-Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>apm_system<span class="token punctuation">]</span>: 
-Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>apm_system<span class="token punctuation">]</span>: 
-Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>kibana<span class="token punctuation">]</span>: 
-Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>kibana<span class="token punctuation">]</span>: 
-Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>logstash_system<span class="token punctuation">]</span>: 
-Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>logstash_system<span class="token punctuation">]</span>: 
-Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>beats_system<span class="token punctuation">]</span>: 
-Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>beats_system<span class="token punctuation">]</span>: 
-Enter password <span class="token keyword">for</span> <span class="token punctuation">[</span>remote_monitoring_user<span class="token punctuation">]</span>: 
-Reenter password <span class="token keyword">for</span> <span class="token punctuation">[</span>remote_monitoring_user<span class="token punctuation">]</span>: 
-Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>apm_system<span class="token punctuation">]</span>
-Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>kibana<span class="token punctuation">]</span>
-Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>logstash_system<span class="token punctuation">]</span>
-Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>beats_system<span class="token punctuation">]</span>
-Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>remote_monitoring_user<span class="token punctuation">]</span>
-Changed password <span class="token keyword">for</span> user <span class="token punctuation">[</span>elastic<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="6-验证"><a href="#6-验证" class="headerlink" title="6.验证"></a>6.验证</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 用户密码都是elastic</span>
-curl --user elastic:elastic <span class="token string">'localhost:9200/_cluster/health?pretty'</span>
-curl -X GET --user elastic:elastic  <span class="token string">"localhost:9200/_cat/nodes?v&amp;pretty"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="安装kibana"><a href="#安装kibana" class="headerlink" title="安装kibana"></a>安装kibana</h3><ul>
-<li>kibana配置<pre class="line-numbers language-yml"><code class="language-yml">server.name: kibana
-server.host: "0"
-elasticsearch.hosts: ["http://192.168.3.17:9200","http://192.168.3.19:9200","http://192.168.3.20:9200"]
-xpack.monitoring.ui.container.elasticsearch.enabled: true
-elasticsearch.username: "elastic"
-elasticsearch.password: "elastic"
-# 中文页面
-i18n.locale: zh-CN<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
-<li>启动<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name kibana -p 5601:5601 -v /root/es/kibana.yml:/usr/share/kibana/config/kibana.yml kibana:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-kibana-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/elasticsearch-kibana-bu-shu/" class="post-title-link" itemprop="url">Elasticsearch-kibana部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-11-02 09:28:37 / 修改时间：09:51:46" itemprop="dateCreated datePublished" datetime="2021-11-02T09:28:37+08:00">2021-11-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name kibana -p 5601:5601 \
--e ELASTICSEARCH_HOSTS<span class="token operator">=</span><span class="token string">'["http://192.168.3.17:9200","http://192.168.3.19:9200","http://192.168.3.20:9200"]'</span> \
-kibana:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1215,14 +1181,14 @@ kibana:7.5.2<span aria-hidden="true" class="line-numbers-rows"><span></span><spa
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">289</span>
+          <span class="site-state-item-count">291</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-count">36</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
