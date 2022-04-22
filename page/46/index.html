@@ -203,6 +203,346 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/haproxy-an-zhuang-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/haproxy-an-zhuang-shi-yong/" class="post-title-link" itemprop="url">Haproxy安装使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-29 15:22:01" itemprop="dateCreated datePublished" datetime="2019-10-29T15:22:01+08:00">2019-10-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-16 10:00:47" itemprop="dateModified" datetime="2020-04-16T10:00:47+08:00">2020-04-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="yum安装"><a href="#yum安装" class="headerlink" title="yum安装"></a>yum安装</h3><pre class="line-numbers language-bash"><code class="language-bash">yum update<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> haproxy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="修改haproxy配置文件"><a href="#修改haproxy配置文件" class="headerlink" title="修改haproxy配置文件"></a>修改haproxy配置文件</h3><p>默认目录：<code>/etc/haproxy/haproxy.cfg</code>，下面是一些参考配置</p>
+<pre><code>#---------------------------------------------------------------------
+# Global settings    
+#---------------------------------------------------------------------
+global    #全局配置文件
+    log         127.0.0.1 local2        #日志配置，所有的日志都记录本地，通过local2输出
+    maxconn         20000
+    ulimit-n    16384
+    #chroot      /var/lib/haproxy        #改变haproxy的工作目录
+    #pidfile     /var/run/haproxy.pid    #指定pid文件的路径
+    maxconn     4000                    #最大连接数的设定
+    #user        haproxy                 #指定运行服务的用户
+    #group       haproxy                 #指定运行服务的用户组
+    daemon
+
+#---------------------------------------------------------------------
+# common defaults that all the 'listen' and 'backend' sections will
+# use if not designated in their block
+#---------------------------------------------------------------------
+defaults
+
+    mode                    http                  #默认使用协议,可以为{http|tcp|health} http:是七层协议 tcp:是四层 health：只返回OK
+    log                     global                #全局日志记录
+    option                  httplog               #详细记录http日志
+    option                  dontlognull           #不记录空日志
+    option http-server-close                      #启用http-server-close
+    option forwardfor       except 127.0.0.0/8    #来自这些信息的都不forwardfor
+    option                  redispatch            #重新分发，ServerID对应的服务器宕机后，强制定向到其他运行正常的服务器
+    retries                 3                      #3次连接失败则认为服务不可用
+    timeout http-request    10s                    #默认http请求超时时间
+    timeout queue           1m                     #默认队列超时时间
+    timeout connect         10s                    #默认连接超时时间
+    timeout client          1m                     #默认客户端超时时间
+    timeout server          1m                     #默认服务器超时时间
+    timeout http-keep-alive 10s                    #默认持久连接超时时间
+    timeout check           10s                    #默认检查时间间隔
+    maxconn                 3000                   #最大连接数
+
+######## 监控界面配置 #################
+listen admin_status
+        # 监控界面访问信息
+        bind 0.0.0.0:8888
+        mode http
+        #自动刷新时间
+        stats refresh 30s
+        # URI相对地址
+        stats uri /
+        # 统计报告格式
+        # stats realm Global\ statistics
+        stats realm welcome login\ Haproxy
+        # 登录账户信息
+        stats auth admin:123456
+        #用来隐藏统计页面上HAProxy 的版本信息
+        stats hide-version
+        #通过设置此选项，可以在监控页面上手工启用或禁用后端真实服务器
+        stats admin if TRUE
+        ########frontend配置##############
+
+######## mysql负载均衡配置 ###############
+listen mysql
+        bind 0.0.0.0:3306
+        mode tcp
+        # 负载均衡算法
+        # static-rr 权重, leastconn 最少连接, source 请求IP, 轮询 roundrobin
+        balance roundrobin
+        # 日志格式
+        # option tcplog
+        # 在 mysql 创建一个没有权限的haproxy用户，密码为空。 haproxy用户
+        # create user 'haproxy'@'%' identified by ''; FLUSH PRIVILEGES;
+        # option mysql-check user haproxy
+         # 这里是容器中的IP地址，由于配置的是轮询roundrobin，weight 权重其实没有生效
+        server mysql_1 192.168.41.129:3306 check weight 1 maxconn 2000
+        server mysql_2 192.168.41.130:3306 check weight 1 maxconn 2000
+        server mysql_3 192.168.41.131:3306 check weight 1 maxconn 2000
+        # 使用keepalive检测死链
+        # option tcpka
+#########################################
+
+
+########test1配置#################
+# listen test1
+#         bind 0.0.0.0:8008
+#         mode tcp
+#         balance roundrobin
+#         server s1 127.0.0.1:8010 weight 1 maxconn 10000 check inter 10s
+#         server s2 127.0.0.1:8011 weight 1 maxconn 10000 check inter 10s
+#         server s3 127.0.0.1:8012 weight 1 maxconn 10000 check inter 10s
+
+########test2配置#################
+# listen test2
+#         bind 0.0.0.0:8007
+#         mode tcp
+#         balance roundrobin
+#         server s1 192.168.1.88:8010 weight 1 maxconn 10000 check inter 10s</code></pre><h3 id="修改ulimit配置"><a href="#修改ulimit配置" class="headerlink" title="修改ulimit配置"></a>修改ulimit配置</h3><p><code>haproxy</code>要求<code>ulimit</code><font color="red">大于（<code>maxconn</code>*2 + 15 ）</font></p>
+<pre><code>#临时修改
+ulimit -n 65536
+
+#永久修改，需要修改/etc/security/limits.conf配置文件，文末增加以下内容，然后重新登录就可以生效
+* soft nofile 65536
+* hard nofile 65536
+* soft nproc 65565
+* hard nproc 65565</code></pre><h3 id="启动服务并配置自启动"><a href="#启动服务并配置自启动" class="headerlink" title="启动服务并配置自启动"></a>启动服务并配置自启动</h3><p>启动后访问<code>8888</code>端口，使用<code>admin/123456</code>登录就可以看到<code>UI</code>界面了。</p>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl start haproxy
+systemctl <span class="token function">enable</span> haproxy<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/spring-boot-tong-guo-zhu-jie-shi-xian-restful-jie-kou-quan-xian-kong-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/spring-boot-tong-guo-zhu-jie-shi-xian-restful-jie-kou-quan-xian-kong-zhi/" class="post-title-link" itemprop="url">Spring Boot通过注解实现Restful接口权限控制</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-29 14:13:51" itemprop="dateCreated datePublished" datetime="2019-10-29T14:13:51+08:00">2019-10-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-01-09 09:45:53" itemprop="dateModified" datetime="2020-01-09T09:45:53+08:00">2020-01-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="创建一个注解AuthToken"><a href="#创建一个注解AuthToken" class="headerlink" title="创建一个注解AuthToken"></a>创建一个注解<code>AuthToken</code></h3><p>所有使用这个注解的方法，均要通过权限验证才能访问。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Target</span><span class="token punctuation">(</span><span class="token punctuation">{</span>ElementType<span class="token punctuation">.</span>METHOD<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Retention</span><span class="token punctuation">(</span>RetentionPolicy<span class="token punctuation">.</span>RUNTIME<span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Documented</span>
+<span class="token keyword">public</span> @<span class="token keyword">interface</span> <span class="token class-name">AuthToken</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">/**
+     * 是否只能管理员权限才能访问,默认所有用户都可以访问
+     */</span>
+    <span class="token keyword">boolean</span> <span class="token function">admin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建一个拦截器AuthInterceptor"><a href="#创建一个拦截器AuthInterceptor" class="headerlink" title="创建一个拦截器AuthInterceptor"></a>创建一个拦截器<code>AuthInterceptor</code></h3><p>所有请求都通过拦截器</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AuthInterceptor</span> <span class="token keyword">extends</span> <span class="token class-name">HandlerInterceptorAdapter</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">preHandle</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>handler <span class="token keyword">instanceof</span> <span class="token class-name">HandlerMethod</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        HandlerMethod handlerMethod <span class="token operator">=</span> <span class="token punctuation">(</span>HandlerMethod<span class="token punctuation">)</span> handler<span class="token punctuation">;</span>
+        Method method <span class="token operator">=</span> handlerMethod<span class="token punctuation">.</span><span class="token function">getMethod</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        AuthToken authToken <span class="token operator">=</span> method<span class="token punctuation">.</span><span class="token function">getAnnotation</span><span class="token punctuation">(</span>AuthToken<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">//需要验证的Method</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>authToken <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">boolean</span> isAdmin <span class="token operator">=</span> authToken<span class="token punctuation">.</span><span class="token function">admin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">//todo</span>
+            <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment" spellcheck="true">//无需验证</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="注册拦截器"><a href="#注册拦截器" class="headerlink" title="注册拦截器"></a>注册拦截器</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AuthConfigurer</span> <span class="token keyword">implements</span> <span class="token class-name">WebMvcConfigurer</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addInterceptors</span><span class="token punctuation">(</span>InterceptorRegistry registry<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        registry<span class="token punctuation">.</span><span class="token function">addInterceptor</span><span class="token punctuation">(</span><span class="token function">AuthInterceptor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">addPathPatterns</span><span class="token punctuation">(</span><span class="token string">"/**"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">public</span> AuthInterceptor <span class="token function">AuthInterceptor</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">AuthInterceptor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="在controller方法上添加注解"><a href="#在controller方法上添加注解" class="headerlink" title="在controller方法上添加注解"></a>在<code>controller</code>方法上添加注解</h3><pre class="line-numbers language-java"><code class="language-java">#需要管理员权限才能访问的
+<span class="token annotation punctuation">@AuthToken</span><span class="token punctuation">(</span>admin <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">)</span>
+
+#普通用户和管理员都能访问的
+<span class="token annotation punctuation">@AuthToken</span>
+
+#不加注解是所有人都可以访问的，不安全<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/si-you-jing-xiang-cang-ku-harbor-v1-5-0-da-jian-yu-shi-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -975,352 +1315,6 @@ kubectl explain pod.spec.affinity.podAffinity<span aria-hidden="true" class="lin
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-duo-tai-ji-qi-docker-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/consul-duo-tai-ji-qi-docker-bu-shu/" class="post-title-link" itemprop="url">consul【多台机器docker部署】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-10-11 12:13:40" itemprop="dateCreated datePublished" datetime="2019-10-11T12:13:40+08:00">2019-10-11</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-14 15:46:58" itemprop="dateModified" datetime="2020-04-14T15:46:58+08:00">2020-04-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题1：ip问题"><a href="#问题1：ip问题" class="headerlink" title="问题1：ip问题"></a>问题1：ip问题</h3><p><img data-src="/images/consul22.png" alt="consul"><br>使用容器方式在主机上部署后，consul节点的ip为容器IP，如上图所示，主机外不能访问到该服务，需要配置内网或公网IP。</p>
-<h4 id="使用docker"><a href="#使用docker" class="headerlink" title="使用docker"></a>使用docker</h4><p>使用docker run命令启动consul只需要在run后增加 <code>--net = "host"</code> ，这相当于使用主机上的IP。</p>
-<pre class="line-numbers language-sh"><code class="language-sh">#注意1是要指定net为host，2是网卡为主机上的网卡，该网卡主机外服务能访问到，可以使用ifconfig看看网卡具体的名字
-docker run --net = "host" --name ** -e CONSUL_BIND_INTERFACE='eth0' ....(省略)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h4 id="使用docker-compose"><a href="#使用docker-compose" class="headerlink" title="使用docker-compose"></a>使用docker-compose</h4><p>使用<code>docker-compose</code>启动docker，需要指定<code>network_mode</code>为<code>host</code></p>
-<pre class="line-numbers language-yml"><code class="language-yml">#原本配置，eth0为容器内网卡
-  consul_server_2:
-    container_name: consul_server_2
-    image: consul:1.6.0
-    networks: 
-      consul:
-        ipv4_address: 172.20.0.3
-    volumes:
-      - /docker/consul/server2/config:/consul/config
-      - /docker/consul/server2/data:/consul/data
-    environment:
-      - CONSUL_BIND_INTERFACE=eth0
-      - TZ=Asia/Shanghai
-      - CONSUL_HTTP_TOKEN=db98c304-4d38-8660-fafe-6a4be56a40d0
-    restart: always
-    command: [
-      'agent'
-    ]
-
-
-#优化后，映射端口不需要了，因为是直接使用主机ens33网卡了
-  consul_server_1:
-    container_name: consul_server_1
-    image: consul:1.6.0
-    network_mode: host
-    volumes:
-      - /docker/consul/server1/config:/consul/config
-      - /docker/consul/server1/data:/consul/data
-    environment:
-      - CONSUL_BIND_INTERFACE=ens33
-      - TZ=Asia/Shanghai
-      - CONSUL_HTTP_TOKEN=db98c304-4d38-8660-fafe-6a4be56a40d0
-    restart: always
-    command: [
-      'agent'
-    ]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>这样启动后consul服务的ip会变成主机的ip，外面的服务可以访问，跨机器部署consul集群通信也不会有问题了<br><img data-src="/images/consul23.png" alt="consul"></p>
-<p>但是以上办法一台机器只能启动一个consul容器，多了会有端口占用的问题，如果想要单机部署多个consul节点，可以考虑修改consul端口。</p>
-<pre class="line-numbers language-json"><code class="language-json">//新增ports.json放到consul的配置目录下即可。配置目录下所有.json配置都会加载
-//默认端口参考官网：https<span class="token operator">:</span>//www.consul.io/docs/agent/options.html#ports
-<span class="token punctuation">{</span>
-  <span class="token property">"ports"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-    <span class="token property">"dns"</span><span class="token operator">:</span><span class="token number">9600</span><span class="token punctuation">,</span>
-    <span class="token property">"http"</span><span class="token operator">:</span><span class="token number">9500</span><span class="token punctuation">,</span>
-    <span class="token property">"serf_lan"</span><span class="token operator">:</span><span class="token number">9301</span><span class="token punctuation">,</span>
-    <span class="token property">"serf_wan"</span><span class="token operator">:</span><span class="token number">9302</span><span class="token punctuation">,</span>
-    <span class="token property">"server"</span><span class="token operator">:</span><span class="token number">9300</span>
-  <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>启动后同一台机器上两个consul都启动了，占用不同端口，类似可以继续增加consul节点数量，他们的IP都是一样的</p>
-<p><img data-src="/images/consul24.png" alt="consul"><br><img data-src="/images/consul25.png" alt="consul"></p>
-<h3 id="问题2：跨机器加入集群报错"><a href="#问题2：跨机器加入集群报错" class="headerlink" title="问题2：跨机器加入集群报错"></a>问题2：跨机器加入集群报错</h3><pre class="line-numbers language-log"><code class="language-log">#client
-2019/10/11 03:48:01 [INFO] agent: (LAN) joining: [192.168.41.128]
-consul_client_2    | ==> 1 error occurred:
-consul_client_2    |     * Failed to join 192.168.41.128: No installed keys could decrypt the message
-
-#server端
-consul_server_1    |     2019/10/11 03:48:18 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48362
-consul_server_1    |     2019/10/11 03:48:18 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48364
-consul_server_1    |     2019/10/11 03:48:31 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48438
-consul_server_1    |     2019/10/11 03:48:31 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48440
-consul_server_1    |     2019/10/11 03:48:57 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48598
-consul_server_1    |     2019/10/11 03:48:57 [ERR] memberlist: failed to receive: No installed keys could decrypt the message from=192.168.41.129:48600<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre><code>所有consul节点加入配置
-"encrypt":"Cwqvm4elg0SIaF6xanFxZ3OFYadEiQtZ71xY1mJTUbk="
-
-此encrypt官方解释是用与集群通信加密的，生成方式 consul keygen
-
-依然报错不能解决</code></pre><pre class="line-numbers language-json"><code class="language-json">//所有节点加入以下配置，删除encrypt，下面的配置字面意思，出入的通信都不在验证，问题解决，不在报错
-    <span class="token property">"encrypt_verify_incoming"</span><span class="token operator">:</span><span class="token boolean">false</span>
-    <span class="token property">"encrypt_verify_outgoing"</span><span class="token operator">:</span><span class="token boolean">false</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>上面的配置是把验证功能关掉了，有安全隐患，官网还有另一个配置<code>disable_keyring_file</code>，（<code>https://github.com/hashicorp/consul/issues/4163</code>）有人可以解决，但是我尝试没有成功，后面继续研究有没有两全其美的办法。。</p>
-<h3 id="start-join、retry-join的格式"><a href="#start-join、retry-join的格式" class="headerlink" title="start_join、retry_join的格式"></a>start_join、retry_join的格式</h3><pre class="line-numbers language-sh"><code class="language-sh">-join-启动时要加入的另一个代理的地址。可以多次指定，以指定要加入的多个代理。如果Consul无法加入任何指定地址，则代理启动将失败。默认情况下，代理在启动时不会加入任何节点。请注意，retry_join在Consul群集部署自动化时，使用 更为合适的方法有助于减轻节点启动竞争条件。
-
-
--retry-join-与类似，-join但如果第一次尝试失败，则允许重试连接。在您知道该地址最终可用的情况下，这很有用。该列表可以包含IPv4，IPv6或DNS地址。在Consul 1.1.0及更高版本中，可以将其设置为 go-sockaddr 模板。如果Consul在非默认的Serf LAN端口上运行，则也必须指定此端口。IPv6必须使用“括弧式”语法。如果给出了多个值，则按照列出的顺序尝试并重试它们，直到第一个成功。这里有些例子：
-
-# Using a DNS entry
-$ consul agent -retry-join "consul.domain.internal"
-
-# Using IPv4，只有IP
-$ consul agent -retry-join "10.0.4.67"
-
-# Using IPv6,带端口
-$ consul agent -retry-join "[::1]:8301"
-
-#配置文件中格式
-    "start_join":[
-        "192.168.41.128:8301"
-    ],
-    "retry_join":[
-        "192.168.41.128:8301"
-    ],<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="问题：No-installed-keys-could-decrypt-the-message-报错解决"><a href="#问题：No-installed-keys-could-decrypt-the-message-报错解决" class="headerlink" title="问题：No installed keys could decrypt the message 报错解决"></a>问题：No installed keys could decrypt the message 报错解决</h3><p>新加入的consul节点需要配置<code>encrypt</code>，这个值是需要跟server端一样的，值保存在<code>/consul/data/serf/local.keyring</code>文件中，如果文件中已存在内容，是不是会更新的，需要删掉，或者手动填入，然后重启服务。如果文件中已经有了，那么启动配置中encrypt参数就可以删了，不会产生影响。<code>-disable-keyring-file</code>这个参数作用是是否持久化这个<code>encrypt</code>，默认持久化，可以选择不持久化，缺点是就要在启动配置里显式填写，优点是更好的排查所有节点是否一样。例如文件中和你启动参数中不一样，问题就出来了。</p>
-<p>可以先在原有的集群中找到<code>local.keyring</code>文件中找到该<code>encrypt</code>，所有节点保持一致即可。</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-jie-he-spring-cloud-shi-yong-consul-pei-zhi-zhong-xin-bing-zi-dong-shua-xin/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/consul-jie-he-spring-cloud-shi-yong-consul-pei-zhi-zhong-xin-bing-zi-dong-shua-xin/" class="post-title-link" itemprop="url">consul【结合spring cloud使用consul配置中心并自动刷新】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-10-10 17:10:44" itemprop="dateCreated datePublished" datetime="2019-10-10T17:10:44+08:00">2019-10-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-14 15:52:57" itemprop="dateModified" datetime="2020-04-14T15:52:57+08:00">2020-04-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="重点"><a href="#重点" class="headerlink" title="重点:"></a><strong>重点:</strong></h3><blockquote>
-<p><code>consul</code>的配置需要全部写在<code>resource</code>目录下<code>bootstrap.yml</code>文件中，写在<code>application.yml</code>中不能生效！</p>
-</blockquote>
-<h3 id="consul-config配置"><a href="#consul-config配置" class="headerlink" title="consul config配置"></a>consul config配置</h3><pre class="line-numbers language-yml"><code class="language-yml">#bootstrap.yml配置
-spring:
-  cloud:
-    consul:
-      host: 192.168.1.11
-      port: 8500
-      config:
-        enabled: true
-        format: KEY_VALUE
-        data-key: data
-        watch:
-          enabled: true
-        prefix: deriii
-        acl-token: bd63ce16-ccd0-22e1-d37d-fb948232cbf5
-      discovery:
-        healthCheckPath: /actuator/health
-        healthCheckInterval: 15s
-        acl-token: bd63ce16-ccd0-22e1-d37d-fb948232cbf5
-        prefer-ip-address: true
-        ip-address: 192.168.1.113<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="获取配置"><a href="#获取配置" class="headerlink" title="获取配置"></a>获取配置</h3><pre class="line-numbers language-java"><code class="language-java">    <span class="token comment" spellcheck="true">//data在consul中完整的目录是prefix + application name + data  </span>
-    <span class="token annotation punctuation">@Value</span><span class="token punctuation">(</span><span class="token string">"${data}"</span><span class="token punctuation">)</span>
-    String test<span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/test"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> String <span class="token function">test</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> test<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="实时刷新，需要在类上加注解"><a href="#实时刷新，需要在类上加注解" class="headerlink" title="实时刷新，需要在类上加注解"></a>实时刷新，需要在类上加注解</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@RefreshScope</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="另一种实现配置刷新"><a href="#另一种实现配置刷新" class="headerlink" title="另一种实现配置刷新"></a>另一种实现配置刷新</h3><pre class="line-numbers language-yml"><code class="language-yml">#bootstrap.yml配置，主要是修改了format为YAML，配合spring boot Configuration使用
-spring:
-  cloud:
-    consul:
-      host: 192.168.1.11
-      port: 8500
-      config:
-        enabled: true
-        format: YAML
-        data-key: data
-        watch:
-          enabled: true
-        prefix: deriiiii
-        acl-token: bd63ce16-ccd0-22e1-d37d-fb948232cbf5
-      discovery:
-        healthCheckPath: /actuator/health
-        healthCheckInterval: 15s
-        acl-token: bd63ce16-ccd0-22e1-d37d-fb948232cbf5
-        prefer-ip-address: true
-        ip-address: 192.168.1.113<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="spring-boot-配置类"><a href="#spring-boot-配置类" class="headerlink" title="spring boot 配置类"></a>spring boot 配置类</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@ConfigurationProperties</span><span class="token punctuation">(</span>prefix <span class="token operator">=</span> <span class="token string">"ttt"</span><span class="token punctuation">)</span>
-<span class="token annotation punctuation">@Configuration</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HiConfig</span> <span class="token punctuation">{</span>
-
-    <span class="token keyword">private</span> String test<span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">//getter setter ...</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="consul中key为prefix-application-Name-data，value为yaml类型，且前缀是ttt，属性名为test"><a href="#consul中key为prefix-application-Name-data，value为yaml类型，且前缀是ttt，属性名为test" class="headerlink" title="consul中key为prefix + application Name + data，value为yaml类型，且前缀是ttt，属性名为test"></a>consul中key为prefix + application Name + data，value为yaml类型，且前缀是ttt，属性名为test</h3><pre class="line-numbers language-yml"><code class="language-yml">#key = deriiii/service-hello/data
-ttt:
- test: asdas<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="启动类加上"><a href="#启动类加上" class="headerlink" title="启动类加上"></a>启动类加上</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@EnableConfigurationProperties</span><span class="token punctuation">(</span><span class="token punctuation">{</span>HiConfig<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1392,7 +1386,7 @@ ttt:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">291</span>
+          <span class="site-state-item-count">293</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
