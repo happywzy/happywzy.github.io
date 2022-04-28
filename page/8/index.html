@@ -203,6 +203,141 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kafka-ji-qun-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/kafka-ji-qun-bu-shu/" class="post-title-link" itemprop="url">kafka集群部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-26 13:56:52 / 修改时间：13:58:26" itemprop="dateCreated datePublished" datetime="2021-08-26T13:56:52+08:00">2021-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># node1</span>
+docker run -d --name kafka --net host --restart always \
+  -e KAFKA_CFG_ZOOKEEPER_CONNECT<span class="token operator">=</span>192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 \
+  -e KAFKA_BROKER_ID<span class="token operator">=</span>1 \
+  -e KAFKA_CFG_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.17:9092 \
+  -e KAFKA_CFG_ADVERTISED_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.17:9092 \
+  -e ALLOW_PLAINTEXT_LISTENER<span class="token operator">=</span>yes \
+  -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE<span class="token operator">=</span>true \
+  -v /root/kafka:/bitnami/kafka \
+  bitnami/kafka:2.8.0
+
+<span class="token comment" spellcheck="true"># node2</span>
+docker run -d --name kafka --net host --restart always \
+  -e KAFKA_CFG_ZOOKEEPER_CONNECT<span class="token operator">=</span>192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 \
+  -e KAFKA_BROKER_ID<span class="token operator">=</span>2 \
+  -e KAFKA_CFG_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.19:9092 \
+  -e KAFKA_CFG_ADVERTISED_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.19:9092 \
+  -e ALLOW_PLAINTEXT_LISTENER<span class="token operator">=</span>yes \
+  -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE<span class="token operator">=</span>true \
+  -v /root/kafka:/bitnami/kafka \
+  bitnami/kafka:2.8.0
+
+<span class="token comment" spellcheck="true"># node3</span>
+docker run -d --name kafka --net host --restart always \
+  -e KAFKA_CFG_ZOOKEEPER_CONNECT<span class="token operator">=</span>192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 \
+  -e KAFKA_BROKER_ID<span class="token operator">=</span>3 \
+  -e KAFKA_CFG_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.20:9092 \
+  -e KAFKA_CFG_ADVERTISED_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.20:9092 \
+  -e ALLOW_PLAINTEXT_LISTENER<span class="token operator">=</span>yes \
+  -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE<span class="token operator">=</span>true \
+  -v /root/kafka:/bitnami/kafka \
+  bitnami/kafka:2.8.0
+
+<span class="token comment" spellcheck="true"># 2种ui</span>
+docker run -d -p 18080:8889 --name ui freakchicken/kafka-ui-lite
+docker run -d -p 9000:9000 --name ui -e ZK_HOSTS<span class="token operator">=</span>192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 solsson/kafka-manager
+
+<span class="token comment" spellcheck="true"># 测试命令</span>
+./kafka-topics.sh --create --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --replication-factor 1 --partitions 1 --topic first_kafka
+
+./kafka-console-producer.sh --broker-list 192.168.3.17:9092,192.168.3.19:9092,192.168.3.20:9092 --topic first_kafka
+
+./kafka-console-consumer.sh --bootstrap-server 192.168.3.17:9092,192.168.3.19:9092,192.168.3.20:9092 --topic first_kafka --from-beginning
+
+./kafka-topics.sh --describe --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --topic first_kafka
+
+./kafka-topics.sh --list --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181
+
+./kafka-topics.sh --delete --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --topic first_kafka
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/centos-pei-zhi-mian-mi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -720,174 +855,6 @@ repl_backlog_histlen:844
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-ji-qun-mo-shi-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/redis-ji-qun-mo-shi-bu-shu/" class="post-title-link" itemprop="url">redis集群模式部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-08-19 15:36:55 / 修改时间：15:59:23" itemprop="dateCreated datePublished" datetime="2021-08-19T15:36:55+08:00">2021-08-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="一些重要参数"><a href="#一些重要参数" class="headerlink" title="一些重要参数"></a>一些重要参数</h3><ul>
-<li><code>--cluster-enabled</code>：是否启动集群，选值：yes 、no</li>
-<li><code>--cluster-config-file</code> 配置文件.conf ：指定节点信息，自动生成</li>
-<li><code>--cluster-node-timeout</code> 毫秒值： 配置节点连接超时时间</li>
-<li><code>--appendonly</code>：是否开启持久化，选值：yes、no</li>
-</ul>
-<h3 id="最简单3主模式"><a href="#最简单3主模式" class="headerlink" title="最简单3主模式"></a>最简单3主模式</h3><p>方便测试，使用<code>host</code>网络模式启动docker,且并没有将持久化映射出来.</p>
-<blockquote>
-<p>持久化启动参数<code>-v /data/redis-data/node1:/data</code>.</p>
-</blockquote>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 节点1</span>
-docker run -d --name redis-node1 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-1.conf --port 6379
-<span class="token comment" spellcheck="true"># 节点2</span>
-docker run -d --name redis-node2 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-2.conf --port 6380
-<span class="token comment" spellcheck="true"># 节点3</span>
-docker run -d --name redis-node3 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-3.conf --port 6381
-
-<span class="token comment" spellcheck="true"># 进入一个容器执行创建集群的命令</span>
-docker <span class="token function">exec</span> -it redis-node1 /bin/bash
-<span class="token comment" spellcheck="true"># 创建集群,只有三个节点,所有指定副本数为0</span>
-redis-cli --cluster create 192.168.41.128:6379  192.168.41.128:6380  192.168.41.128:6381 --cluster-replicas 0
-<span class="token operator">>></span><span class="token operator">></span> Performing <span class="token function">hash</span> slots allocation on 3 nodes<span class="token punctuation">..</span>.
-Master<span class="token punctuation">[</span>0<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 0 - 5460
-Master<span class="token punctuation">[</span>1<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 5461 - 10922
-Master<span class="token punctuation">[</span>2<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 10923 - 16383
-M: 699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379
-   slots:<span class="token punctuation">[</span>0-5460<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
-M: ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380
-   slots:<span class="token punctuation">[</span>5461-10922<span class="token punctuation">]</span> <span class="token punctuation">(</span>5462 slots<span class="token punctuation">)</span> master
-M: 043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381
-   slots:<span class="token punctuation">[</span>10923-16383<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
-Can I <span class="token keyword">set</span> the above configuration? <span class="token punctuation">(</span>type <span class="token string">'yes'</span> to accept<span class="token punctuation">)</span>: <span class="token function">yes</span>
-<span class="token operator">>></span><span class="token operator">></span> Nodes configuration updated
-<span class="token operator">>></span><span class="token operator">></span> Assign a different config epoch to each node
-<span class="token operator">>></span><span class="token operator">></span> Sending CLUSTER MEET messages to <span class="token function">join</span> the cluster
-Waiting <span class="token keyword">for</span> the cluster to <span class="token function">join</span>
-<span class="token keyword">.</span>
-<span class="token operator">>></span><span class="token operator">></span> Performing Cluster Check <span class="token punctuation">(</span>using node 192.168.41.128:6379<span class="token punctuation">)</span>
-M: 699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379
-   slots:<span class="token punctuation">[</span>0-5460<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
-M: ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380
-   slots:<span class="token punctuation">[</span>5461-10922<span class="token punctuation">]</span> <span class="token punctuation">(</span>5462 slots<span class="token punctuation">)</span> master
-M: 043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381
-   slots:<span class="token punctuation">[</span>10923-16383<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
-<span class="token punctuation">[</span>OK<span class="token punctuation">]</span> All nodes agree about slots configuration.
-<span class="token operator">>></span><span class="token operator">></span> Check <span class="token keyword">for</span> <span class="token function">open</span> slots<span class="token punctuation">..</span>.
-<span class="token operator">>></span><span class="token operator">></span> Check slots coverage<span class="token punctuation">..</span>.
-<span class="token punctuation">[</span>OK<span class="token punctuation">]</span> All 16384 slots covered.
-
-<span class="token comment" spellcheck="true"># 查看集群状态</span>
-root@node1:/data<span class="token comment" spellcheck="true"># redis-cli </span>
-127.0.0.1:6379<span class="token operator">></span> cluster nodes
-ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380@16380 master - 0 1629358092049 2 connected 5461-10922
-043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381@16381 master - 0 1629358091025 3 connected 10923-16383
-699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379@16379 myself,master - 0 1629358091000 1 connected 0-5460
-
-<span class="token comment" spellcheck="true"># 测试,连接集群,set数据,别的节点可以get到数据</span>
-root@node1:/data<span class="token comment" spellcheck="true"># redis-cli -c</span>
-127.0.0.1:6379<span class="token operator">></span> <span class="token keyword">set</span> hello world
-OK<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="3主3从模式"><a href="#3主3从模式" class="headerlink" title="3主3从模式"></a>3主3从模式</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 主备6个redis节点</span>
-docker run -d --name redis-node1 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-1.conf --port 6379
-docker run -d --name redis-node2 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-2.conf --port 6380
-docker run -d --name redis-node3 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-3.conf --port 6381
-docker run -d --name redis-node4 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-4.conf --port 6382
-docker run -d --name redis-node5 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-5.conf --port 6383
-docker run -d --name redis-node6 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-6.conf --port 6384
-
-<span class="token comment" spellcheck="true"># 进入任一节点</span>
-docker <span class="token function">exec</span> -it redis-node1 /bin/bash
-
-<span class="token comment" spellcheck="true"># 创建集群</span>
-redis-cli --cluster create 192.168.41.128:6379 192.168.41.128:6380 192.168.41.128:6381 192.168.41.128:6382 192.168.41.128:6383 192.168.41.128:6384 --cluster-replicas 1
-
-<span class="token comment" spellcheck="true"># 查看集群状态</span>
-root@node1:/data<span class="token comment" spellcheck="true"># redis-cli </span>
-127.0.0.1:6379<span class="token operator">></span> cluster nodes
-95b197193ee57fb0f331ee03df671b0e50d293c2 192.168.41.128:6380@16380 master - 0 1629359633234 2 connected 5461-10922
-10678b7ed61dbcd923472a272b6d365222fdad95 192.168.41.128:6384@16384 slave 345dd13e0bbf74a09ebe0011302f0ba8a011c726 0 1629359633000 3 connected
-34e4d85bbdebc619ed4e9a183a0939db0ad82d9a 192.168.41.128:6382@16382 slave 75325c54ff09715263c514bde71d6582fde2b8a8 0 1629359632000 1 connected
-345dd13e0bbf74a09ebe0011302f0ba8a011c726 192.168.41.128:6381@16381 master - 0 1629359635272 3 connected 10923-16383
-75325c54ff09715263c514bde71d6582fde2b8a8 192.168.41.128:6379@16379 myself,master - 0 1629359634000 1 connected 0-5460
-98b18508d3248973c3d28930b7a571d4564c8e2a 192.168.41.128:6383@16383 slave 95b197193ee57fb0f331ee03df671b0e50d293c2 0 1629359635000 2 connected<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -959,7 +926,7 @@ root@node1:/data<span class="token comment" spellcheck="true"># redis-cli </span
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">293</span>
+          <span class="site-state-item-count">294</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
