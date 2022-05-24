@@ -203,6 +203,224 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-zheng-shu-guan-li-cert-manager-zi-dong-qian-fa-geng-xin-zheng-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-zheng-shu-guan-li-cert-manager-zi-dong-qian-fa-geng-xin-zheng-shu/" class="post-title-link" itemprop="url">k8s证书管理【Cert-manager自动签发/更新证书】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-07 15:03:34" itemprop="dateCreated datePublished" datetime="2020-01-07T15:03:34+08:00">2020-01-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-12-17 15:22:25" itemprop="dateModified" datetime="2021-12-17T15:22:25+08:00">2021-12-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>Cert-manager 是一个云原生证书管理开源项目，用于在 Kubernetes 集群中提供 HTTPS 证书并自动续期，支持 Let’s Encrypt, HashiCorp Vault 这些免费证书的签发。在Kubernetes集群中，我们可以通过 Kubernetes Ingress 和 Let’s Encrypt 实现外部服务的自动化 HTTPS。<br>本文 Cert manager使用版本：<font color="red"><strong>v0.12.0</strong></font><br><img data-src="/images/cert-manager.png" alt="cert-manager"><br>强烈建议参考官方文档：<a href="https://cert-manager.io/docs" target="_blank" rel="noopener">https://cert-manager.io/docs</a></p>
+</blockquote>
+<h3 id="添加helm源"><a href="#添加helm源" class="headerlink" title="添加helm源"></a>添加helm源</h3><blockquote>
+<p>注意<a href="https://github.com/helm/charts/tree/master/stable/cert-manager" target="_blank" rel="noopener">stable/cert-manager</a>已经过时不再维护了，转到<a href="https://github.com/jetstack/cert-manager/tree/master/deploy/charts/cert-manager" target="_blank" rel="noopener">jetstack/cert-manager</a>。</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash">helm repo add jetstack https://charts.jetstack.io<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="更新源"><a href="#更新源" class="headerlink" title="更新源"></a>更新源</h3><pre class="line-numbers language-bash"><code class="language-bash">helm repo update<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="创建CRDs"><a href="#创建CRDs" class="headerlink" title="创建CRDs"></a>创建CRDs</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply --validate<span class="token operator">=</span>false -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.12/deploy/manifests/00-crds.yaml
+或
+kubectl create -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.12/deploy/manifests/00-crds.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><blockquote>
+<p>这里设置了两个默认值<br>–set ingressShim.defaultIssuerName=<font color="red"><strong>letsencrypt-prod</strong></font><br>–set ingressShim.defaultIssuerKind=ClusterIssuer<br>–set ingressShim.defaultIssuerGroup=cert-manager.io<br>用于在后续创建Ingress时，配合annotations<br>kubernetes.io/tls-acme: “true”<br>kubernetes.io/ingress.class: “nginx”<br>实现<strong>自动创建</strong>证书。</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash">helm <span class="token function">install</span> --name cert-manager --namespace cert-manager --version v0.12.0 --set ingressShim.defaultIssuerName<span class="token operator">=</span>letsencrypt-prod --set ingressShim.defaultIssuerKind<span class="token operator">=</span>ClusterIssuer --set ingressShim.defaultIssuerGroup<span class="token operator">=</span>cert-manager.io jetstack/cert-manager<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="查看安装是否完成"><a href="#查看安装是否完成" class="headerlink" title="查看安装是否完成"></a>查看安装是否完成</h3><blockquote>
+<p>注意事项：下面的<code>pod</code>需要部署在可以访问外网的机器上.</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master cert<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod -n cert-manager</span>
+NAME                                      READY   STATUS    RESTARTS   AGE
+cert-manager-5cd477f7bb-fxpvf             1/1     Running   0          22m
+cert-manager-cainjector-df4dc78cd-l527b   1/1     Running   0          22m
+cert-manager-webhook-5f78ff89bc-ggvqt     1/1     Running   0          22m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master cert<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get crd | grep cert-manager</span>
+certificaterequests.cert-manager.io         2020-01-07T01:38:32Z
+certificates.cert-manager.io                2020-01-07T01:38:32Z
+challenges.acme.cert-manager.io             2020-01-07T01:38:32Z
+clusterissuers.cert-manager.io              2020-01-07T01:38:32Z
+issuers.cert-manager.io                     2020-01-07T01:38:32Z
+orders.acme.cert-manager.io                 2020-01-07T01:38:32Z<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建默认签发机构"><a href="#创建默认签发机构" class="headerlink" title="创建默认签发机构"></a>创建默认签发机构</h3><p>刚刚安装时已经指定了默认签发类型是<code>ClusterIssuer</code> ，签发机构名称是<code>letsencrypt-prod</code> ，但是我们还没有创建，现在需要创建<code>cluster-issuer.yaml</code>。 </p>
+<blockquote>
+<p>cert-manager 给我们提供了 <code>Issuer</code> 和 <code>ClusterIssuer</code> 这两种用于创建签发机构的自定义资源对象，<code>Issuer</code> 只能用来签发自己所在 namespace 下的证书，<code>ClusterIssuer</code> 可以签发任意 namespace 下的证书.</p>
+</blockquote>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> cert<span class="token punctuation">-</span>manager.io/v1alpha2
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> ClusterIssuer
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> letsencrypt<span class="token punctuation">-</span>prod
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">acme</span><span class="token punctuation">:</span>
+    <span class="token key atrule">server</span><span class="token punctuation">:</span> https<span class="token punctuation">:</span>//acme<span class="token punctuation">-</span>v02.api.letsencrypt.org/directory
+    <span class="token key atrule">email</span><span class="token punctuation">:</span> 1154365135@qq.com
+    <span class="token key atrule">privateKeySecretRef</span><span class="token punctuation">:</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> letsencrypt<span class="token punctuation">-</span>prod
+    <span class="token key atrule">solvers</span><span class="token punctuation">:</span>    
+    <span class="token punctuation">-</span> <span class="token key atrule">http01</span><span class="token punctuation">:</span>
+        <span class="token key atrule">ingress</span><span class="token punctuation">:</span>
+          <span class="token key atrule">class</span><span class="token punctuation">:</span> nginx<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>上述配置，更多配置参考<a href="https://cert-manager.io/docs/reference/api-docs/#cert-manager.io/v1alpha2.ClusterIssuer" target="_blank" rel="noopener">ClusterIssuer</a></p>
+<ul>
+<li><code>metadata.name</code> 是我们创建的签发机构的名称，后面我们创建证书的时候会引用它</li>
+<li><code>spec.acme.email</code> 是你自己的邮箱，证书快过期的时候会有邮件提醒，不过 cert-manager 会利用 acme 协议自动给我们重新颁发证书来续期</li>
+<li><code>spec.acme.server</code> 是 acme 协议的服务端，我们这里用 Let’s Encrypt，这个地址就写死成这样就行</li>
+<li><code>spec.acme.privateKeySecretRef</code> 指示此签发机构的私钥将要存储到哪个 Secret 对象中，名称不重要</li>
+<li><code>spec.acme.solvers.http01</code> 这里指示签发机构使用 HTTP-01 的方式进行 acme 协议 (还可以用 DNS 方式，acme 协议的目的是证明这台机器和域名都是属于你的，然后才准许给你颁发证书)</li>
+</ul>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl create -f cluster-issuer.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl get clusterissuer<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="配置ingress"><a href="#配置ingress" class="headerlink" title="配置ingress"></a>配置ingress</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> extensions/v1beta1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Ingress
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+    <span class="token key atrule">kubernetes.io/ingress.class</span><span class="token punctuation">:</span> nginx
+    <span class="token key atrule">kubernetes.io/tls-acme</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+    <span class="token key atrule">nginx.ingress.kubernetes.io/backend-protocol</span><span class="token punctuation">:</span> HTTPS
+    <span class="token key atrule">nginx.ingress.kubernetes.io/ssl-redirect</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app</span><span class="token punctuation">:</span> kubernetes<span class="token punctuation">-</span>dashboard
+    <span class="token key atrule">chart</span><span class="token punctuation">:</span> kubernetes<span class="token punctuation">-</span>dashboard<span class="token punctuation">-</span>1.10.0
+    <span class="token key atrule">heritage</span><span class="token punctuation">:</span> Tiller
+    <span class="token key atrule">release</span><span class="token punctuation">:</span> kubernetes<span class="token punctuation">-</span>dashboard
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> kubernetes<span class="token punctuation">-</span>dashboard
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>system
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">rules</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">host</span><span class="token punctuation">:</span> k8s.deri.com
+    <span class="token key atrule">http</span><span class="token punctuation">:</span>
+      <span class="token key atrule">paths</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">backend</span><span class="token punctuation">:</span>
+          <span class="token key atrule">serviceName</span><span class="token punctuation">:</span> kubernetes<span class="token punctuation">-</span>dashboard
+          <span class="token key atrule">servicePort</span><span class="token punctuation">:</span> <span class="token number">443</span>
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> /
+  <span class="token key atrule">tls</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> k8s.deri.com
+    <span class="token key atrule">secretName</span><span class="token punctuation">:</span> deri<span class="token punctuation">-</span>com<span class="token punctuation">-</span>tls<span class="token punctuation">-</span>secret<span class="token punctuation">-</span>cc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>由于添加了<code>annotations kubernetes.io/tls-acme: "true"</code>，tls这个secret会自动创建。</p>
+<blockquote>
+<p>创建完成后隔一会儿我们可以看到会多出现一个随机名称的 Ingress 对象<code>cm-acme-http-solver-hl5sx</code>，这个 Ingress 对象就是用来专门验证证书的：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">$ kubectl get ingress -n gateway
+NAME                        HOSTS                   ADDRESS   PORTS     AGE
+cm-acme-http-solver-hl5sx   cs.deri.com             80        37s
+kube-ui                     cs.deri.com             80, 443   41s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+</blockquote>
+<p>验证成功后，这个 Ingress 对象会自动删除.</p>
+<h3 id="卸载"><a href="#卸载" class="headerlink" title="卸载"></a>卸载</h3><pre class="line-numbers language-bash"><code class="language-bash">helm delete --purge cert-manager<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl delete -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.12/deploy/manifests/00-crds.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="Check"><a href="#Check" class="headerlink" title="Check"></a>Check</h3><p>检查服务是否正常</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get certificate -n gateway </span>
+NAME              READY   SECRET            AGE
+consul-tls-test   True    consul-tls-test   19m
+
+<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get clusterissuer</span>
+NAME               READY   AGE
+letsencrypt-prod   True    157m
+
+<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get certificate -n gateway </span>
+NAME              READY   SECRET            AGE
+consul-tls-test   True    consul-tls-test   19m
+
+<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get Order -n gateway</span>
+NAME                                    STATE   AGE
+consul-tls-test-3546184973-1845474898   valid   20m
+
+<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get  CertificateRequest -n gateway</span>
+NAME                         READY   AGE
+consul-tls-test-3546184973   True    27m
+
+<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get secret -ngateway</span>
+NAME                      TYPE                                  DATA   AGE
+consul-tls-test           kubernetes.io/tls                     3      29m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="用到的镜像"><a href="#用到的镜像" class="headerlink" title="用到的镜像"></a>用到的镜像</h3><pre><code>quay.io/jetstack/cert-manager-cainjector:v0.12.0
+quay.io/jetstack/cert-manager-webhook:v0.12.0
+quay.io/jetstack/cert-manager-controller:v0.12.0
+#这里由于上面配置solve是acme所以用到这个镜像，如果你配置别的，可能不一致
+quay.io/jetstack/cert-manager-acmesolver:v0.12.0</code></pre><script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-la-qu-guo-wai-jing-xiang-shi-bai-quay-io-he-gcr-io-jie-jue-ban-fa/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -976,119 +1194,6 @@ docker save -o "导出的镜像文件名.tar" "要导出的镜像名"</code></pr
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/devops-yu-cicd/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/devops-yu-cicd/" class="post-title-link" itemprop="url">DevOps与CI/CD</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-31 14:07:07" itemprop="dateCreated datePublished" datetime="2019-12-31T14:07:07+08:00">2019-12-31</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:39:15" itemprop="dateModified" datetime="2020-04-15T13:39:15+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="了解-DevOps"><a href="#了解-DevOps" class="headerlink" title="了解 DevOps"></a>了解 DevOps</h2><p>DevOps 是指对企业文化、业务自动化和平台设计等方面进行全方位变革，从而实现迅捷、优质的服务交付，提升企业响应能力和价值。只有通过快速迭代的 IT 服务交付，这一切才能实现。<code>DevOps</code>可以将传统应用和最新的云原生应用与基础架构彼此相连。</p>
-<h2 id="DevOps简介"><a href="#DevOps简介" class="headerlink" title="DevOps简介"></a>DevOps简介</h2><p>DevOps 就是开发（Development）、测试（QA）、运维（Operations）这三个领域的合并。<br><img data-src="/images/DevOps.jpg" alt="DevOps"></p>
-<p>从字面上来看，”DevOps”一词是由英文 <code>Development</code>（开发）和 <code>Operations</code> （运维）组合而成，但它所代表的理念和实践要比这广阔的多。DevOps 涵盖了安全、协作方式、数据分析等许多方面。</p>
-<p>DevOps 强调通过一系列手段来实现既快又稳的工作流程，使每个想法（比如一个新的软件功能，一个功能增强请求或者一个 bug 修复）在从开发到生产环境部署的整个流程中，都能不断地为用户带来价值。这种方式需要开发团队和运维团队密切交流、高效协作并且彼此体谅。此外，DevOps 还要能够方便扩展，灵活部署。有了 DevOps，需求最迫切的工作就能通过自助服务和自动化得到解决；通常在标准开发环境编写代码的开发人员也可与 IT 运维人员紧密合作，加速软件的构建、测试和发布，同时保障开发成果的稳定可靠。</p>
-<h2 id="容器与-DevOps-有什么关系？"><a href="#容器与-DevOps-有什么关系？" class="headerlink" title="容器与 DevOps 有什么关系？"></a>容器与 DevOps 有什么关系？</h2><p>DevOps 可以加快一个想法从提出到部署的整个过程。DevOps 的核心在于，在应用的整个生命周期中，都要确保日常<strong>运维任务自动化和环境的标准化</strong>。容器可以提供标准化的环境，你需要一个平台来管理它们，同时提供内置的自动化功能并支持各种基础架构。</p>
-<h2 id="DevOps-与-CI-CD"><a href="#DevOps-与-CI-CD" class="headerlink" title="DevOps 与 CI/CD"></a>DevOps 与 CI/CD</h2><p>选择支持流程的工具对于 DevOps 的成功至关重要。运维团队要跟上快速开发周期，就需要利用高度灵活的平台，并像开发团队对待代码一样，对待平台的基础架构。手动部署不仅速度慢，而且可能出错。因此，您也可通过自动化来简化平台调配和部署。</p>
-<p>持续集成和持续部署管道（CI/CD）是实施 DevOps 的一大重要成果。CI/CD 可帮助您频繁地向客户交付应用并检验软件质量，而且只需极少的人工干预。</p>
-<p>具体而言，CI/CD 在整个应用生命周期内（从集成和测试阶段，到交付和部署）都引入了持续自动化和持续监控，让您能够快速识别和改正问题与缺陷。这些彼此关联的实践通常被统称为“CI/CD 管道”，需要开发和运维团队以敏捷方式协同支持。</p>
-<h2 id="CICD简介"><a href="#CICD简介" class="headerlink" title="CICD简介"></a>CICD简介</h2><ul>
-<li>持续集成（Continuous Integration ，CI）</li>
-<li>持续交付（Continuous Delivery）</li>
-<li>持续部署（Continuous Deploy）</li>
-</ul>
-<p>参考<a href="https://www.jianshu.com/p/654505d42180" target="_blank" rel="noopener">链接</a></p>
-<h2 id="云原生CICD实现"><a href="#云原生CICD实现" class="headerlink" title="云原生CICD实现"></a>云原生CICD实现</h2><p><img data-src="/images/CICD.jpg" alt="CICD"><br>流程：</p>
-<ol>
-<li>用户本地完成开发；</li>
-<li>代码提交到<code>GitLab</code>上；</li>
-<li>Gitlab收到代码提交请求后通过webhook触发Jenkins;</li>
-<li><code>Jenkins</code>被触发后，首先从代码仓库拉取源码，进行构建、静态分析和单元测试，然后创建镜像推送到镜像仓库<code>Harbor</code>，最后调用<code>Kubernetes API</code>更新应用；</li>
-<li>Kubernetes从Harbor拉取最新镜像，更新应用。</li>
-</ol>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1160,7 +1265,7 @@ docker save -o "导出的镜像文件名.tar" "要导出的镜像名"</code></pr
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">295</span>
+          <span class="site-state-item-count">296</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1252,7 +1357,7 @@ docker save -o "导出的镜像文件名.tar" "要导出的镜像名"</code></pr
 
   
   <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/lozad.js/1.14.0/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

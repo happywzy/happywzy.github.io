@@ -203,6 +203,154 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-shuang-zhu-mo-shi-haproxy-keepalived-gao-ke-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-shuang-zhu-mo-shi-haproxy-keepalived-gao-ke-yong/" class="post-title-link" itemprop="url">mysql【双主模式+haproxy+keepalived高可用】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-07-28 15:15:56 / 修改时间：16:05:38" itemprop="dateCreated datePublished" datetime="2020-07-28T15:15:56+08:00">2020-07-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>前文仅仅通过<code>mysql双主 + keepalived</code>实现高可用，这种方式在一台出现问题的时候可以切换，但是正常情况下只有一台服务使用，无法实现负载均衡，本文引入<code>haproxy</code>实现正常情况下也能有负载均衡的效果.</p>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ol>
+<li><p>安装<code>haproxy</code></p>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> haproxy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li><p>修改<code>haproxy</code>配置文件<br>默认目录：<code>/etc/haproxy/haproxy.cfg</code></p>
+<pre class="line-numbers language-cfg"><code class="language-cfg">#---------------------------------------------------------------------
+# Example configuration for a possible web application.  See the
+# full configuration options online.
+#
+#   http://haproxy.1wt.eu/download/1.4/doc/configuration.txt
+#
+#---------------------------------------------------------------------
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<p>#———————————————————————</p>
+<h1 id="Global-settings"><a href="#Global-settings" class="headerlink" title="Global settings"></a>Global settings</h1><p>#———————————————————————<br>global<br>    # to have these messages end up in /var/log/haproxy.log you will<br>    # need to:<br>    #<br>    # 1) configure syslog to accept network log events.  This is done<br>    #    by adding the ‘-r’ option to the SYSLOGD_OPTIONS in<br>    #    /etc/sysconfig/syslog<br>    #<br>    # 2) configure local2 events to go to the /var/log/haproxy.log<br>    #   file. A line like the following can be added to<br>    #   /etc/sysconfig/syslog<br>    #<br>    #    local2.*                       /var/log/haproxy.log<br>    #<br>    log         127.0.0.1 local2</p>
+<pre><code>chroot      /var/lib/haproxy
+pidfile     /var/run/haproxy.pid
+maxconn     4000
+user        haproxy
+group       haproxy
+daemon
+
+# turn on stats unix socket
+stats socket /var/lib/haproxy/stats</code></pre><p>#———————————————————————</p>
+<h1 id="common-defaults-that-all-the-‘listen’-and-‘backend’-sections-will"><a href="#common-defaults-that-all-the-‘listen’-and-‘backend’-sections-will" class="headerlink" title="common defaults that all the ‘listen’ and ‘backend’ sections will"></a>common defaults that all the ‘listen’ and ‘backend’ sections will</h1><h1 id="use-if-not-designated-in-their-block"><a href="#use-if-not-designated-in-their-block" class="headerlink" title="use if not designated in their block"></a>use if not designated in their block</h1><p>#———————————————————————<br>defaults<br>    mode                    http<br>    log                     global<br>    option                  httplog<br>    option                  dontlognull<br>    option http-server-close<br>    option forwardfor       except 127.0.0.0/8<br>    option                  redispatch<br>    retries                 3<br>    timeout http-request    10s<br>    timeout queue           1m<br>    timeout connect         10s<br>    timeout client          1m<br>    timeout server          1m<br>    timeout http-keep-alive 10s<br>    timeout check           10s<br>    maxconn                 3000</p>
+<p>######## 监控界面配置 #################<br>listen admin_status<br>        bind 0.0.0.0:8888<br>        mode http<br>        stats refresh 30s<br>        stats uri /<br>        stats realm welcome login\ Haproxy<br>        stats auth admin:123456<br>        stats hide-version<br>        stats admin if TRUE<br>        ########frontend配置##############</p>
+<p>######## mysql负载均衡配置 ###############<br>listen mysql<br>        bind 0.0.0.0:13306<br>        mode tcp<br>        balance roundrobin                  # 负载均衡策略<br>        #option tcplog                      # tcp日志<br>        option mysql-check user haproxy     # 在mysql中创建无任何权限用户haproxy，且无密码<br>        server mysql_1 192.168.41.141:3306 check weight 1 maxconn 2000<br>        server mysql_2 192.168.41.142:3306 check weight 1 maxconn 2000<br>        option tcpka                        # 缺少这个配置,可能无法查看到数据库</p>
+<pre><code>
+&gt; `option mysql-check user haproxy`这里是配置健康检查的，需要在mysql中创建无任何权限用户`haproxy`，且无密码.    
+&gt; -  `CREATE USER 'haproxy'@'%' IDENTIFIED BY ''; `
+
+3. 修改ulimit配置
+`haproxy`要求`ulimit`大于`（maxconn*2 + 15 ）`
+```bash
+#临时修改
+ulimit -n 65536
+
+#永久修改，需要修改/etc/security/limits.conf配置文件，文末增加以下内容，然后重新登录就可以生效
+* soft nofile 65536
+* hard nofile 65536
+* soft nproc 65565
+* hard nproc 65565</code></pre><ol start="4">
+<li>启动服务并配置自启动</li>
+</ol>
+<p>启动后访问<code>8888</code>端口，使用<code>admin/123456</code>登录就可以看到<code>UI界面</code>了。</p>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl start haproxy
+systemctl <span class="token function">enable</span> haproxy<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>修改<code>keepalived</code>配置<br>前文配置的<code>keepalived</code>监控的是<code>mysqld</code>进程，需要修改成监控<code>haproxy</code>进程.这样不管哪台机器的<code>mysql</code>或者<code>haproxy</code>或者<code>keepalived</code>出现问题，都不影响使用.</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改的配置如下</span>
+vrrp_script chk_mysql <span class="token punctuation">{</span>
+    script <span class="token string">"killall -0 haproxy"</span>
+    interval 2
+    <span class="token function">timeout</span> 2
+    fall 3
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>测试<br>通过<code>VIP</code>连接数据库，增删改查测试.</li>
+</ol>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-shuang-zhu-mo-shi-keepalived-gao-ke-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1093,342 +1241,6 @@ flush <span class="token keyword">privileges</span><span class="token punctuatio
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/route-ming-ling/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/route-ming-ling/" class="post-title-link" itemprop="url">route命令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-22 09:00:55" itemprop="dateCreated datePublished" datetime="2020-07-22T09:00:55+08:00">2020-07-22</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-05-13 15:26:55" itemprop="dateModified" datetime="2021-05-13T15:26:55+08:00">2021-05-13</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="route命令"><a href="#route命令" class="headerlink" title="route命令"></a>route命令</h3><p><code>route</code>命令用来显示并设置<code>Linux</code>内核中的<code>网络路由表</code>，<code>route</code>命令设置的路由主要是<code>静态路由</code>。要实现两个不同的子网之间的通信，需要一台连接两个网络的路由器，或者同时位于两个网络的网关来实现。</p>
-<p>在Linux系统中设置路由通常是为了解决以下问题：</p>
-<ul>
-<li>该Linux系统在一个局域网中，局域网中有一个网关，能够让机器访问Internet，那么就需要将这台机器的ip地址设置为Linux机器的默认路由。</li>
-<li>直接在命令行下执行route命令来添加路由，不会永久保存，当网卡重启或者机器重启之后，该路由就失效了</li>
-<li>可以在<code>/etc/rc.local</code>中添加<code>route</code>命令来保证该路由设置永久有效，这个方法只能在重启电脑的时候生效，重启网络不生效；</li>
-<li>推荐在<code>/etc/sysconfig/static-routes</code>编写路由，重启网络或服务器都能生效；</li>
-</ul>
-<pre class="line-numbers language-sh"><code class="language-sh"># vim /etc/sysconfig/static-routes
-# 这个文件默认不存在
-any net 192.168.11.0 gw 192.168.21.1 netmask 255.255.255.0 metric 1 dev eth0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意，如果本机安装了docker,添加路由后重启网络，会导致docker服务启动添加的路由失效，导致docker服务调用失败，创建新的docker服务会报以下错误,重启docker服务可以解决。<code>systemctl restart docker</code></p>
-</blockquote>
-<pre><code>[root@localhost ~]# docker run -d -p 9000:80 centos:httpd /bin/sh -c /usr/local/bin/start.sh
-d5b2bd5a7bc4895a973fe61efd051847047d26385f65c278aaa09e4fa31c4d76
-docker: Error response from daemon: driver failed programming external connectivity on endpoint quirky_allen (6bda693d1143657e46bee0300276aa05820da2b21a3d89441e820d1a274c48b6): (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 9000 -j DNAT --to-destination 172.17.0.2:80 ! -i docker0: iptables: No chain/target/match by that name.
-(exit status 1)).</code></pre><h3 id="route语法"><a href="#route语法" class="headerlink" title="route语法"></a>route语法</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 设置和查看路由表都可以用 route 命令，设置内核路由表的命令格式是：</span>
-route  <span class="token punctuation">[</span>add<span class="token operator">|</span>del<span class="token punctuation">]</span> <span class="token punctuation">[</span>-net<span class="token operator">|</span>-host<span class="token punctuation">]</span> target <span class="token punctuation">[</span>netmask Nm<span class="token punctuation">]</span> <span class="token punctuation">[</span>gw Gw<span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">[</span>dev<span class="token punctuation">]</span> If<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol>
-<li>方法</li>
-</ol>
-<table>
-<thead>
-<tr>
-<th>方法</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>add</td>
-<td>增加指定的路由记录；</td>
-</tr>
-<tr>
-<td>del</td>
-<td>删除指定的路由记录；</td>
-</tr>
-<tr>
-<td>target</td>
-<td>目的网络或目的主机；</td>
-</tr>
-<tr>
-<td>gw</td>
-<td>设置默认网关；</td>
-</tr>
-<tr>
-<td>mss</td>
-<td>设置TCP的最大区块长度（MSS），单位MB；</td>
-</tr>
-<tr>
-<td>netmask</td>
-<td>目的地址的网络掩码</td>
-</tr>
-<tr>
-<td>window</td>
-<td>指定通过路由表的TCP连接的TCP窗口大小；</td>
-</tr>
-<tr>
-<td>dev</td>
-<td>路由记录所表示的网络接口。</td>
-</tr>
-</tbody></table>
-<ol start="2">
-<li>选项 </li>
-</ol>
-<table>
-<thead>
-<tr>
-<th>选项</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>-A</td>
-<td>设置地址类型；</td>
-</tr>
-<tr>
-<td>-C</td>
-<td>打印将Linux核心的路由缓存；</td>
-</tr>
-<tr>
-<td>-v</td>
-<td>详细信息模式；</td>
-</tr>
-<tr>
-<td>-n</td>
-<td>不执行DNS反向查找，直接显示数字形式的IP地址；</td>
-</tr>
-<tr>
-<td>-e</td>
-<td>netstat格式显示路由表；</td>
-</tr>
-<tr>
-<td>-net</td>
-<td>到一个网络的路由表；</td>
-</tr>
-<tr>
-<td>-host</td>
-<td>到一个主机的路由表。</td>
-</tr>
-</tbody></table>
-<ol start="3">
-<li>Flags标志说明</li>
-</ol>
-<table>
-<thead>
-<tr>
-<th>flag</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>U</td>
-<td>Up表示此路由当前为启动状态。</td>
-</tr>
-<tr>
-<td>H</td>
-<td>Host，表示此网关为一主机。</td>
-</tr>
-<tr>
-<td>G</td>
-<td>Gateway，表示此网关为一路由器。</td>
-</tr>
-<tr>
-<td>R</td>
-<td>Reinstate Route，使用动态路由重新初始化的路由。</td>
-</tr>
-<tr>
-<td>D</td>
-<td>Dynamically,此路由是动态性地写入。</td>
-</tr>
-<tr>
-<td>M</td>
-<td>Modified，此路由是由路由守护程序或导向器动态修改。</td>
-</tr>
-<tr>
-<td>!</td>
-<td>表示此路由当前为关闭状态。</td>
-</tr>
-</tbody></table>
-<ol start="4">
-<li>route命令输出说明</li>
-</ol>
-<table>
-<thead>
-<tr>
-<th>输出列</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Destination</td>
-<td>目标网段或者主机</td>
-</tr>
-<tr>
-<td>Gateway</td>
-<td>网关地址，<code>*</code>表示目标是本主机所属的网络，不需要路由</td>
-</tr>
-<tr>
-<td>Genmask</td>
-<td>网络掩码</td>
-</tr>
-<tr>
-<td>Flags</td>
-<td>标记。</td>
-</tr>
-<tr>
-<td>Metric</td>
-<td>路由距离，到达指定网络所需的中转数</td>
-</tr>
-<tr>
-<td>Ref</td>
-<td>路由项引用次数</td>
-</tr>
-<tr>
-<td>Use</td>
-<td>此路由项被路由软件查找的次数</td>
-</tr>
-<tr>
-<td>Iface</td>
-<td>该路由表项对应的输出接口</td>
-</tr>
-</tbody></table>
-<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 显示当前路由</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># route </span>
-Kernel IP routing table
-Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
-default         gateway         0.0.0.0         UG    0      0        0 ens33
-link-local      0.0.0.0         255.255.0.0     U     1002   0        0 ens33
-172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
-172.18.0.0      0.0.0.0         255.255.0.0     U     0      0        0 br-caa257c6f76d
-192.168.41.0    0.0.0.0         255.255.255.0   U     0      0        0 ens33
-192.168.122.0   0.0.0.0         255.255.255.0   U     0      0        0 virbr0
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># route -n</span>
-Kernel IP routing table
-Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
-0.0.0.0         192.168.41.2    0.0.0.0         UG    0      0        0 ens33
-169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 ens33
-172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
-172.18.0.0      0.0.0.0         255.255.0.0     U     0      0        0 br-caa257c6f76d
-192.168.41.0    0.0.0.0         255.255.255.0   U     0      0        0 ens33
-192.168.122.0   0.0.0.0         255.255.255.0   U     0      0        0 virbr0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 增加一条到达244.0.0.0的路由。</span>
-route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
-
-<span class="token comment" spellcheck="true"># 添加到主机的路由</span>
-route add -host 192.168.1.2 dev eth0
-<span class="token comment" spellcheck="true"># 添加到10.20.30.148的网关</span>
-route add -host 10.20.30.148 gw 10.20.30.40
-<span class="token comment" spellcheck="true"># 添加10.20.30.40的网络</span>
-route add -net 10.20.30.40 netmask 255.255.255.248 eth0
-<span class="token comment" spellcheck="true"># 网络掩码 255.255.255.0简写</span>
-route add -net 192.168.1.0/24 eth1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 增加一条屏蔽的路由，目的地址为224.x.x.x将被拒绝。</span>
-route add -net 224.0.0.0 netmask 240.0.0.0 reject<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 删除路由记录</span>
-route del -net 224.0.0.0 netmask 240.0.0.0
-route del -net 224.0.0.0 netmask 240.0.0.0 reject<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 删除和添加设置默认网关</span>
-route del default gw 192.168.120.240
-route add default gw 192.168.120.240<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="设置包转发"><a href="#设置包转发" class="headerlink" title="设置包转发"></a>设置包转发</h3><p>在 <code>CentOS</code> 中默认的内核配置已经包含了路由功能，但默认并没有在系统启动时启用此功能。开启 <code>Linux</code> 的路由功能可以通过调整内核的网络参数来实现。要配置和调整内核参数可以使用 <code>sysctl</code> 命令。例如：要开启 <code>Linux</code> 内核的数据包转发功能可以使用如下的命令。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">sysctl -w net.ipv4.ip_forward<span class="token operator">=</span>1<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>这样设置之后，当前系统就能实现包转发，但下次启动计算机时将失效。为了使在下次启动计算机时仍然有效，需要将下面的行写入配置文件<code>/etc/sysctl.conf</code>。</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># vi /etc/sysctl.conf</span>
-net.ipv4.ip_forward <span class="token operator">=</span> 1
-<span class="token comment" spellcheck="true"># 或者 使用下面的命令</span>
-<span class="token keyword">echo</span> net.ipv4.ip_forward<span class="token operator">=</span>1 <span class="token operator">>></span> /etc/sysctl.conf
-<span class="token comment" spellcheck="true"># 使上面配置生效</span>
-sysctl -p <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>用户还可以使用如下的命令查看当前系统是否支持包转发。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">sysctl net.ipv4.ip_forward
-
-<span class="token comment" spellcheck="true"># 或者下面命令 输出1 证明已生效</span>
-<span class="token function">cat</span> /proc/sys/net/ipv4/ip_forward<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="iptables-SNAT-DNAT服务"><a href="#iptables-SNAT-DNAT服务" class="headerlink" title="iptables SNAT/DNAT服务"></a>iptables SNAT/DNAT服务</h3><ul>
-<li><code>SNAT</code> : <code>source network address translation</code>, 修改网络包源IP</li>
-<li><code>DNAT</code> : <code>destination network address translation</code>, 修改网络包目的IP</li>
-<li>修改源IP目的是这个包还能返回到自己这里，在<code>iptables</code>中，SNAT是在出口<code>POSTROUTING</code>链中发挥作用</li>
-<li>修改目的IP目的是这个包能够发送出去，让包传递下去，在<code>iptables</code>中，DNAT是在入口<code>PREROUTING</code>链中发挥作用,以便让包进入<code>FORWARD</code>表.</li>
-</ul>
-<h3 id="iptables-SNAT-DNAT服务使用场景"><a href="#iptables-SNAT-DNAT服务使用场景" class="headerlink" title="iptables SNAT/DNAT服务使用场景"></a>iptables SNAT/DNAT服务使用场景</h3><ul>
-<li>云上虚拟机作为客户端访问外网服务器, <code>SNAT</code>类似于代理的作用, 客户端通过<code>SNAT</code>服务可以访问外网.</li>
-<li>云上虚拟机作为服务端为外网提供服务, <code>DNAT</code>类似于反向代理, 外网请求通过<code>DNAT</code>服务可以将包传到内网服务端.</li>
-</ul>
-<p><img data-src="/images/nat.png" alt="SNAT/DNAT"></p>
-<pre class="line-numbers language-bash"><code class="language-bash">lsmod<span class="token operator">|</span><span class="token function">grep</span> ^ip <span class="token comment" spellcheck="true">#查看nat模块</span>
-<span class="token comment" spellcheck="true"># 载入：modprobe iptable-nat</span>
-<span class="token comment" spellcheck="true"># 开启上网命令</span>
-iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j SNAT --to-source 192.168.1.202
-iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j SNAT --to 192.168.1.202
-
-<span class="token comment" spellcheck="true"># 确认查看</span>
-iptables -t nat -nL<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1500,7 +1312,7 @@ iptables -t nat -nL<span aria-hidden="true" class="line-numbers-rows"><span></sp
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">295</span>
+          <span class="site-state-item-count">296</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1592,7 +1404,7 @@ iptables -t nat -nL<span aria-hidden="true" class="line-numbers-rows"><span></sp
 
   
   <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/lozad.js/1.14.0/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 
