@@ -203,6 +203,121 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-fen-pian-guo-lu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/elasticsearch-fen-pian-guo-lu/" class="post-title-link" itemprop="url">elasticsearch分片过滤</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-04-22 09:12:48 / 修改时间：09:34:36" itemprop="dateCreated datePublished" datetime="2022-04-22T09:12:48+08:00">2022-04-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="分片过滤"><a href="#分片过滤" class="headerlink" title="分片过滤"></a>分片过滤</h3><ul>
+<li>第一步</li>
+</ul>
+<p>在节点<code>elasticsearch.yml</code>配置中可以为节点增加自定义属性，如</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># small,big,...</span>
+<span class="token key atrule">node.attr.size</span><span class="token punctuation">:</span> medium<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>或者在启动时增加自定义属性</p>
+<pre class="line-numbers language-bash"><code class="language-bash">./bin/elasticsearch -Enode.attr.size<span class="token operator">=</span>medium<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>节点自带属性<br>|属性|说明|<br>|—|—|<br>|<code>_name</code>|Match nodes by node name<br>|<code>_host_ip</code>|Match nodes by host IP address (IP associated with hostname)<br>|<code>_publish_ip</code>|Match nodes by publish IP address<br>|<code>_ip</code>|Match either _host_ip or _publish_ip<br>|<code>_host</code>|Match nodes by hostname<br>|<code>_id</code>|Match nodes by node id<br>|<code>_tier</code>|Match nodes by the node’s data tier role.</p>
+<ul>
+<li>第二步</li>
+</ul>
+<p>创建或修改索引的分片过滤条件,支持<code>require</code>,<code>exclude</code>,<code>include</code></p>
+<pre class="line-numbers language-yaml"><code class="language-yaml">PUT test/_settings
+<span class="token comment" spellcheck="true"># 例1</span>
+<span class="token punctuation">{</span>
+  <span class="token key atrule">"index.routing.allocation.include.size"</span><span class="token punctuation">:</span> <span class="token string">"big,medium"</span>
+<span class="token punctuation">}</span>
+<span class="token comment" spellcheck="true"># 例2</span>
+<span class="token punctuation">{</span>
+  <span class="token key atrule">"index.routing.allocation.require.size"</span><span class="token punctuation">:</span> <span class="token string">"big"</span><span class="token punctuation">,</span>
+  <span class="token key atrule">"index.routing.allocation.require.rack"</span><span class="token punctuation">:</span> <span class="token string">"rack1"</span>
+<span class="token punctuation">}</span>
+<span class="token comment" spellcheck="true"># 例3</span>
+<span class="token punctuation">{</span>
+  <span class="token key atrule">"index.routing.allocation.include._ip"</span><span class="token punctuation">:</span> <span class="token string">"192.168.2.*"</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/shard-allocation-filtering.html" target="_blank" rel="noopener">官方文档分片过滤</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-java-ke-hu-duan/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1245,207 +1360,6 @@ systemctl restart docker<span aria-hidden="true" class="line-numbers-rows"><span
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ji-yu-easy-rsa3-da-jian-openvpn-fu-wu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ji-yu-easy-rsa3-da-jian-openvpn-fu-wu/" class="post-title-link" itemprop="url">基于easy-rsa3搭建openvpn服务</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-03-18 17:50:25" itemprop="dateCreated datePublished" datetime="2022-03-18T17:50:25+08:00">2022-03-18</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-03-24 11:32:59" itemprop="dateModified" datetime="2022-03-24T11:32:59+08:00">2022-03-24</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/openvpn/" itemprop="url" rel="index"><span itemprop="name">openvpn</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="openvpn服务器安装"><a href="#openvpn服务器安装" class="headerlink" title="openvpn服务器安装"></a>openvpn服务器安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装服务</span>
-yum <span class="token function">install</span> epel-release
-yum <span class="token function">install</span> -y openssl openssl-devel lzo lzo-devel pam pam-devel automake pkgconfig makecache
-yum <span class="token function">install</span> -y openvpn easy-rsa
-<span class="token comment" spellcheck="true"># 找到easy-ras的安装目录</span>
-<span class="token punctuation">[</span>root@localhost openvpn<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># whereis easy-rsa</span>
-easy-rsa: /usr/share/easy-rsa
-<span class="token comment" spellcheck="true"># 并拷贝到openvpn目录下</span>
-<span class="token function">mkdir</span> -p /etc/openvpn/easy-rsa
-<span class="token comment" spellcheck="true"># 注意3.0.8版本号可能不一样</span>
-<span class="token function">cd</span> /usr/share/easy-rsa/3.0.8
-<span class="token function">cp</span> -r *  /etc/openvpn/easy-rsa<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="openvpn服务端配置"><a href="#openvpn服务端配置" class="headerlink" title="openvpn服务端配置"></a>openvpn服务端配置</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 进入easy-rsa目录</span>
-<span class="token function">cd</span> /etc/openvpn/easy-rsa
-<span class="token comment" spellcheck="true"># 将easy-rsa变量模板拷入到当前目录</span>
-<span class="token function">find</span> / -type f -name <span class="token string">"vars.example"</span><span class="token operator">|</span><span class="token function">xargs</span> <span class="token function">cp</span> -t <span class="token keyword">.</span> <span class="token operator">&amp;&amp;</span> <span class="token function">mv</span> vars.example vars
-<span class="token punctuation">[</span>root@localhost easy-rsa<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># ll</span>
-total 100
--rwxr-xr-x. 1 root root 76946 Mar 18 16:26 easyrsa
--rw-r--r--. 1 root root  4616 Mar 18 16:26 openssl-easyrsa.cnf
--rw-r--r--. 1 root root  8888 Mar 19  2022 vars
-drwxr-xr-x. 2 root root   122 Mar 18 16:26 x509-types
-<span class="token comment" spellcheck="true"># 修改vars主要信息,按需修改</span>
-set_var EASYRSA_REQ_COUNTRY     <span class="token string">"CN"</span>
-set_var EASYRSA_REQ_PROVINCE    <span class="token string">"Jiangsu"</span>
-set_var EASYRSA_REQ_CITY        <span class="token string">"Nanjing"</span>
-set_var EASYRSA_REQ_ORG         <span class="token string">"Deri"</span>
-set_var EASYRSA_REQ_EMAIL       <span class="token string">"wuzhiyong@deri.energy"</span>
-set_var EASYRSA_REQ_OU          <span class="token string">"deri.org.cn"</span>
-<span class="token comment" spellcheck="true"># 创建空的pki</span>
-./easyrsa init-pki
-<span class="token comment" spellcheck="true"># 创建新的CA,不使用密码,过程中直接回车</span>
-./easyrsa build-ca nopass
-<span class="token comment" spellcheck="true"># 创建服务端证书</span>
-./easyrsa gen-req server nopass
-<span class="token comment" spellcheck="true"># 签约服务端证书,过程中手动输入yes</span>
-./easyrsa sign server server
-<span class="token comment" spellcheck="true"># 生成DH验证文件Diffie-Hellman</span>
-./easyrsa gen-dh
-<span class="token comment" spellcheck="true"># 创建吊销列表</span>
-./easyrsa gen-crl
-<span class="token comment" spellcheck="true"># 生成ta.key</span>
-openvpn --genkey --secret keys/ta.key
-<span class="token comment" spellcheck="true"># 将所有需要的文件拷贝到/etc/openvpn/server目录下</span>
-<span class="token function">cp</span> keys/ta.key <span class="token punctuation">..</span>/server/
-<span class="token function">cp</span> pki/ca.crt <span class="token punctuation">..</span>/server/
-<span class="token function">cp</span> pki/dh.pem <span class="token punctuation">..</span>/server/
-<span class="token function">cp</span> pki/issued/server.crt <span class="token punctuation">..</span>/server/
-<span class="token function">cp</span> pki/private/server.key <span class="token punctuation">..</span>/server/<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>创建服务器配置</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@ecs-a017-0002 chuanda<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># cat server.conf </span>
-port 20016
-<span class="token punctuation">;</span>proto tcp
-proto udp
-dev tun
-<span class="token punctuation">;</span>dev tap
-ca /etc/openvpn/server/ca.crt
-cert /etc/openvpn/server/server.crt
-key /etc/openvpn/server/server.key
-tls-auth /etc/openvpn/server/ta.key 0
-dh /etc/openvpn/server/dh.pem
-log /etc/openvpn/openvpn.log
-<span class="token comment" spellcheck="true">#duplicate-cn</span>
-push <span class="token string">"route 10.1.0.0 255.255.255.0"</span>
-server 10.1.0.0 255.255.255.0
-<span class="token comment" spellcheck="true"># 在ipp.txt可以配置静态ip: client1,11.1.0.100</span>
-ifconfig-pool-persist /etc/openvpn/ipp.txt
-keepalive 10 120
-cipher AES-256-CBC
-persist-key
-persist-tun
-status /etc/openvpn/openvpn-status.log
-verb 3
-explicit-exit-notify 1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>创建openvpn启停脚本，start.sh</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token shebang important">#!/bin/bash</span>
-CD_OVPN_PNUM<span class="token operator">=</span>`ps -ef<span class="token operator">|</span><span class="token function">grep</span> <span class="token string">"openvpn /etc/openvpn/server.conf"</span><span class="token operator">|</span><span class="token function">grep</span> -v <span class="token function">grep</span><span class="token operator">|</span><span class="token function">wc</span> -l`
-<span class="token keyword">if</span> <span class="token punctuation">[</span> <span class="token variable">$CD_OVPN_PNUM</span> -le 0 <span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token keyword">then</span>
-   openvpn /etc/openvpn/chuanda/server.conf <span class="token operator">&amp;</span>
-<span class="token keyword">fi</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>stop.sh</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token shebang important">#!/bin/bash</span>
-<span class="token function">ps</span> -ef<span class="token operator">|</span><span class="token function">grep</span> <span class="token string">"openvpn /etc/openvpn/server.conf"</span><span class="token operator">|</span><span class="token function">grep</span> -v <span class="token function">grep</span><span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'{print<span class="token variable">$2</span>}'</span><span class="token operator">|</span><span class="token function">xargs</span> <span class="token function">kill</span> -9<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="创建客户端证书"><a href="#创建客户端证书" class="headerlink" title="创建客户端证书"></a>创建客户端证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成客户端证书</span>
-./easyrsa build-client-full client_name nopass<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="创建openvpn客户端文件"><a href="#创建openvpn客户端文件" class="headerlink" title="创建openvpn客户端文件"></a>创建openvpn客户端文件</h3><pre class="line-numbers language-xml"><code class="language-xml">client
-nobind
-dev tun
-remote-cert-tls server
-remote 服务器IP 端口 udp
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>key</span><span class="token punctuation">></span></span>
-<span class="token comment" spellcheck="true">&lt;!-- 客户端私钥 --></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>key</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>cert</span><span class="token punctuation">></span></span>
-<span class="token comment" spellcheck="true">&lt;!-- 客户端证书 --></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>cert</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>ca</span><span class="token punctuation">></span></span>
-<span class="token comment" spellcheck="true">&lt;!-- ca.crt --></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>ca</span><span class="token punctuation">></span></span>
-key-direction 1
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>tls-auth</span><span class="token punctuation">></span></span>
-<span class="token comment" spellcheck="true">&lt;!-- ta.key --></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>tls-auth</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h3><pre class="line-numbers language-log"><code class="language-log">A: VERIFY ERROR: depth=1, error=certificate is not yet valid
-or error 9 at 1 depth lookup:certificate is not yet valid
-B: VERIFY ERROR: depth=0, error=certificate signature failure
-C: error 7 at 0 depth lookup:certificate signature failure<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>解决办法：主要是由于服务器时区设置不对,客户端时间比服务器时间早导致.</p>
-</blockquote>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1517,14 +1431,14 @@ C: error 7 at 0 depth lookup:certificate signature failure<span aria-hidden="tru
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">297</span>
+          <span class="site-state-item-count">298</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">36</span>
+        <span class="site-state-item-count">37</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
