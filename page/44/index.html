@@ -84,9 +84,9 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
-<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
-</head>
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
@@ -199,6 +199,273 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-chuang-jian-xin-de-alertmanager/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/prometheus-operator-shi-yong-chuang-jian-xin-de-alertmanager/" class="post-title-link" itemprop="url">prometheus-operator使用【创建新的Alertmanager】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-29 11:05:27" itemprop="dateCreated datePublished" datetime="2019-11-29T11:05:27+08:00">2019-11-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 10:20:30" itemprop="dateModified" datetime="2020-04-15T10:20:30+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p><code>Alertmanager</code>是安装<code>prometheus-operator</code>时默认新增的自定义资源类型（<code>CRD</code>），我们可以直接在K8s中创建这样的资源。</p>
+</blockquote>
+<h3 id="创建alert-test-yaml"><a href="#创建alert-test-yaml" class="headerlink" title="创建alert-test.yaml"></a>创建alert-test.yaml</h3><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: monitoring.coreos.com/v1
+kind: Alertmanager
+metadata:
+  generation: 1
+  labels:
+    app: prometheus-operator-alertmanager
+    chart: prometheus-operator-8.2.4
+    heritage: Tiller
+    release: prometheus-operator
+  name: prometheus-operator-alertmanager-test
+  namespace: monitoring
+spec:
+  baseImage: quay.io/prometheus/alertmanager
+  version: v0.19.0
+  portName: web
+  replicas: 1
+  retention: 120h
+  routePrefix: /
+  serviceAccountName: prometheus-operator-alertmanager
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+            app: alertmanager
+            alertmanager: prometheus-operator-alertmanager-test
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app: alertmanager
+              alertmanager: prometheus-operator-alertmanager-test
+  storage:
+    volumeClaimTemplate:
+      selector: {}
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: nfs-client<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="针对以上配置文件简要说明："><a href="#针对以上配置文件简要说明：" class="headerlink" title="针对以上配置文件简要说明："></a>针对以上配置文件简要说明：</h4><ul>
+<li>所有配置项可以从<code>stable/prometheus-operator/templates/alertmanager/alertmanager.yaml</code>获取，参考前文，<code>prometheus-operator</code>环境是使用<code>helm</code>安装的，可以通过命令<code>helm fetch stable/prometheus-operator</code>将所有配置下载到本地，然后参考。helm安装会默认安装一个<code>Alertmanager</code>服务，也是通过<code>alertmanager.yaml</code>安装的。</li>
+<li><code>kind</code>类型写Alertmanager，无需多言。</li>
+<li><code>metadata.name</code>指定你这个Alertmanager名称，可以通过命令查询<pre><code>kubectl get alertmanager -n monitoring</code></pre></li>
+<li><code>spec.baseImage/version</code>需要指定，不然默认使用的镜像版本可能跟helm安装时使用的版本不一致，导致你需要重新下载，部署就非常慢。</li>
+<li><code>spec.storage</code>指定你新部署的Alertmanager存储，建议指定。</li>
+<li><code>spec.affinity</code>需要指定一些label，Alertmanager对象本质还是一个StatefulSet对象，后面你为Alertmanager对象创建Service时需要通过Label选择。</li>
+<li><code>spec.portName</code>指定你端口的名称，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
+<li><code>metadata.namespace</code>指定命名空间，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
+<li><code>spec.routePrefix</code>指定路径前缀，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
+</ul>
+<h3 id="过命令或者dashborad创建Alertmanager"><a href="#过命令或者dashborad创建Alertmanager" class="headerlink" title="过命令或者dashborad创建Alertmanager"></a>过命令或者dashborad创建Alertmanager</h3><pre><code>kubectl create -f alert-test.yaml</code></pre><h4 id="注意："><a href="#注意：" class="headerlink" title="注意："></a>注意：</h4><p>现在创建这个，肯定会报错，类似<code>MountVolume.SetUp failed for volume "config-volume" : secrets "alertmanager-XXXX-xX" not found</code></p>
+<p>原因：（参考：<code>https://yunlzheng.gitbook.io/prometheus-book/part-iii-prometheus-shi-zhan/operator/use-operator-manage-monitor</code>）</p>
+<p>这是由于<code>Prometheus Operator</code>通过<code>Statefulset</code>的方式创建的<code>Alertmanager</code>实例，在默认情况下，会通过<code>alertmanager-{ALERTMANAGER_NAME}</code>的命名规则去查找<code>Secret</code>配置并以文件挂载的方式，将<code>Secret</code>的内容作为配置文件挂载到<code>Alertmanager</code>实例当中。因此，需要提前为<code>Alertmanager</code>创建相应的配置内容。</p>
+<h3 id="参考前文Alertmanager配置"><a href="#参考前文Alertmanager配置" class="headerlink" title="参考前文Alertmanager配置"></a>参考前文Alertmanager配置</h3><p>我们创建<code>alertmanager.yaml</code>，<code>template_1.tmpl</code></p>
+<p>然后用命令创建<code>secret</code>，<code>secret</code>名称格式：<code>alertmanager-{ALERTMANAGER_NAME}</code>,例如我们前文指定的<code>Alertmanager</code>名称为<code>prometheus-operator-alertmanager-test</code>，那么这里<code>secret</code>名称为<code>alertmanager-prometheus-operator-alertmanager-test</code>。</p>
+<pre><code>kubectl create secret generic alertmanager-prometheus-operator-alertmanager-test -n monitoring --from-file=alertmanager.yaml --from-file=template_1.tmpl</code></pre><h3 id="最后创建Alertmanager"><a href="#最后创建Alertmanager" class="headerlink" title="最后创建Alertmanager"></a>最后创建Alertmanager</h3><h3 id="创建Alertmanager的service"><a href="#创建Alertmanager的service" class="headerlink" title="创建Alertmanager的service"></a>创建Alertmanager的service</h3><blockquote>
+<p>这里直接指定Service类型是NodePort，便于我们访问，实际应通过Ingress来做。</p>
+</blockquote>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: prometheus-operator-alertmanager
+    chart: prometheus-operator-8.2.4
+    heritage: Tiller
+    release: prometheus-operator
+  name: prometheus-operator-alertmanager-test
+  namespace: monitoring
+spec:
+  ports:
+  - name: web
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  selector:
+    alertmanager: prometheus-operator-alertmanager-test
+    app: alertmanager
+  sessionAffinity: None
+  type: NodePort<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：这里通过<code>selector</code>来选择，和创建<code>Alertmanager</code>配置中保持一致。</p>
+</blockquote>
+<h3 id="通过命令查询Service的映射端口"><a href="#通过命令查询Service的映射端口" class="headerlink" title="通过命令查询Service的映射端口"></a>通过命令查询Service的映射端口</h3><pre><code>kubectl get svc -n monitoring</code></pre><p>通过命令查询Service的映射端口，即可访问我们刚刚创建的Alertmanager.</p>
+<p>现在Alertmanager上应该还没有任何通知，原因是还没有将我们创建的Alertmanager和Prometheus关联。</p>
+<h3 id="关联Prometheus"><a href="#关联Prometheus" class="headerlink" title="关联Prometheus"></a>关联Prometheus</h3><p>如何关联Prometheus呢？首先查看下prometheus-operator创建的Prometheus的配置，prometheus-operator也是通过自定义资源类型（CRD）prometheus来创建prometheus server的，直接通过命令查看。</p>
+<pre class="line-numbers language-yml"><code class="language-yml">kubectl get Prometheus prometheus-operator-prometheus  -n monitoring -o yaml
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  creationTimestamp: "2019-11-28T02:42:48Z"
+  generation: 1
+  labels:
+    app: prometheus-operator-prometheus
+    chart: prometheus-operator-8.2.4
+    heritage: Tiller
+    release: prometheus-operator
+  name: prometheus-operator-prometheus
+  namespace: monitoring
+  resourceVersion: "6316434"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/monitoring/prometheuses/prometheus-operator-prometheus
+  uid: de60d68f-6818-484d-ba30-4f381e7cb016
+spec:
+  alerting:
+    alertmanagers:
+    - name: prometheus-operator-alertmanager
+      namespace: monitoring
+      pathPrefix: /
+      port: web
+  baseImage: quay.io/prometheus/prometheus
+  enableAdminAPI: false
+  externalUrl: http://prom.deri.com/
+  listenLocal: false
+  logFormat: logfmt
+  logLevel: info
+  paused: false
+  podMonitorNamespaceSelector: {}
+  podMonitorSelector:
+    matchLabels:
+      release: prometheus-operator
+  portName: web
+  replicas: 1
+  retention: 10d
+  routePrefix: /
+  ruleNamespaceSelector: {}
+  ruleSelector:
+    matchLabels:
+      app: prometheus-operator
+      release: prometheus-operator
+  securityContext:
+    fsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+  serviceAccountName: prometheus-operator-prometheus
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector:
+    matchLabels:
+      release: prometheus-operator
+  storage:
+    volumeClaimTemplate:
+      selector: {}
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: nfs-client
+  version: v2.13.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="Prometheus配置"><a href="#Prometheus配置" class="headerlink" title="Prometheus配置"></a>Prometheus配置</h4><ul>
+<li><code>spec.alerting.alertmanagers</code>就是指定Prometheus将告警发给哪些alertmanagers。</li>
+<li><code>spec.ruleSelector.matchLabels</code>通过标签关联用户创建的自定义PrometheusRule。</li>
+<li><code>spec.serviceMonitorSelector.matchLabels</code>通过标签关联用户创建的自定义ServiceMonitor</li>
+</ul>
+<p>使用命令编辑已有的Prometheus服务配置</p>
+<pre><code>kubectl edit Prometheus prometheus-operator-prometheus  -n monitoring</code></pre><p>增加一个<code>Alertmanager</code>的<code>Endpoint</code>，其中<code>name</code>、<code>namespace</code>、<code>pathPrefix</code>、<code>port</code>和创建<code>Alertmanager</code>配置保持一致。</p>
+<pre class="line-numbers language-yml"><code class="language-yml">spec:
+  alerting:
+    alertmanagers:
+    - name: prometheus-operator-alertmanager
+      namespace: monitoring
+      pathPrefix: /
+      port: web
+    - name: prometheus-operator-alertmanager-test
+      namespace: monitoring
+      pathPrefix: /
+      port: web<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1126,217 +1393,6 @@ spec:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-dong-tai-fen-pei-cun-chu-helm-an-zhuang-nfs-client/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-dong-tai-fen-pei-cun-chu-helm-an-zhuang-nfs-client/" class="post-title-link" itemprop="url">k8s动态分配存储【helm安装nfs-client】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-18 15:41:52" itemprop="dateCreated datePublished" datetime="2019-11-18T15:41:52+08:00">2019-11-18</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-14 17:34:41" itemprop="dateModified" datetime="2020-04-14T17:34:41+08:00">2020-04-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>前文：在所有节点安装nfs-utils并启动相关服务。</p>
-</blockquote>
-<h3 id="NFS服务端新建一个挂载目录"><a href="#NFS服务端新建一个挂载目录" class="headerlink" title="NFS服务端新建一个挂载目录"></a>NFS服务端新建一个挂载目录</h3><pre><code>echo "/home/nfs *(rw,async,no_root_squash)" &gt;&gt; /etc/exports
-exportfs -r
-showmount -e localhost</code></pre><h3 id="安装nfs-client"><a href="#安装nfs-client" class="headerlink" title="安装nfs-client"></a>安装nfs-client</h3><pre><code>helm install stable/nfs-client-provisioner --name test-storageclass --set nfs.server=192.168.1.210 --set nfs.path=/home/nfs</code></pre><h3 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h3><p>可以先用命令<code>helm inspect values stable/nfs-client-provisioner</code>查看所有配置项，并提前下载好镜像。</p>
-<pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
-strategyType: Recreate
-
-image:
-  repository: quay.io/external_storage/nfs-client-provisioner
-  tag: v3.1.0-k8s1.11
-  pullPolicy: IfNotPresent
-
-nfs:
-  server:
-  path: /ifs/kubernetes
-  mountOptions:
-
-# For creating the StorageClass automatically:
-storageClass:
-  create: true
-
-  # Set a provisioner name. If unset, a name will be generated.
-  # provisionerName:
-
-  # Set StorageClass as the default StorageClass
-  # Ignored if storageClass.create is false
-  defaultClass: false
-
-  # Set a StorageClass name
-  # Ignored if storageClass.create is false
-  name: nfs-client
-
-  # Allow volume to be expanded dynamically
-  allowVolumeExpansion: true
-
-  # Method used to reclaim an obsoleted volume
-  reclaimPolicy: Delete
-
-  # When set to false your PVs will not be archived by the provisioner upon deletion of the PVC.
-  archiveOnDelete: true
-
-## For RBAC support:
-rbac:
-  # Specifies whether RBAC resources should be created
-  create: true
-
-# If true, create & use Pod Security Policy resources
-# https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-podSecurityPolicy:
-  enabled: false
-
-## Set pod priorityClassName
-# priorityClassName: ""
-
-serviceAccount:
-  # Specifies whether a ServiceAccount should be created
-  create: true
-
-  # The name of the ServiceAccount to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name:
-
-resources: {}
-  # limits:
-  #  cpu: 100m
-  #  memory: 128Mi
-  # requests:
-  #  cpu: 100m
-  #  memory: 128Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>也可以修改下上面的yaml，直接通过<code>nfs-client.yaml</code>创建：</p>
-<pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
-strategyType: Recreate
-
-image:
-  repository: quay.io/external_storage/nfs-client-provisioner
-  tag: v3.1.0-k8s1.11
-  pullPolicy: IfNotPresent
-
-nfs:
-  server: 192.168.1.210
-  path: /home/nfs
-  mountOptions:
-
-storageClass:
-  create: true
-  defaultClass: false
-  name: nfs-client
-  allowVolumeExpansion: true
-  reclaimPolicy: Delete
-  archiveOnDelete: true
-
-rbac:
-  create: true
-
-podSecurityPolicy:
-  enabled: false<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>执行安装命令：</p>
-<pre><code>helm install stable/nfs-client-provisioner -n test-storageclass -f nfs-client.yaml</code></pre><h3 id="创建PVC测试"><a href="#创建PVC测试" class="headerlink" title="创建PVC测试"></a>创建PVC测试</h3><p>创建<code>test-pvc.yaml</code></p>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: testclaim
-spec:
-  storageClassName: "nfs-client"
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 10Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre><code>kubectl apply -f test-pvc.yaml</code></pre><h3 id="查看结果"><a href="#查看结果" class="headerlink" title="查看结果"></a>查看结果</h3><pre class="line-numbers language-log"><code class="language-log">[root@k8s-master home]# kubectl get sc
-NAME         PROVISIONER                                              AGE
-nfs-client   cluster.local/test-storageclass-nfs-client-provisioner   36m
-[root@k8s-master home]# kubectl get pv,pvc
-NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS        CLAIM                 STORAGECLASS    REASON   AGE
-persistentvolume/pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            Delete           Bound         default/testclaim     nfs-client               33m
-
-NAME                              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/testclaim   Bound    pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            nfs-client     34m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1408,7 +1464,7 @@ persistentvolumeclaim/testclaim   Bound    pvc-d9bdfa45-6417-4ad9-bbf0-02301f928
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">296</span>
+          <span class="site-state-item-count">297</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1421,7 +1477,7 @@ persistentvolumeclaim/testclaim   Bound    pvc-d9bdfa45-6417-4ad9-bbf0-02301f928
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">193</span>
+        <span class="site-state-item-count">194</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
