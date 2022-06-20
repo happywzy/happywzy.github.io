@@ -203,6 +203,260 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-shi-xian-hui-du-fa-bu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ingress-nginx-shi-xian-hui-du-fa-bu/" class="post-title-link" itemprop="url">ingress-nginx实现灰度发布</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-05-23 16:51:03 / 修改时间：16:55:02" itemprop="dateCreated datePublished" datetime="2022-05-23T16:51:03+08:00">2022-05-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Ingress-Nginx-Annotation-简介"><a href="#Ingress-Nginx-Annotation-简介" class="headerlink" title="Ingress-Nginx Annotation 简介"></a>Ingress-Nginx Annotation 简介</h2><p>KubeSphere 基于 <a href="https://github.com/kubernetes/ingress-nginx/#nginx-ingress-controller" target="_blank" rel="noopener">Nginx Ingress Controller</a> 实现了项目的网关，作为项目对外的流量入口和项目中各个服务的反向代理。而 Ingress-Nginx 支持配置 Ingress Annotations 来实现不同场景下的灰度发布和测试，可以满足<code>金丝雀发布</code>、<code>蓝绿部署</code>与 <code>A/B 测试</code>等业务场景。</p>
+<blockquote>
+<p><strong>Nginx Annotations 支持以下 5 种 Canary 规则：</strong></p>
+<ul>
+<li><code>nginx.ingress.kubernetes.io/canary-by-header</code>：基于 Request Header 的流量切分，适用于<code>灰度发布以及 A/B 测试</code>。当 Request Header 设置为 <code>always</code> 时，请求将会被<code>一直</code>发送到 Canary 版本；当 Request Header 设置为 <code>never</code> 时，请求<code>不会</code>被发送到 Canary 入口；对于任何其他 <code>Header</code> 值，将忽略 <code>Header</code>，并通过优先级将请求与其他金丝雀规则进行优先级的比较。</li>
+<li><code>nginx.ingress.kubernetes.io/canary-by-header-value</code>：要匹配的 Request Header 的值，用于通知 <code>Ingress</code> 将请求路由到 <code>Canary Ingress</code>中指定的服务。当 <code>Request Header</code> 设置为此值时，它将被路由到 Canary 入口。该规则允许用户自定义 Request Header 的值，必须与上一个 annotation (即：<code>canary-by-header</code>) 一起使用。</li>
+<li><code>nginx.ingress.kubernetes.io/canary-by-header-pattern</code>：要匹配的 Request Header 值的 PCRE 正则表达式，作用同上面的 <code>canary-by-header-value</code> 一样，当 <code>Request Header</code> 设置的值满足该正则表达式时，它将被路由到 Canary 入口，必须与 <code>canary-by-header</code> 一起使用。</li>
+<li><code>nginx.ingress.kubernetes.io/canary-weight</code>：基于服务权重的流量切分，适用于蓝绿部署，权重范围 <code>0</code> - <code>100</code>按百分比将请求路由到 <code>Canary Ingress</code> 中指定的服务。权重为 <code>0</code> 意味着该金丝雀规则不会向 Canary 入口的服务发送任何请求，权重为 <code>100</code> 意味着所有请求都将被发送到 Canary 入口。</li>
+<li><code>nginx.ingress.kubernetes.io/canary-by-cookie</code>：基于 <code>cookie</code> 的流量切分，适用于<code>灰度发布与 A/B 测试</code>。用于通知 Ingress 将请求路由到<code>Canary Ingress</code>中指定的服务的 <code>cookie</code>。当 <code>cookie</code> 值设置为 <code>always</code> 时，它将被路由到 Canary 入口；当 cookie 值设置为 <code>never</code> 时，请求不会被发送到 Canary 入口；对于任何其他值，将忽略 cookie 并将请求与其他金丝雀规则进行优先级的比较。</li>
+</ul>
+<p><strong>注意：金丝雀规则按优先顺序进行如下排序：</strong></p>
+<p><code>canary-by-header</code> - &gt; <code>canary-by-cookie</code> - &gt; <code>canary-weight</code></p>
+</blockquote>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><ul>
+<li>创建两个不同版本的service及ingress</li>
+<li>两个ingress使用相关的域名，但是后端服务使用不同版本的</li>
+<li>canary版本的ingress增加<code>nginx.ingress.kubernetes.io/canary: "true"</code> 启用 <code>Canary</code></li>
+<li>其余策略参考nginx annotation</li>
+</ul>
+<h3 id=""><a href="#" class="headerlink" title=""></a></h3><script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-nei-tong-guo-prometheus-jian-kong-wai-bu-jie-dian-zi-yuan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-nei-tong-guo-prometheus-jian-kong-wai-bu-jie-dian-zi-yuan/" class="post-title-link" itemprop="url">k8s内通过Prometheus监控外部节点资源</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-04-29 15:43:29 / 修改时间：16:43:16" itemprop="dateCreated datePublished" datetime="2022-04-29T15:43:29+08:00">2022-04-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/prometheus/" itemprop="url" rel="index"><span itemprop="name">prometheus</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="前提"><a href="#前提" class="headerlink" title="前提"></a>前提</h3><ul>
+<li>已部署<code>k8s</code>集群</li>
+<li>集群内部署<code>prometheus</code></li>
+</ul>
+<h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><ul>
+<li>在外部节点安装<code>node-exporter</code><pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name node-exporter -p 9100:9100 prom/node-exporter<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+启动完成可以访问<code>http://IP:9100/metrics</code>.</li>
+<li>创建<code>endpoints</code><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Endpoints
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+<span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+<span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
+<span class="token key atrule">labels</span><span class="token punctuation">:</span>
+  <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+<span class="token key atrule">subsets</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token key atrule">addresses</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.17
+    <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.19
+    <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.20
+  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9100</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> http<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>创建<code>service</code><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+<span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+<span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
+<span class="token key atrule">labels</span><span class="token punctuation">:</span>
+  <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+<span class="token key atrule">ports</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9100</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> http<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>创建<code>ServiceMonitor</code><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> monitoring.coreos.com/v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> ServiceMonitor
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+<span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>exporter<span class="token punctuation">-</span>data
+<span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+<span class="token key atrule">endpoints</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> http
+<span class="token key atrule">namespaceSelector</span><span class="token punctuation">:</span>
+  <span class="token key atrule">matchNames</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
+<span class="token key atrule">selector</span><span class="token punctuation">:</span>
+  <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+创建完成可以<code>prometheus web</code>页面查看是否有新建的<code>targets</code>.<h3 id="PromQL"><a href="#PromQL" class="headerlink" title="PromQL"></a>PromQL</h3></li>
+</ul>
+<ol>
+<li>计算CPU使用率<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1m查不到数据可以设置成3m,5m</span>
+<span class="token punctuation">(</span>1-<span class="token punctuation">(</span>sum<span class="token punctuation">(</span>increase<span class="token punctuation">(</span>node_cpu_seconds_total<span class="token punctuation">{</span>mode<span class="token operator">=</span><span class="token string">"idle"</span><span class="token punctuation">}</span><span class="token punctuation">[</span>1m<span class="token punctuation">]</span><span class="token punctuation">))</span>by<span class="token punctuation">(</span>instance<span class="token punctuation">))</span>/<span class="token punctuation">(</span>sum<span class="token punctuation">(</span>increase<span class="token punctuation">(</span>node_cpu_seconds_total<span class="token punctuation">[</span>1m<span class="token punctuation">]</span><span class="token punctuation">))</span>by<span class="token punctuation">(</span>instance<span class="token punctuation">))</span><span class="token punctuation">)</span>*100<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+<li>内存使用率<pre class="line-numbers language-sql"><code class="language-sql"><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">-</span><span class="token punctuation">(</span>node_memory_MemAvailable_bytes{}<span class="token operator">/</span><span class="token punctuation">(</span>node_memory_MemTotal_bytes{}<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">100</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li>磁盘分区<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 注意mountpoint</span>
+100 - <span class="token punctuation">(</span>node_filesystem_free_bytes<span class="token punctuation">{</span>mountpoint<span class="token operator">=</span><span class="token string">"/"</span>,fstype<span class="token operator">=</span>~<span class="token string">"ext4|xfs"</span><span class="token punctuation">}</span> / node_filesystem_size_bytes<span class="token punctuation">{</span>mountpoint<span class="token operator">=</span><span class="token string">"/"</span>,fstype<span class="token operator">=</span>~<span class="token string">"ext4|xfs"</span><span class="token punctuation">}</span> * 100<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-cha-xun-rong-qi-shi-yong-nei-cun/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -803,204 +1057,10 @@ BulkRequest requests <span class="token operator">=</span> <span class="token ke
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-shu-ju-jie-gou/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/elasticsearch-shu-ju-jie-gou/" class="post-title-link" itemprop="url">elasticsearch数据结构</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-04-20 10:51:32" itemprop="dateCreated datePublished" datetime="2022-04-20T10:51:32+08:00">2022-04-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-04-22 13:44:22" itemprop="dateModified" datetime="2022-04-22T13:44:22+08:00">2022-04-22</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="节点"><a href="#节点" class="headerlink" title="节点"></a>节点</h3><p>ES节点分master和data节点.为避免脑裂,应设置<code>discovery.zen.minimum_master_nodes</code>参数,值为<code>集群中master节点数量</code>/<code>2</code> + <code>1</code>,默认<code>1</code>.</p>
-<h3 id="index"><a href="#index" class="headerlink" title="index"></a>index</h3><p>合理设置索引分片数量,单个分片的存储<code>doc</code>数为<code>2,147,483,519</code>，建议小于<code>30G</code>,索引分片的数量依据节点数量,单个节点上单个索引的分片数量小于<code>3</code>,小规模集群分片数量小于等于数据节点数量最佳.</p>
-<p>ES每个查询在每个分片的单个线程中执行再聚合,如果指定<code>routing</code>会提升查询效率.</p>
-<h3 id="type"><a href="#type" class="headerlink" title="type"></a>type</h3><ul>
-<li><code>5.x</code>版本支持多个<code>type</code></li>
-<li><code>6.x</code>版本仅支持一个<code>type</code>,可以自定义</li>
-<li><code>7.x</code>版本所有<code>type</code>默认为<code>_doc</code>,也可以自定义但不推荐</li>
-</ul>
-<h3 id="id"><a href="#id" class="headerlink" title="id"></a>id</h3><ul>
-<li>自动生成的是20位<code>GUID</code></li>
-<li>支持手动生成</li>
-</ul>
-<h3 id="Mapping字段"><a href="#Mapping字段" class="headerlink" title="Mapping字段"></a>Mapping字段</h3><p>字段尽量少用<code>nested</code>或<code>parent/child</code>,非常影响查询效率.尽量采用宽表设计.如果一定要使用<code>nested fields</code>，保证<code>nested fields</code>字段不能过多，目前ES默认限制是50。<br><code>index.mapping.nested_fields.limit: 50</code></p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-xian-liu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ingress-nginx-xian-liu/" class="post-title-link" itemprop="url">ingress-nginx限流</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-04-13 16:45:50 / 修改时间：16:52:07" itemprop="dateCreated datePublished" datetime="2022-04-13T16:45:50+08:00">2022-04-13</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h3><ul>
-<li><a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#rate-limiting" target="_blank" rel="noopener">Rate Limiting</a></li>
-</ul>
-<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><ul>
-<li><code>nginx.ingress.kubernetes.io/limit-connections</code>: number of concurrent connections allowed from a single IP address. A 503 error is returned when exceeding this limit.</li>
-<li><code>nginx.ingress.kubernetes.io/limit-rps</code>: number of requests accepted from a given IP each second. The burst limit is set to this limit multiplied by the burst multiplier, the default multiplier is 5. When clients exceed this limit, <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#limit-req-status-code" target="_blank" rel="noopener">limit-req-status-code</a> default: 503 is returned.</li>
-<li><code>nginx.ingress.kubernetes.io/limit-rpm</code>: number of requests accepted from a given IP each minute. The burst limit is set to this limit multiplied by the burst multiplier, the default multiplier is 5. When clients exceed this limit, <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#limit-req-status-code" target="_blank" rel="noopener">limit-req-status-code</a> default: 503 is returned.</li>
-<li><code>nginx.ingress.kubernetes.io/limit-burst-multiplier</code>: multiplier of the limit rate for burst size. The default burst multiplier is 5, this annotation override the default multiplier. When clients exceed this limit, <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#limit-req-status-code" target="_blank" rel="noopener">limit-req-status-code</a> default: 503 is returned.</li>
-<li><code>nginx.ingress.kubernetes.io/limit-rate-after</code>: initial number of kilobytes after which the further transmission of a response to a given connection will be rate limited. This feature must be used with <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#proxy-buffering" target="_blank" rel="noopener">proxy-buffering</a> enabled.</li>
-<li><code>nginx.ingress.kubernetes.io/limit-rate</code>: number of kilobytes per second allowed to send to a given connection. The zero value disables rate limiting. This feature must be used with <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#proxy-buffering" target="_blank" rel="noopener">proxy-buffering</a> enabled.</li>
-<li><code>nginx.ingress.kubernetes.io/limit-whitelist</code>: client IP source ranges to be excluded from rate-limiting. The value is a comma separated list of CIDRs.</li>
-</ul>
-<p>If you specify multiple annotations in a single Ingress rule, limits are applied in the order <code>limit-connections</code>, <code>limit-rpm</code>, <code>limit-rps</code>.</p>
-<p>To configure settings globally for all Ingress rules, the <code>limit-rate-after</code> and <code>limit-rate</code> values may be set in the <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#limit-rate" target="_blank" rel="noopener">NGINX ConfigMap</a>. The value set in an Ingress annotation will override the global setting.</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/50/">50</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/51/">51</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1068,20 +1128,20 @@ BulkRequest requests <span class="token operator">=</span> <span class="token ke
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">300</span>
+          <span class="site-state-item-count">302</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">195</span>
+        <span class="site-state-item-count">196</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
