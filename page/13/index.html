@@ -203,6 +203,130 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gitee-he-github-de-api-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/gitee-he-github-de-api-shi-yong/" class="post-title-link" itemprop="url">gitee和github的API使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-03-29 15:16:51 / 修改时间：15:42:33" itemprop="dateCreated datePublished" datetime="2021-03-29T15:16:51+08:00">2021-03-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>gitee</code>和<code>github</code>都提供了丰富的<code>restful API</code>，用于开发人员操作仓库.</p>
+<ul>
+<li><a href="https://gitee.com/api/v5/swagger" target="_blank" rel="noopener">gitee Open API</a></li>
+<li><a href="https://docs.github.com/en/rest" target="_blank" rel="noopener">github restful API</a></li>
+</ul>
+<h3 id="token获取"><a href="#token获取" class="headerlink" title="token获取"></a>token获取</h3><p><code>gitee</code>和<code>github</code>私有仓库或者部分接口都需要用户权限认证,本文均使用<code>token</code>方式验证.</p>
+<ul>
+<li><p><code>gitee token</code> 获取<br>选择<code>【用户】</code> - <code>【设置】</code> - <code>【私人令牌】</code> - <code>【生成新令牌】</code>. 使用私人令牌，可以通过<a href="https://gitee.com/api/v5/swagger" target="_blank" rel="noopener">Gitee Open API</a>访问你授权的数据.</p>
+</li>
+<li><p><code>github token</code> 获取<br>选择<code>【用户】</code> - <code>【Settings】</code> - <code>【Developer settings】</code> - <code>【Personal access tokens】</code> - <code>【Generate new token】</code>. Tokens you have generated that can be used to access the <a href="https://docs.github.com/" target="_blank" rel="noopener">GitHub API</a>.</p>
+</li>
+</ul>
+<h3 id="gitee-接口测试"><a href="#gitee-接口测试" class="headerlink" title="gitee 接口测试"></a>gitee 接口测试</h3><ul>
+<li>示例: 添加新的<code>issue</code></li>
+</ul>
+<blockquote>
+<p><a href="https://gitee.com/api/v5/swagger#/postV5ReposOwnerIssues" target="_blank" rel="noopener">接口在线测试地址</a></p>
+</blockquote>
+<pre class="line-numbers language-sh"><code class="language-sh">curl -X POST --header 'Content-Type: application/json;charset=UTF-8' 'https://gitee.com/api/v5/repos/happywzy/issues' -d '{"access_token":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","repo":"test","title":"测试ISSUE","body":"测试内容","labels":"bug"}'<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="github-接口测试"><a href="#github-接口测试" class="headerlink" title="github 接口测试"></a>github 接口测试</h3><blockquote>
+<p>接口格式：<a href="https://api.github.com/repos/{用户名}/{仓库}/xxx" target="_blank" rel="noopener">https://api.github.com/repos/{用户名}/{仓库}/xxx</a></p>
+</blockquote>
+<ul>
+<li><p>获取公开仓库的<code>issue</code>列表</p>
+<pre class="line-numbers language-sh"><code class="language-sh"># 添加Accept头,指定返回内容类型
+curl \
+-H "Accept: application/vnd.github.v3+json" \
+https://api.github.com/repos/octocat/hello-world/issues<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>获取私有仓库的<code>issue</code>列表</p>
+<blockquote>
+<p>github API传入<code>token</code>的几种方式，<a href="https://docs.github.com/en/rest/overview/other-authentication-methods" target="_blank" rel="noopener">官方文档</a>.</p>
+</blockquote>
+</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh"># header添加Authorization字段,注意字段的值是[token xxxxxx]格式
+curl -v -H "Authorization: token xxxxxxxxxxxxxx" https://api.github.com/repos/xxx/admin/issues<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh"># 请求URL后面增加access_token
+https://api.github.com/repos/alfalfaw/vue-shop-admin?access_token=xxxxxxx<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/chi-xian-huan-jing-an-zhuang-docker-he-docker-compose/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -896,210 +1020,6 @@ IP: 172.18.0.3<span aria-hidden="true" class="line-numbers-rows"><span></span><s
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-compose-chang-yong-pei-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-compose-chang-yong-pei-zhi/" class="post-title-link" itemprop="url">docker-compose常用配置</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-01-13 17:01:14 / 修改时间：17:02:39" itemprop="dateCreated datePublished" datetime="2021-01-13T17:01:14+08:00">2021-01-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">'3'</span>
-<span class="token key atrule">services</span><span class="token punctuation">:</span>
-  <span class="token key atrule">nginx-route</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> hub.deri.org.cn/library/nginx
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>route
-    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"8080:80"</span>
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-    <span class="token punctuation">-</span> <span class="token string">"/wuzhiyong/nginx.conf:/etc/nginx/nginx.conf"</span>
-  <span class="token key atrule">authservice</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/authservice
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> authservice
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-  <span class="token key atrule">dbcompare</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/dbcompare
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> dbcompare
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-  <span class="token key atrule">graphcompare</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/graphcompare
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> graphcompare
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-    <span class="token punctuation">-</span> <span class="token string">"/wuzhiyong/svg:/root/svg"</span>
-  <span class="token key atrule">hbasecompare</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/hbasecompare
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> hbasecompare
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-    <span class="token key atrule">extra_hosts</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"hadoop1:172.16.0.7"</span>
-    <span class="token punctuation">-</span> <span class="token string">"hadoop2:172.16.0.8"</span>
-    <span class="token punctuation">-</span> <span class="token string">"hadoop3:172.16.0.9"</span>
-  <span class="token key atrule">taskservice</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/taskservice
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> taskservice
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-<span class="token key atrule">networks</span><span class="token punctuation">:</span>
-  nwzb<span class="token punctuation">:</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-text"><code class="language-text">user  nginx;
-worker_processes  1;
-
-error_log  /var/log/nginx/error.log warn;
-pid        /var/run/nginx.pid;
-
-
-events {
-    worker_connections  1024;
-}
-
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-
-    keepalive_timeout  65;
-
-    #gzip  on;
-
-    include /etc/nginx/conf.d/*.conf;
-
-    upstream taskservice{
-        server taskservice:28080;
-    }
-
-    upstream authservice{
-        server authservice:25050;
-    }
-
-    upstream dbcompare{
-        server dbcompare:28082;
-    }
-
-    upstream hbasecompare{
-        server hbasecompare:26060;
-    }
-
-    upstream graphcompare{
-        server graphcompare:29090;
-    }
-
-    server {
-        listen    80 default_server;
-        server_name _;
-    location /ts {
-        proxy_pass    http://taskservice;
-    }
-        location /auth {
-            proxy_pass  http://authservice;
-        }
-        location /dbc {
-            proxy_pass  http://dbcompare;
-        }
-        location /hbc {
-            proxy_pass  http://hbasecompare;
-        }
-        location /graph {
-            proxy_pass  http://graphcompare;
-        }
-    }
-}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1171,7 +1091,7 @@ http {
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-count">303</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

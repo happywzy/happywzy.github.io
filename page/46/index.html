@@ -203,6 +203,217 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-dong-tai-fen-pei-cun-chu-helm-an-zhuang-nfs-client/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-dong-tai-fen-pei-cun-chu-helm-an-zhuang-nfs-client/" class="post-title-link" itemprop="url">k8s动态分配存储【helm安装nfs-client】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-18 15:41:52" itemprop="dateCreated datePublished" datetime="2019-11-18T15:41:52+08:00">2019-11-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-14 17:34:41" itemprop="dateModified" datetime="2020-04-14T17:34:41+08:00">2020-04-14</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>前文：在所有节点安装nfs-utils并启动相关服务。</p>
+</blockquote>
+<h3 id="NFS服务端新建一个挂载目录"><a href="#NFS服务端新建一个挂载目录" class="headerlink" title="NFS服务端新建一个挂载目录"></a>NFS服务端新建一个挂载目录</h3><pre><code>echo "/home/nfs *(rw,async,no_root_squash)" &gt;&gt; /etc/exports
+exportfs -r
+showmount -e localhost</code></pre><h3 id="安装nfs-client"><a href="#安装nfs-client" class="headerlink" title="安装nfs-client"></a>安装nfs-client</h3><pre><code>helm install stable/nfs-client-provisioner --name test-storageclass --set nfs.server=192.168.1.210 --set nfs.path=/home/nfs</code></pre><h3 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h3><p>可以先用命令<code>helm inspect values stable/nfs-client-provisioner</code>查看所有配置项，并提前下载好镜像。</p>
+<pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
+strategyType: Recreate
+
+image:
+  repository: quay.io/external_storage/nfs-client-provisioner
+  tag: v3.1.0-k8s1.11
+  pullPolicy: IfNotPresent
+
+nfs:
+  server:
+  path: /ifs/kubernetes
+  mountOptions:
+
+# For creating the StorageClass automatically:
+storageClass:
+  create: true
+
+  # Set a provisioner name. If unset, a name will be generated.
+  # provisionerName:
+
+  # Set StorageClass as the default StorageClass
+  # Ignored if storageClass.create is false
+  defaultClass: false
+
+  # Set a StorageClass name
+  # Ignored if storageClass.create is false
+  name: nfs-client
+
+  # Allow volume to be expanded dynamically
+  allowVolumeExpansion: true
+
+  # Method used to reclaim an obsoleted volume
+  reclaimPolicy: Delete
+
+  # When set to false your PVs will not be archived by the provisioner upon deletion of the PVC.
+  archiveOnDelete: true
+
+## For RBAC support:
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+# If true, create & use Pod Security Policy resources
+# https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+podSecurityPolicy:
+  enabled: false
+
+## Set pod priorityClassName
+# priorityClassName: ""
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+resources: {}
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也可以修改下上面的yaml，直接通过<code>nfs-client.yaml</code>创建：</p>
+<pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
+strategyType: Recreate
+
+image:
+  repository: quay.io/external_storage/nfs-client-provisioner
+  tag: v3.1.0-k8s1.11
+  pullPolicy: IfNotPresent
+
+nfs:
+  server: 192.168.1.210
+  path: /home/nfs
+  mountOptions:
+
+storageClass:
+  create: true
+  defaultClass: false
+  name: nfs-client
+  allowVolumeExpansion: true
+  reclaimPolicy: Delete
+  archiveOnDelete: true
+
+rbac:
+  create: true
+
+podSecurityPolicy:
+  enabled: false<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行安装命令：</p>
+<pre><code>helm install stable/nfs-client-provisioner -n test-storageclass -f nfs-client.yaml</code></pre><h3 id="创建PVC测试"><a href="#创建PVC测试" class="headerlink" title="创建PVC测试"></a>创建PVC测试</h3><p>创建<code>test-pvc.yaml</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: testclaim
+spec:
+  storageClassName: "nfs-client"
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre><code>kubectl apply -f test-pvc.yaml</code></pre><h3 id="查看结果"><a href="#查看结果" class="headerlink" title="查看结果"></a>查看结果</h3><pre class="line-numbers language-log"><code class="language-log">[root@k8s-master home]# kubectl get sc
+NAME         PROVISIONER                                              AGE
+nfs-client   cluster.local/test-storageclass-nfs-client-provisioner   36m
+[root@k8s-master home]# kubectl get pv,pvc
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS        CLAIM                 STORAGECLASS    REASON   AGE
+persistentvolume/pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            Delete           Bound         default/testclaim     nfs-client               33m
+
+NAME                              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/testclaim   Bound    pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            nfs-client     34m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-cha-xun/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -819,186 +1030,6 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-yu-harbor-lian-he-shi-yong-k8s-la-qu-harbor-zhong-jing-xiang/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-yu-harbor-lian-he-shi-yong-k8s-la-qu-harbor-zhong-jing-xiang/" class="post-title-link" itemprop="url">k8s与harbor联合使用【k8s拉取harbor中镜像】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-08 10:18:50" itemprop="dateCreated datePublished" datetime="2019-11-08T10:18:50+08:00">2019-11-08</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:41:36" itemprop="dateModified" datetime="2020-04-15T13:41:36+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p><strong>概要</strong>：要想<code>k8s</code>从<code>harbor</code>中拉取镜像，需要有<code>harbor</code>的用户、密码、服务器信息，然后在<code>k8s</code>指定<code>namespace</code>中创建<code>docker-registry</code>类型。</p>
-</blockquote>
-<blockquote>
-<p><strong>前提</strong>：已经搭建<code>K8s</code>集群、<code>harbor</code>服务，且已经在机器上配置可以从<code>harbor</code>中拉取上传镜像。</p>
-</blockquote>
-<h3 id="创建docker-registry"><a href="#创建docker-registry" class="headerlink" title="创建docker-registry"></a>创建<code>docker-registry</code></h3><p>创建<code>docker-registry</code>，有两种方式，命令行和<code>YAML</code>.</p>
-<h4 id="第一种方式：命令行"><a href="#第一种方式：命令行" class="headerlink" title="第一种方式：命令行"></a>第一种方式：命令行</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl create secret docker-registry test-deri-registry-secret --namespace<span class="token operator">=</span>test-namespace \ 
---docker-server<span class="token operator">=</span>hub.test.org.cn --docker-username<span class="token operator">=</span>test2019 \ 
---docker-password<span class="token operator">=</span>tests12019 --docker-email<span class="token operator">=</span>admin@harbor.com<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h4 id="第二种方式：YAML"><a href="#第二种方式：YAML" class="headerlink" title="第二种方式：YAML"></a>第二种方式：YAML</h4><p>需要有一台已经成功登录过<code>harbor</code>服务器的机器，使用命令<code>cat ~/.docker/config.json</code>，确认是否有<code>harbor</code>服务器的认证信息，例如:</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-    <span class="token property">"auths"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"hub.test.org.cn:443"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-            <span class="token property">"auth"</span><span class="token operator">:</span> <span class="token string">"YWRtaW46RGVxasdXXnsada"</span>
-        <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token property">"HttpHeaders"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"User-Agent"</span><span class="token operator">:</span> <span class="token string">"Docker-Client/19.03.4 (linux)"</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>接下来k8s也可以直接使用该认证信息，使用命令<code>cat ~/.docker/config.json |base64 -w 0</code>将该认证信息<code>BASE64</code>编码<font color="red"><strong>【以下示例结果都是瞎写的，请使用自己返回的结果】</strong></font>。</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># cat .docker/config.json |base64 -w 0</span>
-ewoJImF1dGhzIjogewoJCSJodWIuZGVyaS5vcmcuY246NDQzIjogewoJCQkiYXV0aCI6ICJZV1J0YVc0NlJHVnlhU015TURFNSIKCHIUASDGUGDUGAUDUIAGDJIIGIUDZWFkZXJzIjogewoJCSJVc2VyLUFnZW50IjogIkRvY2tlci1DbGllbnQvMTkSDISDhi7asd56523gHGSGH<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>编写<code>test-registry-secret.yaml</code></p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Secret
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>registry<span class="token punctuation">-</span>secret
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>deri
-<span class="token key atrule">data</span><span class="token punctuation">:</span>
-  <span class="token key atrule">.dockerconfigjson</span><span class="token punctuation">:</span> wraJImF1dGhzIjogeraJCSIxOTIuMTY4LjEzMC4yMyI6IHsKCQkJImF1dGgiOiAiYW5OaVpHVjJaV3h2Y0dWeU9rcHpZakV5TXpRMSIKCQl9Cgl9LAoJIkh0dHBIZWFkZXJzIjogewoJCSJVc2VyLUFnZW50IjogIkRvY2tlci1DbGllbnQvMTguMDkuMiAobGludXgpIgoJfQp9
-<span class="token key atrule">type</span><span class="token punctuation">:</span> kubernetes.io/dockerconfigjson<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>使用命令<code>kubectl create -f test-registry-secret.yaml</code>或者在<code>dashboard</code>中用上述<code>YAML</code>即可创建<code>docker-registry</code>。</p>
-<p>使用命令查看结果</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl get secret -n test-namespace<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl describe secret test-registry-secret -n test-namespace<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="使用刚刚创建的docker-registry"><a href="#使用刚刚创建的docker-registry" class="headerlink" title="使用刚刚创建的docker-registry"></a>使用刚刚创建的<code>docker-registry</code></h3><p>如何使用刚刚创建的<code>docker-registry</code>呢？两种方式:</p>
-<ul>
-<li>一种是每次在创建<code>pod</code>或者<code>deployment</code>时指定<code>imagePullSecrets</code>，</li>
-<li>一种是在该<code>namespace</code>的<code>serviceaccount</code>【默认<code>default</code>，如果是别的<code>serviceaccount</code>，需要在创建<code>pod</code>时指定<code>spec.serviceAccount</code>】中指定<code>imagePullSecrets</code>，这样用该<code>serviceaccount</code>创建的<code>pod</code>会自动加上。</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">imagePullSecrets</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>registry<span class="token punctuation">-</span>secret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h4 id="第一种"><a href="#第一种" class="headerlink" title="第一种"></a>第一种</h4><p>每次创建<code>pod</code>时指定<code>secret</code>，例如</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>baresystem
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>namespace
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>baresystem
-      <span class="token key atrule">image</span><span class="token punctuation">:</span> hub.test.org.cn/dev<span class="token punctuation">-</span>project/centos6<span class="token punctuation">-</span>bare<span class="token punctuation">-</span>system<span class="token punctuation">:</span>v0
-      <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">containerPort</span><span class="token punctuation">:</span> <span class="token number">8080</span>
-        <span class="token key atrule">hostPort</span><span class="token punctuation">:</span> <span class="token number">30001</span>
-  <span class="token key atrule">imagePullSecrets</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>registry<span class="token punctuation">-</span>secret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="第二种"><a href="#第二种" class="headerlink" title="第二种"></a>第二种</h4><p>以创建<code>namespace</code>时自动创建的<code>serviceaccount default</code>为例，首先查看<code>default</code>的详细情况:</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl describe sa test-deri -n test-namespace</span>
-Name:                test-deri
-Namespace:           test-namespace
-Labels:              <span class="token operator">&lt;</span>none<span class="token operator">></span>
-Annotations:         <span class="token operator">&lt;</span>none<span class="token operator">></span>
-Image pull secrets:  <span class="token operator">&lt;</span>none<span class="token operator">></span>
-Mountable secrets:   test-deri-token-rmxbn
-Tokens:              test-deri-token-rmxbn
-Events:              <span class="token operator">&lt;</span>none<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>可以看到当前的<code>Image pull secrets:  &lt;none&gt;</code>，需要为它指定成刚刚我们创建的<code>secret</code>。使用命令:</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl patch serviceaccount default -p <span class="token string">'{"imagePullSecrets": [{"name": "test-registry-secret"}]}'</span> -n test-namespace<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>或者使用命令:</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl edit sa default -n test-namespace<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>在打开的<code>YAML</code>文件中添加两行，保存退出。</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">imagePullSecrets</span><span class="token punctuation">:</span>
-<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>registry<span class="token punctuation">-</span>secret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>最后再次查看<code>default</code>的详细情况，可以看到<code>Image pull secrets:  test-registry-secret</code>.</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl describe sa default -n test-namespace</span>
-Name:                default
-Namespace:           test-namespace
-Labels:              <span class="token operator">&lt;</span>none<span class="token operator">></span>
-Annotations:         <span class="token operator">&lt;</span>none<span class="token operator">></span>
-Image pull secrets:  test-registry-secret
-Mountable secrets:   default-token-5fcn5
-Tokens:              default-token-5fcn5
-Events:              <span class="token operator">&lt;</span>none<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>接下来在<code>test-namespace</code>命名空间下用<code>default</code>这个<code>serviceaccount</code>创建的任何<code>pods</code>容器，都会自动在<code>pod</code>定义中附加上下面这样的密钥认证信息了。</p>
-<p>最后测试一下吧。</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1070,7 +1101,7 @@ Events:              <span class="token operator">&lt;</span>none<span class="to
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-count">303</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
