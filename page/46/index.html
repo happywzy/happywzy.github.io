@@ -203,6 +203,148 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-zi-dai-ren-zheng-gong-neng/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ingress-nginx-zi-dai-ren-zheng-gong-neng/" class="post-title-link" itemprop="url">ingress-nginx自带认证功能</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-19 11:35:26" itemprop="dateCreated datePublished" datetime="2019-11-19T11:35:26+08:00">2019-11-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 13:40:51" itemprop="dateModified" datetime="2020-04-15T13:40:51+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="安装htpasswd"><a href="#安装htpasswd" class="headerlink" title="安装htpasswd"></a>安装htpasswd</h3><p><code>htpasswd</code>不是<code>centos7</code>自带的命令，需要使用<code>yum</code>安装。</p>
+<pre><code>yum install httpd-tools</code></pre><p>选项</p>
+<ul>
+<li>-c: 创建一个新的密码文件</li>
+<li>-b: 在命令行中一并输入用户名和密码而不是根据提示输入密码</li>
+<li>-D: 删除指定的用户</li>
+<li>-n: 不更新密码文件,只将加密后的用户名密码输出到屏幕上</li>
+<li>-p: 不对密码进行加密,采用明文的方式</li>
+<li>-m: 采用MD5算法对密码进行加密(默认的加密方式)</li>
+<li>-d: 采用CRYPT算法对密码进行加密</li>
+<li>-s: 采用SHA算法对密码进行加密</li>
+<li>-B: 采用bcrypt算法对密码进行加密(非常安全)</li>
+</ul>
+<p>参数</p>
+<ul>
+<li>用户名: 要创建或者更新的用户名</li>
+<li>密码: 用户的新密码</li>
+</ul>
+<h3 id="创建用户，设置密码"><a href="#创建用户，设置密码" class="headerlink" title="创建用户，设置密码"></a>创建用户，设置密码</h3><p>用下面的三个操作，创建 <code>basic-auth</code> 用户 <code>foo</code>，密码 <code>123456</code>，将用户信息提交到 <code>kubernetes</code>：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">$ htpasswd -c auth foo
+$ kubectl -n demo-echo create secret generic basic-auth --from-file=auth<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意其中命名空间<code>demo-echo</code>，<code>secret</code> 与目标服务<code>echo</code>在同一个 <code>namespace</code> 中。</p>
+</blockquote>
+<h3 id="为目标服务设置-ingress"><a href="#为目标服务设置-ingress" class="headerlink" title="为目标服务设置 ingress"></a>为目标服务设置 ingress</h3><blockquote>
+<p>注意其中的<code>basic-auth</code>改成你的</p>
+</blockquote>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-echo-with-auth-basic
+  annotations:
+    # type of authentication
+    nginx.ingress.kubernetes.io/auth-type: basic
+    # name of the secret that contains the user/password definitions
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    # message to display with an appropriate context why the authentication is required
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - foo'
+spec:
+  rules:
+  - host: auth-basic.echo.example
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: echo
+          servicePort: 80<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="访问测试"><a href="#访问测试" class="headerlink" title="访问测试"></a>访问测试</h3><p><img data-src="/images/k8s2.png" alt="ingress-nginx"></p>
+<h3 id="原文链接"><a href="#原文链接" class="headerlink" title="原文链接"></a>原文链接</h3><ul>
+<li><a href="https://www.lijiaocn.com/soft/k8s/ingress-nginx/auth.html" target="_blank" rel="noopener">https://www.lijiaocn.com/soft/k8s/ingress-nginx/auth.html</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-she-zhi-https-zheng-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -954,143 +1096,6 @@ Export list <span class="token keyword">for</span> localhost:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-jian-kong-metrics-server-bu-shu-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-jian-kong-metrics-server-bu-shu-shi-yong/" class="post-title-link" itemprop="url">k8s监控【metrics-server部署使用】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-10 17:26:11" itemprop="dateCreated datePublished" datetime="2019-11-10T17:26:11+08:00">2019-11-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-01-10 17:32:57" itemprop="dateModified" datetime="2020-01-10T17:32:57+08:00">2020-01-10</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>从<code>Heapster</code>的<a href="https://github.com/kubernetes/heapster" target="_blank" rel="noopener">github</a> 中可以看到已经，<code>heapster</code>已经<code>DEPRECATED</code>。 这里是<code>heapster</code>的<a href="https://github.com/kubernetes-retired/heapster/blob/master/docs/deprecation.md" target="_blank" rel="noopener">deprecation timeline</a>。 可以看出<code>heapster</code>从<code>Kubernetes 1.12</code>开始从<code>Kubernetes</code>各种安装脚本中移除。</p>
-<p><code>Kubernetes</code>推荐使用<code>metrics-server</code>。我们这里也使用<code>helm</code>来部署<code>metrics-server</code>。</p>
-<h3 id="创建配置metrics-server-yaml"><a href="#创建配置metrics-server-yaml" class="headerlink" title="创建配置metrics-server.yaml"></a>创建配置<code>metrics-server.yaml</code></h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">replicaCount</span><span class="token punctuation">:</span> <span class="token number">1</span>
-<span class="token key atrule">image</span><span class="token punctuation">:</span>
-    <span class="token key atrule">repository</span><span class="token punctuation">:</span> hub.deri.org.cn/k8s/metrics<span class="token punctuation">-</span>server<span class="token punctuation">-</span>amd64
-    <span class="token key atrule">tag</span><span class="token punctuation">:</span> v0.3.5
-    <span class="token key atrule">pullPolicy</span><span class="token punctuation">:</span> IfNotPresent
-<span class="token key atrule">args</span><span class="token punctuation">:</span>
-<span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>logtostderr
-<span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>kubelet<span class="token punctuation">-</span>insecure<span class="token punctuation">-</span>tls
-<span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>kubelet<span class="token punctuation">-</span>preferred<span class="token punctuation">-</span>address<span class="token punctuation">-</span>types=InternalIP
-<span class="token key atrule">nodeSelector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">node-role.kubernetes.io/edge</span><span class="token punctuation">:</span> <span class="token string">''</span>
-<span class="token key atrule">tolerations</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>role.kubernetes.io/master
-      <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists
-      <span class="token key atrule">effect</span><span class="token punctuation">:</span> NoSchedule
-    <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>role.kubernetes.io/master
-      <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists
-      <span class="token key atrule">effect</span><span class="token punctuation">:</span> PreferNoSchedule<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre class="line-numbers language-bash"><code class="language-bash">helm <span class="token function">install</span> stable/metrics-server \
--n metrics-server \
---namespace kube-system \
--f metrics-server.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">top</span> node
-NAME    CPU<span class="token punctuation">(</span>cores<span class="token punctuation">)</span>   CPU%   MEMORY<span class="token punctuation">(</span>bytes<span class="token punctuation">)</span>   MEMORY%
-node1   650m         32%    1276Mi          73%
-node2   73m          3%     527Mi           30%<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">top</span> pod -n kube-system
-NAME                                    CPU<span class="token punctuation">(</span>cores<span class="token punctuation">)</span>   MEMORY<span class="token punctuation">(</span>bytes<span class="token punctuation">)</span>   
-coredns-5c98db65d4-dr8lf                8m           7Mi             
-coredns-5c98db65d4-lp8dg                6m           8Mi             
-etcd-node1                              44m          46Mi            
-kube-apiserver-node1                    74m          295Mi           
-kube-controller-manager-node1           35m          50Mi            
-kube-flannel-ds-amd64-7lwm9             2m           8Mi             
-kube-flannel-ds-amd64-mm296             5m           9Mi             
-kube-proxy-7fsrg                        1m           11Mi            
-kube-proxy-k8vhm                        3m           11Mi            
-kube-scheduler-node1                    8m           15Mi            
-kubernetes-dashboard-848b8dd798-c4sc2   2m           14Mi            
-metrics-server-8456fb6676-fwh2t         10m          19Mi            
-tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>遗憾的是，当前<code>Kubernetes Dashboard</code>还不支持<code>metrics-server</code>。因此如果使用<code>metrics-server</code>替代了<code>heapster</code>，将无法在<code>dashboard</code>中以图形展示<code>Pod</code>的内存和<code>CPU</code>情况。计划在<a href="https://github.com/kubernetes/dashboard" target="_blank" rel="noopener">dashboard 2.0</a>版本以后才会支持，尽情期待~</p>
-</blockquote>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1162,7 +1167,7 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">304</span>
+          <span class="site-state-item-count">305</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1209,6 +1214,9 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true
         </li>
         <li class="links-of-blogroll-item">
           <a href="/chinamap.html" title="&#x2F;chinamap.html">中国地图</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/md2all" title="&#x2F;md2all">Md2All</a>
         </li>
     </ul>
   </div>
