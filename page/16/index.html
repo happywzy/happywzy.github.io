@@ -203,6 +203,145 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-cha-zhao-zhan-yong-zhu-ji-ci-pan-zui-duo-de-rong-qi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-cha-zhao-zhan-yong-zhu-ji-ci-pan-zui-duo-de-rong-qi/" class="post-title-link" itemprop="url">docker查找占用主机磁盘最多的容器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-11-20 13:49:00 / 修改时间：14:17:42" itemprop="dateCreated datePublished" datetime="2020-11-20T13:49:00+08:00">2020-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>有时候我们一台主机上部署了多个容器，而且对部分数据做了持久化，时间长了，数据会越来越多，相应的可能会造成磁盘空间不足？那么我们如何，找出占用磁盘空间最大的容器，并删除容器的部分不需要的日志或数据文件呢？</p>
+<h3 id="overlay2简介"><a href="#overlay2简介" class="headerlink" title="overlay2简介"></a>overlay2简介</h3><p>OverlayFS是一种现代的联合文件系统，与AUFS类似，但速度更快且实现更简单。Docker为OverlayFS提供了两个存储驱动程序：原始的overlay，更新的和更稳定的overlay2。</p>
+<h3 id="容器存储目录"><a href="#容器存储目录" class="headerlink" title="容器存储目录"></a>容器存储目录</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda1        40G  4.1G   34G  11% /
+devtmpfs        911M     0  911M   0% /dev
+tmpfs           920M     0  920M   0% /dev/shm
+tmpfs           920M  1.3M  919M   1% /run
+tmpfs           920M     0  920M   0% /sys/fs/cgroup
+overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/6c21d550b2e37e23b777490d3f3b26c54ed5b98ad615ac833ff4248a288b9530/merged
+overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/aa7a46d5a35c404e956fa35c88c5ecb8f117d03299f3818d5c66c33caf4ee6f4/merged
+overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/507f4480d6ed67738d618080b0fcbf60ca22623ba9a87eade44fa403e421cf55/merged
+overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/5cc8105791fd74756b0f7cc36ec93685f3ca90bcb72ac025edb7389e5156228b/merged
+overlay          40G  4.1G   34G  11% <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在当前版本中，容器存储目录为<code>/var/lib/docker/overlay2</code>。且当前占用宿主机磁盘空间的目录也为容器存储目录。</p>
+<h3 id="查找占用磁盘空间大小的容器目录"><a href="#查找占用磁盘空间大小的容器目录" class="headerlink" title="查找占用磁盘空间大小的容器目录"></a>查找占用磁盘空间大小的容器目录</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# du -s * | sort -nr | head -5
+334636    f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870
+159348    86444fb8a5127b41323bef731c14eb764135a7066bb5f904427f53816ff4fe2f
+146556    6c21d550b2e37e23b777490d3f3b26c54ed5b98ad615ac833ff4248a288b9530
+102080    1eb50142766d18f3927615f63f599d9de1885b2954397736b882bb89ab8ae265
+88504    ef4e0ff8bf2cd2f8d2f147e30e89e2c7b6f6e02795ebbcd45a3bba1d77b3b132<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：这里只列出了排名<code>前五</code>的容器目录。那么现在知道了容器目录，那么如何找出对应的容器呢？现在我们要找出<code>f6acb9573429</code>开头的目录对应时哪个容器？</p>
+</blockquote>
+<h3 id="查找容器目录对应的容器名"><a href="#查找容器目录对应的容器名" class="headerlink" title="查找容器目录对应的容器名"></a>查找容器目录对应的容器名</h3><ul>
+<li>通过 <code>docker ps -a</code> 查看容器列表</li>
+<li>通过 <code>docker inspect 容器ID</code> 查看容器配置信息</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# for i in $(docker ps -q );do echo echo $i ; docker inspect $i|grep f6acb9573429  ; done
+echo 4332fe39163b
+                "LowerDir": "/var/lib/docker/overlay2/**f6acb9573429**712fe4d8b8b786e24d790fae8727f403693874b62a168b174870-init/diff:/var/lib/docker/overlay2/b76d30a66c8fef0123a2310bd861a0aa626b5a6e7bf83f9982a6344c8e466187/diff:/var/lib/docker/overlay2/c5b396df751ea053d81765d77f85a8dd44c1c847b6fbe95b38230509f372dfd2/diff:/var/lib/docker/overlay2/1efa8716d1f55fde7716deaacabe0e582aff78f7e460f18b9d5dc84db387533e/diff:/var/lib/docker/overlay2/3f78cbaa248e4f8b1e25599e5e1e2496a463b75e39adfaad2026f134a8ebf89f/diff:/var/lib/docker/overlay2/18ca1077ac90dff82d1085d19162d7b56c42effce18b416632c0e1627602fb17/diff:/var/lib/docker/overlay2/bcee6e758f7ac5769da672274262d61b38acc2cc6ade4b9b56cd0475ca886528/diff:/var/lib/docker/overlay2/e23e02b967bdf1aaaef8e002f0a9f1d778d7a7de7adb12cd925e84ef770b62c7/diff:/var/lib/docker/overlay2/916a116fc26d356a61a9e028c52a3a402349e87e1e9eea6f4d2039cf31391155/diff",
+                "MergedDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/merged",
+                "UpperDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/diff",
+                "WorkDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/work"
+echo 4172f0cf7985
+echo a622665b0a81
+echo 20fde2e0a903<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：这里就已经找出了最占用磁盘空间大小的容器了。<code>4332fe39163b</code>为容器<code>ID</code>.</p>
+</blockquote>
+<h3 id="查看镜像占用磁盘"><a href="#查看镜像占用磁盘" class="headerlink" title="查看镜像占用磁盘"></a>查看镜像占用磁盘</h3><pre class="line-numbers language-sh"><code class="language-sh">docker system df <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="查看docker日志-json-log"><a href="#查看docker日志-json-log" class="headerlink" title="查看docker日志.json.log"></a>查看docker日志.json.log</h3><p><code>docker</code>日志默认不作限制,可能产生非常大的日志文件,需要清理或者作出限制.</p>
+<ul>
+<li>限制docker容器日志大小<pre class="line-numbers language-json"><code class="language-json">// vim /etc/docker/daemon.json
+<span class="token punctuation">{</span>
+<span class="token property">"log-driver"</span><span class="token operator">:</span><span class="token string">"json-file"</span><span class="token punctuation">,</span>
+<span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"max-size"</span><span class="token operator">:</span><span class="token string">"500m"</span><span class="token punctuation">,</span> <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a href="https://blog.csdn.net/m0_37814112/article/details/103049589" target="_blank" rel="noopener">docker查找占用主机磁盘空间最大的容器</a></li>
+<li><a href="https://blog.csdn.net/hnmpf/article/details/90237465" target="_blank" rel="noopener">定位那个docker容器占用overlay2的问题之容器磁盘定位</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubeadm-bu-shu-k8s-geng-xin-zheng-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2780,139 +2919,6 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config<span aria-hidden="true" class="l
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-she-zhi-ttl/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/hbase-she-zhi-ttl/" class="post-title-link" itemprop="url">hbase设置ttl</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-11-12 10:09:22 / 修改时间：10:29:28" itemprop="dateCreated datePublished" datetime="2020-11-12T10:09:22+08:00">2020-11-12</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="Hbase关于TTL"><a href="#Hbase关于TTL" class="headerlink" title="Hbase关于TTL"></a>Hbase关于TTL</h3><ul>
-<li><code>ColumnFamilies</code>可以以秒为单位来设置 <code>TTL</code>（<code>Time To Live</code>）长度，一旦达到到期时间，<code>HBase</code> 将自动删除行。</li>
-<li>设置 <code>hbase.store.delete.expired.storefile</code> 为 <code>false</code> 将禁用此功能。将最小版本数设置为 <code>0</code> 以外的值也会禁用此功能。</li>
-<li>也支持设置时间以每个单元为基础生存。单元<code>TTL</code> 是使用突变 <code>setTTL</code> 作为突变请求（例如：<code>Appends</code>、<code>Increments</code>、<code>Puts</code>）的属性提交的.</li>
-<li>单元 <code>TTL</code> 以毫秒为单位而不是秒;</li>
-<li>单元 <code>TTL</code> 不能将一个单元的有效生命周期延长超过 <code>ColumnFamily</code> 级 <code>TTL</code> 设置.</li>
-</ul>
-<h3 id="设置TTL"><a href="#设置TTL" class="headerlink" title="设置TTL"></a>设置TTL</h3><ol>
-<li><p>创建表的时候指定</p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">create</span> <span class="token string">'t_task_log'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'cf'</span><span class="token punctuation">,</span> TTL<span class="token operator">=</span><span class="token operator">></span><span class="token string">'86400'</span>}<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
-<li><p>查看TTL<br>```sql<br>desc “t_task_log”</p>
-</li>
-</ol>
-<p>– 默认: TTL =&gt; ‘FOREVER’</p>
-<pre><code>
-3. 修改TTL
-```sql
--- 禁用表
-disable "t_task_log"
--- 设置TTL值，作用于列族cf
-alter "t_task_log",NAME=&gt;'cf',TTL=&gt;'86400'
--- 恢复表
-enable  "t_task_log"</code></pre><blockquote>
-<p>高版本<code>hbase</code>可以不需要先禁用表,可直接在线修改<code>TTL</code>.</p>
-</blockquote>
-<ol start="4">
-<li>编码设置列族TTL<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 1. 创建一个测试表,并添加列族cf</span>
-TableName tableName <span class="token operator">=</span> TableName<span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span><span class="token string">"test"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-TableDescriptor tableDescriptor <span class="token operator">=</span> TableDescriptorBuilder<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span>tableName<span class="token punctuation">)</span>
-     <span class="token punctuation">.</span><span class="token function">setColumnFamily</span><span class="token punctuation">(</span>ColumnFamilyDescriptorBuilder<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span><span class="token string">"cf"</span><span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-     <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
-</ol>
-<p>admin.createTable(tableDescriptor);<br>System.out.println(“创建表并添加列族cf成功”);</p>
-<p>// 2.为当前的表添加一个ttl的列族(默认设定时间为10秒)<br>ColumnFamilyDescriptor cfDesc = ColumnFamilyDescriptorBuilder.newBuilder(“ttl-cf”.getBytes()).setTimeToLive(10)<br>        .build();<br>admin.addColumnFamily(tableName, cfDesc);<br>System.out.println(“为表添加一个具有TTL的列族ttl-cf,设定超时时间为10s”);</p>
-<pre><code>
-5. 编码设置单元TTL
-```java
-Put put = new Put(Bytes.toBytes("row1"));
-put.setTTL(86400L);</code></pre><h3 id="怎么重置TTL为FOREVER"><a href="#怎么重置TTL为FOREVER" class="headerlink" title="怎么重置TTL为FOREVER"></a>怎么重置TTL为FOREVER</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- HBase TTL 最大值为INT最大值 2147483647，只需将TTL设为该整数即可</span>
-<span class="token keyword">alter</span> <span class="token string">'test'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'cf'</span><span class="token punctuation">,</span>TTL <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'2147483647'</span>}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://www.cnblogs.com/zpb2016/p/12649831.html" target="_blank" rel="noopener">https://www.cnblogs.com/zpb2016/p/12649831.html</a></li>
-<li><a href="https://blog.csdn.net/weixin_45492007/article/details/106804808" target="_blank" rel="noopener">https://blog.csdn.net/weixin_45492007/article/details/106804808</a></li>
-<li><a href="https://www.w3cschool.cn/hbase_doc/hbase_doc-x41d2mmo.html" target="_blank" rel="noopener">https://www.w3cschool.cn/hbase_doc/hbase_doc-x41d2mmo.html</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -2984,7 +2990,7 @@ put.setTTL(86400L);</code></pre><h3 id="怎么重置TTL为FOREVER"><a href="#怎
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">305</span>
+          <span class="site-state-item-count">306</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
