@@ -203,6 +203,123 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mybatis-zhu-jie-fang-shi-dong-tai-pin-jie-sql/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mybatis-zhu-jie-fang-shi-dong-tai-pin-jie-sql/" class="post-title-link" itemprop="url">Mybatis注解方式动态拼接SQL</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-31 09:40:00" itemprop="dateCreated datePublished" datetime="2019-12-31T09:40:00+08:00">2019-12-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-10-30 14:29:13" itemprop="dateModified" datetime="2020-10-30T14:29:13+08:00">2020-10-30</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在spring boot中，集成Mybatis可以使用完全注解的方式，完全不用新增任何配置文件。多条件判断，可以使用<code>&lt;script&gt;</code>和<code>&lt;set&gt;</code>搭配实现。</p>
+<h3 id="Update"><a href="#Update" class="headerlink" title="@Update"></a>@Update</h3><pre><code>@Update("&lt;script&gt;update t_user " +
+        "&lt;set&gt; " +
+        "&lt;if test='userName != null'&gt; user_name = #{userName},&lt;/if&gt;" +
+        "&lt;if test='userPwd != null'&gt; user_pwd = #{userPwd},&lt;/if&gt;" +
+        "&lt;if test='userRemark != null'&gt; user_remark = #{userRemark},&lt;/if&gt;" +
+        "&lt;if test='userPhone != null'&gt; user_phone = #{userPhone},&lt;/if&gt;" +
+        "&lt;if test='userEmail != null'&gt; user_email = #{userEmail},&lt;/if&gt;" +
+        "&lt;/set&gt; " +
+        "where user_id = #{userId}&lt;/script&gt;")</code></pre><h3 id="Select"><a href="#Select" class="headerlink" title="@Select"></a>@Select</h3><pre><code>@Select("select id,name,description,enabled,deleted,date_created as dateCreated,last_modified as lastModified from admin_role (#{roleParam})")</code></pre><pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">//不使用 @Param 时，那么，此时 collection 需要定义为 list，否则会报错</span>
+<span class="token annotation punctuation">@Select</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+        <span class="token string">"&lt;script>"</span><span class="token punctuation">,</span>
+        <span class="token string">"SELECT * "</span><span class="token punctuation">,</span>
+        <span class="token string">"FROM users WHERE id IN"</span><span class="token punctuation">,</span>
+        <span class="token string">"&lt;foreach item='id' index='index' collection='ids' open='(' separator=',' close=')'>"</span><span class="token punctuation">,</span>
+        <span class="token string">"#{id}"</span><span class="token punctuation">,</span>
+        <span class="token string">"&lt;/foreach>"</span><span class="token punctuation">,</span>
+        <span class="token string">"&lt;/script>"</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+List<span class="token operator">&lt;</span>UserEntity<span class="token operator">></span> <span class="token function">getUserById</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Param</span><span class="token punctuation">(</span><span class="token string">"ids"</span><span class="token punctuation">)</span> List<span class="token operator">&lt;</span>String<span class="token operator">></span> ids<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Insert"><a href="#Insert" class="headerlink" title="@Insert"></a>@Insert</h3><pre><code>@Insert("insert into t_alert_log (alert_name,severity,message,start_at,end_at) " +
+            "values(#{alertName},#{severity},#{message},#{startAt},#{endAt})")
+@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")</code></pre><h3 id="Update-1"><a href="#Update-1" class="headerlink" title="@Update"></a>@Update</h3><pre><code>@Update("update t_alert_log set status=true,remark=#{remark} where token=#{token}")</code></pre><h3 id="ResultType"><a href="#ResultType" class="headerlink" title="@ResultType"></a>@ResultType</h3><pre><code>@ResultType(String.class)</code></pre><h3 id="注解方式传入表名和字段名"><a href="#注解方式传入表名和字段名" class="headerlink" title="注解方式传入表名和字段名"></a>注解方式传入表名和字段名</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 一般通过#{xxx}方式传入内容,但是表名和字段名不能通过这个方式.</span>
+<span class="token comment" spellcheck="true">// 动态传入表名和字段名用到${xxx}</span>
+<span class="token annotation punctuation">@Delete</span><span class="token punctuation">(</span><span class="token string">"delete from ${tableName} where DATE(${columnName}) &lt;= DATE(DATE_SUB(NOW(),INTERVAL #{interval} day));"</span><span class="token punctuation">)</span>
+<span class="token keyword">void</span> <span class="token function">delete</span><span class="token punctuation">(</span>String tableName<span class="token punctuation">,</span> String columnName<span class="token punctuation">,</span> <span class="token keyword">int</span> interval<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/helm-chang-yong-ming-ling-zong-jie/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -989,138 +1106,10 @@ jaeger-query             NodePort       10.101.53.38     <span class="token oper
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/logback-pei-zhi-wen-jian-mo-ban/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/logback-pei-zhi-wen-jian-mo-ban/" class="post-title-link" itemprop="url">logback配置文件模板</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-25 16:30:22" itemprop="dateCreated datePublished" datetime="2019-12-25T16:30:22+08:00">2019-12-25</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 13:42:34" itemprop="dateModified" datetime="2020-04-15T13:42:34+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="Logback默认配置的步骤"><a href="#Logback默认配置的步骤" class="headerlink" title="Logback默认配置的步骤"></a>Logback默认配置的步骤</h2><ol>
-<li>尝试在 classpath下查找文件logback-test.xml；</li>
-<li>如果文件不存在，则查找文件logback.xml；</li>
-<li>如果两个文件都不存在，logback用BasicConfigurator自动对自己进行配置，这会导致记录输出到控制台。</li>
-</ol>
-<h2 id="logback配置文件模板"><a href="#logback配置文件模板" class="headerlink" title="logback配置文件模板"></a>logback配置文件模板</h2><pre class="line-numbers language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="UTF-8"?></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>statusListener</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.status.NopStatusListener<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ROOT<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>./logs/<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILESIZE<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>100MB<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>MAXHISTORY<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>30<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timestamp</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>DATETIME<span class="token punctuation">"</span></span> <span class="token attr-name">datePattern</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>yyyy-MM-dd HH:mm:ss<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token comment" spellcheck="true">&lt;!-- 控制台打印 --></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>STDOUT<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.ConsoleAppender<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>encoder</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pattern</span><span class="token punctuation">></span></span>[%-5level] %d{yyyy-MM-dd HH:mm:ss:SSS} [%thread] %logger{36} - %m%n<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pattern</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>encoder</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appender</span><span class="token punctuation">></span></span>
-    <span class="token comment" spellcheck="true">&lt;!-- 输入到文件，按日期和文件大小 --></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILEOUT<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.RollingFileAppender<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>encoder</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pattern</span><span class="token punctuation">></span></span>[%-5level] %d{yyyy-MM-dd HH:mm:ss:SSS} [%thread] %logger{36} - %m%n<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pattern</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>encoder</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>rollingPolicy</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.TimeBasedRollingPolicy<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>fileNamePattern</span><span class="token punctuation">></span></span>${ROOT}/log.%d.%i.log<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>fileNamePattern</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>maxHistory</span><span class="token punctuation">></span></span>${MAXHISTORY}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>maxHistory</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timeBasedFileNamingAndTriggeringPolicy</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>maxFileSize</span><span class="token punctuation">></span></span>${FILESIZE}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>maxFileSize</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>timeBasedFileNamingAndTriggeringPolicy</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>rollingPolicy</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appender</span><span class="token punctuation">></span></span>
-    <span class="token comment" spellcheck="true">&lt;!-- Logger 根目录 --></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>root</span> <span class="token attr-name">level</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>INFO<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>STDOUT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILEOUT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>root</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/41/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/41/">41</a><span class="page-number current">42</span><a class="page-number" href="/page/43/">43</a><span class="space">&hellip;</span><a class="page-number" href="/page/51/">51</a><a class="extend next" rel="next" href="/page/43/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/41/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/41/">41</a><span class="page-number current">42</span><a class="page-number" href="/page/43/">43</a><span class="space">&hellip;</span><a class="page-number" href="/page/52/">52</a><a class="extend next" rel="next" href="/page/43/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1188,7 +1177,7 @@ jaeger-query             NodePort       10.101.53.38     <span class="token oper
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">306</span>
+          <span class="site-state-item-count">307</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

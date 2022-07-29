@@ -203,6 +203,120 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-xian-zhi-rong-qi-ri-zhi-da-xiao/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-xian-zhi-rong-qi-ri-zhi-da-xiao/" class="post-title-link" itemprop="url">docker限制容器日志大小</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-11-20 14:09:43 / 修改时间：14:15:09" itemprop="dateCreated datePublished" datetime="2020-11-20T14:09:43+08:00">2020-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>容器日志一般存放在<code>/var/lib/docker/containers/container_id/</code>下面，以<code>json.log</code>结尾的文件(业务日志)很大.</p>
+<h3 id="处理"><a href="#处理" class="headerlink" title="处理"></a>处理</h3><ul>
+<li><p>临时清空日志</p>
+<pre class="line-numbers language-sh"><code class="language-sh"># 注意不能用rm命令
+cat /dev/null > /var/lib/docker/containers/容器id/容器id-json.log<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+<li><p>如果是docker-compose<br>通过配置容器<code>docker-compose.yml</code>的<code>max-size</code>选项来实现:</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">nginx</span><span class="token punctuation">:</span> 
+<span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span>1.12.1 
+<span class="token key atrule">restart</span><span class="token punctuation">:</span> always 
+<span class="token key atrule">logging</span><span class="token punctuation">:</span> 
+  <span class="token key atrule">driver</span><span class="token punctuation">:</span> <span class="token string">"json-file"</span>
+  <span class="token key atrule">options</span><span class="token punctuation">:</span> 
+    <span class="token key atrule">max-size</span><span class="token punctuation">:</span> <span class="token string">"5g"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>限制docker容器日志大小</p>
+<pre class="line-numbers language-json"><code class="language-json">// vim /etc/docker/daemon.json
+<span class="token punctuation">{</span>
+<span class="token property">"log-driver"</span><span class="token operator">:</span><span class="token string">"json-file"</span><span class="token punctuation">,</span>
+<span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"max-size"</span><span class="token operator">:</span><span class="token string">"500m"</span><span class="token punctuation">,</span> <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<p>重启docker生效</p>
+<pre class="line-numbers language-sh"><code class="language-sh">systemctl daemon-reload
+systemctl restart docker<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a href="https://www.cnblogs.com/angel-devil/p/12558908.html" target="_blank" rel="noopener">https://www.cnblogs.com/angel-devil/p/12558908.html</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-cha-zhao-zhan-yong-zhu-ji-ci-pan-zui-duo-de-rong-qi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2782,147 +2896,10 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config<span aria-hidden="true" class="l
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/resttemplate-qing-qiu-put-delete-fang-fa-wu-fan-hui-zhi-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/resttemplate-qing-qiu-put-delete-fang-fa-wu-fan-hui-zhi-wen-ti/" class="post-title-link" itemprop="url">RestTemplate请求PUT/DELETE方法无返回值问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-11-17 14:50:00 / 修改时间：14:51:50" itemprop="dateCreated datePublished" datetime="2020-11-17T14:50:00+08:00">2020-11-17</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="使用exchange"><a href="#使用exchange" class="headerlink" title="使用exchange"></a>使用exchange</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>fastjson<span class="token punctuation">.</span>JSON<span class="token punctuation">;</span>
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>crd<span class="token punctuation">.</span>service<span class="token punctuation">.</span>routing<span class="token punctuation">.</span>bean<span class="token punctuation">.</span>AddrInfo<span class="token punctuation">;</span>
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>crd<span class="token punctuation">.</span>service<span class="token punctuation">.</span>routing<span class="token punctuation">.</span>bean<span class="token punctuation">.</span>Response<span class="token punctuation">;</span>
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>fasterxml<span class="token punctuation">.</span>jackson<span class="token punctuation">.</span>core<span class="token punctuation">.</span>JsonProcessingException<span class="token punctuation">;</span>
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>fasterxml<span class="token punctuation">.</span>jackson<span class="token punctuation">.</span>databind<span class="token punctuation">.</span>ObjectMapper<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>http<span class="token punctuation">.</span>*<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>util<span class="token punctuation">.</span>MimeType<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>util<span class="token punctuation">.</span>MimeTypeUtils<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>util<span class="token punctuation">.</span>MultiValueMap<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>web<span class="token punctuation">.</span>client<span class="token punctuation">.</span>RestTemplate<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>charset<span class="token punctuation">.</span>Charset<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">/**
- * @Author: wzy
- * @Time: Created on 2018/4/27 16:04
- * @Project: sg-imq-console
- * @Modified By: 使用exchange发送put,delete，解决resttemplate无返回值问题
- */</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RestClientUtil</span> <span class="token punctuation">{</span>
-    <span class="token comment" spellcheck="true">/**
-     * 发送/获取 服务端数据(主要用于解决发送put,delete方法无返回值问题).
-     *
-     * @param url    绝对地址
-     * @param method 请求方式
-     * @param &lt;T>    返回类型
-     * @return 返回结果(响应体)
-     */</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">exchange</span><span class="token punctuation">(</span>String url<span class="token punctuation">,</span> HttpMethod method<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> response<span class="token punctuation">,</span> String request<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token comment" spellcheck="true">// 请求头</span>
-        HttpHeaders headers <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HttpHeaders</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        MimeType mimeType <span class="token operator">=</span> MimeTypeUtils<span class="token punctuation">.</span><span class="token function">parseMimeType</span><span class="token punctuation">(</span><span class="token string">"application/json"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        MediaType mediaType <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MediaType</span><span class="token punctuation">(</span>mimeType<span class="token punctuation">.</span><span class="token function">getType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> mimeType<span class="token punctuation">.</span><span class="token function">getSubtype</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Charset<span class="token punctuation">.</span><span class="token function">forName</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        headers<span class="token punctuation">.</span><span class="token function">setContentType</span><span class="token punctuation">(</span>mediaType<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 发送请求</span>
-        HttpEntity<span class="token operator">&lt;</span>String<span class="token operator">></span> entity <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HttpEntity</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> headers<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        RestTemplate restTemplate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RestTemplate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        ResponseEntity<span class="token operator">&lt;</span>T<span class="token operator">></span> resultEntity <span class="token operator">=</span> restTemplate<span class="token punctuation">.</span><span class="token function">exchange</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> method<span class="token punctuation">,</span> entity<span class="token punctuation">,</span> response<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> resultEntity<span class="token punctuation">.</span><span class="token function">getBody</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        String url <span class="token operator">=</span> <span class="token string">"http://127.0.0.1:8088/route/addr/安徽"</span><span class="token punctuation">;</span>
-        AddrInfo addrInfo <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AddrInfo</span><span class="token punctuation">(</span><span class="token string">"安徽"</span><span class="token punctuation">,</span> <span class="token string">"127.0.0.1:9877"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">//        Response response = RestClientUtil.exchange(url,HttpMethod.PUT,Response.class,</span>
-<span class="token comment" spellcheck="true">//                JSON.toJSONString(addrInfo));</span>
-        Response response <span class="token operator">=</span> RestClientUtil<span class="token punctuation">.</span><span class="token function">exchange</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> HttpMethod<span class="token punctuation">.</span>DELETE<span class="token punctuation">,</span> Response<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span>
-                null<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>response<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">//        RestTemplate restTemplate = new RestTemplate();</span>
-<span class="token comment" spellcheck="true">//        restTemplate.put(url, addrInfo);</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/15/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/51/">51</a><a class="extend next" rel="next" href="/page/17/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/15/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/52/">52</a><a class="extend next" rel="next" href="/page/17/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -2990,7 +2967,7 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config<span aria-hidden="true" class="l
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">306</span>
+          <span class="site-state-item-count">307</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
