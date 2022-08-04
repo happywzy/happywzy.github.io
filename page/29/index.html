@@ -203,6 +203,242 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hadoop-dan-ji-ban-bu-shu-ce-shi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/hadoop-dan-ji-ban-bu-shu-ce-shi/" class="post-title-link" itemprop="url">hadoop单机版部署测试</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-07 11:41:36 / 修改时间：14:37:54" itemprop="dateCreated datePublished" datetime="2020-05-07T11:41:36+08:00">2020-05-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h3><ul>
+<li><a href="https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/" target="_blank" rel="noopener">hadoop-2.7.7.tar.gz</a></li>
+</ul>
+<h3 id="配置ssh无密码登录"><a href="#配置ssh无密码登录" class="headerlink" title="配置ssh无密码登录"></a>配置ssh无密码登录</h3><pre class="line-numbers language-sh"><code class="language-sh"># 测试ssh localhost, 默认需要密码
+[root@node1 hadoop]# ssh localhost
+The authenticity of host 'localhost (::1)' can't be established.
+ECDSA key fingerprint is SHA256:Ii9RadytomW4X2LEvMQwRxoOTeGgxfNbOgwXrc/wwZI.
+ECDSA key fingerprint is MD5:bc:b5:ef:93:e6:fd:7c:cd:a3:4f:a7:f6:4c:24:c7:a7.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'localhost' (ECDSA) to the list of known hosts.
+root@localhost's password: <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh">ssh-keygen -t dsa -P '' -f ~/.ssh/id_dsa
+cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh"># 测试免密登录,无需密码即可登录成功
+[root@node1 hadoop]# ssh localhost
+Last failed login: Thu May  7 11:44:07 CST 2020 from localhost on ssh:notty
+There was 1 failed login attempt since the last successful login.
+Last login: Thu May  7 11:43:04 2020 from 192.168.41.1
+[root@node1 ~]# <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置java环境"><a href="#配置java环境" class="headerlink" title="配置java环境"></a>配置java环境</h3><pre class="line-numbers language-sh"><code class="language-sh">#已经部署过了
+[root@node1 hadoop]# echo $JAVA_HOME
+/usr/local/bin/jdk1.8.0_112<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装hadoop"><a href="#安装hadoop" class="headerlink" title="安装hadoop"></a>安装hadoop</h3><p>将<code>hadoop-2.7.7.tar.gz</code>拷贝到<code>/root/hadoop</code>目录下并解压.</p>
+<pre class="line-numbers language-sh"><code class="language-sh">[root@node1 hadoop]# pwd
+/root/hadoop
+[root@node1 hadoop]# tar -zxvf hadoop-2.7.7.tar.gz <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>在<code>/etc/profile</code>或者<code>~/.bash_profile</code>配置环境变量<code>HADOOP_HOME</code>.</p>
+<pre class="line-numbers language-sh"><code class="language-sh">export HADOOP_HOME=/root/hadoop/hadoop-2.7.7
+export PATH=$PATH:$HADOOP_HOME/bin<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>使配置生效</p>
+<pre class="line-numbers language-sh"><code class="language-sh">source /etc/profile<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="配置hadoop"><a href="#配置hadoop" class="headerlink" title="配置hadoop"></a>配置hadoop</h3><p>进入<code>$HADOOP_HOME/etc/hadoop</code>目录，配置<code>hadoop-env.sh</code>等。涉及的配置文件如下：</p>
+<pre><code>hadoop-2.9.2/etc/hadoop/hadoop-env.sh
+hadoop-2.9.2/etc/hadoop/yarn-env.sh
+hadoop-2.9.2/etc/hadoop/core-site.xml
+hadoop-2.9.2/etc/hadoop/hdfs-site.xml
+hadoop-2.9.2/etc/hadoop/mapred-site.xml
+hadoop-2.9.2/etc/hadoop/yarn-site.xml</code></pre><ol>
+<li><p>配置<code>hadoop-env.sh</code></p>
+<pre class="line-numbers language-sh"><code class="language-sh"># The java implementation to use.
+export JAVA_HOME=${JAVA_HOME}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+<li><p>配置<code>yarn-env.sh</code></p>
+<pre class="line-numbers language-sh"><code class="language-sh">#export JAVA_HOME=/home/y/libexec/jdk1.6.0/<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li><p>配置<code>core-site.xml</code></p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>fs.default.name<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>hdfs://192.168.41.128:9000<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>description</span><span class="token punctuation">></span></span>HDFS的URI，文件系统://namenode标识:端口号<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>description</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<property>
+　　<name>hadoop.tmp.dir</name>
+　　<value>/root/hadoop/tmp</value>
+　　<description>namenode上本地的hadoop临时文件夹</description>
+</property>
+
+```
+
+<ol start="4">
+<li>配置<code>hdfs-site.xml</code><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>dfs.name.dir<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>/root/hadoop/name<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>description</span><span class="token punctuation">></span></span>namenode上存储hdfs名字空间元数据 <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>description</span><span class="token punctuation">></span></span> 
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<property>
+　　<name>dfs.data.dir</name>
+　　<value>/root/hadoop/data</value>
+　　<description>datanode上数据块的物理存储位置</description>
+</property>
+
+<property>
+　　<name>dfs.replication</name>
+　　<value>1</value>
+　　<description>副本个数，配置默认是3,应小于datanode机器数量</description>
+　　</property>
+
+```
+
+<ol start="5">
+<li><p>配置<code>mapred-site.xml</code></p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>mapreduce.framework.name<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>yarn<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>配置<code>yarn-site.xml</code></p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>yarn.nodemanager.aux-services<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>mapreduce_shuffle<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>yarn.resourcemanager.webapp.address<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+　　<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>${yarn.resourcemanager.hostname}:8099<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<h3 id="启动hadoop"><a href="#启动hadoop" class="headerlink" title="启动hadoop"></a>启动hadoop</h3><ol>
+<li><p>格式化hdfs文件系统</p>
+<pre class="line-numbers language-sh"><code class="language-sh">bin/hadoop namenode -format<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li><p>启动namenode</p>
+<pre><code>sbin/hadoop-daemon.sh start namenode</code></pre></li>
+<li><p>启动datanode</p>
+<pre><code>sbin/hadoop-daemon.sh start datanode</code></pre></li>
+<li><p>启动yarn</p>
+<pre><code>sbin/start-yarn.sh</code></pre></li>
+<li><p>验证<br>查看<code>logs/</code>目录下是否有错误日志,通过<code>jps</code>命令查看后台进程.</p>
+<pre class="line-numbers language-sh"><code class="language-sh">[root@node1 hadoop-2.7.7]# jps
+17152 NodeManager
+17920 Jps
+16721 DataNode #数据节点
+16866 ResourceManager
+62190 HMaster # Hbase
+16623 NameNode #名称节点<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>查看<code>UI</code></p>
+</li>
+</ol>
+<ul>
+<li>Nodes of the cluster: <a href="http://192.168.41.128:8099/cluster/nodes" target="_blank" rel="noopener">http://192.168.41.128:8099/cluster/nodes</a></li>
+<li>Applications running on this node: <a href="http://192.168.41.128:8042/node/allApplications" target="_blank" rel="noopener">http://192.168.41.128:8042/node/allApplications</a></li>
+<li>Browse Hdfs: <a href="http://192.168.41.128:50070/" target="_blank" rel="noopener">http://192.168.41.128:50070/</a></li>
+<li>DataNode overview: <a href="http://192.168.41.128:50075/" target="_blank" rel="noopener">http://192.168.41.128:50075/</a></li>
+</ul>
+<h3 id="提交MapReduce作业"><a href="#提交MapReduce作业" class="headerlink" title="提交MapReduce作业"></a>提交<code>MapReduce</code>作业</h3><pre class="line-numbers language-sh"><code class="language-sh">bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.7.jar pi 2 100<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="hdfs使用"><a href="#hdfs使用" class="headerlink" title="hdfs使用"></a>hdfs使用</h3><ol>
+<li><p>创建一个目录</p>
+<pre><code>hadoop fs -mkdir /test</code></pre></li>
+<li><p>上传一个文件到指定目录</p>
+<pre><code>hadoop fs -put README.txt /test</code></pre><p>或者</p>
+<pre><code>hadoop fs -moveFromLocal README.txt /test</code></pre></li>
+<li><p>查看目录下文件</p>
+<pre class="line-numbers language-sh"><code class="language-sh">[root@node1 hadoop-2.7.7]# hadoop fs -ls /test<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+</ol>
+<blockquote>
+<p>更多命令<a href="/2020/05/06/hdfs-chang-yong-ming-ling/">参考</a></p>
+</blockquote>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/hadoop-yu-hbase-zhi-chi-ju-zhen/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1068,119 +1304,6 @@ spring.datasource.druid.filter.stat.slow-sql-millis=1<span aria-hidden="true" cl
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/rowkey-zi-dian-pai-xu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/rowkey-zi-dian-pai-xu/" class="post-title-link" itemprop="url">rowkey字典排序</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-24 15:38:18" itemprop="dateCreated datePublished" datetime="2020-04-24T15:38:18+08:00">2020-04-24</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-05-07 17:33:51" itemprop="dateModified" datetime="2020-05-07T17:33:51+08:00">2020-05-07</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="排序规则"><a href="#排序规则" class="headerlink" title="排序规则"></a>排序规则</h3><ul>
-<li><code>rowkey</code>从高位到低位依照<code>ASCII</code>码表排序;如<code>A</code>排在<code>a</code>前面,<code>a</code>排在<code>aa</code> <code>ab</code>前面;</li>
-<li>如果<code>rowkey</code>一样,按照<code>column family:qualifier</code>排序;</li>
-<li>如果<code>column family:qualifier</code>一样,按照<code>时间戳</code>排序;</li>
-</ul>
-<h3 id="充分利用rowkey会排序特性"><a href="#充分利用rowkey会排序特性" class="headerlink" title="充分利用rowkey会排序特性"></a>充分利用<code>rowkey</code>会排序特性</h3><ol>
-<li>如果热点数据的<code>rowkey</code>前缀一样，则很容易被存储在同一<code>RegionServer</code>上，这样就会造成访问的性能瓶颈;</li>
-<li><code>rowkey</code>前缀提供一个随机字符串,可以更好的分布在集群中，但是失去了排序特性;</li>
-<li><code>rowkey</code>应该设计的精简，过长会加长硬盘和网络IO的开销.</li>
-</ol>
-<h3 id="rowkey排序"><a href="#rowkey排序" class="headerlink" title="rowkey排序"></a><code>rowkey</code>排序</h3><ol>
-<li><code>scan</code>返回的数据是按照<code>rowkey</code>排序;</li>
-<li><code>API</code>可以设置<code>StartRow</code>、<code>StopRow</code>查询范围内数据;</li>
-</ol>
-<p>如<code>rowkey</code>是时间日期格式,以下可以查询<code>2020</code>年的数据:</p>
-<pre class="line-numbers language-java"><code class="language-java">Scan scan <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Scan</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-scan<span class="token punctuation">.</span><span class="token function">setStartRow</span><span class="token punctuation">(</span>Bytes<span class="token punctuation">.</span><span class="token function">toBytes</span><span class="token punctuation">(</span><span class="token string">"20200101"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-scan<span class="token punctuation">.</span><span class="token function">setStopRow</span><span class="token punctuation">(</span>Bytes<span class="token punctuation">.</span><span class="token function">toBytes</span><span class="token punctuation">(</span><span class="token string">"20210101"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意[<code>StartRow</code>,<code>StopRow</code>)左闭右开.</p>
-</blockquote>
-<h3 id="ASCII编码"><a href="#ASCII编码" class="headerlink" title="ASCII编码"></a><code>ASCII</code>编码</h3><p><img data-src="/images/asc.png" alt="ASCII"></p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1252,7 +1375,7 @@ scan<span class="token punctuation">.</span><span class="token function">setStop
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">307</span>
+          <span class="site-state-item-count">308</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

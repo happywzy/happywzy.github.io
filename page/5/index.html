@@ -203,6 +203,126 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubectl-cha-jian-guan-li-krew/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/kubectl-cha-jian-guan-li-krew/" class="post-title-link" itemprop="url">kubectl插件管理krew</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-03-08 10:47:15 / 修改时间：10:55:36" itemprop="dateCreated datePublished" datetime="2022-03-08T10:47:15+08:00">2022-03-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><h3 id="krew安装"><a href="#krew安装" class="headerlink" title="krew安装"></a>krew安装</h3><ul>
+<li><a href="https://krew.sigs.k8s.io/docs/user-guide/setup/install/" target="_blank" rel="noopener">官方文档</a><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1.安装git</span>
+yum -y <span class="token function">install</span> <span class="token function">git</span>
+<span class="token comment" spellcheck="true"># 2.安装krew</span>
+<span class="token punctuation">(</span>
+<span class="token keyword">set</span> -x<span class="token punctuation">;</span> <span class="token function">cd</span> <span class="token string">"<span class="token variable"><span class="token variable">$(</span>mktemp -d<span class="token variable">)</span></span>"</span> <span class="token operator">&amp;&amp;</span>
+OS<span class="token operator">=</span><span class="token string">"<span class="token variable"><span class="token variable">$(</span><span class="token function">uname</span> <span class="token operator">|</span> <span class="token function">tr</span> '<span class="token punctuation">[</span>:upper:<span class="token punctuation">]</span>' '<span class="token punctuation">[</span>:lower:<span class="token punctuation">]</span>'<span class="token variable">)</span></span>"</span> <span class="token operator">&amp;&amp;</span>
+ARCH<span class="token operator">=</span><span class="token string">"<span class="token variable"><span class="token variable">$(</span><span class="token function">uname</span> -m <span class="token operator">|</span> <span class="token function">sed</span> -e 's/x86_64/amd64/' -e 's/\<span class="token punctuation">(</span>arm\<span class="token variable">)</span></span>\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')"</span> <span class="token operator">&amp;&amp;</span>
+KREW<span class="token operator">=</span><span class="token string">"krew-<span class="token variable">${OS}</span>_<span class="token variable">${ARCH}</span>"</span> <span class="token operator">&amp;&amp;</span>
+curl -fsSLO <span class="token string">"https://github.com/kubernetes-sigs/krew/releases/latest/download/<span class="token variable">${KREW}</span>.tar.gz"</span> <span class="token operator">&amp;&amp;</span>
+<span class="token function">tar</span> zxvf <span class="token string">"<span class="token variable">${KREW}</span>.tar.gz"</span> <span class="token operator">&amp;&amp;</span>
+./<span class="token string">"<span class="token variable">${KREW}</span>"</span> <span class="token function">install</span> krew
+<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true"># 3.配置环境变量:.bashrc或者其它位置配置</span>
+<span class="token function">export</span> PATH<span class="token operator">=</span><span class="token string">"<span class="token variable">${KREW_ROOT:-$HOME/.krew}</span>/bin:<span class="token variable">$PATH</span>"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="krew快速开始"><a href="#krew快速开始" class="headerlink" title="krew快速开始"></a>krew快速开始</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1.更新插件列表</span>
+kubectl krew update
+<span class="token comment" spellcheck="true"># 2.查看插件列表</span>
+kubectl krew search
+<span class="token comment" spellcheck="true"># 3.安装插件</span>
+kubectl krew <span class="token function">install</span> xxxxx
+<span class="token comment" spellcheck="true"># 4.卸载插件</span>
+kubectl krew uninstall xxxxx<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<h3 id="插件推荐"><a href="#插件推荐" class="headerlink" title="插件推荐"></a>插件推荐</h3><ul>
+<li><code>sniff</code> : 抓包工具<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 保存文件,可以用wireshark分析</span>
+kubectl -n <span class="token function">test</span> sniff website-7d7d96cdbf-6v4p6 -o test.pcap
+<span class="token comment" spellcheck="true"># 明文查看</span>
+kubectl -n <span class="token function">test</span> sniff website-7d7d96cdbf-6v4p6 -o -
+<span class="token comment" spellcheck="true"># 抓取时过滤</span>
+kubectl -n <span class="token function">test</span> sniff website-7d7d96cdbf-6v4p6 -f <span class="token string">"port 80"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>其它插件推荐: <a href="https://blog.csdn.net/weixin_49366475/article/details/109124327" target="_blank" rel="noopener">参考链接</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-man-cha-xun-ri-zhi-zong-jie/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -768,102 +888,6 @@ easzlab/nfs-subdir-external-provisioner:v4.0.1<span aria-hidden="true" class="li
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/helm-ban-ben-hui-tui/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/helm-ban-ben-hui-tui/" class="post-title-link" itemprop="url">helm版本回退</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-12-08 10:13:37 / 修改时间：10:15:07" itemprop="dateCreated datePublished" datetime="2021-12-08T10:13:37+08:00">2021-12-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># helm list -n  istio-system</span>
-NAME               NAMESPACE       REVISION    UPDATED                                    STATUS      CHART                     APP VERSION
-jaeger-operator    istio-system    7           2021-11-18 15:49:10.783153039 +0800 CST    deployed    jaeger-operator-2.26.0    1.27.0     
-kiali-operator     istio-system    4           2021-11-18 15:36:24.945838387 +0800 CST    deployed    kiali-operator-1.38.1     v1.38.1    
-<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># helm history -n istio-system jaeger-operator</span>
-REVISION    UPDATED                     STATUS        CHART                     APP VERSION    DESCRIPTION    
-1           Wed Aug 25 13:39:38 2021    superseded    jaeger-operator-2.14.2    1.17.1         Install complete              
-2           Mon Nov 15 11:11:58 2021    superseded    jaeger-operator-2.26.0    1.27.0         Upgrade complete     
-3           Thu Nov 18 15:37:13 2021    superseded    jaeger-operator-2.14.2    1.17.1         Rollback to 1      
-<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true">#  helm rollback -n istio-system jaeger-operator 2</span>
-Rollback was a success<span class="token operator">!</span> Happy Helming<span class="token operator">!</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -935,7 +959,7 @@ Rollback was a success<span class="token operator">!</span> Happy Helming<span c
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">307</span>
+          <span class="site-state-item-count">308</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
