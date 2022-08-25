@@ -203,6 +203,206 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-kai-qi-lin-shi-rong-qi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-kai-qi-lin-shi-rong-qi/" class="post-title-link" itemprop="url">k8s开启临时容器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-08-25 14:38:11 / 修改时间：14:46:29" itemprop="dateCreated datePublished" datetime="2022-08-25T14:38:11+08:00">2022-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>EphemeralContainers</code>:<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#ephemeralcontainer-v1-core" target="_blank" rel="noopener">官方说明</a></p>
+<p>kubectl 版本为 v1.18 或者更高 beta 功能 默认不开启，需要手动开启, v1.22 版本开始成为正式功能无需开启.</p>
+<p>如果执行<code>kubectl debug xxxx</code> 报以下错误说明需要手动开启临时容器功能：</p>
+<pre class="line-numbers language-log"><code class="language-log">error: ephemeral containers are disabled for this cluster (error from server: "the server could not find the requested resource").<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="手动开启操作"><a href="#手动开启操作" class="headerlink" title="手动开启操作"></a>手动开启操作</h3><h4 id="master节点"><a href="#master节点" class="headerlink" title="master节点"></a>master节点</h4><ul>
+<li>修改<code>apiserver</code><br>编辑<code>/etc/kubernetes/manifests/kube-apiserver.yaml</code></li>
+</ul>
+<p>在<code>--feature-gates=xxxxx</code>后面添加<code>,EphemeralContainers=true</code>，注意逗号.</p>
+<ul>
+<li>修改<code>controller-manager</code><br>编辑<code>/etc/kubernetes/manifests/kube-controller-manager.yaml</code></li>
+</ul>
+<p>在<code>--feature-gates=xxxxx</code>后面添加<code>,EphemeralContainers=true</code>，注意逗号.</p>
+<ul>
+<li>修改<code>kube-scheduler</code><br>编辑<code>/etc/kubernetes/manifests/kube-scheduler.yaml</code></li>
+</ul>
+<p>在<code>--feature-gates=xxxxx</code>后面添加<code>,EphemeralContainers=true</code>，注意逗号.</p>
+<h4 id="所有节点"><a href="#所有节点" class="headerlink" title="所有节点"></a>所有节点</h4><ul>
+<li>修改<code>kubelet</code><br>编辑<code>/var/lib/kubelet/kubeadm-flags.env</code></li>
+</ul>
+<p>添加<code>--feature-gates=EphemeralContainers=true</code></p>
+<p>修改后如下</p>
+<pre class="line-numbers language-bash"><code class="language-bash">KUBELET_KUBEADM_ARGS<span class="token operator">=</span><span class="token string">"--cgroup-driver=systemd --network-plugin=cni --pod-infra-container-image=k8s.gcr.io/pause:3.2 --feature-gates=EphemeralContainers=true"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li><p>重启kubelet</p>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl daemon-reload
+systemctl restart kubelet <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+<li><p><a href="http://www.lishuai.fun/2021/08/25/kubectl-debug" target="_blank" rel="noopener">参考链接</a></p>
+</li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/wei-wang-ji-chu-zhi-shi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/wei-wang-ji-chu-zhi-shi/" class="post-title-link" itemprop="url">微网基础知识</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-08-05 09:27:21 / 修改时间：15:41:19" itemprop="dateCreated datePublished" datetime="2022-08-05T09:27:21+08:00">2022-08-05</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="储能系统"><a href="#储能系统" class="headerlink" title="储能系统"></a>储能系统</h3><p>储能系统（Energy Storage System，简称ESS）：是一个可完成存储电能和供电的系统，具有平滑过渡、削峰填谷、调频调压等功能。可以使太阳能、风能发电平滑输出，减少其随机性、间歇性、波动性给电网和用户带来的冲击；通过谷价时段充电，峰价时段放电可以减少用户的电费支出；在大电网断电时，能够孤岛运行，确保对用户不间断供电。<br>|名词|说明|<br>|—|—|<br>|BA|储能电池组|<br>|BMS|电池管理系统|<br>|PCS|储能变流器，功率变换系统|<br>|EMS|能量管理系统|<br>||| </p>
+<h3 id="变流器控制策略"><a href="#变流器控制策略" class="headerlink" title="变流器控制策略"></a>变流器控制策略</h3><ul>
+<li>PQ控制：指恒定有功无功控制，控制储能变流器输出的有功功率和无功功率等于其参考功率。PQ控制是新能源并网最常用的控制方式，只有在储能系统并网模式下才可能运用</li>
+<li>VF控制：指储能变流器维持输出电压和频率不变；而输出的有功功率和无功功率由负荷决定</li>
+<li>VSG控制：虚拟同步机模式，该模式下储能可以构网，同时可以和并网型或者构网型系统并机运行</li>
+</ul>
+<h3 id="名词"><a href="#名词" class="headerlink" title="名词"></a>名词</h3><ul>
+<li>使能：所谓使能信号，英文叫Enable，通过这个信号可以控制某颗芯片/某个电路有没有被“启用”。一个大型的数字系统中，通常都需要使用多个芯片/电路单元来配合完成一个功能。而这些芯片并不是每时每刻都在工作的。因此需要用使能信号来控制应该“启动”哪个芯片来工作。</li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/dian-li-xi-tong-ji-chu-zhi-shi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -673,230 +873,6 @@ set_var EASYRSA_CERT_EXPIRE   3650<span aria-hidden="true" class="line-numbers-r
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/curl-zhi-ding-yu-ming-ip/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/curl-zhi-ding-yu-ming-ip/" class="post-title-link" itemprop="url">curl指定域名IP</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-07-06 16:29:24 / 修改时间：16:32:58" itemprop="dateCreated datePublished" datetime="2022-07-06T16:29:24+08:00">2022-07-06</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>两种都可以不用在 hosts 中添加域名解析即可完成测试.</p>
-<h3 id="方法1"><a href="#方法1" class="headerlink" title="方法1"></a>方法1</h3><pre class="line-numbers language-bash"><code class="language-bash">curl -H <span class="token string">"Host: whoami.local.com"</span> http://192.168.1.32:31532/whoami<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="方法2"><a href="#方法2" class="headerlink" title="方法2"></a>方法2</h3><pre class="line-numbers language-bash"><code class="language-bash">curl --resolve whoami.local.com:31532:192.168.1.32 whoami.local.com:31532/whoami<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-si-chong-shu-ju-lei-xing/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/prometheus-si-chong-shu-ju-lei-xing/" class="post-title-link" itemprop="url">prometheus四种数据类型</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-06-23 14:45:25 / 修改时间：14:57:36" itemprop="dateCreated datePublished" datetime="2022-06-23T14:45:25+08:00">2022-06-23</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/prometheus/" itemprop="url" rel="index"><span itemprop="name">prometheus</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Prometheus 定义了 4 中不同的指标类型 (metric type)：Counter（计数器）、Gauge（仪表盘）、Histogram（直方图）、Summary（摘要）.</p>
-<h3 id="Counter"><a href="#Counter" class="headerlink" title="Counter"></a>Counter</h3><ul>
-<li>Counter 用于累计值，例如 记录 请求次数、任务完成数、错误发生次数</li>
-<li>一直增加，不会减少</li>
-<li>重启进程后，会被重置<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># http响应总数</span>
-http_response_total<span class="token punctuation">{</span>method<span class="token operator">=</span><span class="token string">"GET"</span>,endpoint<span class="token operator">=</span><span class="token string">"/api/tracks"</span><span class="token punctuation">}</span> 100<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-</li>
-</ul>
-<h3 id="Gauge"><a href="#Gauge" class="headerlink" title="Gauge"></a>Gauge</h3><ul>
-<li>Gauge 常规数值，例如 温度变化、内存使用变化</li>
-<li>可增可减的仪表盘</li>
-<li>重启进程后，会被重置<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 如cpu、内存使用量</span>
-memory_usage_bytes<span class="token punctuation">{</span>host<span class="token operator">=</span><span class="token string">"master-01"</span><span class="token punctuation">}</span> 80
-cpu_usage<span class="token punctuation">{</span>host<span class="token operator">=</span><span class="token string">"master-01"</span><span class="token punctuation">}</span> 60<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-</li>
-</ul>
-<h3 id="Histogram"><a href="#Histogram" class="headerlink" title="Histogram"></a>Histogram</h3><ul>
-<li>对记录的内容进行分组，提供 count 和 sum 全部值</li>
-<li>直接反应了在不同区间内样本的个数<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 如：prometheus_tsdb_compaction_chunk_range_bucket 指标</span>
-<span class="token comment" spellcheck="true"># HELP prometheus_tsdb_compaction_chunk_range Final time range of chunks on their first compaction</span>
-<span class="token comment" spellcheck="true"># TYPE prometheus_tsdb_compaction_chunk_range histogram</span>
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"100"</span><span class="token punctuation">}</span> 0
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"400"</span><span class="token punctuation">}</span> 0
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"1600"</span><span class="token punctuation">}</span> 0
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"6400"</span><span class="token punctuation">}</span> 0
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"25600"</span><span class="token punctuation">}</span> 0
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"102400"</span><span class="token punctuation">}</span> 0
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"409600"</span><span class="token punctuation">}</span> 0
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"1.6384e+06"</span><span class="token punctuation">}</span> 260
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"6.5536e+06"</span><span class="token punctuation">}</span> 780
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"2.62144e+07"</span><span class="token punctuation">}</span> 780
-prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"+Inf"</span><span class="token punctuation">}</span> 780
-prometheus_tsdb_compaction_chunk_range_sum 1.1540798e+09
-prometheus_tsdb_compaction_chunk_range_count 780<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
-</ul>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><ul>
-<li>提供 count 和 sum 全部值</li>
-<li>提供一个 quantiles 的功能，可以按%比划分跟踪的结果</li>
-<li>例如：quantile 取值 0.95，表示取采样值里面的 95% 数据<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># HELP prometheus_tsdb_wal_fsync_duration_seconds Duration of WAL fsync.</span>
-<span class="token comment" spellcheck="true"># TYPE prometheus_tsdb_wal_fsync_duration_seconds summary</span>
-prometheus_tsdb_wal_fsync_duration_seconds<span class="token punctuation">{</span>quantile<span class="token operator">=</span><span class="token string">"0.5"</span><span class="token punctuation">}</span> 0.012352463
-prometheus_tsdb_wal_fsync_duration_seconds<span class="token punctuation">{</span>quantile<span class="token operator">=</span><span class="token string">"0.9"</span><span class="token punctuation">}</span> 0.014458005
-prometheus_tsdb_wal_fsync_duration_seconds<span class="token punctuation">{</span>quantile<span class="token operator">=</span><span class="token string">"0.99"</span><span class="token punctuation">}</span> 0.017316173
-prometheus_tsdb_wal_fsync_duration_seconds_sum 2.888716127000002
-prometheus_tsdb_wal_fsync_duration_seconds_count 216<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>从上面的样本中可以得知当前 Prometheus Server 进行 wal_fsync 操作的总次数为 216 次，耗时 2.888716127000002s。其中中位数（quantile=0.5）的耗时为 0.012352463，9 分位数（quantile=0.9）的耗时为 0.014458005s。</p>
-</blockquote>
-</li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -968,7 +944,7 @@ prometheus_tsdb_wal_fsync_duration_seconds_count 216<span aria-hidden="true" cla
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">308</span>
+          <span class="site-state-item-count">310</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -981,7 +957,7 @@ prometheus_tsdb_wal_fsync_duration_seconds_count 216<span aria-hidden="true" cla
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">197</span>
+        <span class="site-state-item-count">198</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
