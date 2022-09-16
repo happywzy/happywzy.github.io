@@ -25628,6 +25628,18 @@ input hdfs:///test_dir/input_dir/story --output hdfs:///test_dir/output_dir/outp
 <td>查看本地refs,添加<code>--tags</code>查看本地tag,<code>--heads</code>查看本地分支</td>
 </tr>
 </tbody></table>
+<h3 id="版本回退-复原"><a href="#版本回退-复原" class="headerlink" title="版本回退/复原"></a>版本回退/复原</h3><p><code>HEAD</code>表示当前版本,<code>HEAD^</code>表示上一个版本,<code>HEAD^^</code>表示上上个版本,<code>HEAD~5</code>表示上 5 个版本.</p>
+<blockquote>
+<p>Windows <code>cmd</code> 窗口下执行 <code>git reset --hard HEAD^</code> 会报错, 需要为 <code>HEAD^</code> 添加双引号 <code>git reset --hard "HEAD^"</code></p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 回退</span>
+<span class="token function">git</span> reset --hard HEAD^
+<span class="token function">git</span> reset --hard HEAD^^
+<span class="token comment" spellcheck="true"># 查看提交历史,根据commit_id回退</span>
+<span class="token function">git</span> log
+<span class="token function">git</span> reset --hard commit_id
+<span class="token comment" spellcheck="true"># 查看未来提交日志恢复提交</span>
+<span class="token function">git</span> reflog<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><ul>
 <li><p>配置公钥</p>
 <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成公钥,过程中按3次回车</span>
@@ -32685,5 +32697,131 @@ systemctl restart kubelet <span aria-hidden="true" class="line-numbers-rows"><sp
             document.body.appendChild(img);
           });
       </script>]]></content>
+  </entry>
+  <entry>
+    <title>springboot中conditional的使用</title>
+    <url>/springboot-zhong-conditional-de-shi-yong/</url>
+    <content><![CDATA[<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>在 springboot 中一个接口有多个实现，我们希望通过配置来控制<code>运行时</code>实例化哪个对象，springboot 中 @Conditional 注解可以帮助我们细粒度控制 bean 的实例化。</p>
+<h3 id="Bean对象"><a href="#Bean对象" class="headerlink" title="Bean对象"></a>Bean对象</h3><ul>
+<li>两个 User Bean<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@NoArgsConstructor</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">User1</span> <span class="token punctuation">{</span>
+  <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
+  <span class="token keyword">private</span> <span class="token keyword">int</span> age<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<p>@Data<br>@NoArgsConstructor<br>public class User2 {<br>    private String name;<br>    private int age;<br>}</p>
+<pre><code>
+### 方法一
+- 为每类对象创建一个 Conditional，如下为 User1和User2分别创建一个
+```java
+public class MyConditional1 implements Condition {
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        String v = context.getEnvironment().getProperty("user.label");
+        if (v.equals("user1")) return true;
+        return false;
+    }
+}
+
+public class MyConditional2 implements Condition {
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        String v = context.getEnvironment().getProperty("user.label");
+        if (v.equals("user2")) return true;
+        return false;
+    }
+}</code></pre><ul>
+<li>springboot 实例化 bean<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Bean</span>
+<span class="token annotation punctuation">@Conditional</span><span class="token punctuation">(</span>MyConditional1<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> User <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+  System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">111</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">User</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<p>@Bean<br>@Conditional(MyConditional2.class)<br>public User2 init2(){<br>    System.out.println(222);<br>    return new User2();<br>}</p>
+<pre><code>
+- application.propeties
+```bash
+# 如果 label 匹配 bean 的label，该 bean 就会被实例化
+user.label=user1</code></pre><h3 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h3><ul>
+<li>新增注解给要实例化的对象打上标签<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Target</span><span class="token punctuation">(</span><span class="token punctuation">{</span>ElementType<span class="token punctuation">.</span>TYPE<span class="token punctuation">,</span>ElementType<span class="token punctuation">.</span>METHOD<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Retention</span><span class="token punctuation">(</span>RetentionPolicy<span class="token punctuation">.</span>RUNTIME<span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Documented</span>
+<span class="token annotation punctuation">@Conditional</span><span class="token punctuation">(</span>MyConditional<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> @<span class="token keyword">interface</span> <span class="token class-name">MyConditionalAnnotation</span> <span class="token punctuation">{</span>
+  String <span class="token function">label</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>MyConditional.java<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyConditional</span> <span class="token keyword">extends</span> <span class="token class-name">SpringBootCondition</span> <span class="token punctuation">{</span>
+  <span class="token annotation punctuation">@Override</span>
+  <span class="token keyword">public</span> ConditionOutcome <span class="token function">getMatchOutcome</span><span class="token punctuation">(</span>ConditionContext context<span class="token punctuation">,</span> AnnotatedTypeMetadata metadata<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Object<span class="token operator">></span> annotationAttributes <span class="token operator">=</span> metadata<span class="token punctuation">.</span><span class="token function">getAnnotationAttributes</span><span class="token punctuation">(</span>MyConditionalAnnotation<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment" spellcheck="true">// 获取注解所传入的 label</span>
+      Object value <span class="token operator">=</span> annotationAttributes<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"label"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token comment" spellcheck="true">//            return new ConditionOutcome(false, "ERROR");</span>
+          <span class="token keyword">return</span> ConditionOutcome<span class="token punctuation">.</span><span class="token function">noMatch</span><span class="token punctuation">(</span><span class="token string">"ERROR"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token comment" spellcheck="true">// user.label 的值是通过application.propeties传入</span>
+      String v <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">getEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span><span class="token string">"user.label"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>v<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+          <span class="token comment" spellcheck="true">// 如果匹配就实例化该 bean</span>
+          <span class="token keyword">return</span> ConditionOutcome<span class="token punctuation">.</span><span class="token function">match</span><span class="token punctuation">(</span><span class="token string">"OK"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">return</span> ConditionOutcome<span class="token punctuation">.</span><span class="token function">noMatch</span><span class="token punctuation">(</span><span class="token string">"ERROR"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：代码中通过 <code>application.propeties</code> 传入配置优先级比较高，所以通过context可以获取到，如果通过别的配置文件可能无法获取则需要手动加载。</p>
+</blockquote>
+<pre class="line-numbers language-java"><code class="language-java">Properties properties <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Properties</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">try</span> <span class="token punctuation">{</span>
+  properties<span class="token punctuation">.</span><span class="token function">load</span><span class="token punctuation">(</span>conditionContext<span class="token punctuation">.</span><span class="token function">getResourceLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token string">"test.properties"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  ex<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+String v <span class="token operator">=</span> properties<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span><span class="token string">"user.label"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>springboot 创建bean<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 通过自定义注解设置 label</span>
+<span class="token annotation punctuation">@MyConditionalAnnotation</span><span class="token punctuation">(</span>label <span class="token operator">=</span> <span class="token string">"MyUserLabel1"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Bean</span>
+<span class="token keyword">public</span> User1 <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+  System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">111</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">User1</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<p>@MyConditionalAnnotation(label = “MyUserLabel2”)<br>@Bean<br>public User2 init2(){<br>    System.out.println(222);<br>    return new User2();<br>}</p>
+<pre><code>- application.propeties
+```bash
+# 如果 label 匹配 bean 的label，该 bean 就会被实例化
+user.label=MyUserLabel2</code></pre><script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>springboot</category>
+      </categories>
   </entry>
 </search>

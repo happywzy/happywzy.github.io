@@ -84,9 +84,9 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
-<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
-</head>
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
@@ -199,6 +199,143 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-jian-kong-metrics-server-bu-shu-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-jian-kong-metrics-server-bu-shu-shi-yong/" class="post-title-link" itemprop="url">k8s监控【metrics-server部署使用】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-10 17:26:11" itemprop="dateCreated datePublished" datetime="2019-11-10T17:26:11+08:00">2019-11-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-01-10 17:32:57" itemprop="dateModified" datetime="2020-01-10T17:32:57+08:00">2020-01-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>从<code>Heapster</code>的<a href="https://github.com/kubernetes/heapster" target="_blank" rel="noopener">github</a> 中可以看到已经，<code>heapster</code>已经<code>DEPRECATED</code>。 这里是<code>heapster</code>的<a href="https://github.com/kubernetes-retired/heapster/blob/master/docs/deprecation.md" target="_blank" rel="noopener">deprecation timeline</a>。 可以看出<code>heapster</code>从<code>Kubernetes 1.12</code>开始从<code>Kubernetes</code>各种安装脚本中移除。</p>
+<p><code>Kubernetes</code>推荐使用<code>metrics-server</code>。我们这里也使用<code>helm</code>来部署<code>metrics-server</code>。</p>
+<h3 id="创建配置metrics-server-yaml"><a href="#创建配置metrics-server-yaml" class="headerlink" title="创建配置metrics-server.yaml"></a>创建配置<code>metrics-server.yaml</code></h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">replicaCount</span><span class="token punctuation">:</span> <span class="token number">1</span>
+<span class="token key atrule">image</span><span class="token punctuation">:</span>
+    <span class="token key atrule">repository</span><span class="token punctuation">:</span> hub.deri.org.cn/k8s/metrics<span class="token punctuation">-</span>server<span class="token punctuation">-</span>amd64
+    <span class="token key atrule">tag</span><span class="token punctuation">:</span> v0.3.5
+    <span class="token key atrule">pullPolicy</span><span class="token punctuation">:</span> IfNotPresent
+<span class="token key atrule">args</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>logtostderr
+<span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>kubelet<span class="token punctuation">-</span>insecure<span class="token punctuation">-</span>tls
+<span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>kubelet<span class="token punctuation">-</span>preferred<span class="token punctuation">-</span>address<span class="token punctuation">-</span>types=InternalIP
+<span class="token key atrule">nodeSelector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">node-role.kubernetes.io/edge</span><span class="token punctuation">:</span> <span class="token string">''</span>
+<span class="token key atrule">tolerations</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>role.kubernetes.io/master
+      <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists
+      <span class="token key atrule">effect</span><span class="token punctuation">:</span> NoSchedule
+    <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>role.kubernetes.io/master
+      <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists
+      <span class="token key atrule">effect</span><span class="token punctuation">:</span> PreferNoSchedule<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre class="line-numbers language-bash"><code class="language-bash">helm <span class="token function">install</span> stable/metrics-server \
+-n metrics-server \
+--namespace kube-system \
+-f metrics-server.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">top</span> node
+NAME    CPU<span class="token punctuation">(</span>cores<span class="token punctuation">)</span>   CPU%   MEMORY<span class="token punctuation">(</span>bytes<span class="token punctuation">)</span>   MEMORY%
+node1   650m         32%    1276Mi          73%
+node2   73m          3%     527Mi           30%<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">top</span> pod -n kube-system
+NAME                                    CPU<span class="token punctuation">(</span>cores<span class="token punctuation">)</span>   MEMORY<span class="token punctuation">(</span>bytes<span class="token punctuation">)</span>   
+coredns-5c98db65d4-dr8lf                8m           7Mi             
+coredns-5c98db65d4-lp8dg                6m           8Mi             
+etcd-node1                              44m          46Mi            
+kube-apiserver-node1                    74m          295Mi           
+kube-controller-manager-node1           35m          50Mi            
+kube-flannel-ds-amd64-7lwm9             2m           8Mi             
+kube-flannel-ds-amd64-mm296             5m           9Mi             
+kube-proxy-7fsrg                        1m           11Mi            
+kube-proxy-k8vhm                        3m           11Mi            
+kube-scheduler-node1                    8m           15Mi            
+kubernetes-dashboard-848b8dd798-c4sc2   2m           14Mi            
+metrics-server-8456fb6676-fwh2t         10m          19Mi            
+tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>遗憾的是，当前<code>Kubernetes Dashboard</code>还不支持<code>metrics-server</code>。因此如果使用<code>metrics-server</code>替代了<code>heapster</code>，将无法在<code>dashboard</code>中以图形展示<code>Pod</code>的内存和<code>CPU</code>情况。计划在<a href="https://github.com/kubernetes/dashboard" target="_blank" rel="noopener">dashboard 2.0</a>版本以后才会支持，尽情期待~</p>
+</blockquote>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1044,203 +1181,6 @@ vrrp_instance haproxy {
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/haproxy-an-zhuang-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/haproxy-an-zhuang-shi-yong/" class="post-title-link" itemprop="url">Haproxy安装使用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-10-29 15:22:01" itemprop="dateCreated datePublished" datetime="2019-10-29T15:22:01+08:00">2019-10-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-16 10:00:47" itemprop="dateModified" datetime="2020-04-16T10:00:47+08:00">2020-04-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="yum安装"><a href="#yum安装" class="headerlink" title="yum安装"></a>yum安装</h3><pre class="line-numbers language-bash"><code class="language-bash">yum update<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> haproxy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="修改haproxy配置文件"><a href="#修改haproxy配置文件" class="headerlink" title="修改haproxy配置文件"></a>修改haproxy配置文件</h3><p>默认目录：<code>/etc/haproxy/haproxy.cfg</code>，下面是一些参考配置</p>
-<pre><code>#---------------------------------------------------------------------
-# Global settings    
-#---------------------------------------------------------------------
-global    #全局配置文件
-    log         127.0.0.1 local2        #日志配置，所有的日志都记录本地，通过local2输出
-    maxconn         20000
-    ulimit-n    16384
-    #chroot      /var/lib/haproxy        #改变haproxy的工作目录
-    #pidfile     /var/run/haproxy.pid    #指定pid文件的路径
-    maxconn     4000                    #最大连接数的设定
-    #user        haproxy                 #指定运行服务的用户
-    #group       haproxy                 #指定运行服务的用户组
-    daemon
-
-#---------------------------------------------------------------------
-# common defaults that all the 'listen' and 'backend' sections will
-# use if not designated in their block
-#---------------------------------------------------------------------
-defaults
-
-    mode                    http                  #默认使用协议,可以为{http|tcp|health} http:是七层协议 tcp:是四层 health：只返回OK
-    log                     global                #全局日志记录
-    option                  httplog               #详细记录http日志
-    option                  dontlognull           #不记录空日志
-    option http-server-close                      #启用http-server-close
-    option forwardfor       except 127.0.0.0/8    #来自这些信息的都不forwardfor
-    option                  redispatch            #重新分发，ServerID对应的服务器宕机后，强制定向到其他运行正常的服务器
-    retries                 3                      #3次连接失败则认为服务不可用
-    timeout http-request    10s                    #默认http请求超时时间
-    timeout queue           1m                     #默认队列超时时间
-    timeout connect         10s                    #默认连接超时时间
-    timeout client          1m                     #默认客户端超时时间
-    timeout server          1m                     #默认服务器超时时间
-    timeout http-keep-alive 10s                    #默认持久连接超时时间
-    timeout check           10s                    #默认检查时间间隔
-    maxconn                 3000                   #最大连接数
-
-######## 监控界面配置 #################
-listen admin_status
-        # 监控界面访问信息
-        bind 0.0.0.0:8888
-        mode http
-        #自动刷新时间
-        stats refresh 30s
-        # URI相对地址
-        stats uri /
-        # 统计报告格式
-        # stats realm Global\ statistics
-        stats realm welcome login\ Haproxy
-        # 登录账户信息
-        stats auth admin:123456
-        #用来隐藏统计页面上HAProxy 的版本信息
-        stats hide-version
-        #通过设置此选项，可以在监控页面上手工启用或禁用后端真实服务器
-        stats admin if TRUE
-        ########frontend配置##############
-
-######## mysql负载均衡配置 ###############
-listen mysql
-        bind 0.0.0.0:3306
-        mode tcp
-        # 负载均衡算法
-        # static-rr 权重, leastconn 最少连接, source 请求IP, 轮询 roundrobin
-        balance roundrobin
-        # 日志格式
-        # option tcplog
-        # 在 mysql 创建一个没有权限的haproxy用户，密码为空。 haproxy用户
-        # create user 'haproxy'@'%' identified by ''; FLUSH PRIVILEGES;
-        # option mysql-check user haproxy
-         # 这里是容器中的IP地址，由于配置的是轮询roundrobin，weight 权重其实没有生效
-        server mysql_1 192.168.41.129:3306 check weight 1 maxconn 2000
-        server mysql_2 192.168.41.130:3306 check weight 1 maxconn 2000
-        server mysql_3 192.168.41.131:3306 check weight 1 maxconn 2000
-        # 使用keepalive检测死链
-        # option tcpka
-#########################################
-
-
-########test1配置#################
-# listen test1
-#         bind 0.0.0.0:8008
-#         mode tcp
-#         balance roundrobin
-#         server s1 127.0.0.1:8010 weight 1 maxconn 10000 check inter 10s
-#         server s2 127.0.0.1:8011 weight 1 maxconn 10000 check inter 10s
-#         server s3 127.0.0.1:8012 weight 1 maxconn 10000 check inter 10s
-
-########test2配置#################
-# listen test2
-#         bind 0.0.0.0:8007
-#         mode tcp
-#         balance roundrobin
-#         server s1 192.168.1.88:8010 weight 1 maxconn 10000 check inter 10s</code></pre><h3 id="修改ulimit配置"><a href="#修改ulimit配置" class="headerlink" title="修改ulimit配置"></a>修改ulimit配置</h3><p><code>haproxy</code>要求<code>ulimit</code><font color="red">大于（<code>maxconn</code>*2 + 15 ）</font></p>
-<pre><code>#临时修改
-ulimit -n 65536
-
-#永久修改，需要修改/etc/security/limits.conf配置文件，文末增加以下内容，然后重新登录就可以生效
-* soft nofile 65536
-* hard nofile 65536
-* soft nproc 65565
-* hard nproc 65565</code></pre><h3 id="启动服务并配置自启动"><a href="#启动服务并配置自启动" class="headerlink" title="启动服务并配置自启动"></a>启动服务并配置自启动</h3><p>启动后访问<code>8888</code>端口，使用<code>admin/123456</code>登录就可以看到<code>UI</code>界面了。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">systemctl start haproxy
-systemctl <span class="token function">enable</span> haproxy<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1312,14 +1252,14 @@ systemctl <span class="token function">enable</span> haproxy<span aria-hidden="t
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">310</span>
+          <span class="site-state-item-count">311</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
