@@ -203,6 +203,265 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-shi-yong-upstream-shi-xian-fu-zai-jun-heng/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/nginx-shi-yong-upstream-shi-xian-fu-zai-jun-heng/" class="post-title-link" itemprop="url">nginx使用upstream实现负载均衡</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-12-22 11:11:53 / 修改时间：11:20:40" itemprop="dateCreated datePublished" datetime="2020-12-22T11:11:53+08:00">2020-12-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="轮询（默认）"><a href="#轮询（默认）" class="headerlink" title="轮询（默认）"></a>轮询（默认）</h3><pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="权重"><a href="#权重" class="headerlink" title="权重"></a>权重</h3><blockquote>
+<p><code>weight</code> 默认为<code>1</code>,<code>weight</code>越大,负载的权重就越大</p>
+</blockquote>
+<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span> weight<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span> weight<span class="token operator">=</span><span class="token number">10</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="IP哈希"><a href="#IP哈希" class="headerlink" title="IP哈希"></a>IP哈希</h3><blockquote>
+<p>请求按访问ip的hash结果分配</p>
+</blockquote>
+<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    ip_hash<span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="响应时间"><a href="#响应时间" class="headerlink" title="响应时间"></a>响应时间</h3><blockquote>
+<p>按后端服务器的响应时间来分配请求,响应时间短的优先分配</p>
+</blockquote>
+<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    fair<span class="token punctuation">;</span>
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="其它哈希"><a href="#其它哈希" class="headerlink" title="其它哈希"></a>其它哈希</h3><blockquote>
+<p>如：根据请求路径哈希,<code>hash_method</code>是使用的<code>hash</code>算法</p>
+</blockquote>
+<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    fair<span class="token punctuation">;</span>
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span>
+    hash $request_uri<span class="token punctuation">;</span> 
+    hash_method crc32<span class="token punctuation">;</span> 
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="down-backup"><a href="#down-backup" class="headerlink" title="down/backup"></a>down/backup</h3><pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    <span class="token comment" spellcheck="true">// down 表示单前的server暂时不参与负载.</span>
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span> down<span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.3</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    <span class="token comment" spellcheck="true">// 其它所有的非backup机器down或者忙的时候请求backup机器.</span>
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.4</span><span class="token punctuation">:</span><span class="token number">8080</span> backup<span class="token punctuation">;</span> 
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a href="https://www.cnblogs.com/muhy/p/10528449.html" target="_blank" rel="noopener">https://www.cnblogs.com/muhy/p/10528449.html</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/linux-she-zhi-swap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/linux-she-zhi-swap/" class="post-title-link" itemprop="url">linux设置swap</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-12-04 16:52:39 / 修改时间：17:25:04" itemprop="dateCreated datePublished" datetime="2020-12-04T16:52:39+08:00">2020-12-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="查看swap状态"><a href="#查看swap状态" class="headerlink" title="查看swap状态"></a>查看swap状态</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@ecs ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:           7820        4825         133         896        2862        1818
+Swap:             0           0           0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh"># 无返回
+swapon -s
+# 空
+cat /proc/swaps<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="通过文件设置swap"><a href="#通过文件设置swap" class="headerlink" title="通过文件设置swap"></a>通过文件设置swap</h3><ol>
+<li><p>新建swap交换文件</p>
+<pre class="line-numbers language-sh"><code class="language-sh"># count设置文件大小,4G
+dd if=/dev/zero of=/home/swap bs=1024 count=4096000<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+<li><p>制作为swap格式文件</p>
+<pre class="line-numbers language-sh"><code class="language-sh">mkswap /home/swap<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li><p>挂载swap分区</p>
+<pre class="line-numbers language-sh"><code class="language-sh">swapon /home/swap<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>此时通过<code>free</code>命令已经可以看到<code>swap</code>分区了,但是重启失效.</p>
+</li>
+<li><p>设置持久生效</p>
+<pre class="line-numbers language-sh"><code class="language-sh">vi /etc/fstab
+# 在文件最后一行加上
+/home/swap swap swap default 0 0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<h3 id="删除文件swap分区"><a href="#删除文件swap分区" class="headerlink" title="删除文件swap分区"></a>删除文件swap分区</h3><ol>
+<li><p>先停止swap分区</p>
+<pre class="line-numbers language-sh"><code class="language-sh">swapoff /home/swap<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li><p>删除swap分区文件</p>
+<pre class="line-numbers language-sh"><code class="language-sh">rm -rf /home/swap<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li><p>删除自动装载配置</p>
+<pre class="line-numbers language-sh"><code class="language-sh">vi /etc/fstab
+# 删除刚刚 增加的配置<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+</ol>
+<h3 id="通过分区配置swap"><a href="#通过分区配置swap" class="headerlink" title="通过分区配置swap"></a>通过分区配置swap</h3><h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a href="https://blog.csdn.net/weixin_43228740/article/details/83620958" target="_blank" rel="noopener">参考链接</a></li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-pei-zhi-lu-you-zhuan-fa/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -795,263 +1054,10 @@ find . -type f -size +800M  -print0 | xargs -0 du -h | sort -nr | head -10<span 
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-xian-zhi-rong-qi-ri-zhi-da-xiao/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-xian-zhi-rong-qi-ri-zhi-da-xiao/" class="post-title-link" itemprop="url">docker限制容器日志大小</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-11-20 14:09:43 / 修改时间：14:15:09" itemprop="dateCreated datePublished" datetime="2020-11-20T14:09:43+08:00">2020-11-20</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>容器日志一般存放在<code>/var/lib/docker/containers/container_id/</code>下面，以<code>json.log</code>结尾的文件(业务日志)很大.</p>
-<h3 id="处理"><a href="#处理" class="headerlink" title="处理"></a>处理</h3><ul>
-<li><p>临时清空日志</p>
-<pre class="line-numbers language-sh"><code class="language-sh"># 注意不能用rm命令
-cat /dev/null > /var/lib/docker/containers/容器id/容器id-json.log<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-</li>
-<li><p>如果是docker-compose<br>通过配置容器<code>docker-compose.yml</code>的<code>max-size</code>选项来实现:</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">nginx</span><span class="token punctuation">:</span> 
-<span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span>1.12.1 
-<span class="token key atrule">restart</span><span class="token punctuation">:</span> always 
-<span class="token key atrule">logging</span><span class="token punctuation">:</span> 
-  <span class="token key atrule">driver</span><span class="token punctuation">:</span> <span class="token string">"json-file"</span>
-  <span class="token key atrule">options</span><span class="token punctuation">:</span> 
-    <span class="token key atrule">max-size</span><span class="token punctuation">:</span> <span class="token string">"5g"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
-<li><p>限制docker容器日志大小</p>
-<pre class="line-numbers language-json"><code class="language-json">// vim /etc/docker/daemon.json
-<span class="token punctuation">{</span>
-<span class="token property">"log-driver"</span><span class="token operator">:</span><span class="token string">"json-file"</span><span class="token punctuation">,</span>
-<span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"max-size"</span><span class="token operator">:</span><span class="token string">"500m"</span><span class="token punctuation">,</span> <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
-</ul>
-<p>重启docker生效</p>
-<pre class="line-numbers language-sh"><code class="language-sh">systemctl daemon-reload
-systemctl restart docker<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://www.cnblogs.com/angel-devil/p/12558908.html" target="_blank" rel="noopener">https://www.cnblogs.com/angel-devil/p/12558908.html</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-cha-zhao-zhan-yong-zhu-ji-ci-pan-zui-duo-de-rong-qi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-cha-zhao-zhan-yong-zhu-ji-ci-pan-zui-duo-de-rong-qi/" class="post-title-link" itemprop="url">docker查找占用主机磁盘最多的容器</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-11-20 13:49:00 / 修改时间：14:17:42" itemprop="dateCreated datePublished" datetime="2020-11-20T13:49:00+08:00">2020-11-20</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>有时候我们一台主机上部署了多个容器，而且对部分数据做了持久化，时间长了，数据会越来越多，相应的可能会造成磁盘空间不足？那么我们如何，找出占用磁盘空间最大的容器，并删除容器的部分不需要的日志或数据文件呢？</p>
-<h3 id="overlay2简介"><a href="#overlay2简介" class="headerlink" title="overlay2简介"></a>overlay2简介</h3><p>OverlayFS是一种现代的联合文件系统，与AUFS类似，但速度更快且实现更简单。Docker为OverlayFS提供了两个存储驱动程序：原始的overlay，更新的和更稳定的overlay2。</p>
-<h3 id="容器存储目录"><a href="#容器存储目录" class="headerlink" title="容器存储目录"></a>容器存储目录</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/vda1        40G  4.1G   34G  11% /
-devtmpfs        911M     0  911M   0% /dev
-tmpfs           920M     0  920M   0% /dev/shm
-tmpfs           920M  1.3M  919M   1% /run
-tmpfs           920M     0  920M   0% /sys/fs/cgroup
-overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/6c21d550b2e37e23b777490d3f3b26c54ed5b98ad615ac833ff4248a288b9530/merged
-overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/aa7a46d5a35c404e956fa35c88c5ecb8f117d03299f3818d5c66c33caf4ee6f4/merged
-overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/507f4480d6ed67738d618080b0fcbf60ca22623ba9a87eade44fa403e421cf55/merged
-overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/5cc8105791fd74756b0f7cc36ec93685f3ca90bcb72ac025edb7389e5156228b/merged
-overlay          40G  4.1G   34G  11% <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>在当前版本中，容器存储目录为<code>/var/lib/docker/overlay2</code>。且当前占用宿主机磁盘空间的目录也为容器存储目录。</p>
-<h3 id="查找占用磁盘空间大小的容器目录"><a href="#查找占用磁盘空间大小的容器目录" class="headerlink" title="查找占用磁盘空间大小的容器目录"></a>查找占用磁盘空间大小的容器目录</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# du -s * | sort -nr | head -5
-334636    f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870
-159348    86444fb8a5127b41323bef731c14eb764135a7066bb5f904427f53816ff4fe2f
-146556    6c21d550b2e37e23b777490d3f3b26c54ed5b98ad615ac833ff4248a288b9530
-102080    1eb50142766d18f3927615f63f599d9de1885b2954397736b882bb89ab8ae265
-88504    ef4e0ff8bf2cd2f8d2f147e30e89e2c7b6f6e02795ebbcd45a3bba1d77b3b132<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意：这里只列出了排名<code>前五</code>的容器目录。那么现在知道了容器目录，那么如何找出对应的容器呢？现在我们要找出<code>f6acb9573429</code>开头的目录对应时哪个容器？</p>
-</blockquote>
-<h3 id="查找容器目录对应的容器名"><a href="#查找容器目录对应的容器名" class="headerlink" title="查找容器目录对应的容器名"></a>查找容器目录对应的容器名</h3><ul>
-<li>通过 <code>docker ps -a</code> 查看容器列表</li>
-<li>通过 <code>docker inspect 容器ID</code> 查看容器配置信息</li>
-</ul>
-<pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# for i in $(docker ps -q );do echo echo $i ; docker inspect $i|grep f6acb9573429  ; done
-echo 4332fe39163b
-                "LowerDir": "/var/lib/docker/overlay2/**f6acb9573429**712fe4d8b8b786e24d790fae8727f403693874b62a168b174870-init/diff:/var/lib/docker/overlay2/b76d30a66c8fef0123a2310bd861a0aa626b5a6e7bf83f9982a6344c8e466187/diff:/var/lib/docker/overlay2/c5b396df751ea053d81765d77f85a8dd44c1c847b6fbe95b38230509f372dfd2/diff:/var/lib/docker/overlay2/1efa8716d1f55fde7716deaacabe0e582aff78f7e460f18b9d5dc84db387533e/diff:/var/lib/docker/overlay2/3f78cbaa248e4f8b1e25599e5e1e2496a463b75e39adfaad2026f134a8ebf89f/diff:/var/lib/docker/overlay2/18ca1077ac90dff82d1085d19162d7b56c42effce18b416632c0e1627602fb17/diff:/var/lib/docker/overlay2/bcee6e758f7ac5769da672274262d61b38acc2cc6ade4b9b56cd0475ca886528/diff:/var/lib/docker/overlay2/e23e02b967bdf1aaaef8e002f0a9f1d778d7a7de7adb12cd925e84ef770b62c7/diff:/var/lib/docker/overlay2/916a116fc26d356a61a9e028c52a3a402349e87e1e9eea6f4d2039cf31391155/diff",
-                "MergedDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/merged",
-                "UpperDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/diff",
-                "WorkDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/work"
-echo 4172f0cf7985
-echo a622665b0a81
-echo 20fde2e0a903<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意：这里就已经找出了最占用磁盘空间大小的容器了。<code>4332fe39163b</code>为容器<code>ID</code>.</p>
-</blockquote>
-<h3 id="查看镜像占用磁盘"><a href="#查看镜像占用磁盘" class="headerlink" title="查看镜像占用磁盘"></a>查看镜像占用磁盘</h3><pre class="line-numbers language-sh"><code class="language-sh">docker system df <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="查看docker日志-json-log"><a href="#查看docker日志-json-log" class="headerlink" title="查看docker日志.json.log"></a>查看docker日志.json.log</h3><p><code>docker</code>日志默认不作限制,可能产生非常大的日志文件,需要清理或者作出限制.</p>
-<ul>
-<li>限制docker容器日志大小<pre class="line-numbers language-json"><code class="language-json">// vim /etc/docker/daemon.json
-<span class="token punctuation">{</span>
-<span class="token property">"log-driver"</span><span class="token operator">:</span><span class="token string">"json-file"</span><span class="token punctuation">,</span>
-<span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"max-size"</span><span class="token operator">:</span><span class="token string">"500m"</span><span class="token punctuation">,</span> <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
-</ul>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://blog.csdn.net/m0_37814112/article/details/103049589" target="_blank" rel="noopener">docker查找占用主机磁盘空间最大的容器</a></li>
-<li><a href="https://blog.csdn.net/hnmpf/article/details/90237465" target="_blank" rel="noopener">定位那个docker容器占用overlay2的问题之容器磁盘定位</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/15/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/52/">52</a><a class="extend next" rel="next" href="/page/17/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/15/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/53/">53</a><a class="extend next" rel="next" href="/page/17/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1119,20 +1125,20 @@ echo 20fde2e0a903<span aria-hidden="true" class="line-numbers-rows"><span></span
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">311</span>
+          <span class="site-state-item-count">313</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">39</span>
+        <span class="site-state-item-count">38</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">198</span>
+        <span class="site-state-item-count">199</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

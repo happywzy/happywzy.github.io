@@ -23282,7 +23282,7 @@ docker run -p 11111:11111 --name canal -d docker.io/canal/canal-server<span aria
           });
       </script>]]></content>
       <categories>
-        <category>vpn</category>
+        <category>tools</category>
       </categories>
       <tags>
         <tag>vpn</tag>
@@ -32702,7 +32702,94 @@ systemctl restart kubelet <span aria-hidden="true" class="line-numbers-rows"><sp
     <title>springboot中conditional的使用</title>
     <url>/springboot-zhong-conditional-de-shi-yong/</url>
     <content><![CDATA[<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>在 springboot 中一个接口有多个实现，我们希望通过配置来控制<code>运行时</code>实例化哪个对象，springboot 中 @Conditional 注解可以帮助我们细粒度控制 bean 的实例化。</p>
-<h3 id="Bean对象"><a href="#Bean对象" class="headerlink" title="Bean对象"></a>Bean对象</h3><ul>
+<p><code>Spring Boot</code> 在 <code>org.springframework.boot.autoconfigure.condition</code> 包下定义了以下注解:</p>
+<table>
+<thead>
+<tr>
+<th>注解名</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>@ConditionalOnJava</code></td>
+<td>基于JVM版本作为判断条件.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnBean</code></td>
+<td>当容器中有指定的Bean的条件下.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnClass</code></td>
+<td>当类路径下游指定的类的条件下.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnExpression</code></td>
+<td>基于SpEL表达式作为判断条件.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnJndi</code></td>
+<td>在JNDI存在的条件下查找指定的位置.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnMissingBean</code></td>
+<td>当容器中没有指定Bean的情况下.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnMissingClass</code></td>
+<td>当类路径下没有指定的类的情况下.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnNotWebApplication</code></td>
+<td>当前项目不是web项目的条件下.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnProperty</code></td>
+<td>指定的属性是否有指定的值.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnResource</code></td>
+<td>类路径是否有指定的值.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnSingleCandidate</code></td>
+<td>当指定Bean在容器中只有一个,或者虽然有多个但是指定首选的Bean.</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnWebApplication</code></td>
+<td>当前项目是web项目的条件下.</td>
+</tr>
+</tbody></table>
+<h3 id="ConditionalOnExpression"><a href="#ConditionalOnExpression" class="headerlink" title="@ConditionalOnExpression"></a>@ConditionalOnExpression</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token comment" spellcheck="true">// user.label 属性等于 user2 创建TestBean</span>
+<span class="token comment" spellcheck="true">// @ConditionalOnExpression("'${user.label}'.equals('user2')")</span>
+
+<span class="token comment" spellcheck="true">// 可以使用 &amp;&amp; || 等运算符</span>
+<span class="token comment" spellcheck="true">// @ConditionalOnExpression("'${user.label}'.equals('user3') &amp;&amp; '${xxx}'.equals('xx')")</span>
+<span class="token comment" spellcheck="true">// @ConditionalOnExpression("'${user.label}'.equals('${xxx}')")</span>
+
+<span class="token comment" spellcheck="true">// 当环境变量 user.label=user2 创建TestBean, 注意: 这个环境变量可以通过 application.yml 传入</span>
+<span class="token annotation punctuation">@ConditionalOnExpression</span><span class="token punctuation">(</span><span class="token string">"#{'user2'.equals(environment['user.label'])}"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestBean</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@PostConstruct</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">111</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="ConditionalOnProperty"><a href="#ConditionalOnProperty" class="headerlink" title="@ConditionalOnProperty"></a>@ConditionalOnProperty</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token comment" spellcheck="true">// 当有 user.label 这个属性时创建 TestBean</span>
+<span class="token comment" spellcheck="true">// @ConditionalOnProperty(name = "user.label")</span>
+<span class="token comment" spellcheck="true">// 当有 user.label 和 xxx 两个属性时创建 TestBean</span>
+<span class="token comment" spellcheck="true">// @ConditionalOnProperty(name = {"user.label", "xxx"})</span>
+<span class="token comment" spellcheck="true">// 当有 user.label 这个属性且值为 user2 时创建 TestBean</span>
+<span class="token annotation punctuation">@ConditionalOnProperty</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"user.label"</span><span class="token punctuation">,</span> havingValue <span class="token operator">=</span> <span class="token string">"user2"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestBean</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@PostConstruct</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">111</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="自定义-Conditional"><a href="#自定义-Conditional" class="headerlink" title="自定义 Conditional"></a>自定义 Conditional</h3><h4 id="Bean对象"><a href="#Bean对象" class="headerlink" title="Bean对象"></a>Bean对象</h4><ul>
 <li>两个 User Bean<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
 <span class="token annotation punctuation">@NoArgsConstructor</span>
 <span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">User1</span> <span class="token punctuation">{</span>
@@ -32714,7 +32801,7 @@ systemctl restart kubelet <span aria-hidden="true" class="line-numbers-rows"><sp
 </ul>
 <p>@Data<br>@NoArgsConstructor<br>public class User2 {<br>    private String name;<br>    private int age;<br>}</p>
 <pre><code>
-### 方法一
+#### 方法一
 - 为每类对象创建一个 Conditional，如下为 User1和User2分别创建一个
 ```java
 public class MyConditional1 implements Condition {
@@ -32748,7 +32835,7 @@ public class MyConditional2 implements Condition {
 - application.propeties
 ```bash
 # 如果 label 匹配 bean 的label，该 bean 就会被实例化
-user.label=user1</code></pre><h3 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h3><ul>
+user.label=user1</code></pre><h4 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h4><ul>
 <li>新增注解给要实例化的对象打上标签<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Target</span><span class="token punctuation">(</span><span class="token punctuation">{</span>ElementType<span class="token punctuation">.</span>TYPE<span class="token punctuation">,</span>ElementType<span class="token punctuation">.</span>METHOD<span class="token punctuation">}</span><span class="token punctuation">)</span>
 <span class="token annotation punctuation">@Retention</span><span class="token punctuation">(</span>RetentionPolicy<span class="token punctuation">.</span>RUNTIME<span class="token punctuation">)</span>
 <span class="token annotation punctuation">@Documented</span>
@@ -32823,5 +32910,164 @@ user.label=MyUserLabel2</code></pre><script>
       <categories>
         <category>springboot</category>
       </categories>
+  </entry>
+  <entry>
+    <title>springboot自定义banner</title>
+    <url>/springboot-zi-ding-yi-banner/</url>
+    <content><![CDATA[<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><p>在 resources 目录下 (application.yml 同目录)创建 banner.txt 文件, springboot 启动时会自动加载这个文件替换原有的 spring boot banner.</p>
+<h3 id="生成banner"><a href="#生成banner" class="headerlink" title="生成banner"></a>生成banner</h3><ul>
+<li><a href="http://www.network-science.de/ascii/" target="_blank" rel="noopener">http://www.network-science.de/ascii/</a></li>
+<li><a href="http://patorjk.com/software/taag" target="_blank" rel="noopener">http://patorjk.com/software/taag</a></li>
+</ul>
+<h3 id="其他配置"><a href="#其他配置" class="headerlink" title="其他配置"></a>其他配置</h3><ul>
+<li><p>banner.txt 内配置</p>
+<pre class="line-numbers language-yml"><code class="language-yml">${AnsiColor.BRIGHT_RED}: 设置控制台中输出内容的颜色
+${application.version}: 用来获取MANIFEST.MF文件中的版本号
+${application.formatted-version}: 格式化后的${application.version}版本信息
+${spring-boot.version}: Spring Boot的版本号
+${spring-boot.formatted-version}: 格式化后的${spring-boot.version}版本信息<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>application.yml 配置</p>
+<pre class="line-numbers language-yml"><code class="language-yml">spring:
+banner:
+  charset: UTF-8
+  location: classpath:banner.txt
+  image:
+    location: classpath:banner.gif
+    width: 76
+    height:
+    margin: 2
+    invert: false<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li><p>关闭 banner</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@SpringBootApplication</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SpringbootBannerApplication</span> <span class="token punctuation">{</span>
+
+  <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      SpringApplication springApplication <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SpringApplication</span><span class="token punctuation">(</span>SpringbootBannerApplication<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment" spellcheck="true">//Banner.Mode.OFF 关闭</span>
+      springApplication<span class="token punctuation">.</span><span class="token function">setBannerMode</span><span class="token punctuation">(</span>Banner<span class="token punctuation">.</span>Mode<span class="token punctuation">.</span>OFF<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      springApplication<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>springboot</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>内网穿透工具frp</title>
+    <url>/nei-wang-chuan-tou-gong-ju-frp/</url>
+    <content><![CDATA[<h3 id="内网穿透工具frp"><a href="#内网穿透工具frp" class="headerlink" title="内网穿透工具frp"></a>内网穿透工具frp</h3><p>通过在公网服务器部署 frp 服务端( <code>frps</code> )，内网部署 frp 客户端( <code>frpc</code> )，实现通过公网访问内网的服务.</p>
+<h3 id="frp目录说明"><a href="#frp目录说明" class="headerlink" title="frp目录说明"></a>frp目录说明</h3><pre class="line-numbers language-conf"><code class="language-conf">├── frpc //客户端
+├── frpc_full.ini
+├── frpc.ini//客户端配置
+├── frps//服务端
+├── frps_full.ini
+├── frps.ini//服务端配置
+└── LICENSE<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ul>
+<li>frps.ini<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>common<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true">#服务端口</span>
+bind_port <span class="token operator">=</span> 7000
+<span class="token comment" spellcheck="true">#监听地址</span>
+<span class="token comment" spellcheck="true">#bind_addr = 0.0.0.0</span>
+<span class="token comment" spellcheck="true">#认证token</span>
+<span class="token comment" spellcheck="true">#token = big_cat</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+</ul>
+<p>#http服务端口<br>vhost_http_port = 7080<br>#https服务端口<br>vhost_https_port = 70443</p>
+<pre><code>- frpc.ini
+```bash
+[common]
+#frps的ip地址
+server_addr = 114.114.114.114
+#frps的端口
+server_port = 7000
+#认证token
+#token = big_cat
+
+[web-big_cat01]
+# 远端服务器定义好了 http 服务的端口 这里不需要指定
+# 只需要指定 custom/sub_domains 用来做路由即可 
+# 如果只是代理一台 则指定服务端ip 使用ip访问即可
+type = http
+#本地http服务端口
+local_port = 8081
+#本地http服务地址
+local_ip = 127.0.0.1
+# 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）
+#custom_domains = 118.118.118.118
+# 或者指定域名 可以使用其他域名继续绑定
+custom_domains = frp1.big_cat.com
+
+[web-big_cat02]
+type = http
+local_port = 8082
+#本地http服务地址
+local_ip = 127.0.0.1
+# 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）
+#custom_domains = 118.118.118.118
+# 或者指定域名 可以使用其他域名继续绑定
+custom_domains = frp2.big_cat.com
+
+[ssh]
+type = tcp
+local_port = 22
+local_ip = 127.0.0.1
+# 在服务端注册端口 服务端将监听 7022 ssh root@118.118.118.118 -p 7022 即可代理到本机 ssh 登录
+remote_port = 7022</code></pre><h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动服务端服务</span>
+<span class="token function">nohup</span> ./frps -c ./frps.ini <span class="token operator">&amp;</span>
+<span class="token comment" spellcheck="true"># 启动客户端服务</span>
+<span class="token function">nohup</span> ./frpc -c ./frpc.ini <span class="token operator">&amp;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意: <code>http/https</code> 服务是在服务端配置中定义的端口，客户端指定协议后会自动关联，<code>ssh</code> 等使用 tcp 的则是在客户端定义好 <code>remote_port</code> ，服务端开放此端口即可。</p>
+</blockquote>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>frp</tag>
+      </tags>
   </entry>
 </search>
