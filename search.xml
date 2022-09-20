@@ -33070,4 +33070,137 @@ remote_port = 7022</code></pre><h3 id="启动"><a href="#启动" class="headerli
         <tag>frp</tag>
       </tags>
   </entry>
+  <entry>
+    <title>docker镜像分析工具dive</title>
+    <url>/docker-jing-xiang-fen-xi-gong-ju-dive/</url>
+    <content><![CDATA[<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>docker 镜像分析工具有 docker 自带的 <code>docker inspect</code> 和 <code>docker history</code>,对于具体每一层（<code>layers</code>）组成可以使用 <code>dive</code> 工具. 地址：<a href="https://github.com/wagoodman/dive" target="_blank" rel="noopener">https://github.com/wagoodman/dive</a>，该工具主要用于探索 docker 镜像层内容以及发现减小 docker 镜像大小的方法.</p>
+<h3 id="docker安装"><a href="#docker安装" class="headerlink" title="docker安装"></a>docker安装</h3><pre class="line-numbers language-bash"><code class="language-bash">docker pull wagoodman/dive<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># windows 下 docker.sock 路径可以使用 -v //var/run/docker.sock:/var/run/docker.sock</span>
+docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest <span class="token operator">&lt;</span>dive arguments<span class="token punctuation">..</span>.<span class="token operator">></span>
+<span class="token comment" spellcheck="true"># 示例</span>
+docker run --rm -it -v //var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest test:v1.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="二进制安装"><a href="#二进制安装" class="headerlink" title="二进制安装"></a>二进制安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># centos</span>
+curl -OL https://github.com/wagoodman/dive/releases/download/v0.9.2/dive_0.9.2_linux_amd64.rpm
+rpm -i dive_0.9.2_linux_amd64.rpm
+<span class="token comment" spellcheck="true"># windows</span>
+go get github.com/wagoodman/dive<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="使用-1"><a href="#使用-1" class="headerlink" title="使用"></a>使用</h3><pre class="line-numbers language-bash"><code class="language-bash">dive <span class="token operator">&lt;</span>your-image<span class="token operator">></span> --source <span class="token operator">&lt;</span>source<span class="token operator">></span>
+<span class="token comment" spellcheck="true"># or </span>
+dive <span class="token operator">&lt;</span>source<span class="token operator">></span>://<span class="token operator">&lt;</span>your-image<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>docker</category>
+      </categories>
+      <tags>
+        <tag>dive</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>springboot分层打包docker镜像</title>
+    <url>/springboot-fen-ceng-da-bao-docker-jing-xiang/</url>
+    <content><![CDATA[<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>springboot默认的打包插件</p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>及对应的Dockerfile文件</p>
+<pre class="line-numbers language-conf"><code class="language-conf">FROM openjdk:8-jdk-alpine
+MAINTAINER happywzy
+WORKDIR application
+EXPOSE 8080
+ADD ./target/*.jar ./app.jar
+CMD java  -jar app.jar<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>打包命令</p>
+<pre class="line-numbers language-bash"><code class="language-bash">mvn clean package
+docker build -t test:1.0.0 <span class="token keyword">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这种方式打包 <code>springboot</code> 缺点是每次打包 docker 镜像都是全量上传 ja r包，如果 jar 很大会严重影响拉取镜像的速度.</p>
+<h3 id="springboot-分层打包"><a href="#springboot-分层打包" class="headerlink" title="springboot 分层打包"></a>springboot 分层打包</h3><p>springboot 分层打包需要 springboot 版本大于 <code>2.3.0.RELEASE</code>.</p>
+<h4 id="开启"><a href="#开启" class="headerlink" title="开启"></a>开启</h4><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>layers</span><span class="token punctuation">></span></span>
+                    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>enabled</span><span class="token punctuation">></span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>enabled</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>layers</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>再次使用 <code>mvn clean package</code> 命令打包,可以使用 java 包分析工具查看</p>
+<pre class="line-numbers language-bash"><code class="language-bash">java -Djarmode<span class="token operator">=</span>layertools -jar target/test-0.0.1-SNAPSHOT.jar list<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>改造原有的 Dockerfile</p>
+<pre class="line-numbers language-conf"><code class="language-conf">FROM openjdk:8-jdk-alpine as builder
+WORKDIR application
+ADD ./target/*.jar ./app.jar
+RUN java -Djarmode=layertools -jar app.jar extract
+
+FROM openjdk:8-jdk-alpine
+MAINTAINER happywzy
+
+WORKDIR application
+
+COPY --from=builder application/dependencies/ ./
+COPY --from=builder application/spring-boot-loader/ ./
+COPY --from=builder application/snapshot-dependencies/ ./
+COPY --from=builder application/application/ ./
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个 dockerfile 表示先进行一次临时镜像构建标记为 builder，并加载一次全量 jar 包，然后执行 <code>java -Djarmode=layertools -jar app.jar extract</code> 命令将 jar 包分解为分层打包目录，再次构建一个新镜像，按照list 的目录顺序分批将分层目录加载到 docker 镜像中. 再次执行构建命令</p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker build -t test:1.0.0 <span class="token keyword">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="docker镜像分析"><a href="#docker镜像分析" class="headerlink" title="docker镜像分析"></a>docker镜像分析</h3><p>可以使用 <code>docker inspect</code> 、<code>docker history</code> 或 <code>dive</code> 等工具对比全量打包和分层打包的区别. </p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>docker</category>
+        <category>springboot</category>
+      </categories>
+      <tags>
+        <tag>docker</tag>
+        <tag>springboot</tag>
+        <tag>layers</tag>
+      </tags>
+  </entry>
 </search>

@@ -203,6 +203,281 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-wen-ti-flannel-yi-zhi-chong-qi-wen-ti-crashloopbackoff/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-wen-ti-flannel-yi-zhi-chong-qi-wen-ti-crashloopbackoff/" class="post-title-link" itemprop="url">K8s问题【flannel一直重启问题-CrashLoopBackOff】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-16 15:05:03" itemprop="dateCreated datePublished" datetime="2019-12-16T15:05:03+08:00">2019-12-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 10:59:11" itemprop="dateModified" datetime="2020-04-15T10:59:11+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="kubectl-describe-命令查看"><a href="#kubectl-describe-命令查看" class="headerlink" title="kubectl describe 命令查看"></a>kubectl describe 命令查看</h3><pre class="line-numbers language-log"><code class="language-log">Events:
+  Type     Reason     Age                   From               Message
+  ----     ------     ----                  ----               -------
+  Normal   Scheduled  13m                   default-scheduler  Successfully assigned kube-system/kube-flannel-ds-amd64-vfhnj to node-d1
+  Normal   Pulled     13m                   kubelet, node-d1   Container image "quay.io/coreos/flannel:v0.11.0-amd64" already present on machine
+  Normal   Created    13m                   kubelet, node-d1   Created container install-cni
+  Normal   Started    13m                   kubelet, node-d1   Started container install-cni
+  Normal   Pulled     10m (x5 over 13m)     kubelet, node-d1   Container image "quay.io/coreos/flannel:v0.11.0-amd64" already present on machine
+  Normal   Created    10m (x5 over 13m)     kubelet, node-d1   Created container kube-flannel
+  Normal   Started    10m (x5 over 13m)     kubelet, node-d1   Started container kube-flannel
+  Warning  BackOff    3m39s (x30 over 12m)  kubelet, node-d1   Back-off restarting failed container<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="kubectl-logs命令查看"><a href="#kubectl-logs命令查看" class="headerlink" title="kubectl logs命令查看"></a>kubectl logs命令查看</h3><pre class="line-numbers language-log"><code class="language-log">[root@master ~]# kubectl logs  kube-flannel-ds-amd64-9w5nq -n kube-system
+I1216 05:59:40.055608       1 main.go:527] Using interface with name eth0 and address 192.168.1.82
+I1216 05:59:40.055666       1 main.go:544] Defaulting external address to interface address (192.168.1.82)
+E1216 06:00:10.056546       1 main.go:241] Failed to create SubnetManager: error retrieving pod spec for 'kube-system/kube-flannel-ds-amd64-9w5nq': Get https://10.96.0.1:443/api/v1/namespaces/kube-system/pods/kube-flannel-ds-amd64-9w5nq: dial tcp 10.96.0.1:443: i/o timeout<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>问题排查<br>网络问题？<br>通过curl命令测试，网络没有问题。</p>
+</blockquote>
+<h3 id="测试kube-proxy"><a href="#测试kube-proxy" class="headerlink" title="测试kube-proxy"></a>测试kube-proxy</h3><p>重启该节点上的<code>kube-proxy</code>容器，并查看日志</p>
+<pre><code>kubectl delete pod kube-proxy-vtd27 -n kube-system</code></pre><pre class="line-numbers language-log"><code class="language-log">[root@master ~]# kubectl logs kube-proxy-pljct -n kube-system
+W1216 06:30:51.741835       1 proxier.go:513] Failed to load kernel module ip_vs_wrr with modprobe. You can ignore this message when kube-proxy is running inside container without mounting /lib/modules
+W1216 06:30:51.742536       1 proxier.go:513] Failed to load kernel module ip_vs_sh with modprobe. You can ignore this message when kube-proxy is running inside container without mounting /lib/modules
+W1216 06:30:51.748495       1 proxier.go:513] Failed to load kernel module ip_vs_wrr with modprobe. You can ignore this message when kube-proxy is running inside container without mounting /lib/modules
+W1216 06:30:51.749223       1 proxier.go:513] Failed to load kernel module ip_vs_sh with modprobe. You can ignore this message when kube-proxy is running inside container without mounting /lib/modules
+E1216 06:30:51.750805       1 server_others.go:259] can't determine whether to use ipvs proxy, error: IPVS proxier will not be used because the following required kernel modules are not loaded: [ip_vs_wrr ip_vs_sh]
+I1216 06:30:51.757054       1 server_others.go:143] Using iptables Proxier.
+W1216 06:30:51.757122       1 proxier.go:321] clusterCIDR not specified, unable to distinguish between internal and external traffic
+I1216 06:30:51.757338       1 server.go:534] Version: v1.15.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h4><p>这里明显有个问题。一些需要的内核模块加载失败，参考安装文档，已经配置过内核模块。重新尝试，问题依然存在。</p>
+<pre class="line-numbers language-sh"><code class="language-sh">[root@master ~]# cat > /etc/sysconfig/modules/ipvs.modules <<EOF
+> #!/bin/bash
+> modprobe -- ip_vs
+> modprobe -- ip_vs_rr
+> modprobe -- ip_vs_wrr
+> modprobe -- ip_vs_sh
+> modprobe -- nf_conntrack_ipv4
+> EOF
+[root@master ~]# chmod 755 /etc/sysconfig/modules/ipvs.modules && bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep -e ip_vs -e nf_conntrack_ipv4
+ip_vs_sh               12688  0 
+ip_vs_wrr              12697  0 
+ip_vs_rr               12600  150 
+ip_vs                 145497  156 ip_vs_rr,ip_vs_sh,ip_vs_wrr
+nf_conntrack_ipv4      15053  6 
+nf_defrag_ipv4         12729  1 nf_conntrack_ipv4
+nf_conntrack          139224  9 ip_vs,nf_nat,nf_nat_ipv4,nf_nat_ipv6,xt_conntrack,nf_nat_masquerade_ipv4,nf_conntrack_netlink,nf_conntrack_ipv4,nf_conntrack_ipv6
+libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack
+[root@master ~]# lsmod | grep -e ip_vs -e nf_conntrack_ipv4
+ip_vs_sh               12688  0 
+ip_vs_wrr              12697  0 
+ip_vs_rr               12600  150 
+ip_vs                 145497  156 ip_vs_rr,ip_vs_sh,ip_vs_wrr
+nf_conntrack_ipv4      15053  6 
+nf_defrag_ipv4         12729  1 nf_conntrack_ipv4
+nf_conntrack          139224  9 ip_vs,nf_nat,nf_nat_ipv4,nf_nat_ipv6,xt_conntrack,nf_nat_masquerade_ipv4,nf_conntrack_netlink,nf_conntrack_ipv4,nf_conntrack_ipv6
+libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h4><p>由于<code>ipvs</code>已经加入到内核主干，所以需要内核模块支持，请确保内核已经加载了相应模块；如不确定，执行以下脚本，以确保内核加载相应模块，否则会出现<code>failed to load kernel modules: [ip_vs_rr ip_vs_sh ip_vs_wrr]</code>错误</p>
+<pre class="line-numbers language-sh"><code class="language-sh">cat > /etc/sysconfig/modules/ipvs.modules <<EOF
+#!/bin/bash
+ipvs_modules="ip_vs ip_vs_lc ip_vs_wlc ip_vs_rr ip_vs_wrr ip_vs_lblc ip_vs_lblcr ip_vs_dh ip_vs_sh ip_vs_fo ip_vs_nq ip_vs_sed ip_vs_ftp nf_conntrack_ipv4"
+for kernel_module in \${ipvs_modules}; do
+    /sbin/modinfo -F filename \${kernel_module} > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        /sbin/modprobe \${kernel_module}
+    fi
+done
+EOF
+chmod 755 /etc/sysconfig/modules/ipvs.modules && bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep ip_vs<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行后应该如下图所示，如果<code>lsmod | grep ip_vs</code>并未出现 <code>ip_vs_rr</code> 等模块；</p>
+<pre class="line-numbers language-sh"><code class="language-sh">[root@node-d1 ~]# lsmod | grep ip_vs
+ip_vs_ftp              13079  0 
+ip_vs_sed              12519  0 
+ip_vs_nq               12516  0 
+ip_vs_sh               12688  0 
+ip_vs_dh               12688  0 
+ip_vs_lblcr            12922  0 
+ip_vs_lblc             12819  0 
+ip_vs_wrr              12697  0 
+ip_vs_wlc              12519  0 
+ip_vs_lc               12516  0 
+nf_nat                 26583  5 ip_vs_ftp,nf_nat_ipv4,nf_nat_ipv6,xt_nat,nf_nat_masquerade_ipv4
+ip_vs_rr               12600  136 
+ip_vs                 145497  162 ip_vs_dh,ip_vs_lc,ip_vs_nq,ip_vs_rr,ip_vs_sh,ip_vs_ftp,ip_vs_sed,ip_vs_wlc,ip_vs_wrr,ip_vs_lblcr,ip_vs_lblc
+nf_conntrack          139224  9 ip_vs,nf_nat,nf_nat_ipv4,nf_nat_ipv6,xt_conntrack,nf_nat_masquerade_ipv4,nf_conntrack_netlink,nf_conntrack_ipv4,nf_conntrack_ipv6
+libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>最后重启<code>Kube-proxy</code>和<code>flannel</code>容器，问题解决。</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/a-biao-qian-href-bu-tiao-zhuan-jin-zhi-tiao-zhuan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/a-biao-qian-href-bu-tiao-zhuan-jin-zhi-tiao-zhuan/" class="post-title-link" itemprop="url">a标签href不跳转禁止跳转</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-10 17:14:51" itemprop="dateCreated datePublished" datetime="2019-12-10T17:14:51+08:00">2019-12-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-15 10:54:59" itemprop="dateModified" datetime="2020-04-15T10:54:59+08:00">2020-04-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/html/" itemprop="url" rel="index"><span itemprop="name">html</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="a标签href不跳转-禁止跳转"><a href="#a标签href不跳转-禁止跳转" class="headerlink" title="a标签href不跳转 禁止跳转"></a>a标签href不跳转 禁止跳转</h3><p>当页面中a标签不需要任何跳转时，从原理上来讲，可分如下两种方法：</p>
+<h4 id="标签属性href，使其指向空或不返回任何内容。如："><a href="#标签属性href，使其指向空或不返回任何内容。如：" class="headerlink" title="标签属性href，使其指向空或不返回任何内容。如："></a>标签属性href，使其指向空或不返回任何内容。如：</h4><pre class="line-numbers language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>javascript:void(0);<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span>点此无反应javascript:void(0)<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>a</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>javascript:;<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span>点此无反应javascript:<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>a</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h4 id="标签事件onclick，阻止其默认行为。如："><a href="#标签事件onclick，阻止其默认行为。如：" class="headerlink" title="标签事件onclick，阻止其默认行为。如："></a>标签事件onclick，阻止其默认行为。如：</h4><pre class="line-numbers language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span><span class="token punctuation">"</span></span> <span class="token attr-name">οnclick</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>return false;<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>return false;<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>a</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>#<span class="token punctuation">"</span></span> <span class="token attr-name">οnclick</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>return false;<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>return false;<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>a</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<blockquote>
+<p>注意：只有一个<code>href="#"</code>是不可以的。</p>
+</blockquote>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-wai-jian-guan-lian-yi-zhang-biao-liang-ge-zi-duan-fen-bie-yu-ling-yi-zhang-biao-zhu-jian-guan-lian/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -940,540 +1215,6 @@ remote_read:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-chuang-jian-xin-de-alertmanager/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/prometheus-operator-shi-yong-chuang-jian-xin-de-alertmanager/" class="post-title-link" itemprop="url">prometheus-operator使用【创建新的Alertmanager】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-29 11:05:27" itemprop="dateCreated datePublished" datetime="2019-11-29T11:05:27+08:00">2019-11-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 10:20:30" itemprop="dateModified" datetime="2020-04-15T10:20:30+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p><code>Alertmanager</code>是安装<code>prometheus-operator</code>时默认新增的自定义资源类型（<code>CRD</code>），我们可以直接在K8s中创建这样的资源。</p>
-</blockquote>
-<h3 id="创建alert-test-yaml"><a href="#创建alert-test-yaml" class="headerlink" title="创建alert-test.yaml"></a>创建alert-test.yaml</h3><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: monitoring.coreos.com/v1
-kind: Alertmanager
-metadata:
-  generation: 1
-  labels:
-    app: prometheus-operator-alertmanager
-    chart: prometheus-operator-8.2.4
-    heritage: Tiller
-    release: prometheus-operator
-  name: prometheus-operator-alertmanager-test
-  namespace: monitoring
-spec:
-  baseImage: quay.io/prometheus/alertmanager
-  version: v0.19.0
-  portName: web
-  replicas: 1
-  retention: 120h
-  routePrefix: /
-  serviceAccountName: prometheus-operator-alertmanager
-  affinity:
-    podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - topologyKey: kubernetes.io/hostname
-        labelSelector:
-          matchLabels:
-            app: alertmanager
-            alertmanager: prometheus-operator-alertmanager-test
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          topologyKey: kubernetes.io/hostname
-          labelSelector:
-            matchLabels:
-              app: alertmanager
-              alertmanager: prometheus-operator-alertmanager-test
-  storage:
-    volumeClaimTemplate:
-      selector: {}
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-        storageClassName: nfs-client<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="针对以上配置文件简要说明："><a href="#针对以上配置文件简要说明：" class="headerlink" title="针对以上配置文件简要说明："></a>针对以上配置文件简要说明：</h4><ul>
-<li>所有配置项可以从<code>stable/prometheus-operator/templates/alertmanager/alertmanager.yaml</code>获取，参考前文，<code>prometheus-operator</code>环境是使用<code>helm</code>安装的，可以通过命令<code>helm fetch stable/prometheus-operator</code>将所有配置下载到本地，然后参考。helm安装会默认安装一个<code>Alertmanager</code>服务，也是通过<code>alertmanager.yaml</code>安装的。</li>
-<li><code>kind</code>类型写Alertmanager，无需多言。</li>
-<li><code>metadata.name</code>指定你这个Alertmanager名称，可以通过命令查询<pre><code>kubectl get alertmanager -n monitoring</code></pre></li>
-<li><code>spec.baseImage/version</code>需要指定，不然默认使用的镜像版本可能跟helm安装时使用的版本不一致，导致你需要重新下载，部署就非常慢。</li>
-<li><code>spec.storage</code>指定你新部署的Alertmanager存储，建议指定。</li>
-<li><code>spec.affinity</code>需要指定一些label，Alertmanager对象本质还是一个StatefulSet对象，后面你为Alertmanager对象创建Service时需要通过Label选择。</li>
-<li><code>spec.portName</code>指定你端口的名称，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
-<li><code>metadata.namespace</code>指定命名空间，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
-<li><code>spec.routePrefix</code>指定路径前缀，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
-</ul>
-<h3 id="过命令或者dashborad创建Alertmanager"><a href="#过命令或者dashborad创建Alertmanager" class="headerlink" title="过命令或者dashborad创建Alertmanager"></a>过命令或者dashborad创建Alertmanager</h3><pre><code>kubectl create -f alert-test.yaml</code></pre><h4 id="注意："><a href="#注意：" class="headerlink" title="注意："></a>注意：</h4><p>现在创建这个，肯定会报错，类似<code>MountVolume.SetUp failed for volume "config-volume" : secrets "alertmanager-XXXX-xX" not found</code></p>
-<p>原因：（参考：<code>https://yunlzheng.gitbook.io/prometheus-book/part-iii-prometheus-shi-zhan/operator/use-operator-manage-monitor</code>）</p>
-<p>这是由于<code>Prometheus Operator</code>通过<code>Statefulset</code>的方式创建的<code>Alertmanager</code>实例，在默认情况下，会通过<code>alertmanager-{ALERTMANAGER_NAME}</code>的命名规则去查找<code>Secret</code>配置并以文件挂载的方式，将<code>Secret</code>的内容作为配置文件挂载到<code>Alertmanager</code>实例当中。因此，需要提前为<code>Alertmanager</code>创建相应的配置内容。</p>
-<h3 id="参考前文Alertmanager配置"><a href="#参考前文Alertmanager配置" class="headerlink" title="参考前文Alertmanager配置"></a>参考前文Alertmanager配置</h3><p>我们创建<code>alertmanager.yaml</code>，<code>template_1.tmpl</code></p>
-<p>然后用命令创建<code>secret</code>，<code>secret</code>名称格式：<code>alertmanager-{ALERTMANAGER_NAME}</code>,例如我们前文指定的<code>Alertmanager</code>名称为<code>prometheus-operator-alertmanager-test</code>，那么这里<code>secret</code>名称为<code>alertmanager-prometheus-operator-alertmanager-test</code>。</p>
-<pre><code>kubectl create secret generic alertmanager-prometheus-operator-alertmanager-test -n monitoring --from-file=alertmanager.yaml --from-file=template_1.tmpl</code></pre><h3 id="最后创建Alertmanager"><a href="#最后创建Alertmanager" class="headerlink" title="最后创建Alertmanager"></a>最后创建Alertmanager</h3><h3 id="创建Alertmanager的service"><a href="#创建Alertmanager的service" class="headerlink" title="创建Alertmanager的service"></a>创建Alertmanager的service</h3><blockquote>
-<p>这里直接指定Service类型是NodePort，便于我们访问，实际应通过Ingress来做。</p>
-</blockquote>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: prometheus-operator-alertmanager
-    chart: prometheus-operator-8.2.4
-    heritage: Tiller
-    release: prometheus-operator
-  name: prometheus-operator-alertmanager-test
-  namespace: monitoring
-spec:
-  ports:
-  - name: web
-    port: 9093
-    protocol: TCP
-    targetPort: 9093
-  selector:
-    alertmanager: prometheus-operator-alertmanager-test
-    app: alertmanager
-  sessionAffinity: None
-  type: NodePort<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意：这里通过<code>selector</code>来选择，和创建<code>Alertmanager</code>配置中保持一致。</p>
-</blockquote>
-<h3 id="通过命令查询Service的映射端口"><a href="#通过命令查询Service的映射端口" class="headerlink" title="通过命令查询Service的映射端口"></a>通过命令查询Service的映射端口</h3><pre><code>kubectl get svc -n monitoring</code></pre><p>通过命令查询Service的映射端口，即可访问我们刚刚创建的Alertmanager.</p>
-<p>现在Alertmanager上应该还没有任何通知，原因是还没有将我们创建的Alertmanager和Prometheus关联。</p>
-<h3 id="关联Prometheus"><a href="#关联Prometheus" class="headerlink" title="关联Prometheus"></a>关联Prometheus</h3><p>如何关联Prometheus呢？首先查看下prometheus-operator创建的Prometheus的配置，prometheus-operator也是通过自定义资源类型（CRD）prometheus来创建prometheus server的，直接通过命令查看。</p>
-<pre class="line-numbers language-yml"><code class="language-yml">kubectl get Prometheus prometheus-operator-prometheus  -n monitoring -o yaml
-apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
-metadata:
-  creationTimestamp: "2019-11-28T02:42:48Z"
-  generation: 1
-  labels:
-    app: prometheus-operator-prometheus
-    chart: prometheus-operator-8.2.4
-    heritage: Tiller
-    release: prometheus-operator
-  name: prometheus-operator-prometheus
-  namespace: monitoring
-  resourceVersion: "6316434"
-  selfLink: /apis/monitoring.coreos.com/v1/namespaces/monitoring/prometheuses/prometheus-operator-prometheus
-  uid: de60d68f-6818-484d-ba30-4f381e7cb016
-spec:
-  alerting:
-    alertmanagers:
-    - name: prometheus-operator-alertmanager
-      namespace: monitoring
-      pathPrefix: /
-      port: web
-  baseImage: quay.io/prometheus/prometheus
-  enableAdminAPI: false
-  externalUrl: http://prom.deri.com/
-  listenLocal: false
-  logFormat: logfmt
-  logLevel: info
-  paused: false
-  podMonitorNamespaceSelector: {}
-  podMonitorSelector:
-    matchLabels:
-      release: prometheus-operator
-  portName: web
-  replicas: 1
-  retention: 10d
-  routePrefix: /
-  ruleNamespaceSelector: {}
-  ruleSelector:
-    matchLabels:
-      app: prometheus-operator
-      release: prometheus-operator
-  securityContext:
-    fsGroup: 2000
-    runAsNonRoot: true
-    runAsUser: 1000
-  serviceAccountName: prometheus-operator-prometheus
-  serviceMonitorNamespaceSelector: {}
-  serviceMonitorSelector:
-    matchLabels:
-      release: prometheus-operator
-  storage:
-    volumeClaimTemplate:
-      selector: {}
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 2Gi
-        storageClassName: nfs-client
-  version: v2.13.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="Prometheus配置"><a href="#Prometheus配置" class="headerlink" title="Prometheus配置"></a>Prometheus配置</h4><ul>
-<li><code>spec.alerting.alertmanagers</code>就是指定Prometheus将告警发给哪些alertmanagers。</li>
-<li><code>spec.ruleSelector.matchLabels</code>通过标签关联用户创建的自定义PrometheusRule。</li>
-<li><code>spec.serviceMonitorSelector.matchLabels</code>通过标签关联用户创建的自定义ServiceMonitor</li>
-</ul>
-<p>使用命令编辑已有的Prometheus服务配置</p>
-<pre><code>kubectl edit Prometheus prometheus-operator-prometheus  -n monitoring</code></pre><p>增加一个<code>Alertmanager</code>的<code>Endpoint</code>，其中<code>name</code>、<code>namespace</code>、<code>pathPrefix</code>、<code>port</code>和创建<code>Alertmanager</code>配置保持一致。</p>
-<pre class="line-numbers language-yml"><code class="language-yml">spec:
-  alerting:
-    alertmanagers:
-    - name: prometheus-operator-alertmanager
-      namespace: monitoring
-      pathPrefix: /
-      port: web
-    - name: prometheus-operator-alertmanager-test
-      namespace: monitoring
-      pathPrefix: /
-      port: web<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-liao-jie-alertmanager-tong-zhi-ji-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/prometheus-operator-shi-yong-liao-jie-alertmanager-tong-zhi-ji-zhi/" class="post-title-link" itemprop="url">prometheus-operator使用【了解Alertmanager通知机制】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-28 17:14:46" itemprop="dateCreated datePublished" datetime="2019-11-28T17:14:46+08:00">2019-11-28</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 09:53:03" itemprop="dateModified" datetime="2020-04-15T09:53:03+08:00">2020-04-15</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="Alertmanager简介及机制"><a href="#Alertmanager简介及机制" class="headerlink" title="Alertmanager简介及机制"></a>Alertmanager简介及机制</h2><p>Alertmanager处理由例如Prometheus服务器等客户端发来的警报。它负责删除重复数据、分组，并将警报通过路由发送到正确的接收器，比如电子邮件、Slack等。Alertmanager还支持groups,silencing和警报抑制的机制。</p>
-<h3 id="分组"><a href="#分组" class="headerlink" title="分组"></a>分组</h3><p>分组是指将同一类型的警报分类为单个通知。当许多系统同时宕机时，很有可能成百上千的警报会同时生成，这种机制特别有用。</p>
-<h3 id="抑制-Inhibition"><a href="#抑制-Inhibition" class="headerlink" title="抑制(Inhibition)"></a>抑制(Inhibition)</h3><p>抑制是指当警报发出后，停止重复发送由此警报引发其他错误的警报的机制。(比如网络不可达，导致其他服务连接相关警报)</p>
-<h3 id="沉默-Silences"><a href="#沉默-Silences" class="headerlink" title="沉默(Silences)"></a>沉默(Silences)</h3><p>Silences是一种简单的特定时间不告警的机制。</p>
-<h3 id="默认配置"><a href="#默认配置" class="headerlink" title="默认配置"></a>默认配置</h3><p>打开Alertmanager的页面，选择status页面，可以查看到当前的Config。这是使用Helm安装prometheus-operator时默认的配置，如何修改呢？</p>
-<pre class="line-numbers language-yml"><code class="language-yml">global:
-  resolve_timeout: 4m
-  http_config: {}
-  smtp_hello: localhost
-  smtp_require_tls: true
-  pagerduty_url: https://events.pagerduty.com/v2/enqueue
-  hipchat_api_url: https://api.hipchat.com/
-  opsgenie_api_url: https://api.opsgenie.com/
-  wechat_api_url: https://qyapi.weixin.qq.com/cgi-bin/
-  victorops_api_url: https://alert.victorops.com/integrations/generic/20131114/alert/
-route:
-  receiver: "null"
-  group_by:
-  - job
-  routes:
-  - receiver: "null"
-    match:
-      severity: info
-  group_wait: 30s
-  group_interval: 5m
-  repeat_interval: 12h
-receivers:
-- name: "null"
-templates: []<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h2 id="Alertmanager配置说明"><a href="#Alertmanager配置说明" class="headerlink" title="Alertmanager配置说明"></a>Alertmanager配置说明</h2><p>参考<code>https://www.jianshu.com/p/239b145e2acc</code></p>
-<h2 id="修改默认配置"><a href="#修改默认配置" class="headerlink" title="修改默认配置"></a>修改默认配置</h2><p>默认配置由同命名空间下<code>Secret</code>挂载到<code>POD</code>中，所以只要修改了这个<code>Secret</code>就可以修改默认配置了。</p>
-<p><code>alertmanager-prometheus-operator-alertmanager</code>内容主要是<code>alertmanager.yaml</code> 经过<code>Base64加密</code>的。可以通过命令查看</p>
-<pre><code>kubectl edit  secret alertmanager-prometheus-operator-alertmanager -n monitoring</code></pre><p>复制其中的<code>alertmanager.yaml</code>后面的字符串，然后使用命令查看原始值。</p>
-<pre class="line-numbers language-log"><code class="language-log">echo "Imdsb2JhbCI6IAogICJyZXNvbHZlX3RpbWVvdXQiOiAiNW0iCiJyZWNlaXZlcnMiOiAKLSAibmFtZSI6ICJudWxsIgoicm91dGUiOiAKICAiZ3JvdXBfYnkiOiAKICAtICJqb2IiCiAgImdyb3VwX2ludGVydmFsIjogIjVtIgogICJncm91cF93YWl0IjogIjMwcyIKICAicmVjZWl2ZXIiOiAibnVsbCIKICAicmVwZWF0X2ludGVydmFsIjogIjEyaCIKICAicm91dGVzIjogCiAgLSAibWF0Y2giOiAKICAgICAgImFsZXJ0bmFtZSI6ICJEZWFkTWFuc1N3aXRjaCIKICAgICJyZWNlaXZlciI6ICJudWxsIg==" | base64 -d
-"global":
-  "resolve_timeout": "5m"
-"receivers":
-- "name": "null"
-"route":
-  "group_by":
-  - "job"
-  "group_interval": "5m"
-  "group_wait": "30s"
-  "receiver": "null"
-  "repeat_interval": "12h"
-  "routes":
-  - "match":
-      "alertname": "DeadMansSwitch"
-    "receiver": "null"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>创建一个新的<code>alertmanager.yaml</code>文件，内容</p>
-<pre class="line-numbers language-yml"><code class="language-yml">global:
-  resolve_timeout: 4m
-receivers:
-- name: webhook_alert
-  webhook_configs:
-  - send_resolved: true
-    url: http://dingtalkservice:8060/dingtalk/webhook1/send 
-route:
-  group_by:
-  - job
-  - alertname
-  - cluster
-  - service
-  group_interval: 5m
-  group_wait: 30s
-  receiver: webhook_alert
-  repeat_interval: 12h
-  routes:
-  - match:
-      severity: info
-    receiver: webhook_alert
-  - match:
-      severity: warning
-    receiver: webhook_alert
-templates:
-- '*.tmpl'<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>其中我们增加了<code>webhook</code>方式报警，配置最后增加了模板，所以我们还需要创建一个模板，如<code>template_1.tmpl</code></p>
-<pre class="line-numbers language-go"><code class="language-go"><span class="token punctuation">{</span><span class="token punctuation">{</span> define <span class="token string">"cluster"</span> <span class="token punctuation">}</span><span class="token punctuation">}</span>
-    <span class="token punctuation">[</span>错误订阅信息<span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token punctuation">{</span> <span class="token builtin">len</span> <span class="token punctuation">.</span>Alerts <span class="token punctuation">}</span><span class="token punctuation">}</span>条 <span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token punctuation">.</span>GroupLabels<span class="token punctuation">.</span>appid<span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token operator">-</span><span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token punctuation">.</span>GroupLabels<span class="token punctuation">.</span>service<span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">)</span> 时间
-    <span class="token punctuation">{</span><span class="token punctuation">{</span> <span class="token keyword">range</span> $i<span class="token punctuation">,</span> $alert <span class="token operator">:=</span> <span class="token punctuation">.</span>Alerts <span class="token punctuation">}</span><span class="token punctuation">}</span>
-        <span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token keyword">if</span> eq $i <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">}</span> 
-            <span class="token punctuation">{</span><span class="token punctuation">{</span> $alert<span class="token punctuation">.</span>StartsAt <span class="token punctuation">}</span><span class="token punctuation">}</span>
-        <span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
-    <span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
-<span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
-
-<span class="token punctuation">{</span><span class="token punctuation">{</span> define <span class="token string">"alertemp.html"</span> <span class="token punctuation">}</span><span class="token punctuation">}</span>
-    <span class="token punctuation">{</span><span class="token punctuation">{</span> <span class="token keyword">range</span> $i<span class="token punctuation">,</span> $alert <span class="token operator">:=</span> <span class="token punctuation">.</span>Alerts <span class="token punctuation">}</span><span class="token punctuation">}</span>
-        <span class="token operator">*</span>报警名称<span class="token punctuation">:</span><span class="token operator">*</span> <span class="token punctuation">{</span><span class="token punctuation">{</span> $alert<span class="token punctuation">.</span>Labels<span class="token punctuation">.</span>alertname <span class="token punctuation">}</span><span class="token punctuation">}</span>
-        <span class="token operator">*</span>开始时间<span class="token punctuation">:</span><span class="token operator">*</span> <span class="token punctuation">{</span><span class="token punctuation">{</span> $alert<span class="token punctuation">.</span>StartsAt <span class="token punctuation">}</span><span class="token punctuation">}</span>
-        <span class="token operator">*</span>错误信息<span class="token punctuation">:</span><span class="token operator">*</span> <span class="token punctuation">{</span><span class="token punctuation">{</span> $alert<span class="token punctuation">.</span>Annotations<span class="token punctuation">.</span>errormessage <span class="token punctuation">}</span><span class="token punctuation">}</span>
-    <span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
-<span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>上述模板参考：<code>http://blog.microservice4.net/2018/12/05/alertmanager/</code></p>
-<p>先删除原来的Secret</p>
-<pre><code>kubectl delete secret alertmanager-prometheus-operator-alertmanager -n monitoring</code></pre><p>从刚刚文件创建新的Secret</p>
-<pre><code>kubectl create secret generic alertmanager-prometheus-operator-alertmanager -n monitoring --from-file=alertmanager.yaml --from-file=template_1.tmpl</code></pre><p>创建完之后可以通过log命令查看后台有没有报错。</p>
-<pre><code>kubectl log alertmanager-prometheus-operator-alertmanager-0 alertmanager -n monitoring</code></pre><p>也可以在Dashboard中查看日志。还可以在Alertmanager容器中查看<br><img data-src="/images/k8s6.png" alt="altermanager"></p>
-<p>最后在Alertmanager页面中查看Config是否更新。<br><img data-src="/images/k8s7.png" alt="altermanager"></p>
-<p>到此，已经完成Alertmanager默认配置的更新。</p>
-<p>以上参考<code>https://www.qikqiak.com/post/prometheus-operator-custom-alert/</code>.</p>
-<h2 id="上述配置Webhook使用的钉钉来做通知"><a href="#上述配置Webhook使用的钉钉来做通知" class="headerlink" title="上述配置Webhook使用的钉钉来做通知"></a>上述配置Webhook使用的钉钉来做通知</h2><h3 id="webhook通知机制"><a href="#webhook通知机制" class="headerlink" title="webhook通知机制"></a>webhook通知机制</h3><p>在Alertmanager中可以使用如下配置定义基于webhook的告警接收器receiver。一个receiver可以对应一组webhook配置。</p>
-<pre class="line-numbers language-yml"><code class="language-yml">name: <string>
-webhook_configs:
-  [ - <webhook_config>, ... ]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>每一项webhook_config的具体配置格式如下：</p>
-<pre class="line-numbers language-yml"><code class="language-yml"># Whether or not to notify about resolved alerts.
-[ send_resolved: <boolean> | default = true ]
-
-# The endpoint to send HTTP POST requests to.
-url: <string>
-
-# The HTTP client's configuration.
-[ http_config: <http_config> | default = global.http_config ]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>send_resolved用于指定是否在告警消除时发送回执消息。url则是用于接收webhook请求的地址。http_configs则是在需要对请求进行SSL配置时使用。</p>
-<p>当用户定义webhook用于接收告警信息后，当告警被触发时，Alertmanager会按照以下格式向这些url地址发送HTTP Post请求，请求内容如下：</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-  <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"4"</span><span class="token punctuation">,</span>
-  <span class="token property">"groupKey"</span><span class="token operator">:</span> &lt;string><span class="token punctuation">,</span>    // key identifying the group of alerts (e.g. to deduplicate<span class="token punctuation">)</span>
-  <span class="token property">"status"</span><span class="token operator">:</span> "&lt;resolved|firing>"<span class="token punctuation">,</span>
-  <span class="token property">"receiver"</span><span class="token operator">:</span> &lt;string><span class="token punctuation">,</span>
-  <span class="token property">"groupLabels"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
-  <span class="token property">"commonLabels"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
-  <span class="token property">"commonAnnotations"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
-  <span class="token property">"externalURL"</span><span class="token operator">:</span> &lt;string><span class="token punctuation">,</span>  // backlink to the Alertmanager.
-  <span class="token property">"alerts"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
-    <span class="token punctuation">{</span>
-      <span class="token property">"labels"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
-      <span class="token property">"annotations"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
-      <span class="token property">"startsAt"</span><span class="token operator">:</span> <span class="token string">"&lt;rfc3339>"</span><span class="token punctuation">,</span>
-      <span class="token property">"endsAt"</span><span class="token operator">:</span> <span class="token string">"&lt;rfc3339>"</span>
-    <span class="token punctuation">}</span>
-  <span class="token punctuation">]</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="钉钉机器人"><a href="#钉钉机器人" class="headerlink" title="钉钉机器人"></a>钉钉机器人</h3><p>webhook机器人创建成功后，用户就可以使用任何方式向该地址发起HTTP POST请求，即可实现向该群主发送消息。目前自定义机器人支持文本(text)，连接(link)，markdown三种消息类型。</p>
-<p>例如，可以向webhook地址以POST形式发送以下</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-     <span class="token property">"msgtype"</span><span class="token operator">:</span> <span class="token string">"markdown"</span><span class="token punctuation">,</span>
-     <span class="token property">"markdown"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-         <span class="token property">"title"</span><span class="token operator">:</span><span class="token string">"Prometheus告警信息"</span><span class="token punctuation">,</span>
-         <span class="token property">"text"</span><span class="token operator">:</span> <span class="token string">"#### 监控指标\n"</span> +
-                 <span class="token string">"> 监控描述信息\n\n"</span> +
-                 <span class="token string">"> ###### 告警时间 \n"</span>
-     <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token property">"at"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"atMobiles"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
-            <span class="token string">"156xxxx8827"</span><span class="token punctuation">,</span>
-            <span class="token string">"189xxxx8325"</span>
-        <span class="token punctuation">]</span><span class="token punctuation">,</span> 
-        <span class="token property">"isAtAll"</span><span class="token operator">:</span> <span class="token boolean">false</span>
-    <span class="token punctuation">}</span>
- <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>可以使用curl验证钉钉webhook是否能够成功调用：</p>
-<pre class="line-numbers language-sh"><code class="language-sh">$ curl -l -H "Content-type: application/json" -X POST -d '{"msgtype": "markdown","markdown": {"title":"Prometheus告警信息","text": "#### 监控指标\n> 监控描述信息\n\n> ###### 告警时间 \n"},"at": {"isAtAll": false}}' https://oapi.dingtalk.com/robot/send?access_token=xxxx
-{"errcode":0,"errmsg":"ok"}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<blockquote>
-<p>如果想把Alertmanager信息转到钉钉上去，需要做一个转换器。<br>转化器部署：可以在k8s中部署一个Deployment，然后创建一个Service给Alert manager使用。</p>
-</blockquote>
-<h2 id="整个报警链路"><a href="#整个报警链路" class="headerlink" title="整个报警链路"></a>整个报警链路</h2><ol>
-<li>首先是Prometheus根据告警规则告警，如果增删改规则参考PrometheusRule</li>
-<li>Prometheus的告警经过Alertmanager静默、抑制、分组等配置到达Alertmanager</li>
-<li>AlterManager通过配置webhook，地址填钉钉转换器的地址。</li>
-<li>钉钉转换器中webhook地址填写钉钉机器人webhook的地址。</li>
-</ol>
-<h2 id="Prometheus-Alert-告警状态"><a href="#Prometheus-Alert-告警状态" class="headerlink" title="Prometheus Alert 告警状态"></a>Prometheus Alert 告警状态</h2><p>这里说明一下 Prometheus Alert 告警状态有三种状态：<code>Inactive</code>、<code>Pending</code>、<code>Firing</code>。</p>
-<ul>
-<li><strong>Inactive</strong>：非活动状态，表示正在监控，但是还未有任何警报触发。</li>
-<li><strong>Pending</strong>：表示这个警报必须被触发。由于警报可以被分组、压抑/抑制或静默/静音，所以等待验证，一旦所有的验证都通过，则将转到 Firing 状态。</li>
-<li><strong>Firing</strong>：将警报发送到 AlertManager，它将按照配置将警报的发送给所有接收者。一旦警报解除，则将状态转到 Inactive，如此循环。</li>
-</ul>
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
-<li><a href="https://yunlzheng.gitbook.io/prometheus-book/parti-prometheus-ji-chu/alert/alert-manager-use-receiver/alert-manager-extension-with-webhook#shi-yong-golang-chuang-jian-webhook-fu-wu" target="_blank" rel="noopener">Alert manager集成钉钉</a></li>
-<li><a href="https://developer.aliyun.com/article/705415" target="_blank" rel="noopener">创建一个转化器镜像</a></li>
-<li><a href="https://theo.im/blog/2017/10/16/release-prometheus-alertmanager-webhook-for-dingtalk/" target="_blank" rel="noopener">转化器如何使用</a></li>
-<li><a href="https://mp.weixin.qq.com/s/2yKB3aqeYgna2GupM6SiGA" target="_blank" rel="noopener">Alertmanager何时报警</a></li>
-</ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1545,20 +1286,20 @@ url: <string>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">313</span>
+          <span class="site-state-item-count">315</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">199</span>
+        <span class="site-state-item-count">201</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
