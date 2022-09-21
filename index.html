@@ -731,10 +731,16 @@ banner:
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-09-16 14:36:42 / 修改时间：14:46:34" itemprop="dateCreated datePublished" datetime="2022-09-16T14:36:42+08:00">2022-09-16</time>
+              <time title="创建时间：2022-09-16 14:36:42" itemprop="dateCreated datePublished" datetime="2022-09-16T14:36:42+08:00">2022-09-16</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-09-21 16:30:45" itemprop="dateModified" datetime="2022-09-21T16:30:45+08:00">2022-09-21</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -772,54 +778,45 @@ bind_port <span class="token operator">=</span> 7000
 <span class="token comment" spellcheck="true">#bind_addr = 0.0.0.0</span>
 <span class="token comment" spellcheck="true">#认证token</span>
 <span class="token comment" spellcheck="true">#token = big_cat</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token comment" spellcheck="true">#http服务端口</span>
+vhost_http_port <span class="token operator">=</span> 7080
+<span class="token comment" spellcheck="true">#https服务端口</span>
+vhost_https_port <span class="token operator">=</span> 70443<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>frpc.ini<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>common<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true">#frps的ip地址</span>
+server_addr <span class="token operator">=</span> 114.114.114.114
+<span class="token comment" spellcheck="true">#frps的端口</span>
+server_port <span class="token operator">=</span> 7000
+<span class="token comment" spellcheck="true">#认证token</span>
+<span class="token comment" spellcheck="true">#token = big_cat</span>
+<span class="token punctuation">[</span>web-big_cat01<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true"># 远端服务器定义好了 http 服务的端口 这里不需要指定</span>
+<span class="token comment" spellcheck="true"># 只需要指定 custom/sub_domains 用来做路由即可 </span>
+<span class="token comment" spellcheck="true"># 如果只是代理一台 则指定服务端ip 使用ip访问即可</span>
+<span class="token function">type</span> <span class="token operator">=</span> http
+<span class="token comment" spellcheck="true">#本地http服务端口</span>
+local_port <span class="token operator">=</span> 8081
+<span class="token comment" spellcheck="true">#本地http服务地址</span>
+local_ip <span class="token operator">=</span> 127.0.0.1
+<span class="token comment" spellcheck="true"># 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）</span>
+<span class="token comment" spellcheck="true">#custom_domains = 118.118.118.118</span>
+<span class="token comment" spellcheck="true"># 或者指定域名 可以使用其他域名继续绑定</span>
+custom_domains <span class="token operator">=</span> frp1.big_cat.com
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 </li>
 </ul>
-<p>#http服务端口<br>vhost_http_port = 7080<br>#https服务端口<br>vhost_https_port = 70443</p>
-<pre><code>- frpc.ini
+<p>[web-big_cat02]<br>type = http<br>local_port = 8082<br>#本地http服务地址<br>local_ip = 127.0.0.1</p>
+<h1 id="直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）"><a href="#直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）" class="headerlink" title="直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）"></a>直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）</h1><p>#custom_domains = 118.118.118.118</p>
+<h1 id="或者指定域名-可以使用其他域名继续绑定"><a href="#或者指定域名-可以使用其他域名继续绑定" class="headerlink" title="或者指定域名 可以使用其他域名继续绑定"></a>或者指定域名 可以使用其他域名继续绑定</h1><p>custom_domains = frp2.big_cat.com<br>[ssh]<br>type = tcp<br>local_port = 22<br>local_ip = 127.0.0.1</p>
+<h1 id="在服务端注册端口-服务端将监听-7022-ssh-root-118-118-118-118-p-7022-即可代理到本机-ssh-登录"><a href="#在服务端注册端口-服务端将监听-7022-ssh-root-118-118-118-118-p-7022-即可代理到本机-ssh-登录" class="headerlink" title="在服务端注册端口 服务端将监听 7022 ssh root@118.118.118.118 -p 7022 即可代理到本机 ssh 登录"></a>在服务端注册端口 服务端将监听 7022 ssh <a href="mailto:root@118.118.118.118">root@118.118.118.118</a> -p 7022 即可代理到本机 ssh 登录</h1><p>remote_port = 7022</p>
+<pre><code>
+### 启动
 ```bash
-[common]
-#frps的ip地址
-server_addr = 114.114.114.114
-#frps的端口
-server_port = 7000
-#认证token
-#token = big_cat
-
-[web-big_cat01]
-# 远端服务器定义好了 http 服务的端口 这里不需要指定
-# 只需要指定 custom/sub_domains 用来做路由即可 
-# 如果只是代理一台 则指定服务端ip 使用ip访问即可
-type = http
-#本地http服务端口
-local_port = 8081
-#本地http服务地址
-local_ip = 127.0.0.1
-# 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）
-#custom_domains = 118.118.118.118
-# 或者指定域名 可以使用其他域名继续绑定
-custom_domains = frp1.big_cat.com
-
-[web-big_cat02]
-type = http
-local_port = 8082
-#本地http服务地址
-local_ip = 127.0.0.1
-# 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）
-#custom_domains = 118.118.118.118
-# 或者指定域名 可以使用其他域名继续绑定
-custom_domains = frp2.big_cat.com
-
-[ssh]
-type = tcp
-local_port = 22
-local_ip = 127.0.0.1
-# 在服务端注册端口 服务端将监听 7022 ssh root@118.118.118.118 -p 7022 即可代理到本机 ssh 登录
-remote_port = 7022</code></pre><h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动服务端服务</span>
-<span class="token function">nohup</span> ./frps -c ./frps.ini <span class="token operator">&amp;</span>
-<span class="token comment" spellcheck="true"># 启动客户端服务</span>
-<span class="token function">nohup</span> ./frpc -c ./frpc.ini <span class="token operator">&amp;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
+# 启动服务端服务
+nohup ./frps -c ./frps.ini &amp;
+# 启动客户端服务
+nohup ./frpc -c ./frpc.ini &amp;</code></pre><blockquote>
 <p>注意: <code>http/https</code> 服务是在服务端配置中定义的端口，客户端指定协议后会自动关联，<code>ssh</code> 等使用 tcp 的则是在客户端定义好 <code>remote_port</code> ，服务端开放此端口即可。</p>
 </blockquote>
 <script>
