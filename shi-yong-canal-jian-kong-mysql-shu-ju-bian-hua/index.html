@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="canal介绍canal是阿里开源的数据库同步框架,采用非侵入式方式,解析mysql的binary log,再发送到目的地,目的地可是mq,hbase,mysql,es等. 本章流程 开启mysql的bin-log日志 创建mysql用户获取bin-log日志 canal采集bin-log日志 canal-client获取mysql变化信息  开启bin-log日志只需要在mysqld.cnf新增">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-06-11T02:18:34.000Z">
-<meta property="article:modified_time" content="2021-06-11T02:36:10.347Z">
+<meta property="article:modified_time" content="2021-06-11T02:18:34.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="mysql">
 <meta property="article:tag" content="canal">
@@ -78,6 +78,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -220,9 +222,8 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-06-11 10:18:34 / 修改时间：10:36:10" itemprop="dateCreated datePublished" datetime="2021-06-11T10:18:34+08:00">2021-06-11</time>
+              <time title="创建时间：2021-06-11 10:18:34" itemprop="dateCreated datePublished" datetime="2021-06-11T10:18:34+08:00">2021-06-11</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -254,9 +255,12 @@
 </ol>
 <h4 id="开启bin-log日志"><a href="#开启bin-log日志" class="headerlink" title="开启bin-log日志"></a>开启bin-log日志</h4><p>只需要在<code>mysqld.cnf</code>新增配置</p>
 <pre><code>server-id=1
-log-bin=mysql-bin</code></pre><h4 id="创建mysql用户"><a href="#创建mysql用户" class="headerlink" title="创建mysql用户"></a>创建mysql用户</h4><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">create</span> <span class="token keyword">user</span> canal@'<span class="token operator">%</span><span class="token string">' IDENTIFIED by '</span>canal<span class="token string">';
+log-bin=mysql-bin
+</code></pre>
+<h4 id="创建mysql用户"><a href="#创建mysql用户" class="headerlink" title="创建mysql用户"></a>创建mysql用户</h4><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">create</span> <span class="token keyword">user</span> canal@'<span class="token operator">%</span><span class="token string">' IDENTIFIED by '</span>canal<span class="token string">';
 GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT,SUPER ON *.* TO '</span>canal<span class="token string">'@'</span><span class="token operator">%</span>'<span class="token punctuation">;</span>
-FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <h4 id="配置canal"><a href="#配置canal" class="headerlink" title="配置canal"></a>配置canal</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 配置文件1：canal-server/conf/canal.properties</span>
 <span class="token comment" spellcheck="true"># 端口</span>
 canal.port <span class="token operator">=</span> 11111
@@ -269,11 +273,13 @@ canal.instance.dbPassword<span class="token operator">=</span>canal
 <span class="token comment" spellcheck="true"># 监听的表(正则表达式)</span>
 canal.instance.filter.regex<span class="token operator">=</span>.*\\<span class="token punctuation">..</span>*
 <span class="token comment" spellcheck="true"># 主题</span>
-canal.mq.topic<span class="token operator">=</span>example<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="启动mysql-canal"><a href="#启动mysql-canal" class="headerlink" title="启动mysql/canal"></a>启动mysql/canal</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 本地测试采用docker方式启动</span>
+canal.mq.topic<span class="token operator">=</span>example
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="启动mysql-x2F-canal"><a href="#启动mysql-x2F-canal" class="headerlink" title="启动mysql/canal"></a>启动mysql/canal</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 本地测试采用docker方式启动</span>
 docker run -d --name mysql -p 3307:3306 -e MYSQL_ROOT_PASSWORD<span class="token operator">=</span>123456 -v <span class="token variable">$PWD</span>/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf  hub.c.163.com/library/mysql:5.7
 
-docker run -p 11111:11111 --name canal -d docker.io/canal/canal-server<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+docker run -p 11111:11111 --name canal -d docker.io/canal/canal-server
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <h4 id="编写canal-client"><a href="#编写canal-client" class="headerlink" title="编写canal-client"></a>编写canal-client</h4><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>stream<span class="token punctuation">.</span>canal<span class="token punctuation">;</span>
 
 <span class="token keyword">import</span> com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>otter<span class="token punctuation">.</span>canal<span class="token punctuation">.</span>client<span class="token punctuation">.</span>CanalConnector<span class="token punctuation">;</span>
@@ -358,30 +364,13 @@ docker run -p 11111:11111 --name canal -d docker.io/canal/canal-server<span aria
             System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>column<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" : "</span> <span class="token operator">+</span> column<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"    update="</span> <span class="token operator">+</span> column<span class="token punctuation">.</span><span class="token function">getUpdated</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
         <span class="token punctuation">}</span>
     <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="参考连接"><a href="#参考连接" class="headerlink" title="参考连接"></a>参考连接</h3><ul>
-<li><a href="https://www.cnblogs.com/moris5013/p/12371549.html" target="_blank" rel="noopener">https://www.cnblogs.com/moris5013/p/12371549.html</a></li>
-<li><a href="https://blog.csdn.net/weixin_35852328/article/details/87600833" target="_blank" rel="noopener">https://blog.csdn.net/weixin_35852328/article/details/87600833</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/moris5013/p/12371549.html">https://www.cnblogs.com/moris5013/p/12371549.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_35852328/article/details/87600833">https://blog.csdn.net/weixin_35852328/article/details/87600833</a></li>
 </ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+
     </div>
 
     
@@ -465,7 +454,7 @@ docker run -p 11111:11111 --name canal -d docker.io/canal/canal-server<span aria
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#canal介绍"><span class="nav-number">1.</span> <span class="nav-text">canal介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#本章流程"><span class="nav-number">2.</span> <span class="nav-text">本章流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#开启bin-log日志"><span class="nav-number">2.1.</span> <span class="nav-text">开启bin-log日志</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建mysql用户"><span class="nav-number">2.2.</span> <span class="nav-text">创建mysql用户</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#配置canal"><span class="nav-number">2.3.</span> <span class="nav-text">配置canal</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#启动mysql-canal"><span class="nav-number">2.4.</span> <span class="nav-text">启动mysql&#x2F;canal</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编写canal-client"><span class="nav-number">2.5.</span> <span class="nav-text">编写canal-client</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考连接"><span class="nav-number">3.</span> <span class="nav-text">参考连接</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#canal%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">canal介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%AC%E7%AB%A0%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">本章流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E5%90%AFbin-log%E6%97%A5%E5%BF%97"><span class="nav-number">2.1.</span> <span class="nav-text">开启bin-log日志</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAmysql%E7%94%A8%E6%88%B7"><span class="nav-number">2.2.</span> <span class="nav-text">创建mysql用户</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEcanal"><span class="nav-number">2.3.</span> <span class="nav-text">配置canal</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8mysql-x2F-canal"><span class="nav-number">2.4.</span> <span class="nav-text">启动mysql&#x2F;canal</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%96%E5%86%99canal-client"><span class="nav-number">2.5.</span> <span class="nav-text">编写canal-client</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%BF%9E%E6%8E%A5"><span class="nav-number">3.</span> <span class="nav-text">参考连接</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="前文：在所有节点安装nfs-utils并启动相关服务。  NFS服务端新建一个挂载目录echo &quot;&#x2F;home&#x2F;nfs *(rw,async,no_root_squash)&quot; &gt;&gt; &#x2F;etc&#x2F;exports exportfs -r showmount -e localhost安装nfs-clienthelm install stable&#x2F;nfs-client-provisioner -">
+  <meta name="description" content="前文：在所有节点安装nfs-utils并启动相关服务。  NFS服务端新建一个挂载目录echo &quot;&#x2F;home&#x2F;nfs *(rw,async,no_root_squash)&quot; &gt;&gt; &#x2F;etc&#x2F;exports exportfs -r showmount -e localhost  安装nfs-clienthelm install stable&#x2F;nfs-client-provisioner">
 <meta property="og:type" content="article">
 <meta property="og:title" content="k8s动态分配存储【helm安装nfs-client】">
 <meta property="og:url" content="https://happywzy.top/k8s-dong-tai-fen-pei-cun-chu-helm-an-zhuang-nfs-client/index.html">
 <meta property="og:site_name" content="Happywzy">
-<meta property="og:description" content="前文：在所有节点安装nfs-utils并启动相关服务。  NFS服务端新建一个挂载目录echo &quot;&#x2F;home&#x2F;nfs *(rw,async,no_root_squash)&quot; &gt;&gt; &#x2F;etc&#x2F;exports exportfs -r showmount -e localhost安装nfs-clienthelm install stable&#x2F;nfs-client-provisioner -">
+<meta property="og:description" content="前文：在所有节点安装nfs-utils并启动相关服务。  NFS服务端新建一个挂载目录echo &quot;&#x2F;home&#x2F;nfs *(rw,async,no_root_squash)&quot; &gt;&gt; &#x2F;etc&#x2F;exports exportfs -r showmount -e localhost  安装nfs-clienthelm install stable&#x2F;nfs-client-provisioner">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-11-18T07:41:52.000Z">
-<meta property="article:modified_time" content="2020-04-14T09:34:41.435Z">
+<meta property="article:modified_time" content="2019-11-18T07:41:52.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="k8s">
 <meta property="article:tag" content="nfs-client">
@@ -79,6 +79,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -224,13 +226,6 @@
 
               <time title="创建时间：2019-11-18 15:41:52" itemprop="dateCreated datePublished" datetime="2019-11-18T15:41:52+08:00">2019-11-18</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-14 17:34:41" itemprop="dateModified" datetime="2020-04-14T17:34:41+08:00">2020-04-14</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -257,86 +252,91 @@
 </blockquote>
 <h3 id="NFS服务端新建一个挂载目录"><a href="#NFS服务端新建一个挂载目录" class="headerlink" title="NFS服务端新建一个挂载目录"></a>NFS服务端新建一个挂载目录</h3><pre><code>echo "/home/nfs *(rw,async,no_root_squash)" &gt;&gt; /etc/exports
 exportfs -r
-showmount -e localhost</code></pre><h3 id="安装nfs-client"><a href="#安装nfs-client" class="headerlink" title="安装nfs-client"></a>安装nfs-client</h3><pre><code>helm install stable/nfs-client-provisioner --name test-storageclass --set nfs.server=192.168.1.210 --set nfs.path=/home/nfs</code></pre><h3 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h3><p>可以先用命令<code>helm inspect values stable/nfs-client-provisioner</code>查看所有配置项，并提前下载好镜像。</p>
+showmount -e localhost
+</code></pre>
+<h3 id="安装nfs-client"><a href="#安装nfs-client" class="headerlink" title="安装nfs-client"></a>安装nfs-client</h3><pre><code>helm install stable/nfs-client-provisioner --name test-storageclass --set nfs.server=192.168.1.210 --set nfs.path=/home/nfs
+</code></pre>
+<h3 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h3><p>可以先用命令<code>helm inspect values stable/nfs-client-provisioner</code>查看所有配置项，并提前下载好镜像。</p>
 <pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
 strategyType: Recreate
-
+ 
 image:
   repository: quay.io/external_storage/nfs-client-provisioner
   tag: v3.1.0-k8s1.11
   pullPolicy: IfNotPresent
-
+ 
 nfs:
   server:
   path: /ifs/kubernetes
   mountOptions:
-
+ 
 # For creating the StorageClass automatically:
 storageClass:
   create: true
-
+ 
   # Set a provisioner name. If unset, a name will be generated.
   # provisionerName:
-
+ 
   # Set StorageClass as the default StorageClass
   # Ignored if storageClass.create is false
   defaultClass: false
-
+ 
   # Set a StorageClass name
   # Ignored if storageClass.create is false
   name: nfs-client
-
+ 
   # Allow volume to be expanded dynamically
   allowVolumeExpansion: true
-
+ 
   # Method used to reclaim an obsoleted volume
   reclaimPolicy: Delete
-
+ 
   # When set to false your PVs will not be archived by the provisioner upon deletion of the PVC.
   archiveOnDelete: true
-
+ 
 ## For RBAC support:
 rbac:
   # Specifies whether RBAC resources should be created
   create: true
-
+ 
 # If true, create & use Pod Security Policy resources
 # https://kubernetes.io/docs/concepts/policy/pod-security-policy/
 podSecurityPolicy:
   enabled: false
-
+ 
 ## Set pod priorityClassName
 # priorityClassName: ""
-
+ 
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
   create: true
-
+ 
   # The name of the ServiceAccount to use.
   # If not set and create is true, a name is generated using the fullname template
   name:
-
+ 
 resources: {}
   # limits:
   #  cpu: 100m
   #  memory: 128Mi
   # requests:
   #  cpu: 100m
-  #  memory: 128Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+  #  memory: 128Mi
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>也可以修改下上面的yaml，直接通过<code>nfs-client.yaml</code>创建：</p>
 <pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
 strategyType: Recreate
-
+ 
 image:
   repository: quay.io/external_storage/nfs-client-provisioner
   tag: v3.1.0-k8s1.11
   pullPolicy: IfNotPresent
-
+ 
 nfs:
   server: 192.168.1.210
   path: /home/nfs
   mountOptions:
-
+ 
 storageClass:
   create: true
   defaultClass: false
@@ -344,14 +344,17 @@ storageClass:
   allowVolumeExpansion: true
   reclaimPolicy: Delete
   archiveOnDelete: true
-
+ 
 rbac:
   create: true
-
+ 
 podSecurityPolicy:
-  enabled: false<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+  enabled: false
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>执行安装命令：</p>
-<pre><code>helm install stable/nfs-client-provisioner -n test-storageclass -f nfs-client.yaml</code></pre><h3 id="创建PVC测试"><a href="#创建PVC测试" class="headerlink" title="创建PVC测试"></a>创建PVC测试</h3><p>创建<code>test-pvc.yaml</code></p>
+<pre><code>helm install stable/nfs-client-provisioner -n test-storageclass -f nfs-client.yaml
+</code></pre>
+<h3 id="创建PVC测试"><a href="#创建PVC测试" class="headerlink" title="创建PVC测试"></a>创建PVC测试</h3><p>创建<code>test-pvc.yaml</code></p>
 <pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -362,35 +365,21 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10Mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre><code>kubectl apply -f test-pvc.yaml</code></pre><h3 id="查看结果"><a href="#查看结果" class="headerlink" title="查看结果"></a>查看结果</h3><pre class="line-numbers language-log"><code class="language-log">[root@k8s-master home]# kubectl get sc
+      storage: 10Mi
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre><code>kubectl apply -f test-pvc.yaml
+</code></pre>
+<h3 id="查看结果"><a href="#查看结果" class="headerlink" title="查看结果"></a>查看结果</h3><pre class="line-numbers language-log"><code class="language-log">[root@k8s-master home]# kubectl get sc
 NAME         PROVISIONER                                              AGE
 nfs-client   cluster.local/test-storageclass-nfs-client-provisioner   36m
 [root@k8s-master home]# kubectl get pv,pvc
 NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS        CLAIM                 STORAGECLASS    REASON   AGE
 persistentvolume/pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            Delete           Bound         default/testclaim     nfs-client               33m
-
+ 
 NAME                              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/testclaim   Bound    pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            nfs-client     34m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+persistentvolumeclaim/testclaim   Bound    pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            nfs-client     34m
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
     </div>
 
     
@@ -475,7 +464,7 @@ persistentvolumeclaim/testclaim   Bound    pvc-d9bdfa45-6417-4ad9-bbf0-02301f928
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#NFS服务端新建一个挂载目录"><span class="nav-number">1.</span> <span class="nav-text">NFS服务端新建一个挂载目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装nfs-client"><span class="nav-number">2.</span> <span class="nav-text">安装nfs-client</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注意"><span class="nav-number">3.</span> <span class="nav-text">注意</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建PVC测试"><span class="nav-number">4.</span> <span class="nav-text">创建PVC测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查看结果"><span class="nav-number">5.</span> <span class="nav-text">查看结果</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#NFS%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%96%B0%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%8C%82%E8%BD%BD%E7%9B%AE%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">NFS服务端新建一个挂载目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85nfs-client"><span class="nav-number">2.</span> <span class="nav-text">安装nfs-client</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B3%A8%E6%84%8F"><span class="nav-number">3.</span> <span class="nav-text">注意</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAPVC%E6%B5%8B%E8%AF%95"><span class="nav-number">4.</span> <span class="nav-text">创建PVC测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E7%BB%93%E6%9E%9C"><span class="nav-number">5.</span> <span class="nav-text">查看结果</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

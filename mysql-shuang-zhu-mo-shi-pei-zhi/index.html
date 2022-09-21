@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://happywzy.top/images/mysql.png">
 <meta property="article:published_time" content="2020-07-28T03:13:48.000Z">
-<meta property="article:modified_time" content="2020-08-06T05:29:44.803Z">
+<meta property="article:modified_time" content="2020-07-28T03:13:48.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary">
@@ -79,6 +79,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -224,13 +226,6 @@
 
               <time title="创建时间：2020-07-28 11:13:48" itemprop="dateCreated datePublished" datetime="2020-07-28T11:13:48+08:00">2020-07-28</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-06 13:29:44" itemprop="dateModified" datetime="2020-08-06T13:29:44+08:00">2020-08-06</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -291,37 +286,51 @@
 <p>主要配置文件<code>/etc/my.cnf</code></p>
 </blockquote>
 <ol>
-<li>修改配置<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/my.cnf
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
+<li>修改配置</li>
 </ol>
-<h1 id="添加以下配置"><a href="#添加以下配置" class="headerlink" title="添加以下配置"></a>添加以下配置</h1><h1 id="id-保证唯一"><a href="#id-保证唯一" class="headerlink" title="id 保证唯一"></a>id 保证唯一</h1><p>server-id=1</p>
-<h1 id="开启binlog-日志"><a href="#开启binlog-日志" class="headerlink" title="开启binlog 日志"></a>开启binlog 日志</h1><p>log-bin=mysql-bin</p>
-<h1 id="自增ID保证不冲突-一主1-3-5-另一主2-4-6"><a href="#自增ID保证不冲突-一主1-3-5-另一主2-4-6" class="headerlink" title="自增ID保证不冲突, 一主1,3,5 另一主2,4,6"></a>自增ID保证不冲突, 一主1,3,5 另一主2,4,6</h1><p>auto-increment-increment=2<br>auto-increment-offset=1</p>
-<h1 id="将复制事件写入binlog-一台服务器既做主库又做从库此选项必须要开启"><a href="#将复制事件写入binlog-一台服务器既做主库又做从库此选项必须要开启" class="headerlink" title="将复制事件写入binlog,一台服务器既做主库又做从库此选项必须要开启"></a>将复制事件写入binlog,一台服务器既做主库又做从库此选项必须要开启</h1><p>log-slave-updates=true</p>
-<h1 id="忽略同步的数据库"><a href="#忽略同步的数据库" class="headerlink" title="忽略同步的数据库"></a>忽略同步的数据库</h1><p>replicate-ignore-db=information_schema<br>replicate-ignore-db=performance_schema<br>replicate-ignore-db=mysql<br>replicate-ignore-db=sys</p>
-<h1 id="binlog文件大小限制"><a href="#binlog文件大小限制" class="headerlink" title="binlog文件大小限制"></a>binlog文件大小限制</h1><p>max_binlog_size=1024M</p>
-<h1 id="binlog格式"><a href="#binlog格式" class="headerlink" title="binlog格式"></a>binlog格式</h1><p>binlog-format=ROW</p>
-<pre><code>另一台配置
-```bash
-server-id=2
-log-bin=mysql-bin
-auto-increment-increment=2
-auto-increment-offset=2
-log-slave-updates=true
-replicate-ignore-db=information_schema
-replicate-ignore-db=performance_schema
-replicate-ignore-db=mysql
-replicate-ignore-db=sys
-max_binlog_size=1024M
-binlog-format=ROW
-#binlog_rows_query_log_events=on # 在row 模式的binlog中包含SQL EVENTS（即SQL语句也会保留）
-#master-info-repository=TABLE
-#relay-log-info-repository=TABLE
-#slave-skip-errors=all # 忽略复制产生的错误
-#slave-skip-errors=1062,1032,1060 # 跳过已知错误,主键冲突、表已存在等错误代码如1062,1032,1060等
-#relay-log-purge = 1    #是否自动清空不再需要中继日志时。默认值为1(启用)
-#expire_logs_days = 30  #超过 30 天的 binlog 删除</code></pre><p><code>slave_skip_errors</code>参数说明:</p>
+<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/my.cnf
+
+<span class="token comment" spellcheck="true"># 添加以下配置</span>
+<span class="token comment" spellcheck="true"># id 保证唯一</span>
+server-id<span class="token operator">=</span>1
+<span class="token comment" spellcheck="true"># 开启binlog 日志</span>
+log-bin<span class="token operator">=</span>mysql-bin
+<span class="token comment" spellcheck="true"># 自增ID保证不冲突, 一主1,3,5 另一主2,4,6</span>
+auto-increment-increment<span class="token operator">=</span>2
+auto-increment-offset<span class="token operator">=</span>1
+<span class="token comment" spellcheck="true"># 将复制事件写入binlog,一台服务器既做主库又做从库此选项必须要开启</span>
+log-slave-updates<span class="token operator">=</span>true
+<span class="token comment" spellcheck="true"># 忽略同步的数据库</span>
+replicate-ignore-db<span class="token operator">=</span>information_schema
+replicate-ignore-db<span class="token operator">=</span>performance_schema
+replicate-ignore-db<span class="token operator">=</span>mysql
+replicate-ignore-db<span class="token operator">=</span>sys
+<span class="token comment" spellcheck="true"># binlog文件大小限制</span>
+max_binlog_size<span class="token operator">=</span>1024M
+<span class="token comment" spellcheck="true"># binlog格式</span>
+binlog-format<span class="token operator">=</span>ROW
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>另一台配置</p>
+<pre class="line-numbers language-bash"><code class="language-bash">server-id<span class="token operator">=</span>2
+log-bin<span class="token operator">=</span>mysql-bin
+auto-increment-increment<span class="token operator">=</span>2
+auto-increment-offset<span class="token operator">=</span>2
+log-slave-updates<span class="token operator">=</span>true
+replicate-ignore-db<span class="token operator">=</span>information_schema
+replicate-ignore-db<span class="token operator">=</span>performance_schema
+replicate-ignore-db<span class="token operator">=</span>mysql
+replicate-ignore-db<span class="token operator">=</span>sys
+max_binlog_size<span class="token operator">=</span>1024M
+binlog-format<span class="token operator">=</span>ROW
+<span class="token comment" spellcheck="true">#binlog_rows_query_log_events=on # 在row 模式的binlog中包含SQL EVENTS（即SQL语句也会保留）</span>
+<span class="token comment" spellcheck="true">#master-info-repository=TABLE</span>
+<span class="token comment" spellcheck="true">#relay-log-info-repository=TABLE</span>
+<span class="token comment" spellcheck="true">#slave-skip-errors=all # 忽略复制产生的错误</span>
+<span class="token comment" spellcheck="true">#slave-skip-errors=1062,1032,1060 # 跳过已知错误,主键冲突、表已存在等错误代码如1062,1032,1060等</span>
+<span class="token comment" spellcheck="true">#relay-log-purge = 1    #是否自动清空不再需要中继日志时。默认值为1(启用)</span>
+<span class="token comment" spellcheck="true">#expire_logs_days = 30  #超过 30 天的 binlog 删除</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>slave_skip_errors</code>参数说明:</p>
 <pre><code>slave_skip_errors选项有四个可用值，分别为：off，all，ErorCode，ddl_exist_errors, 默认情况下该参数值是off.
 mysql5.6及MySQL Cluster NDB 7.3以及后续版本增加了参数ddl_exist_errors，该参数包含一系列error code（1007,1008,1050,1051,1054,1060,1061,1068,1094,1146）
 一些error code代表的错误如下：
@@ -336,65 +345,100 @@ mysql5.6及MySQL Cluster NDB 7.3以及后续版本增加了参数ddl_exist_error
     1094：位置线程ID
     1146：数据表缺失，请恢复数据库
     1053：复制过程中主服务器宕机
-    1062：主键冲突 Duplicate entry '%s' for key %d</code></pre><ol start="2">
-<li><p>重启<code>mysql</code></p>
+    1062：主键冲突 Duplicate entry '%s' for key %d
+</code></pre>
+<ol start="2">
+<li>重启<code>mysql</code></li>
+</ol>
 <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 根据安装方式选择</span>
-<span class="token function">service</span> mysql restart<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-</li>
-<li><p>添加主从同步账户<br>```sql</p>
-</li>
+<span class="token function">service</span> mysql restart
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>添加主从同步账户</li>
 </ol>
-<p>– mysql01<br>grant replication slave on <em>.</em> to ‘slave’@’192.168.41.142’ identified by ‘123456’;<br>flush privileges;</p>
-<p>– mysql02<br>grant replication slave on <em>.</em> to ‘slave’@’192.168.41.141’ identified by ‘123456’;<br>flush privileges;</p>
-<pre><code>
-4. 查看主库状态
-```sql
--- 分别在mysql01,mysql02查看, 这里由于都是新安装的，status完全一样，实际可能不一样
--- 记住file的名字和position的值，因为主从同步，从数据库是通过读取主数据库的日志文件来完成同步的，所以需要文件名字和日志的当前位置
-mysql&gt; show master status;
-+------------------+----------+--------------+------------------+-------------------+
-| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
-+------------------+----------+--------------+------------------+-------------------+
-| mysql-bin.000001 |      604 |              |                  |                   |
-+------------------+----------+--------------+------------------+-------------------+
-1 row in set (0.00 sec)</code></pre><ol start="5">
-<li>配置同步信息<br>```sql</li>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- mysql01</span>
+<span class="token keyword">grant</span> <span class="token keyword">replication</span> slave <span class="token keyword">on</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">to</span> <span class="token string">'slave'</span>@'<span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">41.142</span><span class="token string">' identified by '</span><span class="token number">123456</span>'<span class="token punctuation">;</span>
+flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- mysql02</span>
+<span class="token keyword">grant</span> <span class="token keyword">replication</span> slave <span class="token keyword">on</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">to</span> <span class="token string">'slave'</span>@'<span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">41.141</span><span class="token string">' identified by '</span><span class="token number">123456</span>'<span class="token punctuation">;</span>
+flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>查看主库状态</li>
 </ol>
-<p>– mysql01<br>change master to master_host=’192.168.41.142’,master_port=3306,master_user=’slave’,master_password=’123456’,master_log_file=’mysql-bin.000001’,master_log_pos=604;</p>
-<p>start slave;</p>
-<p>– mysql02<br>change master to master_host=’192.168.41.141’,master_port=3306,master_user=’slave’,master_password=’123456’,master_log_file=’mysql-bin.000001’,master_log_pos=604;</p>
-<p>start slave;</p>
-<pre><code>
-6. 查看同步状态
-```sql
--- 分别在mysql01,mysql02查看同步状态
-mysql&gt; show slave status\G
-*************************** 1. row ***************************
-               Slave_IO_State: Waiting for master to send event
-                  Master_Host: 192.168.41.141
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 分别在mysql01,mysql02查看, 这里由于都是新安装的，status完全一样，实际可能不一样</span>
+<span class="token comment" spellcheck="true">-- 记住file的名字和position的值，因为主从同步，从数据库是通过读取主数据库的日志文件来完成同步的，所以需要文件名字和日志的当前位置</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> master <span class="token keyword">status</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token operator">|</span> <span class="token keyword">File</span>             <span class="token operator">|</span> Position <span class="token operator">|</span> Binlog_Do_DB <span class="token operator">|</span> Binlog_Ignore_DB <span class="token operator">|</span> Executed_Gtid_Set <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000001</span> <span class="token operator">|</span>      <span class="token number">604</span> <span class="token operator">|</span>              <span class="token operator">|</span>                  <span class="token operator">|</span>                   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>配置同步信息</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- mysql01</span>
+change master <span class="token keyword">to</span> master_host<span class="token operator">=</span><span class="token string">'192.168.41.142'</span><span class="token punctuation">,</span>master_port<span class="token operator">=</span><span class="token number">3306</span><span class="token punctuation">,</span>master_user<span class="token operator">=</span><span class="token string">'slave'</span><span class="token punctuation">,</span>master_password<span class="token operator">=</span><span class="token string">'123456'</span><span class="token punctuation">,</span>master_log_file<span class="token operator">=</span><span class="token string">'mysql-bin.000001'</span><span class="token punctuation">,</span>master_log_pos<span class="token operator">=</span><span class="token number">604</span><span class="token punctuation">;</span>
+
+<span class="token keyword">start</span> slave<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- mysql02</span>
+change master <span class="token keyword">to</span> master_host<span class="token operator">=</span><span class="token string">'192.168.41.141'</span><span class="token punctuation">,</span>master_port<span class="token operator">=</span><span class="token number">3306</span><span class="token punctuation">,</span>master_user<span class="token operator">=</span><span class="token string">'slave'</span><span class="token punctuation">,</span>master_password<span class="token operator">=</span><span class="token string">'123456'</span><span class="token punctuation">,</span>master_log_file<span class="token operator">=</span><span class="token string">'mysql-bin.000001'</span><span class="token punctuation">,</span>master_log_pos<span class="token operator">=</span><span class="token number">604</span><span class="token punctuation">;</span>
+
+<span class="token keyword">start</span> slave<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>查看同步状态</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 分别在mysql01,mysql02查看同步状态</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> slave <span class="token keyword">status</span>\G
+<span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span> <span class="token number">1</span><span class="token punctuation">.</span> <span class="token keyword">row</span> <span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span>
+               Slave_IO_State: Waiting <span class="token keyword">for</span> master <span class="token keyword">to</span> send event
+                  Master_Host: <span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">41.141</span>
                   Master_User: slave
-                  Master_Port: 3306
-                Connect_Retry: 60
-              Master_Log_File: mysql-bin.000001
-          Read_Master_Log_Pos: 604
-               Relay_Log_File: mysql02-relay-bin.000002
-                Relay_Log_Pos: 320
-        Relay_Master_Log_File: mysql-bin.000001
-             Slave_IO_Running: Yes      -- 状态正常
-            Slave_SQL_Running: Yes      -- 状态正常</code></pre><ol start="7">
-<li>测试<br>```sql</li>
+                  Master_Port: <span class="token number">3306</span>
+                Connect_Retry: <span class="token number">60</span>
+              Master_Log_File: mysql<span class="token operator">-</span>bin<span class="token number">.000001</span>
+          Read_Master_Log_Pos: <span class="token number">604</span>
+               Relay_Log_File: mysql02<span class="token operator">-</span>relay<span class="token operator">-</span>bin<span class="token number">.000002</span>
+                Relay_Log_Pos: <span class="token number">320</span>
+        Relay_Master_Log_File: mysql<span class="token operator">-</span>bin<span class="token number">.000001</span>
+             Slave_IO_Running: Yes      <span class="token comment" spellcheck="true">-- 状态正常</span>
+            Slave_SQL_Running: Yes      <span class="token comment" spellcheck="true">-- 状态正常</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="7">
+<li>测试</li>
 </ol>
-<p>– 随便在 mysql01 或 mysql02 上创建库、表或者数据都能同步到另一台机器上<br>create database test;</p>
-<p>CREATE TABLE <code>t_type</code> (<br>                            <code>type_id</code> INT(2) NOT NULL AUTO_INCREMENT COMMENT ‘资源类型id’,<br>                            <code>type_name</code> VARCHAR(32) NOT NULL COMMENT ‘资源类型名称’,<br>                            <code>type_remark</code> VARCHAR(255) DEFAULT NULL COMMENT ‘备注’,<br>                            <code>create_time</code> DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT ‘创建时间’,<br>                            <code>update_time</code> DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ‘更新时间’,<br>                            PRIMARY KEY (<code>type_id</code>),<br>                            UNIQUE KEY (type_name)<br>) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;</p>
-<p>insert into t_type(type_name, type_remark) VALUES (‘菜单资源’,’用于确定页面菜单资源，分多级菜单’);<br>insert into t_type(type_name, type_remark) VALUES (‘按钮资源’,’用于确定页面按钮资源’);<br>insert into t_type(type_name, type_remark) VALUES (‘路由资源’,’用于确定网关路由资源’);</p>
-<pre><code>
-8. 开启`MySQL5.6`之后引入的`GTID`复制功能
-```bash
-vim /etc/my.cnf
-# 增加以下配置,开启gtid
-gtid-mode=on
-enforce-gtid-consistency=on
-# 修改完my.cnf需要重启mysql才能生效</code></pre><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- mysql01,mysql02分别执行以下命令</span>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 随便在 mysql01 或 mysql02 上创建库、表或者数据都能同步到另一台机器上</span>
+<span class="token keyword">create</span> <span class="token keyword">database</span> test<span class="token punctuation">;</span>
+
+<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t_type<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+                            <span class="token punctuation">`</span>type_id<span class="token punctuation">`</span> <span class="token keyword">INT</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">AUTO_INCREMENT</span> <span class="token keyword">COMMENT</span> <span class="token string">'资源类型id'</span><span class="token punctuation">,</span>
+                            <span class="token punctuation">`</span>type_name<span class="token punctuation">`</span> <span class="token keyword">VARCHAR</span><span class="token punctuation">(</span><span class="token number">32</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'资源类型名称'</span><span class="token punctuation">,</span>
+                            <span class="token punctuation">`</span>type_remark<span class="token punctuation">`</span> <span class="token keyword">VARCHAR</span><span class="token punctuation">(</span><span class="token number">255</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'备注'</span><span class="token punctuation">,</span>
+                            <span class="token punctuation">`</span>create_time<span class="token punctuation">`</span> <span class="token keyword">DATETIME</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CURRENT_TIMESTAMP</span> <span class="token keyword">COMMENT</span> <span class="token string">'创建时间'</span><span class="token punctuation">,</span>
+                            <span class="token punctuation">`</span>update_time<span class="token punctuation">`</span> <span class="token keyword">DATETIME</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CURRENT_TIMESTAMP</span> <span class="token keyword">ON</span> <span class="token keyword">UPDATE</span> <span class="token keyword">CURRENT_TIMESTAMP</span> <span class="token keyword">COMMENT</span> <span class="token string">'更新时间'</span><span class="token punctuation">,</span>
+                            <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>type_id<span class="token punctuation">`</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                            <span class="token keyword">UNIQUE</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span>type_name<span class="token punctuation">)</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">INNODB</span> <span class="token keyword">AUTO_INCREMENT</span><span class="token operator">=</span><span class="token number">1</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8<span class="token punctuation">;</span>
+
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t_type<span class="token punctuation">(</span>type_name<span class="token punctuation">,</span> type_remark<span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span><span class="token string">'菜单资源'</span><span class="token punctuation">,</span><span class="token string">'用于确定页面菜单资源，分多级菜单'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t_type<span class="token punctuation">(</span>type_name<span class="token punctuation">,</span> type_remark<span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span><span class="token string">'按钮资源'</span><span class="token punctuation">,</span><span class="token string">'用于确定页面按钮资源'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t_type<span class="token punctuation">(</span>type_name<span class="token punctuation">,</span> type_remark<span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span><span class="token string">'路由资源'</span><span class="token punctuation">,</span><span class="token string">'用于确定网关路由资源'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="8">
+<li>开启<code>MySQL5.6</code>之后引入的<code>GTID</code>复制功能</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/my.cnf
+<span class="token comment" spellcheck="true"># 增加以下配置,开启gtid</span>
+gtid-mode<span class="token operator">=</span>on
+enforce-gtid-consistency<span class="token operator">=</span>on
+<span class="token comment" spellcheck="true"># 修改完my.cnf需要重启mysql才能生效</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- mysql01,mysql02分别执行以下命令</span>
 mysql<span class="token operator">></span> stop slave<span class="token punctuation">;</span>
 Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
 
@@ -402,15 +446,16 @@ mysql<span class="token operator">></span> change master <span class="token keyw
 Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
 
 mysql<span class="token operator">></span> <span class="token keyword">start</span> slave<span class="token punctuation">;</span>
-Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <blockquote>
 <p><code>GTID</code>又叫<code>全局事务ID</code>（<code>Global Transaction ID</code>），是一个已提交事务的编号，并且是一个全局唯一的编号。<code>MySQL5.6</code>版本之后在主从复制类型上新增了<code>GTID复制</code>。</p>
 <ul>
-<li><a href="https://blog.51cto.com/sumongodb/2090307" target="_blank" rel="noopener">GTID！MySQL复制中的核武器</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.51cto.com/sumongodb/2090307">GTID！MySQL复制中的核武器</a></li>
 </ul>
 </blockquote>
 <h3 id="双主配置之前数据备份"><a href="#双主配置之前数据备份" class="headerlink" title="双主配置之前数据备份"></a>双主配置之前数据备份</h3><blockquote>
-<p>使用<code>mysqldump</code>命令,<a href="https://www.cnblogs.com/liuriqi/p/4207310.html" target="_blank" rel="noopener">MySQL操作mysqldump命令详解</a></p>
+<p>使用<code>mysqldump</code>命令,<a target="_blank" rel="noopener" href="https://www.cnblogs.com/liuriqi/p/4207310.html">MySQL操作mysqldump命令详解</a></p>
 </blockquote>
 <pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 导出主数据库的数据</span>
 mysqldump <span class="token operator">-</span>uroot <span class="token operator">-</span>p <span class="token comment" spellcheck="true">--opt --all-databases >/all_databases.sql</span>
@@ -419,26 +464,9 @@ mysqldump <span class="token operator">-</span>uroot <span class="token operator
 mysql <span class="token operator">-</span>u root <span class="token operator">-</span>p  <span class="token operator">&lt;</span> <span class="token operator">/</span>all_databases<span class="token punctuation">.</span>sql
 
 <span class="token comment" spellcheck="true">-- 或者使用source导入</span>
-<span class="token comment" spellcheck="true">-- mysql> source /all_databases.sql;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+<span class="token comment" spellcheck="true">-- mysql> source /all_databases.sql;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
     </div>
 
     
@@ -521,7 +549,7 @@ mysql <span class="token operator">-</span>u root <span class="token operator">-
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#前提准备"><span class="nav-number">1.</span> <span class="nav-text">前提准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#原理"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#双主架构思路"><span class="nav-number">3.</span> <span class="nav-text">双主架构思路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#双主配置"><span class="nav-number">4.</span> <span class="nav-text">双主配置</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#添加以下配置"><span class="nav-number"></span> <span class="nav-text">添加以下配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#id-保证唯一"><span class="nav-number"></span> <span class="nav-text">id 保证唯一</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#开启binlog-日志"><span class="nav-number"></span> <span class="nav-text">开启binlog 日志</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自增ID保证不冲突-一主1-3-5-另一主2-4-6"><span class="nav-number"></span> <span class="nav-text">自增ID保证不冲突, 一主1,3,5 另一主2,4,6</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#将复制事件写入binlog-一台服务器既做主库又做从库此选项必须要开启"><span class="nav-number"></span> <span class="nav-text">将复制事件写入binlog,一台服务器既做主库又做从库此选项必须要开启</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#忽略同步的数据库"><span class="nav-number"></span> <span class="nav-text">忽略同步的数据库</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#binlog文件大小限制"><span class="nav-number"></span> <span class="nav-text">binlog文件大小限制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#binlog格式"><span class="nav-number"></span> <span class="nav-text">binlog格式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#双主配置之前数据备份"><span class="nav-number">1.</span> <span class="nav-text">双主配置之前数据备份</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E6%8F%90%E5%87%86%E5%A4%87"><span class="nav-number">1.</span> <span class="nav-text">前提准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8C%E4%B8%BB%E6%9E%B6%E6%9E%84%E6%80%9D%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">双主架构思路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8C%E4%B8%BB%E9%85%8D%E7%BD%AE"><span class="nav-number">4.</span> <span class="nav-text">双主配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8C%E4%B8%BB%E9%85%8D%E7%BD%AE%E4%B9%8B%E5%89%8D%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD"><span class="nav-number">5.</span> <span class="nav-text">双主配置之前数据备份</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

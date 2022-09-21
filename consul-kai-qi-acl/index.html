@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://happywzy.top/images/consul16.png">
 <meta property="og:image" content="https://happywzy.top/images/consul17.png">
 <meta property="article:published_time" content="2019-09-05T09:25:11.000Z">
-<meta property="article:modified_time" content="2020-04-14T06:53:17.452Z">
+<meta property="article:modified_time" content="2019-09-05T09:25:11.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="consul">
 <meta property="article:tag" content="acl">
@@ -82,6 +82,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -227,13 +229,6 @@
 
               <time title="创建时间：2019-09-05 17:25:11" itemprop="dateCreated datePublished" datetime="2019-09-05T17:25:11+08:00">2019-09-05</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-14 14:53:17" itemprop="dateModified" datetime="2020-04-14T14:53:17+08:00">2020-04-14</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -263,9 +258,12 @@
     <span class="token property">"tokens"</span><span class="token operator">:</span><span class="token punctuation">{</span>
         <span class="token property">"master"</span><span class="token operator">:</span><span class="token string">"14d54c5e-24ca-41cc-8c9e-987ba7a96ffb"</span>
     <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="启动docker-compose-up"><a href="#启动docker-compose-up" class="headerlink" title="启动docker-compose up"></a>启动docker-compose up</h3><p>后台报大量错误</p>
-<pre><code>agent: Coordinate update blocked by ACLs</code></pre><p>解决办法:<code>创建一个token</code></p>
+<pre><code>agent: Coordinate update blocked by ACLs
+</code></pre>
+<p>解决办法:<code>创建一个token</code></p>
 <pre><code>#使用POSTMAN，请求方法
 PUT
 #请求路径
@@ -276,14 +274,16 @@ http://192.168.41.128:8500/v1/acl/create
   "Type": "client",
   "Rules": "node \"\" { policy = \"write\" } service \"\" { policy = \"read\" }"
 }
-
+ 
 #Headers加上X-Consul-Token，值为master的值
 14d54c5e-24ca-41cc-8c9e-987ba7a96ffb
-
+ 
 #返回结果
 {
     "ID": "db98c304-4d38-8660-fafe-6a4be56a40d0"
-}</code></pre><p>将返回的ID贴到consul节点配置中</p>
+}
+</code></pre>
+<p>将返回的ID贴到consul节点配置中</p>
 <pre class="line-numbers language-json"><code class="language-json"><span class="token property">"acl"</span><span class="token operator">:</span><span class="token punctuation">{</span>
     <span class="token property">"enabled"</span><span class="token operator">:</span><span class="token boolean">true</span><span class="token punctuation">,</span>
     <span class="token property">"default_policy"</span><span class="token operator">:</span><span class="token string">"deny"</span><span class="token punctuation">,</span>
@@ -292,41 +292,27 @@ http://192.168.41.128:8500/v1/acl/create
         <span class="token property">"master"</span><span class="token operator">:</span><span class="token string">"14d54c5e-24ca-41cc-8c9e-987ba7a96ffb"</span><span class="token punctuation">,</span>
         <span class="token property">"agent"</span><span class="token operator">:</span><span class="token string">"db98c304-4d38-8660-fafe-6a4be56a40d0"</span>
     <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>重新启动，问题解决。</p>
-<h3 id="配置环境变量"><a href="#配置环境变量" class="headerlink" title="配置环境变量"></a>配置环境变量</h3><pre><code>docker exec consul_server_1 consul members</code></pre><p>执行上面命令查看members的时候，发现返回为空<br><img data-src="/images/consul15.png" alt="consul"></p>
+<h3 id="配置环境变量"><a href="#配置环境变量" class="headerlink" title="配置环境变量"></a>配置环境变量</h3><pre><code>docker exec consul_server_1 consul members
+</code></pre>
+<p>执行上面命令查看members的时候，发现返回为空<br><img data-src="/images/consul15.png" alt="consul"></p>
 <p>配置<code>CONSUL_HTTP_TOKEN</code>环境变量，值为刚刚PUT请求获取的token即可。</p>
 <p>修改<code>docker-compose.yml</code>配置，所有节点增加环境变量</p>
 <pre class="line-numbers language-yaml"><code class="language-yaml">    <span class="token key atrule">environment</span><span class="token punctuation">:</span>
       <span class="token punctuation">-</span> CONSUL_BIND_INTERFACE=eth0
       <span class="token punctuation">-</span> TZ=Asia/Shanghai
-      <span class="token punctuation">-</span> CONSUL_HTTP_TOKEN=db98c304<span class="token punctuation">-</span>4d38<span class="token punctuation">-</span>8660<span class="token punctuation">-</span>fafe<span class="token punctuation">-</span>6a4be56a40d0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+      <span class="token punctuation">-</span> CONSUL_HTTP_TOKEN=db98c304<span class="token punctuation">-</span>4d38<span class="token punctuation">-</span>8660<span class="token punctuation">-</span>fafe<span class="token punctuation">-</span>6a4be56a40d0
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>重新启动docker-compose up，再次查看members<br><img data-src="/images/consul16.png" alt="consul"></p>
 <p>问题解决。</p>
 <h3 id="登录web-ui"><a href="#登录web-ui" class="headerlink" title="登录web ui"></a>登录web ui</h3><p>打开后发现啥都没有，需要点击ACL，输入<code>master</code>中的值</p>
 <p><img data-src="/images/consul17.png" alt="consul"></p>
 <h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://blog.csdn.net/YellowStar5/article/details/90728468" target="_blank" rel="noopener">https://blog.csdn.net/YellowStar5/article/details/90728468</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/YellowStar5/article/details/90728468">https://blog.csdn.net/YellowStar5/article/details/90728468</a></li>
 </ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+
     </div>
 
     
@@ -410,7 +396,7 @@ http://192.168.41.128:8500/v1/acl/create
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#开启acl"><span class="nav-number">1.</span> <span class="nav-text">开启acl</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#启动docker-compose-up"><span class="nav-number">2.</span> <span class="nav-text">启动docker-compose up</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置环境变量"><span class="nav-number">3.</span> <span class="nav-text">配置环境变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#登录web-ui"><span class="nav-number">4.</span> <span class="nav-text">登录web ui</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考链接"><span class="nav-number">5.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%90%AFacl"><span class="nav-number">1.</span> <span class="nav-text">开启acl</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8docker-compose-up"><span class="nav-number">2.</span> <span class="nav-text">启动docker-compose up</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="nav-number">3.</span> <span class="nav-text">配置环境变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%99%BB%E5%BD%95web-ui"><span class="nav-number">4.</span> <span class="nav-text">登录web ui</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">5.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

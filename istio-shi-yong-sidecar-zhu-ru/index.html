@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文使用的istio版本：1.4.2  查看默认sidecar配置kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml | grep &quot;namespaceSelector:&quot; -A5    namespaceSelector:     matchLabels:       istio-injection:">
+  <meta name="description" content="本文使用的istio版本：1.4.2  查看默认sidecar配置kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml | grep &quot;namespaceSelector:&quot; -A5     namespaceSelector:     matchLabels:       istio-injection:">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Istio使用【sidecar注入】">
 <meta property="og:url" content="https://happywzy.top/istio-shi-yong-sidecar-zhu-ru/index.html">
 <meta property="og:site_name" content="Happywzy">
-<meta property="og:description" content="本文使用的istio版本：1.4.2  查看默认sidecar配置kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml | grep &quot;namespaceSelector:&quot; -A5    namespaceSelector:     matchLabels:       istio-injection:">
+<meta property="og:description" content="本文使用的istio版本：1.4.2  查看默认sidecar配置kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml | grep &quot;namespaceSelector:&quot; -A5     namespaceSelector:     matchLabels:       istio-injection:">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-12-25T03:29:41.000Z">
-<meta property="article:modified_time" content="2020-01-09T07:04:42.280Z">
+<meta property="article:modified_time" content="2019-12-25T03:29:41.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="istio">
 <meta property="article:tag" content="sidecar">
@@ -78,6 +78,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -223,13 +225,6 @@
 
               <time title="创建时间：2019-12-25 11:29:41" itemprop="dateCreated datePublished" datetime="2019-12-25T11:29:41+08:00">2019-12-25</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-01-09 15:04:42" itemprop="dateModified" datetime="2020-01-09T15:04:42+08:00">2020-01-09</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -255,13 +250,14 @@
 <p><strong>本文使用的istio版本：<code>1.4.2</code></strong></p>
 </blockquote>
 <h3 id="查看默认sidecar配置"><a href="#查看默认sidecar配置" class="headerlink" title="查看默认sidecar配置"></a>查看默认sidecar配置</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml <span class="token operator">|</span> <span class="token function">grep</span> <span class="token string">"namespaceSelector:"</span> -A5
-
+ 
   namespaceSelector:
     matchLabels:
       istio-injection: enabled
   objectSelector: <span class="token punctuation">{</span><span class="token punctuation">}</span>
   reinvocationPolicy: Never
-  rules:<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+  rules:
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>可以看出，<code>istio</code>默认<code>sidecar</code>注入规则是，<code>namespace</code>带有标签<code>istio-injection: enabled</code>才会注入sidecar。</p>
 <p>查看哪些<code>namespace</code>已经配置注入：</p>
 <pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get namespace -L istio-injection</span>
@@ -273,13 +269,15 @@ kube-node-lease   Active   70d
 kube-public       Active   70d   
 kube-system       Active   70d   
 naftis            Active   19h   
-test-deri         Active   47d <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+test-deri         Active   47d 
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>为<code>namespace</code>打上注入<code>sidecar</code>标签：</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection<span class="token operator">=</span>enabled --overwrite<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection<span class="token operator">=</span>enabled --overwrite
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>默认情况，是没有设置。</p>
 <h3 id="为namespace设置不注入sidecar"><a href="#为namespace设置不注入sidecar" class="headerlink" title="为namespace设置不注入sidecar"></a>为namespace设置不注入sidecar</h3><p>有些k8s系统组件<code>namespace</code>不应该注入<code>sidecar</code>，如<code>kube-system</code>等，参考如下设置</p>
 <pre class="line-numbers language-bash"><code class="language-bash">kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml <span class="token operator">|</span> <span class="token function">grep</span> <span class="token string">"namespaceSelector:"</span> -A5
-
+ 
   namespaceSelector:
     matchExpressions:
     - key: istio-injection
@@ -288,21 +286,25 @@ test-deri         Active   47d <span aria-hidden="true" class="line-numbers-rows
       - disabled
   rules:
   - apiGroups:
-    - <span class="token string">""</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+    - <span class="token string">""</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>为<code>namespace</code>打上不注入<code>sidecar</code>标签:</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace istio-system istio-injection<span class="token operator">=</span>disabled --overwrite<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace istio-system istio-injection<span class="token operator">=</span>disabled --overwrite
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <pre class="line-numbers language-bash"><code class="language-bash">kubectl get namespace -L istio-injection
 NAME           STATUS    AGE       ISTIO-INJECTION
 default        Active    18d
 istio-system   Active    3d        disabled
 kube-public    Active    18d       disabled
-kube-system    Active    18d       disabled<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+kube-system    Active    18d       disabled
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="查看sidecar配置策略"><a href="#查看sidecar配置策略" class="headerlink" title="查看sidecar配置策略"></a>查看sidecar配置策略</h3><p><code>sidecar</code>配置保存在<code>configmap-istio-sidecar-injector</code>中，更多配置可以在<code>install/kubernetes/helm/istio/charts/sidecarInjectorWebhook/values.yaml</code>中查看。</p>
 <p>主要配置，默认策略：</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl -n istio-system get configmap istio-sidecar-injector -o jsonpath<span class="token operator">=</span><span class="token string">'{.data.config}'</span> <span class="token operator">|</span> <span class="token function">grep</span> policy:<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>允许的值为<code>disabled</code>和<code>enabled</code>。仅当<code>Webhook namespaceSelector</code>匹配目标名称空间时，才应用默认策略。无法识别的策略导致注入被完全禁用。</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl -n istio-system get configmap istio-sidecar-injector -o jsonpath<span class="token operator">=</span><span class="token string">'{.data.config}'</span> <span class="token operator">|</span> <span class="token function">grep</span> policy:
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>允许的值为<code>disabled</code>和<code>enabled</code>。仅当<code>Webhook&nbsp;namespaceSelector</code>匹配目标名称空间时，才应用默认策略。无法识别的策略导致注入被完全禁用。</p>
 <blockquote>
-<p><font color="red">注意</font>：①策略为<code>disabled</code>，但是想要为POD注入<code>sidecar</code>，增加<code>annotation sidecar.istio.io/inject: "true"</code>即可<br> ②策略为<code>enabled</code>，但是不想要为POD注入<code>sidecar</code>，增加<code>annotation sidecar.istio.io/inject: "false"</code>即可</p>
+<p><font color="red">注意</font>：①策略为<code>disabled</code>，但是想要为POD注入<code>sidecar</code>，增加<code>annotation sidecar.istio.io/inject: "true"</code>即可<br>&nbsp; ②策略为<code>enabled</code>，但是不想要为POD注入<code>sidecar</code>，增加<code>annotation sidecar.istio.io/inject: "false"</code>即可</p>
 </blockquote>
 <pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
@@ -317,25 +319,30 @@ kube-system    Active    18d       disabled<span aria-hidden="true" class="line-
       <span class="token key atrule">containers</span><span class="token punctuation">:</span>
       <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ignored
         <span class="token key atrule">image</span><span class="token punctuation">:</span> tutum/curl
-        <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sleep"</span><span class="token punctuation">,</span><span class="token string">"infinity"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+        <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sleep"</span><span class="token punctuation">,</span><span class="token string">"infinity"</span><span class="token punctuation">]</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="手动注入sidecar"><a href="#手动注入sidecar" class="headerlink" title="手动注入sidecar"></a>手动注入<code>sidecar</code></h3><p>为一个写好的yaml文件手动注入sidecar，我们可以使用<code>istioctl kube-inject</code>:</p>
-<pre class="line-numbers language-bash"><code class="language-bash">istioctl kube-inject -f samples/sleep/sleep.yaml <span class="token operator">|</span> kubectl apply -f -<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">istioctl kube-inject -f samples/sleep/sleep.yaml <span class="token operator">|</span> kubectl apply -f -
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>默认情况下，这将使用集群内配置。或者，可以使用配置的本地副本来完成注入。下面命令可以将默认配置导出到文件：</p>
 <pre class="line-numbers language-bash"><code class="language-bash">kubectl -n istio-system get configmap istio-sidecar-injector -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.config}'</span> <span class="token operator">></span> inject-config.yaml
 kubectl -n istio-system get configmap istio-sidecar-injector -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.values}'</span> <span class="token operator">></span> inject-values.yaml
-kubectl -n istio-system get configmap istio -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.mesh}'</span> <span class="token operator">></span> mesh-config.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+kubectl -n istio-system get configmap istio -o<span class="token operator">=</span>jsonpath<span class="token operator">=</span><span class="token string">'{.data.mesh}'</span> <span class="token operator">></span> mesh-config.yaml
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>然后再将文件中配置注入到已建好的<code>YAML</code>中并运行：</p>
 <pre class="line-numbers language-bash"><code class="language-bash">istioctl kube-inject \
     --injectConfigFile inject-config.yaml \
     --meshConfigFile mesh-config.yaml \
     --valuesFile inject-values.yaml \
     --filename samples/sleep/sleep.yaml \
-    <span class="token operator">|</span> kubectl apply -f -<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+    <span class="token operator">|</span> kubectl apply -f -
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这和第一条命令效果一样。验证<code>sidecar</code>已经注入：</p>
 <pre class="line-numbers language-bash"><code class="language-bash">kubectl get pod  -l app<span class="token operator">=</span>sleep
 NAME                     READY   STATUS    RESTARTS   AGE
-sleep-64c6f57bc8-f5n4x   2/2     Running   0          24s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="其它配置：neverInjectSelector-alwaysInjectSelector"><a href="#其它配置：neverInjectSelector-alwaysInjectSelector" class="headerlink" title="其它配置：neverInjectSelector/alwaysInjectSelector"></a>其它配置：<code>neverInjectSelector/alwaysInjectSelector</code></h3><p>参考<a href="https://istio.io/docs/setup/additional-setup/sidecar-injection/#more-control-adding-exceptions" target="_blank" rel="noopener">官网</a></p>
+sleep-64c6f57bc8-f5n4x   2/2     Running   0          24s
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="其它配置：neverInjectSelector-alwaysInjectSelector"><a href="#其它配置：neverInjectSelector-alwaysInjectSelector" class="headerlink" title="其它配置：neverInjectSelector/alwaysInjectSelector"></a>其它配置：<code>neverInjectSelector/alwaysInjectSelector</code></h3><p>参考<a target="_blank" rel="noopener" href="https://istio.io/docs/setup/additional-setup/sidecar-injection/#more-control-adding-exceptions">官网</a></p>
 <p>示例：</p>
 <pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> ConfigMap
@@ -351,35 +358,22 @@ sleep-64c6f57bc8-f5n4x   2/2     Running   0          24s<span aria-hidden="true
         <span class="token punctuation">-</span> <span class="token punctuation">{</span><span class="token key atrule">key</span><span class="token punctuation">:</span> openshift.io/deployer<span class="token punctuation">-</span>pod<span class="token punctuation">-</span>for.name<span class="token punctuation">,</span> <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists<span class="token punctuation">}</span>
     <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token punctuation">-</span>
       <span class="token key atrule">initContainers</span><span class="token punctuation">:</span>
-<span class="token punctuation">...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">...</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="配置优先级"><a href="#配置优先级" class="headerlink" title="配置优先级"></a>配置优先级</h3><p>如果<code>POD</code>配置了<code>注解</code>、<code>neverInjectSelector/alwaysInjectSelector</code>也都配置了，默认策略也配置了，那么他们之间的优先级参考如下：</p>
-<pre><code>Pod Annotations → NeverInjectSelector → AlwaysInjectSelector → Default Policy</code></pre><h3 id="卸载自动注入sidecar"><a href="#卸载自动注入sidecar" class="headerlink" title="卸载自动注入sidecar"></a>卸载自动注入sidecar</h3><h4 id="卸载istio中sidecar组件"><a href="#卸载istio中sidecar组件" class="headerlink" title="卸载istio中sidecar组件"></a>卸载istio中sidecar组件</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl delete mutatingwebhookconfiguration istio-sidecar-injector
+<pre><code>Pod Annotations → NeverInjectSelector → AlwaysInjectSelector → Default Policy
+</code></pre>
+<h3 id="卸载自动注入sidecar"><a href="#卸载自动注入sidecar" class="headerlink" title="卸载自动注入sidecar"></a>卸载自动注入sidecar</h3><h4 id="卸载istio中sidecar组件"><a href="#卸载istio中sidecar组件" class="headerlink" title="卸载istio中sidecar组件"></a>卸载istio中sidecar组件</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl delete mutatingwebhookconfiguration istio-sidecar-injector
 kubectl -n istio-system delete <span class="token function">service</span> istio-sidecar-injector
 kubectl -n istio-system delete deployment istio-sidecar-injector
 kubectl -n istio-system delete serviceaccount istio-sidecar-injector-service-account
 kubectl delete clusterrole istio-sidecar-injector-istio-system
-kubectl delete clusterrolebinding istio-sidecar-injector-admin-role-binding-istio-system<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="删除某个namespace自动注入"><a href="#删除某个namespace自动注入" class="headerlink" title="删除某个namespace自动注入"></a>删除某个namespace自动注入</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="sidecar注入问题"><a href="#sidecar注入问题" class="headerlink" title="sidecar注入问题"></a>sidecar注入问题</h3><p>更多可以参考<a href="https://istio.io/docs/ops/common-problems/injection/" target="_blank" rel="noopener">官网</a>.</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+kubectl delete clusterrolebinding istio-sidecar-injector-admin-role-binding-istio-system
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="删除某个namespace自动注入"><a href="#删除某个namespace自动注入" class="headerlink" title="删除某个namespace自动注入"></a>删除某个namespace自动注入</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection-
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="sidecar注入问题"><a href="#sidecar注入问题" class="headerlink" title="sidecar注入问题"></a>sidecar注入问题</h3><p>更多可以参考<a target="_blank" rel="noopener" href="https://istio.io/docs/ops/common-problems/injection/">官网</a>.</p>
+
     </div>
 
     
@@ -463,7 +457,7 @@ kubectl delete clusterrolebinding istio-sidecar-injector-admin-role-binding-isti
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#查看默认sidecar配置"><span class="nav-number">1.</span> <span class="nav-text">查看默认sidecar配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#为namespace设置不注入sidecar"><span class="nav-number">2.</span> <span class="nav-text">为namespace设置不注入sidecar</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查看sidecar配置策略"><span class="nav-number">3.</span> <span class="nav-text">查看sidecar配置策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#手动注入sidecar"><span class="nav-number">4.</span> <span class="nav-text">手动注入sidecar</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其它配置：neverInjectSelector-alwaysInjectSelector"><span class="nav-number">5.</span> <span class="nav-text">其它配置：neverInjectSelector&#x2F;alwaysInjectSelector</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置优先级"><span class="nav-number">6.</span> <span class="nav-text">配置优先级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#卸载自动注入sidecar"><span class="nav-number">7.</span> <span class="nav-text">卸载自动注入sidecar</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#卸载istio中sidecar组件"><span class="nav-number">7.1.</span> <span class="nav-text">卸载istio中sidecar组件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#删除某个namespace自动注入"><span class="nav-number">7.2.</span> <span class="nav-text">删除某个namespace自动注入</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sidecar注入问题"><span class="nav-number">8.</span> <span class="nav-text">sidecar注入问题</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E9%BB%98%E8%AE%A4sidecar%E9%85%8D%E7%BD%AE"><span class="nav-number">1.</span> <span class="nav-text">查看默认sidecar配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BAnamespace%E8%AE%BE%E7%BD%AE%E4%B8%8D%E6%B3%A8%E5%85%A5sidecar"><span class="nav-number">2.</span> <span class="nav-text">为namespace设置不注入sidecar</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8Bsidecar%E9%85%8D%E7%BD%AE%E7%AD%96%E7%95%A5"><span class="nav-number">3.</span> <span class="nav-text">查看sidecar配置策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%8B%E5%8A%A8%E6%B3%A8%E5%85%A5sidecar"><span class="nav-number">4.</span> <span class="nav-text">手动注入sidecar</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E5%AE%83%E9%85%8D%E7%BD%AE%EF%BC%9AneverInjectSelector-alwaysInjectSelector"><span class="nav-number">5.</span> <span class="nav-text">其它配置：neverInjectSelector&#x2F;alwaysInjectSelector</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E4%BC%98%E5%85%88%E7%BA%A7"><span class="nav-number">6.</span> <span class="nav-text">配置优先级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%B8%E8%BD%BD%E8%87%AA%E5%8A%A8%E6%B3%A8%E5%85%A5sidecar"><span class="nav-number">7.</span> <span class="nav-text">卸载自动注入sidecar</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%B8%E8%BD%BDistio%E4%B8%ADsidecar%E7%BB%84%E4%BB%B6"><span class="nav-number">7.1.</span> <span class="nav-text">卸载istio中sidecar组件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%9F%90%E4%B8%AAnamespace%E8%87%AA%E5%8A%A8%E6%B3%A8%E5%85%A5"><span class="nav-number">7.2.</span> <span class="nav-text">删除某个namespace自动注入</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sidecar%E6%B3%A8%E5%85%A5%E9%97%AE%E9%A2%98"><span class="nav-number">8.</span> <span class="nav-text">sidecar注入问题</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

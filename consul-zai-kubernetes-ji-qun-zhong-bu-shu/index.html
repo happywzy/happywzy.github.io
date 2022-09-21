@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="consul具体配置、ACL配置可以参考Consul系列文章  首先创建k8s-consul-config.json文件注意token需要自己创建一个，这里加密处理了 {     &quot;datacenter&quot;:&quot;dc8&quot;,     &quot;primary_datacenter&quot;:&quot;dc8&quot;,     &quot;acl&quot;:{         &quot;enabled&quot;:true,         &quot;default_poli">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-10-18T07:57:35.000Z">
-<meta property="article:modified_time" content="2020-04-14T08:07:23.022Z">
+<meta property="article:modified_time" content="2019-10-18T07:57:35.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="consul">
 <meta property="article:tag" content="kubernetes">
@@ -78,6 +78,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -223,13 +225,6 @@
 
               <time title="创建时间：2019-10-18 15:57:35" itemprop="dateCreated datePublished" datetime="2019-10-18T15:57:35+08:00">2019-10-18</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-14 16:07:23" itemprop="dateModified" datetime="2020-04-14T16:07:23+08:00">2020-04-14</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -267,16 +262,16 @@
             <span class="token property">"master"</span><span class="token operator">:</span><span class="token string">"14d54c5e-24ca-****-*******-*********"</span>
         <span class="token punctuation">}</span>
     <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="创建configmap"><a href="#创建configmap" class="headerlink" title="创建configmap"></a>创建configmap</h3><pre><code>kubectl  create configmap consul --from-file=k8s-consul-config.json</code></pre><p>上述命令创建一个名称为consul，内容为一个文件，文件名为<code>k8s-consul-config.json</code>，<code>configmap</code>可以挂载在<code>volume</code>下.</p>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建configmap"><a href="#创建configmap" class="headerlink" title="创建configmap"></a>创建configmap</h3><pre><code>kubectl  create configmap consul --from-file=k8s-consul-config.json
+</code></pre>
+<p>上述命令创建一个名称为consul，内容为一个文件，文件名为<code>k8s-consul-config.json</code>，<code>configmap</code>可以挂载在<code>volume</code>下.</p>
 <h3 id="修改-k8s-consul-statefulset-yaml文件"><a href="#修改-k8s-consul-statefulset-yaml文件" class="headerlink" title="修改 k8s-consul-statefulset.yaml文件"></a>修改 k8s-consul-statefulset.yaml文件</h3><blockquote>
 <p>注意内容：</p>
 <ol>
 <li>在配置最后挂载了volumes-configmap，就是我们刚刚创建的consul</li>
-<li><ul>
-<li>“-config-file=/etc/consul/config/k8s-consul-config.json” 配置了我们保存的consul ACL相关配置</li>
-</ul>
-</li>
+<li>-&nbsp;“-config-file=/etc/consul/config/k8s-consul-config.json” 配置了我们保存的consul ACL相关配置</li>
 <li>requiredDuringSchedulingIgnoredDuringExecution，我们增加了这个配置，保证了consul的pod不会在同一台机器上运行【反亲和特性】，因为我们将consul/data挂载的是hostPath，如果一台机器启动多个会有冲突导致consul启动卡住。</li>
 </ol>
 </blockquote>
@@ -362,27 +357,10 @@
             <span class="token key atrule">path</span><span class="token punctuation">:</span> /root/consul/data
         <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> config
           <span class="token key atrule">configMap</span><span class="token punctuation">:</span>
-            <span class="token key atrule">name</span><span class="token punctuation">:</span> consul<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+            <span class="token key atrule">name</span><span class="token punctuation">:</span> consul
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>最后根据上面的配置重新创建consul的StatefulSet，启动完成后根据之前consul的知识，我们需要使用master token登录到ui，<strong>创建Agent token</strong>，然后修改configmap中acl配置，增加agent token，具体可以参考之前的文章。然后删除consul的pod，让k8s重新创建新的pod，使我们新的configmap生效即可。</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+
     </div>
 
     
@@ -466,7 +444,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#首先创建k8s-consul-config-json文件"><span class="nav-number">1.</span> <span class="nav-text">首先创建k8s-consul-config.json文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建configmap"><span class="nav-number">2.</span> <span class="nav-text">创建configmap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改-k8s-consul-statefulset-yaml文件"><span class="nav-number">3.</span> <span class="nav-text">修改 k8s-consul-statefulset.yaml文件</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A6%96%E5%85%88%E5%88%9B%E5%BB%BAk8s-consul-config-json%E6%96%87%E4%BB%B6"><span class="nav-number">1.</span> <span class="nav-text">首先创建k8s-consul-config.json文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAconfigmap"><span class="nav-number">2.</span> <span class="nav-text">创建configmap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9-k8s-consul-statefulset-yaml%E6%96%87%E4%BB%B6"><span class="nav-number">3.</span> <span class="nav-text">修改 k8s-consul-statefulset.yaml文件</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

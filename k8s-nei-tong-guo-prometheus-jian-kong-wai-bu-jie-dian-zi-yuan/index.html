@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,26 +20,17 @@
     var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="前提 已部署k8s集群 集群内部署prometheus  步骤 在外部节点安装node-exporterdocker run -d --name node-exporter -p 9100:9100 prom&#x2F;node-exporter 启动完成可以访问http:&#x2F;&#x2F;IP:9100&#x2F;metrics. 创建endpointsapiVersion: v1 kind: Endpoints metadat">
+  <meta name="description" content="前提 已部署k8s集群 集群内部署prometheus  步骤 在外部节点安装node-exporter  docker run -d --name node-exporter -p 9100:9100 prom&#x2F;node-exporter  启动完成可以访问http:&#x2F;&#x2F;IP:9100&#x2F;metrics.  创建endpoints  apiVersion: v1 kind: Endpoints m">
 <meta property="og:type" content="article">
 <meta property="og:title" content="k8s内通过Prometheus监控外部节点资源">
 <meta property="og:url" content="https://happywzy.top/k8s-nei-tong-guo-prometheus-jian-kong-wai-bu-jie-dian-zi-yuan/index.html">
 <meta property="og:site_name" content="Happywzy">
-<meta property="og:description" content="前提 已部署k8s集群 集群内部署prometheus  步骤 在外部节点安装node-exporterdocker run -d --name node-exporter -p 9100:9100 prom&#x2F;node-exporter 启动完成可以访问http:&#x2F;&#x2F;IP:9100&#x2F;metrics. 创建endpointsapiVersion: v1 kind: Endpoints metadat">
+<meta property="og:description" content="前提 已部署k8s集群 集群内部署prometheus  步骤 在外部节点安装node-exporter  docker run -d --name node-exporter -p 9100:9100 prom&#x2F;node-exporter  启动完成可以访问http:&#x2F;&#x2F;IP:9100&#x2F;metrics.  创建endpoints  apiVersion: v1 kind: Endpoints m">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-04-29T07:43:29.000Z">
-<meta property="article:modified_time" content="2022-04-29T08:43:16.382Z">
+<meta property="article:modified_time" content="2022-04-29T07:43:29.000Z">
 <meta property="article:author" content="wuzhiyong">
-<meta property="article:tag" content="spring boot">
-<meta property="article:tag" content="java">
-<meta property="article:tag" content="flink">
-<meta property="article:tag" content="kubernetes">
-<meta property="article:tag" content="hadoop">
-<meta property="article:tag" content="分布式">
-<meta property="article:tag" content="微服务">
-<meta property="article:tag" content="容器">
-<meta property="article:tag" content="常用工具">
-<meta property="article:tag" content="linux">
+<meta property="article:tag" content="spring boot,java,flink,kubernetes,hadoop,分布式,微服务,容器,常用工具,linux">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://happywzy.top/k8s-nei-tong-guo-prometheus-jian-kong-wai-bu-jie-dian-zi-yuan/">
@@ -86,6 +77,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -228,9 +221,8 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-04-29 15:43:29 / 修改时间：16:43:16" itemprop="dateCreated datePublished" datetime="2022-04-29T15:43:29+08:00">2022-04-29</time>
+              <time title="创建时间：2022-04-29 15:43:29" itemprop="dateCreated datePublished" datetime="2022-04-29T15:43:29+08:00">2022-04-29</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -262,81 +254,82 @@
 <li>集群内部署<code>prometheus</code></li>
 </ul>
 <h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><ul>
-<li>在外部节点安装<code>node-exporter</code><pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name node-exporter -p 9100:9100 prom/node-exporter<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-启动完成可以访问<code>http://IP:9100/metrics</code>.</li>
-<li>创建<code>endpoints</code><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<li>在外部节点安装<code>node-exporter</code></li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name node-exporter -p 9100:9100 prom/node-exporter
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>启动完成可以访问<code>http://IP:9100/metrics</code>.</p>
+<ul>
+<li>创建<code>endpoints</code></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> Endpoints
 <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-<span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
-<span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
-<span class="token key atrule">labels</span><span class="token punctuation">:</span>
-  <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
 <span class="token key atrule">subsets</span><span class="token punctuation">:</span>
-<span class="token punctuation">-</span> <span class="token key atrule">addresses</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.17
-    <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.19
-    <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.20
-  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9100</span>
-      <span class="token key atrule">name</span><span class="token punctuation">:</span> http<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
-<li>创建<code>service</code><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+  <span class="token punctuation">-</span> <span class="token key atrule">addresses</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.17
+      <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.19
+      <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.3.20
+    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9100</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> http
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>创建<code>service</code></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
 <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-<span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
-<span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
-<span class="token key atrule">labels</span><span class="token punctuation">:</span>
-  <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
 <span class="token key atrule">spec</span><span class="token punctuation">:</span>
-<span class="token key atrule">ports</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9100</span>
-    <span class="token key atrule">name</span><span class="token punctuation">:</span> http<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
-<li>创建<code>ServiceMonitor</code><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> monitoring.coreos.com/v1
+  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9100</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> http
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>创建<code>ServiceMonitor</code></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> monitoring.coreos.com/v1
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> ServiceMonitor
 <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-<span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>exporter<span class="token punctuation">-</span>data
-<span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>exporter<span class="token punctuation">-</span>data
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
 <span class="token key atrule">spec</span><span class="token punctuation">:</span>
-<span class="token key atrule">endpoints</span><span class="token punctuation">:</span>
-<span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> http
-<span class="token key atrule">namespaceSelector</span><span class="token punctuation">:</span>
-  <span class="token key atrule">matchNames</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
-<span class="token key atrule">selector</span><span class="token punctuation">:</span>
-  <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-创建完成可以<code>prometheus web</code>页面查看是否有新建的<code>targets</code>.<h3 id="PromQL"><a href="#PromQL" class="headerlink" title="PromQL"></a>PromQL</h3></li>
-</ul>
-<ol>
-<li>计算CPU使用率<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1m查不到数据可以设置成3m,5m</span>
-<span class="token punctuation">(</span>1-<span class="token punctuation">(</span>sum<span class="token punctuation">(</span>increase<span class="token punctuation">(</span>node_cpu_seconds_total<span class="token punctuation">{</span>mode<span class="token operator">=</span><span class="token string">"idle"</span><span class="token punctuation">}</span><span class="token punctuation">[</span>1m<span class="token punctuation">]</span><span class="token punctuation">))</span>by<span class="token punctuation">(</span>instance<span class="token punctuation">))</span>/<span class="token punctuation">(</span>sum<span class="token punctuation">(</span>increase<span class="token punctuation">(</span>node_cpu_seconds_total<span class="token punctuation">[</span>1m<span class="token punctuation">]</span><span class="token punctuation">))</span>by<span class="token punctuation">(</span>instance<span class="token punctuation">))</span><span class="token punctuation">)</span>*100<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-</li>
-<li>内存使用率<pre class="line-numbers language-sql"><code class="language-sql"><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">-</span><span class="token punctuation">(</span>node_memory_MemAvailable_bytes{}<span class="token operator">/</span><span class="token punctuation">(</span>node_memory_MemTotal_bytes{}<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">100</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
-<li>磁盘分区<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 注意mountpoint</span>
-100 - <span class="token punctuation">(</span>node_filesystem_free_bytes<span class="token punctuation">{</span>mountpoint<span class="token operator">=</span><span class="token string">"/"</span>,fstype<span class="token operator">=</span>~<span class="token string">"ext4|xfs"</span><span class="token punctuation">}</span> / node_filesystem_size_bytes<span class="token punctuation">{</span>mountpoint<span class="token operator">=</span><span class="token string">"/"</span>,fstype<span class="token operator">=</span>~<span class="token string">"ext4|xfs"</span><span class="token punctuation">}</span> * 100<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-</li>
+  <span class="token key atrule">endpoints</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> http
+  <span class="token key atrule">namespaceSelector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">matchNames</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> kubesphere<span class="token punctuation">-</span>monitoring<span class="token punctuation">-</span>system
+  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">app.kubernetes.io/name</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>data
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>创建完成可以<code>prometheus web</code>页面查看是否有新建的<code>targets</code>.</p>
+<h3 id="PromQL"><a href="#PromQL" class="headerlink" title="PromQL"></a>PromQL</h3><ol>
+<li>计算CPU使用率</li>
 </ol>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1m查不到数据可以设置成3m,5m</span>
+<span class="token punctuation">(</span>1-<span class="token punctuation">(</span>sum<span class="token punctuation">(</span>increase<span class="token punctuation">(</span>node_cpu_seconds_total<span class="token punctuation">{</span>mode<span class="token operator">=</span><span class="token string">"idle"</span><span class="token punctuation">}</span><span class="token punctuation">[</span>1m<span class="token punctuation">]</span><span class="token punctuation">))</span>by<span class="token punctuation">(</span>instance<span class="token punctuation">))</span>/<span class="token punctuation">(</span>sum<span class="token punctuation">(</span>increase<span class="token punctuation">(</span>node_cpu_seconds_total<span class="token punctuation">[</span>1m<span class="token punctuation">]</span><span class="token punctuation">))</span>by<span class="token punctuation">(</span>instance<span class="token punctuation">))</span><span class="token punctuation">)</span>*100
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>内存使用率</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">-</span><span class="token punctuation">(</span>node_memory_MemAvailable_bytes{}<span class="token operator">/</span><span class="token punctuation">(</span>node_memory_MemTotal_bytes{}<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">100</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="3">
+<li>磁盘分区</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 注意mountpoint</span>
+100 - <span class="token punctuation">(</span>node_filesystem_free_bytes<span class="token punctuation">{</span>mountpoint<span class="token operator">=</span><span class="token string">"/"</span>,fstype<span class="token operator">=</span>~<span class="token string">"ext4|xfs"</span><span class="token punctuation">}</span> / node_filesystem_size_bytes<span class="token punctuation">{</span>mountpoint<span class="token operator">=</span><span class="token string">"/"</span>,fstype<span class="token operator">=</span>~<span class="token string">"ext4|xfs"</span><span class="token punctuation">}</span> * 100<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
     </div>
 
     
@@ -416,7 +409,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#前提"><span class="nav-number">1.</span> <span class="nav-text">前提</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#步骤"><span class="nav-number">2.</span> <span class="nav-text">步骤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PromQL"><span class="nav-number">3.</span> <span class="nav-text">PromQL</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E6%8F%90"><span class="nav-number">1.</span> <span class="nav-text">前提</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4"><span class="nav-number">2.</span> <span class="nav-text">步骤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PromQL"><span class="nav-number">3.</span> <span class="nav-text">PromQL</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

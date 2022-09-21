@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="说明prometheus监控插件mysqld_exporter可以采集mysql指标并告警展示. 步骤本文使用docker部署的方式  创建用户并授权&#96;&#96;&#96;sqlCREATE USER ‘exporter’@’%’ IDENTIFIED BY ‘exporter#2020’;GRANT PROCESS, REPLICATION CLIENT ON . TO ‘exporter’@’%’;GRANT">
+  <meta name="description" content="说明prometheus监控插件mysqld_exporter可以采集mysql指标并告警展示. 步骤本文使用docker部署的方式  创建用户并授权  CREATE USER &#39;exporter&#39;@&#39;%&#39; IDENTIFIED BY &#39;exporter#2020&#39;; GRANT PROCESS, REPLICATION CLIENT ON *.* TO &#39;exporter&#39;@&#39;%&#39;; GRANT">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mysql【监控指标采集mysqld-exporter】">
 <meta property="og:url" content="https://happywzy.top/mysql-jian-kong-zhi-biao-cai-ji-mysqld-exporter/index.html">
 <meta property="og:site_name" content="Happywzy">
-<meta property="og:description" content="说明prometheus监控插件mysqld_exporter可以采集mysql指标并告警展示. 步骤本文使用docker部署的方式  创建用户并授权&#96;&#96;&#96;sqlCREATE USER ‘exporter’@’%’ IDENTIFIED BY ‘exporter#2020’;GRANT PROCESS, REPLICATION CLIENT ON . TO ‘exporter’@’%’;GRANT">
+<meta property="og:description" content="说明prometheus监控插件mysqld_exporter可以采集mysql指标并告警展示. 步骤本文使用docker部署的方式  创建用户并授权  CREATE USER &#39;exporter&#39;@&#39;%&#39; IDENTIFIED BY &#39;exporter#2020&#39;; GRANT PROCESS, REPLICATION CLIENT ON *.* TO &#39;exporter&#39;@&#39;%&#39;; GRANT">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-08-04T09:11:52.000Z">
-<meta property="article:modified_time" content="2020-08-07T08:54:51.606Z">
+<meta property="article:modified_time" content="2020-08-04T09:11:52.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="mysql">
 <meta property="article:tag" content="mysqld-exporter">
@@ -78,6 +78,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -223,13 +225,6 @@
 
               <time title="创建时间：2020-08-04 17:11:52" itemprop="dateCreated datePublished" datetime="2020-08-04T17:11:52+08:00">2020-08-04</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-07 16:54:51" itemprop="dateModified" datetime="2020-08-07T16:54:51+08:00">2020-08-07</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -254,22 +249,28 @@
         <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>prometheus</code>监控插件<code>mysqld_exporter</code>可以采集<code>mysql</code>指标并告警展示.</p>
 <h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><p>本文使用<code>docker</code>部署的方式</p>
 <ol>
-<li>创建用户并授权<br>```sql<br>CREATE USER ‘exporter’@’%’ IDENTIFIED BY ‘exporter#2020’;<br>GRANT PROCESS, REPLICATION CLIENT ON <em>.</em> TO ‘exporter’@’%’;<br>GRANT SELECT ON performance_schema.* TO ‘exporter’@’%’;</li>
+<li>创建用户并授权</li>
 </ol>
-<p>– GRANT ALL ON <em>.</em> TO ‘exporter’@’%’;</p>
-<pre><code>
-2. 运行`mysqld_exporter`
-```bash
-docker run -d \
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">USER</span> <span class="token string">'exporter'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED BY '</span>exporter<span class="token comment" spellcheck="true">#2020';</span>
+<span class="token keyword">GRANT</span> PROCESS<span class="token punctuation">,</span> <span class="token keyword">REPLICATION</span> CLIENT <span class="token keyword">ON</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">TO</span> <span class="token string">'exporter'</span>@'<span class="token operator">%</span><span class="token string">';
+GRANT SELECT ON performance_schema.* TO '</span>exporter<span class="token string">'@'</span><span class="token operator">%</span>'<span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- GRANT ALL ON *.* TO 'exporter'@'%';</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>运行<code>mysqld_exporter</code></li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d \
   --name mysql_exporter \
   --restart always \
   -p 9104:9104 \
-  -e DATA_SOURCE_NAME="exporter:123456@(192.168.41.141:3306)/" \
-  prom/mysqld-exporter</code></pre><ol start="3">
+  -e DATA_SOURCE_NAME<span class="token operator">=</span><span class="token string">"exporter:123456@(192.168.41.141:3306)/"</span> \
+  prom/mysqld-exporter
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
 <li>查看指标</li>
 </ol>
 <ul>
-<li><a href="http://192.168.41.141:9104/metrics" target="_blank" rel="noopener">http://192.168.41.141:9104/metrics</a></li>
+<li><a target="_blank" rel="noopener" href="http://192.168.41.141:9104/metrics">http://192.168.41.141:9104/metrics</a></li>
 </ul>
 <p>如果没有问题，可以将指标采集到<code>prometheus</code></p>
 <ol start="4">
@@ -294,14 +295,17 @@ scrape_configs:
     - targets: ['192.168.41.128:9090']
   - job_name: 'mysql'
     static_configs:
-      - targets: ['192.168.41.141:9104']<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+      - targets: ['192.168.41.141:9104']
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动</span>
-docker run --name<span class="token operator">=</span>prometheus -d -p 9090:9090  -v /root/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml hub.deri.org.cn/k8s_monitor/prometheus:latest<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+docker run --name<span class="token operator">=</span>prometheus -d -p 9090:9090  -v /root/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml hub.deri.org.cn/k8s_monitor/prometheus:latest
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># vim /usr/local/prometheus/prometheus.yml</span>
 <span class="token key atrule">scrape_configs</span><span class="token punctuation">:</span>
   <span class="token punctuation">-</span> <span class="token key atrule">job_name</span><span class="token punctuation">:</span> <span class="token string">'mysql'</span>
     <span class="token key atrule">static_configs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">targets</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'192.168.41.141:9104'</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+      <span class="token punctuation">-</span> <span class="token key atrule">targets</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'192.168.41.141:9104'</span><span class="token punctuation">]</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <blockquote>
 <p>注意：如果是采用<code>prometheus-operator</code>方式安装<code>prometheus</code>,新增<code>target</code>示例：<br>新增<code>mysql-exporter-endpoints.yaml</code>,引入外部<code>服务</code></p>
 </blockquote>
@@ -319,7 +323,8 @@ docker run --name<span class="token operator">=</span>prometheus -d -p 9090:9090
     <span class="token key atrule">ports</span><span class="token punctuation">:</span>
       <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> metrics
         <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9104</span>
-        <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+        <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>新增<code>mysql-exporter-service.yaml</code></p>
 <pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
@@ -341,7 +346,8 @@ docker run --name<span class="token operator">=</span>prometheus -d -p 9090:9090
     <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9104</span>
     <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">9104</span>
     <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-  <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>新增<code>mysql-exporter-ServiceMonitor.yaml</code></p>
 <pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> monitoring.coreos.com/v1
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> ServiceMonitor
@@ -362,15 +368,17 @@ docker run --name<span class="token operator">=</span>prometheus -d -p 9090:9090
     <span class="token comment" spellcheck="true"># 通过标签发现service</span>
     <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
       <span class="token key atrule">app</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>mysql<span class="token punctuation">-</span>exporter
-      <span class="token key atrule">release</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>operator<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+      <span class="token key atrule">release</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>operator
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f <span class="token keyword">.</span>
 <span class="token comment" spellcheck="true"># 新增上面三个服务之后,prometheus页面就可以发现新增的mysql-exporter.</span>
-<span class="token comment" spellcheck="true"># prometheus数据库中也能查询到mysql指标数据</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<span class="token comment" spellcheck="true"># prometheus数据库中也能查询到mysql指标数据</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <ol start="5">
 <li>设置报警规则</li>
 </ol>
 <ul>
-<li><a href="https://github.com/prometheus/mysqld_exporter/blob/master/example.rules" target="_blank" rel="noopener">参考示例</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/prometheus/mysqld_exporter/blob/master/example.rules">参考示例</a></li>
 </ul>
 <pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">groups</span><span class="token punctuation">:</span>
 <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> GaleraAlerts
@@ -437,7 +445,8 @@ docker run --name<span class="token operator">=</span>prometheus -d -p 9090:9090
     <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
       <span class="token key atrule">description</span><span class="token punctuation">:</span> The innodb logs are waiting for disk at a rate of <span class="token punctuation">{</span><span class="token punctuation">{</span>$value<span class="token punctuation">}</span><span class="token punctuation">}</span> /
         second
-      <span class="token key atrule">summary</span><span class="token punctuation">:</span> MySQL innodb log writes stalling<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> MySQL innodb log writes stalling
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-yml"><code class="language-yml"># 告警规则示例
 groups:
 - name: MySQLStatsAlert
@@ -633,12 +642,14 @@ groups:
       severity: page
     annotations:
       summary: "Instance {{ $labels.instance }} Slave is NOT read only"
-      description: "Slave is NOT set to read only. You can accidentally manipulate data on the slave and get inconsistencies..."<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+      description: "Slave is NOT set to read only. You can accidentally manipulate data on the slave and get inconsistencies..."
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ol start="6">
 <li>监控展示</li>
 </ol>
 <p>如果需要,部署<code>grafana</code></p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker run -d -p 3000:3000 --name grafana hub.deri.org.cn/k8s_monitor/grafana:6.4.2<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d -p 3000:3000 --name grafana hub.deri.org.cn/k8s_monitor/grafana:6.4.2
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p><code>Grafana dashboard</code>一些可用的<code>ID</code>,可直接通过ID导入<code>dashboard</code>.</p>
 <ul>
 <li><code>6239</code></li>
@@ -648,29 +659,11 @@ groups:
 <li><code>11323</code></li>
 </ul>
 <h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a href="https://hub.docker.com/r/prom/mysqld-exporter/" target="_blank" rel="noopener">https://hub.docker.com/r/prom/mysqld-exporter/</a></li>
-<li><a href="https://www.cnblogs.com/xiaobaozi-95/p/11453734.html" target="_blank" rel="noopener">https://www.cnblogs.com/xiaobaozi-95/p/11453734.html</a></li>
-<li><a href="https://www.kancloud.cn/willseecloud/prometheus_practice/1256759" target="_blank" rel="noopener">https://www.kancloud.cn/willseecloud/prometheus_practice/1256759</a></li>
+<li><a target="_blank" rel="noopener" href="https://hub.docker.com/r/prom/mysqld-exporter/">https://hub.docker.com/r/prom/mysqld-exporter/</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/xiaobaozi-95/p/11453734.html">https://www.cnblogs.com/xiaobaozi-95/p/11453734.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.kancloud.cn/willseecloud/prometheus_practice/1256759">https://www.kancloud.cn/willseecloud/prometheus_practice/1256759</a></li>
 </ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+
     </div>
 
     
@@ -754,7 +747,7 @@ groups:
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#说明"><span class="nav-number">1.</span> <span class="nav-text">说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#步骤"><span class="nav-number">2.</span> <span class="nav-text">步骤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考链接"><span class="nav-number">3.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%B4%E6%98%8E"><span class="nav-number">1.</span> <span class="nav-text">说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4"><span class="nav-number">2.</span> <span class="nav-text">步骤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">3.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="接口说明springboot集成Prometheus需要开发的接口有：  监控JVM、tomcat等相关的指标； 自定义监控程序相关指标;  监控JVM、tomcat等相关的指标micrometer已经为我们做好了相关的接口，只需要引入依赖即可. &lt;!--集成Prometheus--&gt; &lt;dependency&gt;     &lt;groupId&gt;org.springframework.b">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-06-23T02:26:02.000Z">
-<meta property="article:modified_time" content="2021-06-23T07:43:01.119Z">
+<meta property="article:modified_time" content="2021-06-23T02:26:02.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="spring boot">
 <meta property="article:tag" content="prometheus">
@@ -78,6 +78,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -220,9 +222,8 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-06-23 10:26:02 / 修改时间：15:43:01" itemprop="dateCreated datePublished" datetime="2021-06-23T10:26:02+08:00">2021-06-23</time>
+              <time title="创建时间：2021-06-23 10:26:02" itemprop="dateCreated datePublished" datetime="2021-06-23T10:26:02+08:00">2021-06-23</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -259,7 +260,8 @@
 <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>io.micrometer<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>micrometer-registry-prometheus<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>设置<code>application.yml</code></p>
 <pre class="line-numbers language-yml"><code class="language-yml">server:
   port: 9090
@@ -273,16 +275,19 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*'<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+        include: '*'
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Bean</span>
 MeterRegistryCustomizer<span class="token operator">&lt;</span>MeterRegistry<span class="token operator">></span> <span class="token function">configurer</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Value</span><span class="token punctuation">(</span><span class="token string">"${spring.application.name}"</span><span class="token punctuation">)</span> String applicationName<span class="token punctuation">)</span> <span class="token punctuation">{</span>
     <span class="token keyword">return</span> registry <span class="token operator">-</span><span class="token operator">></span> registry<span class="token punctuation">.</span><span class="token function">config</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">commonTags</span><span class="token punctuation">(</span><span class="token string">"application"</span><span class="token punctuation">,</span> applicationName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>启动程序后，访问<code>/actuator/prometheus</code>即可获取相关指标.</p>
 <h3 id="使用Micrometer实现方法执行时间监控"><a href="#使用Micrometer实现方法执行时间监控" class="headerlink" title="使用Micrometer实现方法执行时间监控"></a>使用Micrometer实现方法执行时间监控</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Bean</span>
 <span class="token keyword">public</span> TimedAspect <span class="token function">timedAspect</span><span class="token punctuation">(</span>MeterRegistry registry<span class="token punctuation">)</span> <span class="token punctuation">{</span>
     <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">TimedAspect</span><span class="token punctuation">(</span>registry<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 类上要开启@Aspect</span>
 <span class="token comment" spellcheck="true">// 在方法上添加 @Timed 注解即可</span>
 <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/log/warn"</span><span class="token punctuation">)</span>
@@ -290,7 +295,8 @@ MeterRegistryCustomizer<span class="token operator">&lt;</span>MeterRegistry<spa
 <span class="token keyword">public</span> String <span class="token function">warn</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
     log<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"warn msg."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
     <span class="token keyword">return</span> <span class="token string">"warn"</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>启动服务后，访问本地的<code>/actuator/prometheus</code>接口，就能看到如下的指标数据了，其中就有我们自定义的<code>warn_methord</code>的三个指标（count sum max）。</p>
 <pre class="line-numbers language-conf"><code class="language-conf"># HELP warn_methord_seconds 健康检查接口
 # TYPE warn_methord_seconds summary
@@ -298,33 +304,17 @@ warn_methord_seconds_count{application="ggis",exception="None",method="GET",stat
 warn_methord_seconds_sum{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 0.0208932
 # HELP warn_methord_seconds_max 健康检查接口
 # TYPE warn_methord_seconds_max gauge
-warn_methord_seconds_max{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 0.01753<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+warn_methord_seconds_max{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 0.01753
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="自定义监控程序相关指标"><a href="#自定义监控程序相关指标" class="headerlink" title="自定义监控程序相关指标"></a>自定义监控程序相关指标</h3><p>如果上面的接口返回的指标不够用，需要自己开发，可以参考下面的：</p>
 <pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"/metrics"</span><span class="token punctuation">,</span> produces <span class="token operator">=</span> <span class="token string">"text/plain"</span><span class="token punctuation">)</span>
 <span class="token annotation punctuation">@ResponseBody</span>
 String <span class="token function">metrics</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
     <span class="token comment" spellcheck="true">// 这里产生的随机数,实际按需修改</span>
     <span class="token keyword">return</span> <span class="token string">"user_random{application=\"application\"} "</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">(</span>Math<span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="然后配置到Prometheus的Targets中即可"><a href="#然后配置到Prometheus的Targets中即可" class="headerlink" title="然后配置到Prometheus的Targets中即可."></a>然后配置到Prometheus的Targets中即可.</h3><script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="然后配置到Prometheus的Targets中即可"><a href="#然后配置到Prometheus的Targets中即可" class="headerlink" title="然后配置到Prometheus的Targets中即可."></a>然后配置到Prometheus的Targets中即可.</h3>
     </div>
 
     
@@ -408,7 +398,7 @@ String <span class="token function">metrics</span><span class="token punctuation
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#接口说明"><span class="nav-number">1.</span> <span class="nav-text">接口说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#监控JVM、tomcat等相关的指标"><span class="nav-number">2.</span> <span class="nav-text">监控JVM、tomcat等相关的指标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用Micrometer实现方法执行时间监控"><span class="nav-number">3.</span> <span class="nav-text">使用Micrometer实现方法执行时间监控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义监控程序相关指标"><span class="nav-number">4.</span> <span class="nav-text">自定义监控程序相关指标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#然后配置到Prometheus的Targets中即可"><span class="nav-number">5.</span> <span class="nav-text">然后配置到Prometheus的Targets中即可.</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E"><span class="nav-number">1.</span> <span class="nav-text">接口说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%91%E6%8E%A7JVM%E3%80%81tomcat%E7%AD%89%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8C%87%E6%A0%87"><span class="nav-number">2.</span> <span class="nav-text">监控JVM、tomcat等相关的指标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8Micrometer%E5%AE%9E%E7%8E%B0%E6%96%B9%E6%B3%95%E6%89%A7%E8%A1%8C%E6%97%B6%E9%97%B4%E7%9B%91%E6%8E%A7"><span class="nav-number">3.</span> <span class="nav-text">使用Micrometer实现方法执行时间监控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%9B%91%E6%8E%A7%E7%A8%8B%E5%BA%8F%E7%9B%B8%E5%85%B3%E6%8C%87%E6%A0%87"><span class="nav-number">4.</span> <span class="nav-text">自定义监控程序相关指标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%84%B6%E5%90%8E%E9%85%8D%E7%BD%AE%E5%88%B0Prometheus%E7%9A%84Targets%E4%B8%AD%E5%8D%B3%E5%8F%AF"><span class="nav-number">5.</span> <span class="nav-text">然后配置到Prometheus的Targets中即可.</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

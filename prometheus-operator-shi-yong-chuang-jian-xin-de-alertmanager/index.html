@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="Alertmanager是安装prometheus-operator时默认新增的自定义资源类型（CRD），我们可以直接在K8s中创建这样的资源。  创建alert-test.yamlapiVersion: monitoring.coreos.com&#x2F;v1 kind: Alertmanager metadata:   generation: 1   labels:     app: prometh">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-11-29T03:05:27.000Z">
-<meta property="article:modified_time" content="2020-04-15T02:20:30.010Z">
+<meta property="article:modified_time" content="2019-11-29T03:05:27.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="k8s">
 <meta property="article:tag" content="prometheus">
@@ -79,6 +79,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -224,13 +226,6 @@
 
               <time title="创建时间：2019-11-29 11:05:27" itemprop="dateCreated datePublished" datetime="2019-11-29T11:05:27+08:00">2019-11-29</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-15 10:20:30" itemprop="dateModified" datetime="2020-04-15T10:20:30+08:00">2020-04-15</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -300,11 +295,16 @@ spec:
         resources:
           requests:
             storage: 1Gi
-        storageClassName: nfs-client<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+        storageClassName: nfs-client
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h4 id="针对以上配置文件简要说明："><a href="#针对以上配置文件简要说明：" class="headerlink" title="针对以上配置文件简要说明："></a>针对以上配置文件简要说明：</h4><ul>
 <li>所有配置项可以从<code>stable/prometheus-operator/templates/alertmanager/alertmanager.yaml</code>获取，参考前文，<code>prometheus-operator</code>环境是使用<code>helm</code>安装的，可以通过命令<code>helm fetch stable/prometheus-operator</code>将所有配置下载到本地，然后参考。helm安装会默认安装一个<code>Alertmanager</code>服务，也是通过<code>alertmanager.yaml</code>安装的。</li>
 <li><code>kind</code>类型写Alertmanager，无需多言。</li>
-<li><code>metadata.name</code>指定你这个Alertmanager名称，可以通过命令查询<pre><code>kubectl get alertmanager -n monitoring</code></pre></li>
+<li><code>metadata.name</code>指定你这个Alertmanager名称，可以通过命令查询</li>
+</ul>
+<pre><code>kubectl get alertmanager -n monitoring
+</code></pre>
+<ul>
 <li><code>spec.baseImage/version</code>需要指定，不然默认使用的镜像版本可能跟helm安装时使用的版本不一致，导致你需要重新下载，部署就非常慢。</li>
 <li><code>spec.storage</code>指定你新部署的Alertmanager存储，建议指定。</li>
 <li><code>spec.affinity</code>需要指定一些label，Alertmanager对象本质还是一个StatefulSet对象，后面你为Alertmanager对象创建Service时需要通过Label选择。</li>
@@ -312,12 +312,16 @@ spec:
 <li><code>metadata.namespace</code>指定命名空间，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
 <li><code>spec.routePrefix</code>指定路径前缀，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
 </ul>
-<h3 id="过命令或者dashborad创建Alertmanager"><a href="#过命令或者dashborad创建Alertmanager" class="headerlink" title="过命令或者dashborad创建Alertmanager"></a>过命令或者dashborad创建Alertmanager</h3><pre><code>kubectl create -f alert-test.yaml</code></pre><h4 id="注意："><a href="#注意：" class="headerlink" title="注意："></a>注意：</h4><p>现在创建这个，肯定会报错，类似<code>MountVolume.SetUp failed for volume "config-volume" : secrets "alertmanager-XXXX-xX" not found</code></p>
+<h3 id="过命令或者dashborad创建Alertmanager"><a href="#过命令或者dashborad创建Alertmanager" class="headerlink" title="过命令或者dashborad创建Alertmanager"></a>过命令或者dashborad创建Alertmanager</h3><pre><code>kubectl create -f alert-test.yaml
+</code></pre>
+<h4 id="注意："><a href="#注意：" class="headerlink" title="注意："></a>注意：</h4><p>现在创建这个，肯定会报错，类似<code>MountVolume.SetUp failed for volume "config-volume" : secrets "alertmanager-XXXX-xX" not found</code></p>
 <p>原因：（参考：<code>https://yunlzheng.gitbook.io/prometheus-book/part-iii-prometheus-shi-zhan/operator/use-operator-manage-monitor</code>）</p>
 <p>这是由于<code>Prometheus Operator</code>通过<code>Statefulset</code>的方式创建的<code>Alertmanager</code>实例，在默认情况下，会通过<code>alertmanager-{ALERTMANAGER_NAME}</code>的命名规则去查找<code>Secret</code>配置并以文件挂载的方式，将<code>Secret</code>的内容作为配置文件挂载到<code>Alertmanager</code>实例当中。因此，需要提前为<code>Alertmanager</code>创建相应的配置内容。</p>
 <h3 id="参考前文Alertmanager配置"><a href="#参考前文Alertmanager配置" class="headerlink" title="参考前文Alertmanager配置"></a>参考前文Alertmanager配置</h3><p>我们创建<code>alertmanager.yaml</code>，<code>template_1.tmpl</code></p>
 <p>然后用命令创建<code>secret</code>，<code>secret</code>名称格式：<code>alertmanager-{ALERTMANAGER_NAME}</code>,例如我们前文指定的<code>Alertmanager</code>名称为<code>prometheus-operator-alertmanager-test</code>，那么这里<code>secret</code>名称为<code>alertmanager-prometheus-operator-alertmanager-test</code>。</p>
-<pre><code>kubectl create secret generic alertmanager-prometheus-operator-alertmanager-test -n monitoring --from-file=alertmanager.yaml --from-file=template_1.tmpl</code></pre><h3 id="最后创建Alertmanager"><a href="#最后创建Alertmanager" class="headerlink" title="最后创建Alertmanager"></a>最后创建Alertmanager</h3><h3 id="创建Alertmanager的service"><a href="#创建Alertmanager的service" class="headerlink" title="创建Alertmanager的service"></a>创建Alertmanager的service</h3><blockquote>
+<pre><code>kubectl create secret generic alertmanager-prometheus-operator-alertmanager-test -n monitoring --from-file=alertmanager.yaml --from-file=template_1.tmpl
+</code></pre>
+<h3 id="最后创建Alertmanager"><a href="#最后创建Alertmanager" class="headerlink" title="最后创建Alertmanager"></a>最后创建Alertmanager</h3><h3 id="创建Alertmanager的service"><a href="#创建Alertmanager的service" class="headerlink" title="创建Alertmanager的service"></a>创建Alertmanager的service</h3><blockquote>
 <p>这里直接指定Service类型是NodePort，便于我们访问，实际应通过Ingress来做。</p>
 </blockquote>
 <pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
@@ -340,11 +344,14 @@ spec:
     alertmanager: prometheus-operator-alertmanager-test
     app: alertmanager
   sessionAffinity: None
-  type: NodePort<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+  type: NodePort
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <blockquote>
 <p>注意：这里通过<code>selector</code>来选择，和创建<code>Alertmanager</code>配置中保持一致。</p>
 </blockquote>
-<h3 id="通过命令查询Service的映射端口"><a href="#通过命令查询Service的映射端口" class="headerlink" title="通过命令查询Service的映射端口"></a>通过命令查询Service的映射端口</h3><pre><code>kubectl get svc -n monitoring</code></pre><p>通过命令查询Service的映射端口，即可访问我们刚刚创建的Alertmanager.</p>
+<h3 id="通过命令查询Service的映射端口"><a href="#通过命令查询Service的映射端口" class="headerlink" title="通过命令查询Service的映射端口"></a>通过命令查询Service的映射端口</h3><pre><code>kubectl get svc -n monitoring
+</code></pre>
+<p>通过命令查询Service的映射端口，即可访问我们刚刚创建的Alertmanager.</p>
 <p>现在Alertmanager上应该还没有任何通知，原因是还没有将我们创建的Alertmanager和Prometheus关联。</p>
 <h3 id="关联Prometheus"><a href="#关联Prometheus" class="headerlink" title="关联Prometheus"></a>关联Prometheus</h3><p>如何关联Prometheus呢？首先查看下prometheus-operator创建的Prometheus的配置，prometheus-operator也是通过自定义资源类型（CRD）prometheus来创建prometheus server的，直接通过命令查看。</p>
 <pre class="line-numbers language-yml"><code class="language-yml">kubectl get Prometheus prometheus-operator-prometheus  -n monitoring -o yaml
@@ -409,14 +416,17 @@ spec:
           requests:
             storage: 2Gi
         storageClassName: nfs-client
-  version: v2.13.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+  version: v2.13.1
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h4 id="Prometheus配置"><a href="#Prometheus配置" class="headerlink" title="Prometheus配置"></a>Prometheus配置</h4><ul>
 <li><code>spec.alerting.alertmanagers</code>就是指定Prometheus将告警发给哪些alertmanagers。</li>
 <li><code>spec.ruleSelector.matchLabels</code>通过标签关联用户创建的自定义PrometheusRule。</li>
 <li><code>spec.serviceMonitorSelector.matchLabels</code>通过标签关联用户创建的自定义ServiceMonitor</li>
 </ul>
 <p>使用命令编辑已有的Prometheus服务配置</p>
-<pre><code>kubectl edit Prometheus prometheus-operator-prometheus  -n monitoring</code></pre><p>增加一个<code>Alertmanager</code>的<code>Endpoint</code>，其中<code>name</code>、<code>namespace</code>、<code>pathPrefix</code>、<code>port</code>和创建<code>Alertmanager</code>配置保持一致。</p>
+<pre><code>kubectl edit Prometheus prometheus-operator-prometheus  -n monitoring
+</code></pre>
+<p>增加一个<code>Alertmanager</code>的<code>Endpoint</code>，其中<code>name</code>、<code>namespace</code>、<code>pathPrefix</code>、<code>port</code>和创建<code>Alertmanager</code>配置保持一致。</p>
 <pre class="line-numbers language-yml"><code class="language-yml">spec:
   alerting:
     alertmanagers:
@@ -427,26 +437,9 @@ spec:
     - name: prometheus-operator-alertmanager-test
       namespace: monitoring
       pathPrefix: /
-      port: web<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+      port: web
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
     </div>
 
     
@@ -531,7 +524,7 @@ spec:
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建alert-test-yaml"><span class="nav-number">1.</span> <span class="nav-text">创建alert-test.yaml</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#针对以上配置文件简要说明："><span class="nav-number">1.1.</span> <span class="nav-text">针对以上配置文件简要说明：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#过命令或者dashborad创建Alertmanager"><span class="nav-number">2.</span> <span class="nav-text">过命令或者dashborad创建Alertmanager</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#注意："><span class="nav-number">2.1.</span> <span class="nav-text">注意：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考前文Alertmanager配置"><span class="nav-number">3.</span> <span class="nav-text">参考前文Alertmanager配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最后创建Alertmanager"><span class="nav-number">4.</span> <span class="nav-text">最后创建Alertmanager</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Alertmanager的service"><span class="nav-number">5.</span> <span class="nav-text">创建Alertmanager的service</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通过命令查询Service的映射端口"><span class="nav-number">6.</span> <span class="nav-text">通过命令查询Service的映射端口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关联Prometheus"><span class="nav-number">7.</span> <span class="nav-text">关联Prometheus</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Prometheus配置"><span class="nav-number">7.1.</span> <span class="nav-text">Prometheus配置</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAalert-test-yaml"><span class="nav-number">1.</span> <span class="nav-text">创建alert-test.yaml</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%92%88%E5%AF%B9%E4%BB%A5%E4%B8%8A%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%AE%80%E8%A6%81%E8%AF%B4%E6%98%8E%EF%BC%9A"><span class="nav-number">1.1.</span> <span class="nav-text">针对以上配置文件简要说明：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%87%E5%91%BD%E4%BB%A4%E6%88%96%E8%80%85dashborad%E5%88%9B%E5%BB%BAAlertmanager"><span class="nav-number">2.</span> <span class="nav-text">过命令或者dashborad创建Alertmanager</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B3%A8%E6%84%8F%EF%BC%9A"><span class="nav-number">2.1.</span> <span class="nav-text">注意：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E5%89%8D%E6%96%87Alertmanager%E9%85%8D%E7%BD%AE"><span class="nav-number">3.</span> <span class="nav-text">参考前文Alertmanager配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E5%90%8E%E5%88%9B%E5%BB%BAAlertmanager"><span class="nav-number">4.</span> <span class="nav-text">最后创建Alertmanager</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAAlertmanager%E7%9A%84service"><span class="nav-number">5.</span> <span class="nav-text">创建Alertmanager的service</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E5%91%BD%E4%BB%A4%E6%9F%A5%E8%AF%A2Service%E7%9A%84%E6%98%A0%E5%B0%84%E7%AB%AF%E5%8F%A3"><span class="nav-number">6.</span> <span class="nav-text">通过命令查询Service的映射端口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E8%81%94Prometheus"><span class="nav-number">7.</span> <span class="nav-text">关联Prometheus</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Prometheus%E9%85%8D%E7%BD%AE"><span class="nav-number">7.1.</span> <span class="nav-text">Prometheus配置</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,10 +28,10 @@
 <meta property="og:description" content="Metrics QueriesMetrics Queries 可以用来计算日志错误率或最近一段时间日志最多的前 N 个日志源. LogQL 范围聚合查询函数   函数 说明    rate(log-range) 计​​算每秒的条目数   count_over_time(log-range) 计算给定范围内每个日志流的条目   bytes_rate(log-range) 计算每个流每秒的字节数">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-07-29T01:09:54.000Z">
-<meta property="article:modified_time" content="2022-07-29T01:23:16.536Z">
+<meta property="article:modified_time" content="2022-07-29T01:09:54.000Z">
 <meta property="article:author" content="wuzhiyong">
-<meta property="article:tag" content="grafana">
 <meta property="article:tag" content="loki">
+<meta property="article:tag" content="grafana">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://happywzy.top/loki-ri-zhi-tong-ji/">
@@ -78,6 +78,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -220,9 +222,8 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-07-29 09:09:54 / 修改时间：09:23:16" itemprop="dateCreated datePublished" datetime="2022-07-29T09:09:54+08:00">2022-07-29</time>
+              <time title="创建时间：2022-07-29 09:09:54" itemprop="dateCreated datePublished" datetime="2022-07-29T09:09:54+08:00">2022-07-29</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -277,7 +278,8 @@
 <h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 计算 MySQL 作业最后五分钟内的所有日志行。</span>
 count_over_time<span class="token punctuation">(</span><span class="token punctuation">{</span>job<span class="token operator">=</span><span class="token string">"mysql"</span><span class="token punctuation">}</span><span class="token punctuation">[</span>5m<span class="token punctuation">]</span><span class="token punctuation">)</span>
 <span class="token comment" spellcheck="true"># MySQL 作业在每台主机的最后几分钟内所有非超时错误的每秒速率，并且仅包括持续时间超过 10 秒的错误</span>
-<span class="token function">sum</span> by <span class="token punctuation">(</span>host<span class="token punctuation">)</span> <span class="token punctuation">(</span>rate<span class="token punctuation">(</span><span class="token punctuation">{</span>job<span class="token operator">=</span><span class="token string">"mysql"</span><span class="token punctuation">}</span> <span class="token operator">|</span><span class="token operator">=</span> <span class="token string">"error"</span> <span class="token operator">!=</span> <span class="token string">"timeout"</span> <span class="token operator">|</span> json <span class="token operator">|</span> duration <span class="token operator">></span> 10s <span class="token punctuation">[</span>1m<span class="token punctuation">]</span><span class="token punctuation">))</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token function">sum</span> by <span class="token punctuation">(</span>host<span class="token punctuation">)</span> <span class="token punctuation">(</span>rate<span class="token punctuation">(</span><span class="token punctuation">{</span>job<span class="token operator">=</span><span class="token string">"mysql"</span><span class="token punctuation">}</span> <span class="token operator">|</span><span class="token operator">=</span> <span class="token string">"error"</span> <span class="token operator">!=</span> <span class="token string">"timeout"</span> <span class="token operator">|</span> json <span class="token operator">|</span> duration <span class="token operator">></span> 10s <span class="token punctuation">[</span>1m<span class="token punctuation">]</span><span class="token punctuation">))</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="内置聚合运算符"><a href="#内置聚合运算符" class="headerlink" title="内置聚合运算符"></a>内置聚合运算符</h3><table>
 <thead>
 <tr>
@@ -332,29 +334,12 @@ topk<span class="token punctuation">(</span>10,sum<span class="token punctuation
 sum<span class="token punctuation">(</span>count_over_time<span class="token punctuation">(</span><span class="token punctuation">{</span>job<span class="token operator">=</span><span class="token string">"mysql"</span><span class="token punctuation">}</span><span class="token punctuation">[</span>5m<span class="token punctuation">]</span><span class="token punctuation">))</span> by <span class="token punctuation">(</span>level<span class="token punctuation">)</span>
 
 <span class="token comment" spellcheck="true"># /home按区域获取对 NGINX 日志端点的 HTTP GET 请求速率</span>
-avg<span class="token punctuation">(</span>rate<span class="token punctuation">((</span><span class="token punctuation">{</span>job<span class="token operator">=</span><span class="token string">"nginx"</span><span class="token punctuation">}</span> <span class="token operator">|</span><span class="token operator">=</span> <span class="token string">"GET"</span> <span class="token operator">|</span> json <span class="token operator">|</span> path<span class="token operator">=</span><span class="token string">"/home"</span><span class="token punctuation">)</span><span class="token punctuation">[</span>10s<span class="token punctuation">]</span><span class="token punctuation">))</span> by <span class="token punctuation">(</span>region<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+avg<span class="token punctuation">(</span>rate<span class="token punctuation">((</span><span class="token punctuation">{</span>job<span class="token operator">=</span><span class="token string">"nginx"</span><span class="token punctuation">}</span> <span class="token operator">|</span><span class="token operator">=</span> <span class="token string">"GET"</span> <span class="token operator">|</span> json <span class="token operator">|</span> path<span class="token operator">=</span><span class="token string">"/home"</span><span class="token punctuation">)</span><span class="token punctuation">[</span>10s<span class="token punctuation">]</span><span class="token punctuation">))</span> by <span class="token punctuation">(</span>region<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
 <li><a href="">https://grafana.com/docs/loki/latest/logql/metric_queries/</a></li>
 </ul>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+
     </div>
 
     
@@ -363,8 +348,8 @@ avg<span class="token punctuation">(</span>rate<span class="token punctuation">(
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/grafana/" rel="tag"># grafana</a>
               <a href="/tags/loki/" rel="tag"># loki</a>
+              <a href="/tags/grafana/" rel="tag"># grafana</a>
           </div>
 
         
@@ -438,7 +423,7 @@ avg<span class="token punctuation">(</span>rate<span class="token punctuation">(
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Metrics-Queries"><span class="nav-number">1.</span> <span class="nav-text">Metrics Queries</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LogQL-范围聚合查询函数"><span class="nav-number">2.</span> <span class="nav-text">LogQL 范围聚合查询函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#示例"><span class="nav-number">3.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内置聚合运算符"><span class="nav-number">4.</span> <span class="nav-text">内置聚合运算符</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#示例-1"><span class="nav-number">5.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考链接"><span class="nav-number">6.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Metrics-Queries"><span class="nav-number">1.</span> <span class="nav-text">Metrics Queries</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LogQL-%E8%8C%83%E5%9B%B4%E8%81%9A%E5%90%88%E6%9F%A5%E8%AF%A2%E5%87%BD%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">LogQL 范围聚合查询函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B"><span class="nav-number">3.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E7%BD%AE%E8%81%9A%E5%90%88%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="nav-number">4.</span> <span class="nav-text">内置聚合运算符</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B-1"><span class="nav-number">5.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">6.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

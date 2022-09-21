@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="本文使用的istio版本：1.4.2   上章内容只是简单运行了Bookinfo示例（Istio使用【Bookinfo示例】），访问页面，Reviews虽然有三个版本，但是刷新浏览器，三个版本是随机返回。本章内容仍然使用官方样例配置，定义一些自定义路由规则。在这之前最好了解下Istio使用【CRDs】。  创建所有服务的DestinationRulekubectl apply -f sample">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-12-30T06:47:41.000Z">
-<meta property="article:modified_time" content="2020-01-09T06:53:40.852Z">
+<meta property="article:modified_time" content="2019-12-30T06:47:41.000Z">
 <meta property="article:author" content="wuzhiyong">
 <meta property="article:tag" content="istio">
 <meta property="article:tag" content="bookinfo">
@@ -78,6 +78,8 @@
   </style>
 </noscript>
 
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
 <link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
@@ -223,13 +225,6 @@
 
               <time title="创建时间：2019-12-30 14:47:41" itemprop="dateCreated datePublished" datetime="2019-12-30T14:47:41+08:00">2019-12-30</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-01-09 14:53:40" itemprop="dateModified" datetime="2020-01-09T14:53:40+08:00">2020-01-09</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -255,9 +250,10 @@
 <p><strong>本文使用的istio版本：<code>1.4.2</code></strong></p>
 </blockquote>
 <blockquote>
-<p>上章内容只是简单运行了<code>Bookinfo</code>示例（<a href="">Istio使用【Bookinfo示例】</a>），访问页面，<code>Reviews</code>虽然有三个版本，但是刷新浏览器，三个版本是随机返回。本章内容仍然使用官方样例配置，定义一些自定义路由规则。在这之前最好了解下<a href="https://haolin.club/2020/01/03/istio-shi-yong-crds/">Istio使用【CRDs】</a>。</p>
+<p>上章内容只是简单运行了<code>Bookinfo</code>示例（<a href="">Istio使用【Bookinfo示例】</a>），访问页面，<code>Reviews</code>虽然有三个版本，但是刷新浏览器，三个版本是随机返回。本章内容仍然使用官方样例配置，定义一些自定义路由规则。在这之前最好了解下<a target="_blank" rel="noopener" href="https://haolin.club/2020/01/03/istio-shi-yong-crds/">Istio使用【CRDs】</a>。</p>
 </blockquote>
-<h3 id="创建所有服务的DestinationRule"><a href="#创建所有服务的DestinationRule" class="headerlink" title="创建所有服务的DestinationRule"></a>创建所有服务的<code>DestinationRule</code></h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="创建所有服务的DestinationRule"><a href="#创建所有服务的DestinationRule" class="headerlink" title="创建所有服务的DestinationRule"></a>创建所有服务的<code>DestinationRule</code></h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <h3 id="定义V1和V2版本8-2比重，V3不返回"><a href="#定义V1和V2版本8-2比重，V3不返回" class="headerlink" title="定义V1和V2版本8:2比重，V3不返回"></a>定义<code>V1</code>和<code>V2</code>版本<code>8:2</code>比重，<code>V3</code>不返回</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
 <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
@@ -274,7 +270,8 @@
     <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
         <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
         <span class="token key atrule">subset</span><span class="token punctuation">:</span> v2
-      <span class="token key atrule">weight</span><span class="token punctuation">:</span> <span class="token number">20</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+      <span class="token key atrule">weight</span><span class="token punctuation">:</span> <span class="token number">20</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="定义如果Header中包含jason用户返回V2版本，否则返回V3版本"><a href="#定义如果Header中包含jason用户返回V2版本，否则返回V3版本" class="headerlink" title="定义如果Header中包含jason用户返回V2版本，否则返回V3版本"></a>定义如果<code>Header</code>中包含<code>jason</code>用户返回<code>V2</code>版本，否则返回<code>V3</code>版本</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
 <span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
 <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
@@ -294,27 +291,10 @@
   <span class="token punctuation">-</span> <span class="token key atrule">route</span><span class="token punctuation">:</span>
     <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
         <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
-        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v3
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>其它可以参考<code>samples/bookinfo/networking/</code>目录下配置。</p>
-<script>
-        document.querySelectorAll('.github-emoji')
-          .forEach(el => {
-            if (!el.dataset.src) { return; }
-            const img = document.createElement('img');
-            img.style = 'display:none !important;';
-            img.src = el.dataset.src;
-            img.addEventListener('error', () => {
-              img.remove();
-              el.style.color = 'inherit';
-              el.style.backgroundImage = 'none';
-              el.style.background = 'none';
-            });
-            img.addEventListener('load', () => {
-              img.remove();
-            });
-            document.body.appendChild(img);
-          });
-      </script>
+
     </div>
 
     
@@ -398,7 +378,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建所有服务的DestinationRule"><span class="nav-number">1.</span> <span class="nav-text">创建所有服务的DestinationRule</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定义V1和V2版本8-2比重，V3不返回"><span class="nav-number">2.</span> <span class="nav-text">定义V1和V2版本8:2比重，V3不返回</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定义如果Header中包含jason用户返回V2版本，否则返回V3版本"><span class="nav-number">3.</span> <span class="nav-text">定义如果Header中包含jason用户返回V2版本，否则返回V3版本</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E6%89%80%E6%9C%89%E6%9C%8D%E5%8A%A1%E7%9A%84DestinationRule"><span class="nav-number">1.</span> <span class="nav-text">创建所有服务的DestinationRule</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89V1%E5%92%8CV2%E7%89%88%E6%9C%AC8-2%E6%AF%94%E9%87%8D%EF%BC%8CV3%E4%B8%8D%E8%BF%94%E5%9B%9E"><span class="nav-number">2.</span> <span class="nav-text">定义V1和V2版本8:2比重，V3不返回</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89%E5%A6%82%E6%9E%9CHeader%E4%B8%AD%E5%8C%85%E5%90%ABjason%E7%94%A8%E6%88%B7%E8%BF%94%E5%9B%9EV2%E7%89%88%E6%9C%AC%EF%BC%8C%E5%90%A6%E5%88%99%E8%BF%94%E5%9B%9EV3%E7%89%88%E6%9C%AC"><span class="nav-number">3.</span> <span class="nav-text">定义如果Header中包含jason用户返回V2版本，否则返回V3版本</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
