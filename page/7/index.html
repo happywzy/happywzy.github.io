@@ -196,6 +196,200 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-man-cha-xun-ri-zhi-zong-jie/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-man-cha-xun-ri-zhi-zong-jie/" class="post-title-link" itemprop="url">mysql慢查询日志总结</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-02-28 16:07:09" itemprop="dateCreated datePublished" datetime="2022-02-28T16:07:09+08:00">2022-02-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="开启慢查询日志"><a href="#开启慢查询日志" class="headerlink" title="开启慢查询日志"></a>开启慢查询日志</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查询慢查询日志开启状态</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'slow_query%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+-------------------------------+</span>
+<span class="token operator">|</span> Variable_name       <span class="token operator">|</span> <span class="token keyword">Value</span>                         <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+-------------------------------+</span>
+<span class="token operator">|</span> slow_query_log      <span class="token operator">|</span> <span class="token keyword">ON</span>                            <span class="token operator">|</span>
+<span class="token operator">|</span> slow_query_log_file <span class="token operator">|</span> <span class="token operator">/</span>var<span class="token operator">/</span>lib<span class="token operator">/</span>mysql<span class="token operator">/</span>data3<span class="token operator">-</span>slow<span class="token punctuation">.</span>log <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+-------------------------------+</span>
+<span class="token number">2</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+<span class="token comment" spellcheck="true">-- 开启慢查询日志记录</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span> slow_query_log<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 查询慢查询时间</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'long_query_time%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token operator">|</span> Variable_name   <span class="token operator">|</span> <span class="token keyword">Value</span>     <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token operator">|</span> long_query_time <span class="token operator">|</span> <span class="token number">10.000000</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true">-- 修改慢查询时间,修改后需要重新建立会话才能看到最新设置的值</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span> long_query_time<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="慢查询输出"><a href="#慢查询输出" class="headerlink" title="慢查询输出"></a>慢查询输出</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看默认输出,默认输出到文件,性能较高</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%log_output%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-------+</span>
+<span class="token operator">|</span> Variable_name <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-------+</span>
+<span class="token operator">|</span> log_output    <span class="token operator">|</span> <span class="token keyword">FILE</span>  <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+<span class="token comment" spellcheck="true">-- 可以设置输出到表</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span> log_output<span class="token operator">=</span><span class="token string">'TABLE'</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> mysql<span class="token punctuation">.</span>slow_log<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="其它配置"><a href="#其它配置" class="headerlink" title="其它配置"></a>其它配置</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 开启这个配置,可以将未使用索引的查询也记录到日志</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'log_queries_not_using_indexes'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token operator">|</span> Variable_name                 <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token operator">|</span> log_queries_not_using_indexes <span class="token operator">|</span> <span class="token keyword">OFF</span>   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true">-- 开启配置</span>
+mysql<span class="token operator">></span> <span class="token keyword">set</span> <span class="token keyword">global</span> log_queries_not_using_indexes<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-dai-li-jie-kou-503-bao-cuo-pai-cha-fen-xi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-dai-li-jie-kou-503-bao-cuo-pai-cha-fen-xi/" class="post-title-link" itemprop="url">istio代理接口503报错排查分析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-02-22 15:01:19" itemprop="dateCreated datePublished" datetime="2022-02-22T15:01:19+08:00">2022-02-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="获取istio-proxy所有配置"><a href="#获取istio-proxy所有配置" class="headerlink" title="获取istio-proxy所有配置"></a>获取istio-proxy所有配置</h3><pre><code>kubectl -n test exec auhss-v1-769dc687ff-479r4 -c istio-proxy -- curl http://localhost:15000/config_dump &gt; test.json
+</code></pre>
+<h3 id="配置istio-proxy日志级别为debug"><a href="#配置istio-proxy日志级别为debug" class="headerlink" title="配置istio-proxy日志级别为debug"></a>配置istio-proxy日志级别为debug</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># -n 名空间</span>
+<span class="token comment" spellcheck="true"># server-v1-6dfd6b9846-c2ch6 容器名</span>
+kubectl -n mgec  <span class="token function">exec</span> server-v1-6dfd6b9846-c2ch6  -c istio-proxy -- curl -XPOST -s -o /dev/null http://localhost:15000/logging?level<span class="token operator">=</span>debug
+<span class="token comment" spellcheck="true"># 通过pod注解方式设置日志级别</span>
+template:
+    metadata:
+      annotations:
+        sidecar.istio.io/logLevel: debug
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="查看Prometheus收集的istio指标"><a href="#查看Prometheus收集的istio指标" class="headerlink" title="查看Prometheus收集的istio指标"></a>查看Prometheus收集的istio指标</h3><pre><code>istio_requests_total{response_flags="UC", response_code="503", reporter="destination"}
+</code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubernetes-cun-chu-longhorn/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -556,374 +750,10 @@ Rollback was a success<span class="token operator">!</span> Happy Helming<span c
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/centos-xi-tong-pan-kuo-rong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/centos-xi-tong-pan-kuo-rong/" class="post-title-link" itemprop="url">centos系统盘扩容</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-12-08 09:44:45" itemprop="dateCreated datePublished" datetime="2021-12-08T09:44:45+08:00">2021-12-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/centos/" itemprop="url" rel="index"><span itemprop="name">centos</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ol>
-<li>查看当前系统盘信息</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># df -h</span>
-Filesystem               Size  Used Avail Use% Mounted on
-devtmpfs                 7.8G     0  7.8G   0% /dev
-tmpfs                    7.8G     0  7.8G   0% /dev/shm
-tmpfs                    7.8G  7.4M  7.8G   1% /run
-tmpfs                    7.8G     0  7.8G   0% /sys/fs/cgroup
-/dev/mapper/centos-root   44G   32G   13G  72% /    <span class="token comment" spellcheck="true"># 注意这里只有13G了</span>
-/dev/sda1               1014M  168M  847M  17% /boot
-tmpfs                    1.6G     0  1.6G   0% /run/user/0
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>查看未分配的存储</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># lsblk -l</span>
-NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-sda           8:0    0  200G  0 disk  <span class="token comment" spellcheck="true">#还有150G未分配</span>
-sda1          8:1    0    1G  0 part /boot
-sda2          8:2    0   49G  0 part 
-centos-root 253:0    0   44G  0 lvm  /
-centos-swap 253:1    0    5G  0 lvm  
-sr0          11:0    1 1024M  0 rom  
-<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># fdisk -l</span>
-Disk /dev/sda: 214.7 GB, 214748364800 bytes, 419430400 sectors
-Units <span class="token operator">=</span> sectors of 1 * 512 <span class="token operator">=</span> 512 bytes
-Sector size <span class="token punctuation">(</span>logical/physical<span class="token punctuation">)</span>: 512 bytes / 512 bytes
-I/O size <span class="token punctuation">(</span>minimum/optimal<span class="token punctuation">)</span>: 512 bytes / 512 bytes
-Disk label type: dos
-Disk identifier: 0x00039057
-Device Boot      Start         End      Blocks   Id  System
-/dev/sda1   *        2048     2099199     1048576   83  Linux
-/dev/sda2         2099200   104857599    51379200   8e  Linux LVM
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="3">
-<li>对新增加的磁盘进行分区</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># fdisk /dev/sda </span>
-Welcome to <span class="token function">fdisk</span> <span class="token punctuation">(</span>util-linux 2.23.2<span class="token punctuation">)</span>.
-Changes will remain <span class="token keyword">in</span> memory only, <span class="token keyword">until</span> you decide to <span class="token function">write</span> them.
-Be careful before using the <span class="token function">write</span> command.
-<span class="token comment" spellcheck="true"># 1</span>
-Command <span class="token punctuation">(</span>m <span class="token keyword">for</span> help<span class="token punctuation">)</span>: n
-Partition type:
-   p   primary <span class="token punctuation">(</span>2 primary, 0 extended, 2 free<span class="token punctuation">)</span>
-   e   extended
-<span class="token comment" spellcheck="true"># 2</span>
-Select <span class="token punctuation">(</span>default p<span class="token punctuation">)</span>: p
-Partition number <span class="token punctuation">(</span>3,4, default 3<span class="token punctuation">)</span>: 
-First sector <span class="token punctuation">(</span>104857600-419430399, default 104857600<span class="token punctuation">)</span>: 
-Using default value 104857600
-Last sector, +sectors or +size<span class="token punctuation">{</span>K,M,G<span class="token punctuation">}</span> <span class="token punctuation">(</span>104857600-419430399, default 419430399<span class="token punctuation">)</span>: 
-Using default value 419430399
-Partition 3 of <span class="token function">type</span> Linux and of size 150 GiB is <span class="token keyword">set</span>
-<span class="token comment" spellcheck="true"># 3</span>
-Command <span class="token punctuation">(</span>m <span class="token keyword">for</span> help<span class="token punctuation">)</span>: w
-The partition table has been altered<span class="token operator">!</span>
-Calling ioctl<span class="token punctuation">(</span><span class="token punctuation">)</span> to re-read partition table.
-WARNING: Re-reading the partition table failed with error 16: Device or resource busy.
-The kernel still uses the old table. The new table will be used at
-the next <span class="token function">reboot</span> or after you run partprobe<span class="token punctuation">(</span>8<span class="token punctuation">)</span> or kpartx<span class="token punctuation">(</span>8<span class="token punctuation">)</span>
-Syncing disks.
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="4">
-<li>分区完后重启<br>分区完之后无法通过<code>lsbfk</code>等命令查看到,但是<code>fdisk -l</code>可以看到</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># fdisk -l</span>
-Disk /dev/sda: 214.7 GB, 214748364800 bytes, 419430400 sectors
-Units <span class="token operator">=</span> sectors of 1 * 512 <span class="token operator">=</span> 512 bytes
-Sector size <span class="token punctuation">(</span>logical/physical<span class="token punctuation">)</span>: 512 bytes / 512 bytes
-I/O size <span class="token punctuation">(</span>minimum/optimal<span class="token punctuation">)</span>: 512 bytes / 512 bytes
-Disk label type: dos
-Disk identifier: 0x00039057
-Device Boot      Start         End      Blocks   Id  System
-/dev/sda1   *        2048     2099199     1048576   83  Linux
-/dev/sda2         2099200   104857599    51379200   8e  Linux LVM
-/dev/sda3       104857600   419430399   157286400   83  Linux
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>创建物理卷</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># pvcreate /dev/sda3</span>
-  Physical volume <span class="token string">"/dev/sda3"</span> successfully created.
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="6">
-<li>查看物理卷信息</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># pvdisplay</span>
-  --- Physical volume ---
-  PV Name               /dev/sda2
-  VG Name               centos
-  PV Size               <span class="token operator">&lt;</span>49.00 GiB / not usable 3.00 MiB
-  Allocatable           <span class="token function">yes</span> <span class="token punctuation">(</span>but full<span class="token punctuation">)</span>
-  PE Size               4.00 MiB
-  Total PE              12543
-  Free PE               0
-  Allocated PE          12543
-  PV UUID               1BfiJn-wrKX-mDQa-Z43E-l3XT-KEki-A9tgAj
-  <span class="token string">"/dev/sda3"</span> is a new physical volume of <span class="token string">"150.00 GiB"</span>
-  --- NEW Physical volume ---
-  PV Name               /dev/sda3
-  VG Name               <span class="token comment" spellcheck="true"># 这里是空的</span>
-  PV Size               150.00 GiB
-  Allocatable           NO
-  PE Size               0   
-  Total PE              0
-  Free PE               0
-  Allocated PE          0
-  PV UUID               AKLFX6-6vhY-t38N-0FjV-r0WR-NXFG-3fafid
-<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># vgdisplay</span>
-  --- Volume group ---
-  VG Name               centos <span class="token comment" spellcheck="true">#这里是系统盘的VG名</span>
-  System ID             
-  Format                lvm2
-  Metadata Areas        1
-  Metadata Sequence No  3
-  VG Access             read/write
-  VG Status             resizable
-  MAX LV                0
-  Cur LV                2
-  Open LV               1
-  Max PV                0
-  Cur PV                1
-  Act PV                1
-  VG Size               <span class="token operator">&lt;</span>49.00 GiB
-  PE Size               4.00 MiB
-  Total PE              12543
-  Alloc PE / Size       12543 / <span class="token operator">&lt;</span>49.00 GiB
-  Free  PE / Size       0 / 0   
-  VG UUID               TWyVcI-YK3A-SAhs-DQWd-0C6n-1PAZ-KumTJW
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="7">
-<li>将新增加的分区<code>/dev/sda3</code>加入到根目录分区<code>centos</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># vgextend centos /dev/sda3</span>
-  Volume group <span class="token string">"centos"</span> successfully extended
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="8">
-<li>重新查看卷组信息</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># vgdisplay</span>
-  --- Volume group ---
-  VG Name               centos
-  System ID             
-  Format                lvm2
-  Metadata Areas        2
-  Metadata Sequence No  4
-  VG Access             read/write
-  VG Status             resizable
-  MAX LV                0
-  Cur LV                2
-  Open LV               1
-  Max PV                0
-  Cur PV                2
-  Act PV                2
-  VG Size               198.99 GiB
-  PE Size               4.00 MiB
-  Total PE              50942
-  Alloc PE / Size       12543 / <span class="token operator">&lt;</span>49.00 GiB
-  Free  PE / Size       38399 / <span class="token operator">&lt;</span>150.00 GiB <span class="token comment" spellcheck="true">#还有150G未分配</span>
-  VG UUID               TWyVcI-YK3A-SAhs-DQWd-0C6n-1PAZ-KumTJW
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="9">
-<li>进行卷扩容</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># lvextend -l +100%FREE /dev/mapper/centos-root</span>
-  Size of logical volume centos/root changed from <span class="token operator">&lt;</span>44.00 GiB <span class="token punctuation">(</span>11263 extents<span class="token punctuation">)</span> to 193.99 GiB <span class="token punctuation">(</span>49662 extents<span class="token punctuation">)</span>.
-  Logical volume centos/root successfully resized.
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<ol start="10">
-<li>调整卷分区大小</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># xfs_growfs /dev/mapper/centos-root</span>
-meta-data<span class="token operator">=</span>/dev/mapper/centos-root isize<span class="token operator">=</span>512    agcount<span class="token operator">=</span>4, agsize<span class="token operator">=</span>2883328 blks
-         <span class="token operator">=</span>                       sectsz<span class="token operator">=</span>512   attr<span class="token operator">=</span>2, projid32bit<span class="token operator">=</span>1
-         <span class="token operator">=</span>                       crc<span class="token operator">=</span>1        finobt<span class="token operator">=</span>0 spinodes<span class="token operator">=</span>0
-data     <span class="token operator">=</span>                       bsize<span class="token operator">=</span>4096   blocks<span class="token operator">=</span>11533312, imaxpct<span class="token operator">=</span>25
-         <span class="token operator">=</span>                       sunit<span class="token operator">=</span>0      swidth<span class="token operator">=</span>0 blks
-naming   <span class="token operator">=</span>version 2              bsize<span class="token operator">=</span>4096   ascii-ci<span class="token operator">=</span>0 ftype<span class="token operator">=</span>1
-log      <span class="token operator">=</span>internal               bsize<span class="token operator">=</span>4096   blocks<span class="token operator">=</span>5631, version<span class="token operator">=</span>2
-         <span class="token operator">=</span>                       sectsz<span class="token operator">=</span>512   sunit<span class="token operator">=</span>0 blks, lazy-count<span class="token operator">=</span>1
-realtime <span class="token operator">=</span>none                   extsz<span class="token operator">=</span>4096   blocks<span class="token operator">=</span>0, rtextents<span class="token operator">=</span>0
-data blocks changed from 11533312 to 50853888
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="11">
-<li>最后再查看系统盘大小</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># df -h</span>
-Filesystem               Size  Used Avail Use% Mounted on
-devtmpfs                 7.8G     0  7.8G   0% /dev
-tmpfs                    7.8G     0  7.8G   0% /dev/shm
-tmpfs                    7.8G  5.0M  7.8G   1% /run
-tmpfs                    7.8G     0  7.8G   0% /sys/fs/cgroup
-/dev/mapper/centos-root  194G   26G  169G  13% / <span class="token comment" spellcheck="true">#已经完成扩容</span>
-/dev/sda1               1014M  168M  847M  17% /boot
-tmpfs                    1.6G     0  1.6G   0% /run/user/0
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-quan-liang-bei-fen-he-zeng-liang-bei-fen/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-quan-liang-bei-fen-he-zeng-liang-bei-fen/" class="post-title-link" itemprop="url">mysql全量备份和增量备份</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-12-07 14:39:31" itemprop="dateCreated datePublished" datetime="2021-12-07T14:39:31+08:00">2021-12-07</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="全量备份"><a href="#全量备份" class="headerlink" title="全量备份"></a>全量备份</h3><h4 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h4><p>在MySQL中提供了命令行导出数据库数据以及文件的一种方便的工具<code>mysqldump</code>,</p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 备份全部数据库的数据和结构</span>
-<span class="token comment" spellcheck="true">-- -d 备份全部数据库的结构</span>
-<span class="token comment" spellcheck="true">-- -t 备份全部数据库的数据</span>
-mysqldump <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token operator">-</span>A <span class="token operator">></span> <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql
-
-<span class="token comment" spellcheck="true">-- 备份单个或多个数据库的数据和结构</span>
-mysqldump <span class="token operator">-</span>u root <span class="token operator">-</span>p <span class="token comment" spellcheck="true">--databases db1 db2 > xxx.sql</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="还原"><a href="#还原" class="headerlink" title="还原"></a>还原</h4><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 方法一：在系统命令行中</span>
-mysql <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token operator">&lt;</span> <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql
-<span class="token comment" spellcheck="true">-- 方法二：登录进入mysql系统中</span>
-mysql<span class="token operator">></span> source <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="增量备份"><a href="#增量备份" class="headerlink" title="增量备份"></a>增量备份</h3><p>要做增量备份首先要开启<code>log_bin</code></p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看log_bin开启状态</span>
-<span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%log_bin%'</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 开启后可以查看当前使用的日志文件</span>
-<span class="token keyword">show</span> master <span class="token keyword">status</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 刷新使用的日志文件,如当前使用mysql-bin.00005,执行命令后变为mysql-bin.00006</span>
-mysqladmin <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 flush<span class="token operator">-</span>logs
-<span class="token comment" spellcheck="true">-- 保存mysql-bin日志文件</span>
-<span class="token comment" spellcheck="true">-- 从mysql-bin恢复数据</span>
-mysqlbinlog <span class="token operator">/</span>var<span class="token operator">/</span>lib<span class="token operator">/</span>mysql<span class="token operator">/</span>mysql<span class="token operator">-</span>bin<span class="token number">.000015</span> <span class="token operator">|</span> mysql <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token number">db1</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="脚本"><a href="#脚本" class="headerlink" title="脚本"></a>脚本</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token shebang important">#!/bin/sh</span>
-<span class="token comment" spellcheck="true"># 备份当日的</span>
-docker <span class="token function">exec</span> -it mysql mysqldump -uroot -p123456 -A <span class="token operator">></span> /root/mysql/bak/<span class="token variable"><span class="token variable">$(</span><span class="token function">date</span> +%F<span class="token variable">)</span></span>.sql
-<span class="token comment" spellcheck="true"># 清除一周前的备份</span>
-<span class="token function">rm</span> -rf /root/mysql/bak/<span class="token punctuation">$(</span>date -d <span class="token string">"-1 week "</span> +%Y-%m-%d<span class="token punctuation">)</span>.sql
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意：如果使用<code>crontab</code>去定时执行上面的脚本,需要把<code>-it</code>去掉,不然生成的<code>sql</code>文件为空.</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/53/">53</a><a class="extend next" rel="next" href="/page/8/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><a class="extend next" rel="next" href="/page/8/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -991,7 +821,7 @@ docker <span class="token function">exec</span> -it mysql mysqldump -uroot -p123
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">317</span>
+          <span class="site-state-item-count">319</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1004,7 +834,7 @@ docker <span class="token function">exec</span> -it mysql mysqldump -uroot -p123
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">201</span>
+        <span class="site-state-item-count">203</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

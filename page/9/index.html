@@ -196,6 +196,205 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-ji-qun-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/elasticsearch-ji-qun-bu-shu/" class="post-title-link" itemprop="url">Elasticsearch集群部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-02 09:02:10" itemprop="dateCreated datePublished" datetime="2021-11-02T09:02:10+08:00">2021-11-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="环境要求"><a href="#环境要求" class="headerlink" title="环境要求"></a>环境要求</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 检查vm.max_map_count设置,至少要求262144</span>
+<span class="token function">grep</span> vm.max_map_count /etc/sysctl.conf
+vm.max_map_count<span class="token operator">=</span>262144
+<span class="token comment" spellcheck="true"># 在线设置</span>
+sysctl -w vm.max_map_count<span class="token operator">=</span>262144
+<span class="token comment" spellcheck="true"># ES的data目录需要设置rwx权限</span>
+<span class="token function">chmod</span> g+rwx /root/es/data
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="三台机器搭建集群"><a href="#三台机器搭建集群" class="headerlink" title="三台机器搭建集群"></a>三台机器搭建集群</h3><ul>
+<li>node1</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name es --net host \
+  -e node.name<span class="token operator">=</span>es1 -e cluster.name<span class="token operator">=</span>es-docker-cluster \
+  -e discovery.seed_hosts<span class="token operator">=</span>192.168.3.19,192.168.3.20 \
+  -e cluster.initial_master_nodes<span class="token operator">=</span>192.168.3.17,192.168.3.19,192.168.3.20 \
+  -e network.publish_host<span class="token operator">=</span>192.168.3.17 \
+  -v /root/es/data:/usr/share/elasticsearch/data \
+  elasticsearch:7.5.2
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>node2</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name es --net host \
+  -e node.name<span class="token operator">=</span>es2 -e cluster.name<span class="token operator">=</span>es-docker-cluster \
+  -e discovery.seed_hosts<span class="token operator">=</span>192.168.3.17,192.168.3.20 \
+  -e cluster.initial_master_nodes<span class="token operator">=</span>192.168.3.17,192.168.3.19,192.168.3.20 \
+  -e network.publish_host<span class="token operator">=</span>192.168.3.19 \
+  -v /root/es/data:/usr/share/elasticsearch/data \
+  elasticsearch:7.5.2 
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>node3</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name es --net host \
+  -e node.name<span class="token operator">=</span>es3 -e cluster.name<span class="token operator">=</span>es-docker-cluster \
+  -e discovery.seed_hosts<span class="token operator">=</span>192.168.3.17,192.168.3.19 \
+  -e cluster.initial_master_nodes<span class="token operator">=</span>192.168.3.17,192.168.3.19,192.168.3.20 \
+  -e network.publish_host<span class="token operator">=</span>192.168.3.20 \
+  -v /root/es/data:/usr/share/elasticsearch/data \
+  elasticsearch:7.5.2 
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data2 es<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># curl -X GET "localhost:9200/_cat/nodes?v&amp;pretty"</span>
+ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role master name
+192.168.3.17           20          98   1    0.07    0.07     0.05 dilm      *      es1
+192.168.3.20           12          97   1    0.04    0.03     0.05 dilm      -      es3
+192.168.3.19            9          93   1    0.01    0.04     0.05 dilm      -      es2
+<span class="token punctuation">[</span>root@data1 es<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># curl 'localhost:9200/_cluster/health?pretty'</span>
+<span class="token punctuation">{</span>
+  <span class="token string">"cluster_name"</span> <span class="token keyword">:</span> <span class="token string">"es-docker-cluster"</span>,
+  <span class="token string">"status"</span> <span class="token keyword">:</span> <span class="token string">"green"</span>,
+  <span class="token string">"timed_out"</span> <span class="token keyword">:</span> false,
+  <span class="token string">"number_of_nodes"</span> <span class="token keyword">:</span> 3,
+  <span class="token string">"number_of_data_nodes"</span> <span class="token keyword">:</span> 3,
+  <span class="token string">"active_primary_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"active_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"relocating_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"initializing_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"unassigned_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"delayed_unassigned_shards"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"number_of_pending_tasks"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"number_of_in_flight_fetch"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"task_max_waiting_in_queue_millis"</span> <span class="token keyword">:</span> 0,
+  <span class="token string">"active_shards_percent_as_number"</span> <span class="token keyword">:</span> 100.0
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-dan-ji-ban-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/elasticsearch-dan-ji-ban-bu-shu/" class="post-title-link" itemprop="url">Elasticsearch单机版部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-02 09:02:01" itemprop="dateCreated datePublished" datetime="2021-11-02T09:02:01+08:00">2021-11-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <pre class="line-numbers language-bash"><code class="language-bash">docker run -p 9200:9200 -p 9300:9300 -e <span class="token string">"discovery.type=single-node"</span> docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/tdengine-shu-ju-geng-xin/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -567,208 +766,10 @@ taos<span class="token operator">></span> <span class="token keyword">show</span
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/tdengine-dan-ji-ti-yan/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/tdengine-dan-ji-ti-yan/" class="post-title-link" itemprop="url">TDengine单机体验</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-10-29 09:58:09" itemprop="dateCreated datePublished" datetime="2021-10-29T09:58:09+08:00">2021-10-29</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/TDengine/" itemprop="url" rel="index"><span itemprop="name">TDengine</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># docker安装</span>
-docker run -d --name tdengine tdengine/tdengine
-<span class="token comment" spellcheck="true"># 进入容器</span>
-docker <span class="token function">exec</span> -it tdengine /bin/bash
-<span class="token comment" spellcheck="true"># 容器内执行命令</span>
-taosdemo
-<span class="token comment" spellcheck="true"># 上述命令运行结束,进入tdengine终端</span>
-taos
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p><code>taosdemo</code>命令将在数据库 <code>test</code> 下面自动创建一张超级表 <code>meters</code>，该超级表下有 <code>1 万</code>张表，表名为 “d0” 到 “d9999”，每张表有 1 万条记录，每条记录有 (ts, current, voltage, phase) 四个字段，时间戳从 “2017-07-14 10:40:00 000” 到 “2017-07-14 10:40:09 999”，每张表带有标签 location 和 groupId，groupId 被设置为 1 到 10， location 被设置为 “beijing” 或者 “shanghai”。</p>
-<blockquote>
-<p><code> taosdemo</code>命令本身带有很多选项，配置表的数目、记录条数等等，请执行 taosdemo –help详细列出</p>
-</blockquote>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看数据库。</span>
-<span class="token keyword">show</span> <span class="token keyword">databases</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 查看超级表</span>
-<span class="token keyword">use</span> test<span class="token punctuation">;</span>
-<span class="token keyword">show</span> stables<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 查看表，限制输出十条</span>
-<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>t0 <span class="token keyword">limit</span> <span class="token number">10</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 查看 d0 表的标签值</span>
-<span class="token keyword">select</span> groupid<span class="token punctuation">,</span> location <span class="token keyword">from</span> test<span class="token number">.d0</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 查询超级表下记录总条数</span>
-<span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>meters<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 查询1亿条记录的平均值、最大值、最小值等</span>
-<span class="token keyword">select</span> <span class="token function">avg</span><span class="token punctuation">(</span><span class="token keyword">current</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>voltage<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">min</span><span class="token punctuation">(</span>phase<span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>meters<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 查询location="beijing"的记录总条数</span>
-<span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>meters <span class="token keyword">where</span> location<span class="token operator">=</span><span class="token string">"beijing"</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 查询groupId=10的所有记录的平均值、最大值、最小值等</span>
-<span class="token keyword">select</span> <span class="token function">avg</span><span class="token punctuation">(</span><span class="token keyword">current</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>voltage<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">min</span><span class="token punctuation">(</span>phase<span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token punctuation">.</span>meters <span class="token keyword">where</span> groupId<span class="token operator">=</span><span class="token number">10</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 对表d10按10s进行平均值、最大值和最小值聚合统计</span>
-<span class="token keyword">select</span> <span class="token function">avg</span><span class="token punctuation">(</span><span class="token keyword">current</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>voltage<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">min</span><span class="token punctuation">(</span>phase<span class="token punctuation">)</span> <span class="token keyword">from</span> test<span class="token number">.d10</span> interval<span class="token punctuation">(</span>10s<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-ji-cheng-swagger/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-ji-cheng-swagger/" class="post-title-link" itemprop="url">springboot集成swagger</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-10-27 09:49:24" itemprop="dateCreated datePublished" datetime="2021-10-27T09:49:24+08:00">2021-10-27</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="引入依赖"><a href="#引入依赖" class="headerlink" title="引入依赖"></a>引入依赖</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>io.springfox<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>springfox-swagger2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>2.9.2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>io.springfox<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>springfox-swagger-ui<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>2.9.2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Configuration</span>
-<span class="token annotation punctuation">@EnableSwagger2</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SwaggerConfig</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@Bean</span>
-    <span class="token keyword">public</span> Docket <span class="token function">createRestApi</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Docket</span><span class="token punctuation">(</span>DocumentationType<span class="token punctuation">.</span>SWAGGER_2<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">apiInfo</span><span class="token punctuation">(</span><span class="token function">apiInfo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">select</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">apis</span><span class="token punctuation">(</span>RequestHandlerSelectors<span class="token punctuation">.</span><span class="token function">any</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">paths</span><span class="token punctuation">(</span>PathSelectors<span class="token punctuation">.</span><span class="token function">any</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">private</span> ApiInfo <span class="token function">apiInfo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">ApiInfoBuilder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">title</span><span class="token punctuation">(</span><span class="token string">"Demo API Doc"</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">description</span><span class="token punctuation">(</span><span class="token string">"This is a restful api document of Demo."</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">version</span><span class="token punctuation">(</span><span class="token string">"1.0"</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="访问UI"><a href="#访问UI" class="headerlink" title="访问UI"></a>访问UI</h3><ul>
-<li><a target="_blank" rel="noopener" href="http://localhost:17070/swagger-ui.html">http://localhost:17070/swagger-ui.html</a></li>
-</ul>
-<h3 id="常用注解："><a href="#常用注解：" class="headerlink" title="常用注解："></a>常用注解：</h3><ul>
-<li><code>@Api()</code>用于类；<br>表示标识这个类是swagger的资源 </li>
-<li><code>@ApiOperation()</code>用于方法；<br>表示一个http请求的操作<br>-<code> @ApiParam()</code>用于方法，参数，字段说明；<br>表示对参数的添加元数据（说明或是否必填等）<br>-<code> @ApiModel()</code>用于类<br>表示对类进行说明，用于参数用实体类接收 </li>
-<li><code>@ApiModelProperty()</code>用于方法，字段<br>表示对model属性的说明或者数据操作更改 </li>
-<li><code>@ApiIgnore()</code>用于类，方法，方法参数<br>表示这个方法或者类被忽略 </li>
-<li><code>@ApiImplicitParam()</code> 用于方法<br>表示单独的请求参数 </li>
-<li><code>@ApiImplicitParams()</code>用于方法，包含多个 <code>@ApiImplicitParam</code></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/8/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><span class="page-number current">9</span><a class="page-number" href="/page/10/">10</a><span class="space">&hellip;</span><a class="page-number" href="/page/53/">53</a><a class="extend next" rel="next" href="/page/10/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/8/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><span class="page-number current">9</span><a class="page-number" href="/page/10/">10</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><a class="extend next" rel="next" href="/page/10/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -836,7 +837,7 @@ taos
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">317</span>
+          <span class="site-state-item-count">319</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -849,7 +850,7 @@ taos
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">201</span>
+        <span class="site-state-item-count">203</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
