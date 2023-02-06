@@ -196,6 +196,106 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-quan-liang-bei-fen-he-zeng-liang-bei-fen/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-quan-liang-bei-fen-he-zeng-liang-bei-fen/" class="post-title-link" itemprop="url">mysql全量备份和增量备份</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-12-07 14:39:31" itemprop="dateCreated datePublished" datetime="2021-12-07T14:39:31+08:00">2021-12-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="全量备份"><a href="#全量备份" class="headerlink" title="全量备份"></a>全量备份</h3><h4 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h4><p>在MySQL中提供了命令行导出数据库数据以及文件的一种方便的工具<code>mysqldump</code>,</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 备份全部数据库的数据和结构</span>
+<span class="token comment" spellcheck="true">-- -d 备份全部数据库的结构</span>
+<span class="token comment" spellcheck="true">-- -t 备份全部数据库的数据</span>
+mysqldump <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token operator">-</span>A <span class="token operator">></span> <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql
+
+<span class="token comment" spellcheck="true">-- 备份单个或多个数据库的数据和结构</span>
+mysqldump <span class="token operator">-</span>u root <span class="token operator">-</span>p <span class="token comment" spellcheck="true">--databases db1 db2 > xxx.sql</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="还原"><a href="#还原" class="headerlink" title="还原"></a>还原</h4><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 方法一：在系统命令行中</span>
+mysql <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token operator">&lt;</span> <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql
+<span class="token comment" spellcheck="true">-- 方法二：登录进入mysql系统中</span>
+mysql<span class="token operator">></span> source <span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>mysqlDump<span class="token operator">/</span>mydb<span class="token punctuation">.</span>sql
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="增量备份"><a href="#增量备份" class="headerlink" title="增量备份"></a>增量备份</h3><p>要做增量备份首先要开启<code>log_bin</code></p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看log_bin开启状态</span>
+<span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%log_bin%'</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 开启后可以查看当前使用的日志文件</span>
+<span class="token keyword">show</span> master <span class="token keyword">status</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 刷新使用的日志文件,如当前使用mysql-bin.00005,执行命令后变为mysql-bin.00006</span>
+mysqladmin <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 flush<span class="token operator">-</span>logs
+<span class="token comment" spellcheck="true">-- 保存mysql-bin日志文件</span>
+<span class="token comment" spellcheck="true">-- 从mysql-bin恢复数据</span>
+mysqlbinlog <span class="token operator">/</span>var<span class="token operator">/</span>lib<span class="token operator">/</span>mysql<span class="token operator">/</span>mysql<span class="token operator">-</span>bin<span class="token number">.000015</span> <span class="token operator">|</span> mysql <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456 <span class="token number">db1</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="脚本"><a href="#脚本" class="headerlink" title="脚本"></a>脚本</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token shebang important">#!/bin/sh</span>
+<span class="token comment" spellcheck="true"># 备份当日的</span>
+docker <span class="token function">exec</span> -it mysql mysqldump -uroot -p123456 -A <span class="token operator">></span> /root/mysql/bak/<span class="token variable"><span class="token variable">$(</span><span class="token function">date</span> +%F<span class="token variable">)</span></span>.sql
+<span class="token comment" spellcheck="true"># 清除一周前的备份</span>
+<span class="token function">rm</span> -rf /root/mysql/bak/<span class="token punctuation">$(</span>date -d <span class="token string">"-1 week "</span> +%Y-%m-%d<span class="token punctuation">)</span>.sql
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：如果使用<code>crontab</code>去定时执行上面的脚本,需要把<code>-it</code>去掉,不然生成的<code>sql</code>文件为空.</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-cha-xun/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -834,74 +934,6 @@ ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role mas
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-dan-ji-ban-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/elasticsearch-dan-ji-ban-bu-shu/" class="post-title-link" itemprop="url">Elasticsearch单机版部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-11-02 09:02:01" itemprop="dateCreated datePublished" datetime="2021-11-02T09:02:01+08:00">2021-11-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <pre class="line-numbers language-bash"><code class="language-bash">docker run -p 9200:9200 -p 9300:9300 -e <span class="token string">"discovery.type=single-node"</span> docker.elastic.co/elasticsearch/elasticsearch:7.5.2
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -973,7 +1005,7 @@ ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role mas
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">323</span>
+          <span class="site-state-item-count">324</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -986,7 +1018,7 @@ ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role mas
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">205</span>
+        <span class="site-state-item-count">206</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1046,7 +1078,7 @@ ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role mas
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2022</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
