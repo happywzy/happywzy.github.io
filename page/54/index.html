@@ -196,6 +196,123 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-dan-ji-ban-windows-bu-shu-ji-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/consul-dan-ji-ban-windows-bu-shu-ji-shi-yong/" class="post-title-link" itemprop="url">consul【单机版windows部署及使用】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-08-30 16:55:26" itemprop="dateCreated datePublished" datetime="2019-08-30T16:55:26+08:00">2019-08-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="启动及常用配置项"><a href="#启动及常用配置项" class="headerlink" title="启动及常用配置项"></a>启动及常用配置项</h3><p>解压后，在目录下打开<code>cmd</code>窗口，运行</p>
+<pre class="line-numbers language-sh"><code class="language-sh">consul agent -dev -ui -node=nodeName
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h4 id="data-dir"><a href="#data-dir" class="headerlink" title="-data-dir"></a>-data-dir</h4><ul>
+<li>作用：指定agent储存状态的数据目录</li>
+<li>这是所有agent都必须的</li>
+<li>对于server尤其重要，因为他们必须持久化集群的状态</li>
+</ul>
+<h4 id="config-dir"><a href="#config-dir" class="headerlink" title="-config-dir"></a>-config-dir</h4><ul>
+<li>作用：指定service的配置文件和检查定义所在的位置</li>
+<li>通常会指定为”某一个路径/consul.d”（通常情况下，.d表示一系列配置文件存放的目录）</li>
+</ul>
+<h4 id="config-file"><a href="#config-file" class="headerlink" title="-config-file"></a>-config-file</h4><ul>
+<li>作用：指定一个要装载的配置文件</li>
+<li>该选项可以配置多次，进而配置多个配置文件（后边的会合并前边的，相同的值覆盖）</li>
+</ul>
+<h4 id="dev"><a href="#dev" class="headerlink" title="-dev"></a>-dev</h4><ul>
+<li>作用：创建一个开发环境下的server节点</li>
+<li>该参数配置下，不会有任何持久化操作，即不会有任何数据写入到磁盘</li>
+<li>这种模式不能用于生产环境（因为第二条）</li>
+</ul>
+<h4 id="node"><a href="#node" class="headerlink" title="-node"></a>-node</h4><ul>
+<li>作用：指定节点在集群中的名称</li>
+<li>该名称在集群中必须是唯一的（默认采用机器的<code>host</code>）</li>
+<li>推荐：直接采用机器的IP</li>
+</ul>
+<h4 id="bind"><a href="#bind" class="headerlink" title="-bind"></a>-bind</h4><ul>
+<li>作用：指明节点的IP地址</li>
+<li>有时候不指定绑定IP，会报<code>Failed to get advertise address: Multiple private IPs found. Please configure one.&nbsp;</code>的异常</li>
+</ul>
+<h4 id="server"><a href="#server" class="headerlink" title="-server"></a>-server</h4><ul>
+<li>作用：指定节点为<code>server</code></li>
+<li>每个数据中心（<code>DC</code>）的server数推荐至少为1，至多为5</li>
+<li>所有的server都采用raft一致性算法来确保事务的一致性和线性化，事务修改了集群的状态，且集群的状态保存在每一台server上保证可用性</li>
+<li>server也是与其他DC交互的门面（gateway）</li>
+</ul>
+<h4 id="bootstrap-expect"><a href="#bootstrap-expect" class="headerlink" title="-bootstrap-expect"></a>-bootstrap-expect</h4><ul>
+<li>作用：该命令通知consul server我们现在准备加入的server节点个数，该参数是为了延迟日志复制的启动直到我们指定数量的server节点成功的加入后启动。</li>
+</ul>
+<h4 id="join"><a href="#join" class="headerlink" title="-join"></a>-join</h4><ul>
+<li>作用：将节点加入到集群</li>
+</ul>
+<h4 id="datacenter（老版本叫-dc，-dc已经失效）"><a href="#datacenter（老版本叫-dc，-dc已经失效）" class="headerlink" title="-datacenter（老版本叫-dc，-dc已经失效）"></a>-datacenter（老版本叫-dc，-dc已经失效）</h4><ul>
+<li>作用：指定机器加入到哪一个数据中心中</li>
+</ul>
+<h4 id="client"><a href="#client" class="headerlink" title="-client"></a>-client</h4><ul>
+<li>作用：指定节点为<code>client</code>，指定客户端接口的绑定地址，包括：<code>HTTP、DNS、RPC</code></li>
+<li>默认是<code>127.0.0.1</code>，只允许回环接口访问</li>
+<li>若不指定为<code>-server</code>，其实就是<code>-client</code></li>
+</ul>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>浏览器访问<a target="_blank" rel="noopener" href="http://127.0.0.1:8500/">http://127.0.0.1:8500</a><br><img data-src="/images/consul1.png" alt="consul"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-chang-yong-ming-ling/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -704,179 +821,10 @@ git config --global user.email "youremail"
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/idea-lie-cao-zuo-windows-ban-shi-ce/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/idea-lie-cao-zuo-windows-ban-shi-ce/" class="post-title-link" itemprop="url">IDEA列操作（windows版-实测）</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-04-14 13:44:39" itemprop="dateCreated datePublished" datetime="2019-04-14T13:44:39+08:00">2019-04-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>CTRL +SHIFT + A</code></td>
-<td>查找快捷键 –&gt;HELP–&gt;FIND ACTION move caret to,move caret to next world 快速到单词的末尾，ctrl+ →， 同时按住shift 就是选中这个单词</td>
-</tr>
-<tr>
-<td><code>CTRL +SHIFT+ALT +J</code></td>
-<td>选中一样的 –&gt;EDIT –&gt;FIND SELECT ALL OCCURRENCES</td>
-</tr>
-<tr>
-<td><code>SHIFT + ALT + 鼠标左键</code></td>
-<td>选中多行</td>
-</tr>
-<tr>
-<td><code>END键</code></td>
-<td>快速移到行尾</td>
-</tr>
-<tr>
-<td><code>HOME键</code></td>
-<td>快速移到行首</td>
-</tr>
-<tr>
-<td><code>CTRL+ALT + L</code></td>
-<td>格式化 –&gt;code –&gt;reformat code</td>
-</tr>
-<tr>
-<td><code>Ctrl+alt+I</code></td>
-<td>自动缩进</td>
-</tr>
-<tr>
-<td><code>ctrl+ shift +U</code></td>
-<td>字母大小写切换</td>
-</tr>
-<tr>
-<td><code>ctrl+alt+t</code></td>
-<td>surround with ,if else, try catch,…</td>
-</tr>
-<tr>
-<td><code>ctrl +shift + t</code></td>
-<td>创建新的测试</td>
-</tr>
-<tr>
-<td><code>alt + insert</code></td>
-<td>generate 生成getter and setter,constructor,toString…</td>
-</tr>
-<tr>
-<td><code>ctrl+y / x</code></td>
-<td>删除行</td>
-</tr>
-<tr>
-<td><code>ctrl + D</code></td>
-<td>复制行</td>
-</tr>
-<tr>
-<td><code>ctrl + H</code></td>
-<td>显示类结构图</td>
-</tr>
-<tr>
-<td><code>ctrl+ shift + h</code></td>
-<td>显示方法调用结构</td>
-</tr>
-<tr>
-<td><code>Alt+7</code></td>
-<td>显示类所有方法，快速定位</td>
-</tr>
-<tr>
-<td><code>ctrl + E</code></td>
-<td>显示最近打开的文件</td>
-</tr>
-<tr>
-<td><code>ctrl +j</code></td>
-<td>自动补全代码 fori psvm sout …</td>
-</tr>
-<tr>
-<td><code>ctrl + w</code></td>
-<td>选中代码，多次按，逐渐扩大选中范围</td>
-</tr>
-<tr>
-<td><code>alt+f3 / ctrl+shift + f7</code></td>
-<td>高亮显示文本</td>
-</tr>
-<tr>
-<td><code>ctrl+/ / ctrl+shift+/</code></td>
-<td>注释// 或者注释/*</td>
-</tr>
-<tr>
-<td><code>ctrl + Alt + o</code></td>
-<td>优化导入的包</td>
-</tr>
-<tr>
-<td><code>ctrl + p</code></td>
-<td>显示方法参数提醒</td>
-</tr>
-</tbody></table>
-<blockquote>
-<p>注意有时候快捷键不生效，是不是和<code>QQ</code>、<code>钉钉</code>等常用软件冲突导致。</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/53/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/53/">53</a><span class="page-number current">54</span>
+    <a class="extend prev" rel="prev" href="/page/53/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/53/">53</a><span class="page-number current">54</span><a class="page-number" href="/page/55/">55</a><a class="extend next" rel="next" href="/page/55/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -944,20 +892,20 @@ git config --global user.email "youremail"
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">324</span>
+          <span class="site-state-item-count">325</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">206</span>
+        <span class="site-state-item-count">207</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

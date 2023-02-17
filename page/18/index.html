@@ -196,6 +196,126 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-shi-yong-upstream-shi-xian-fu-zai-jun-heng/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/nginx-shi-yong-upstream-shi-xian-fu-zai-jun-heng/" class="post-title-link" itemprop="url">nginx使用upstream实现负载均衡</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-22 11:11:53" itemprop="dateCreated datePublished" datetime="2020-12-22T11:11:53+08:00">2020-12-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="轮询（默认）"><a href="#轮询（默认）" class="headerlink" title="轮询（默认）"></a>轮询（默认）</h3><pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="权重"><a href="#权重" class="headerlink" title="权重"></a>权重</h3><blockquote>
+<p><code>weight</code> 默认为<code>1</code>,<code>weight</code>越大,负载的权重就越大</p>
+</blockquote>
+<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span> weight<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span> weight<span class="token operator">=</span><span class="token number">10</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="IP哈希"><a href="#IP哈希" class="headerlink" title="IP哈希"></a>IP哈希</h3><blockquote>
+<p>请求按访问ip的hash结果分配</p>
+</blockquote>
+<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    ip_hash<span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="响应时间"><a href="#响应时间" class="headerlink" title="响应时间"></a>响应时间</h3><blockquote>
+<p>按后端服务器的响应时间来分配请求,响应时间短的优先分配</p>
+</blockquote>
+<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    fair<span class="token punctuation">;</span>
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="其它哈希"><a href="#其它哈希" class="headerlink" title="其它哈希"></a>其它哈希</h3><blockquote>
+<p>如：根据请求路径哈希,<code>hash_method</code>是使用的<code>hash</code>算法</p>
+</blockquote>
+<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    fair<span class="token punctuation">;</span>
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span>
+    hash $request_uri<span class="token punctuation">;</span> 
+    hash_method crc32<span class="token punctuation">;</span> 
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="down-x2F-backup"><a href="#down-x2F-backup" class="headerlink" title="down/backup"></a>down/backup</h3><pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
+    <span class="token comment" spellcheck="true">// down 表示单前的server暂时不参与负载.</span>
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span> down<span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.3</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
+    <span class="token comment" spellcheck="true">// 其它所有的非backup机器down或者忙的时候请求backup机器.</span>
+    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.4</span><span class="token punctuation">:</span><span class="token number">8080</span> backup<span class="token punctuation">;</span> 
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/muhy/p/10528449.html">https://www.cnblogs.com/muhy/p/10528449.html</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/linux-she-zhi-swap/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -850,110 +970,10 @@ find . -type f -size +800M  -print0 | xargs -0 du -h | sort -nr | head -10
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-xian-zhi-rong-qi-ri-zhi-da-xiao/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-xian-zhi-rong-qi-ri-zhi-da-xiao/" class="post-title-link" itemprop="url">docker限制容器日志大小</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-11-20 14:09:43" itemprop="dateCreated datePublished" datetime="2020-11-20T14:09:43+08:00">2020-11-20</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>容器日志一般存放在<code>/var/lib/docker/containers/container_id/</code>下面，以<code>json.log</code>结尾的文件(业务日志)很大.</p>
-<h3 id="处理"><a href="#处理" class="headerlink" title="处理"></a>处理</h3><ul>
-<li>临时清空日志</li>
-</ul>
-<pre class="line-numbers language-sh"><code class="language-sh"># 注意不能用rm命令
-cat /dev/null > /var/lib/docker/containers/容器id/容器id-json.log
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ul>
-<li>如果是docker-compose<br>通过配置容器<code>docker-compose.yml</code>的<code>max-size</code>选项来实现:</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">nginx</span><span class="token punctuation">:</span> 
-  <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span>1.12.1 
-  <span class="token key atrule">restart</span><span class="token punctuation">:</span> always 
-  <span class="token key atrule">logging</span><span class="token punctuation">:</span> 
-    <span class="token key atrule">driver</span><span class="token punctuation">:</span> <span class="token string">"json-file"</span>
-    <span class="token key atrule">options</span><span class="token punctuation">:</span> 
-      <span class="token key atrule">max-size</span><span class="token punctuation">:</span> <span class="token string">"5g"</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>限制docker容器日志大小</li>
-</ul>
-<pre class="line-numbers language-json"><code class="language-json">// vim /etc/docker/daemon.json
-<span class="token punctuation">{</span>
-  <span class="token property">"log-driver"</span><span class="token operator">:</span><span class="token string">"json-file"</span><span class="token punctuation">,</span>
-  <span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"max-size"</span><span class="token operator">:</span><span class="token string">"500m"</span><span class="token punctuation">,</span> <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>重启docker生效</p>
-<pre class="line-numbers language-sh"><code class="language-sh">systemctl daemon-reload
-systemctl restart docker
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/angel-devil/p/12558908.html">https://www.cnblogs.com/angel-devil/p/12558908.html</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/17/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/17/">17</a><span class="page-number current">18</span><a class="page-number" href="/page/19/">19</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><a class="extend next" rel="next" href="/page/19/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/17/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/17/">17</a><span class="page-number current">18</span><a class="page-number" href="/page/19/">19</a><span class="space">&hellip;</span><a class="page-number" href="/page/55/">55</a><a class="extend next" rel="next" href="/page/19/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1021,20 +1041,20 @@ systemctl restart docker
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">324</span>
+          <span class="site-state-item-count">325</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">206</span>
+        <span class="site-state-item-count">207</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

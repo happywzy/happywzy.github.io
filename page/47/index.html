@@ -196,6 +196,100 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kai-fang-fen-bu-shi-zhui-zong-opentracing-yu-jaeger-xiang-guan-wen-dang-zheng-li/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/kai-fang-fen-bu-shi-zhui-zong-opentracing-yu-jaeger-xiang-guan-wen-dang-zheng-li/" class="post-title-link" itemprop="url">开放分布式追踪OpenTracing与Jaeger相关文档整理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-18 10:36:11" itemprop="dateCreated datePublished" datetime="2019-12-18T10:36:11+08:00">2019-12-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="为什么需要服务追踪？"><a href="#为什么需要服务追踪？" class="headerlink" title="为什么需要服务追踪？"></a>为什么需要服务追踪？</h1><p>开发和工程团队因为系统组件水平扩展、开发团队小型化、敏捷开发、CD（持续集成）、解耦等各种需求，正在使用现代的微服务架构替换老旧的单片机系统，当一个生产系统面对真正的高并发，或者解耦成大量微服务时，以前很容易实现的重点任务变得困难了，如<strong>用户体验优化</strong>、<strong>后台真实错误原因分析</strong>，<strong>分布式系统内各组件的调用情况</strong>等。 </p>
+<h1 id="分布式服务追踪现状"><a href="#分布式服务追踪现状" class="headerlink" title="分布式服务追踪现状"></a>分布式服务追踪现状</h1><p>当代分布式跟踪系统（例如，<code>Zipkin</code>, <code>Dapper</code>, <code>HTrace</code>, <code>X-Trace</code>等）旨在解决这些问题，但是他们使用不兼容的<code>API</code>来实现各自的应用需求。尽管这些分布式追踪系统有着相似的API语法，但各种语言的开发人员依然很难将他们各自的系统（使用不同的语言和技术）和特定的分布式追踪系统进行整合。</p>
+<h1 id="OpenTracing"><a href="#OpenTracing" class="headerlink" title="OpenTracing"></a>OpenTracing</h1><p>OpenTracing通过提供平台无关、厂商无关的API，使得开发人员能够方便的添加（或更换）追踪系统的实现。 OpenTracing提供了用于运营支撑系统的和针对特定平台的辅助程序库。</p>
+<h1 id="典型服务追踪案例"><a href="#典型服务追踪案例" class="headerlink" title="典型服务追踪案例"></a>典型服务追踪案例</h1><p><img data-src="/images/ot1.png" alt="案例"></p>
+<p>在一个分布式系统中，追踪一个事务或者调用流一般如上图所示。虽然这种图对于看清各组件的组合关系是很有用的，但是，它不能很好显示组件的调用时间，是串行调用还是并行调用，如果展现更复杂的调用关系，会更加复杂，甚至无法画出这样的图。这种图也无法显示调用间的时间间隔以及是否通过定时调用来启动调用.</p>
+<p><img data-src="/images/ot2.png" alt="案例"></p>
+<p>这种展现方式增加显示了执行时间的上下文，相关服务间的层次关系，进程或者任务的串行或并行调用关系。这样的视图有助于发现系统调用的关键路径。通过关注关键路径的执行过程，项目团队可能专注于优化路径中的关键位置，最大幅度的提升系统性能。例如：可以通过追踪一个资源定位的调用情况，明确底层的调用情况，发现哪些操作有阻塞的情况。</p>
+<h1 id="Jaeger-架构"><a href="#Jaeger-架构" class="headerlink" title="Jaeger 架构"></a>Jaeger 架构</h1><p><code>Jaeger</code>是OpenTracing的一种实现。<br><img data-src="/images/jaeger.jpg" alt="jaeger"></p>
+<p>如上图所示，<code>Jaeger</code> 主要由以下几部分组成。</p>
+<ul>
+<li><strong>Jaeger Client</strong> - 为不同语言实现了符合&nbsp;OpenTracing&nbsp;标准的 SDK。应用程序通过 API 写入数据，client library 把 trace 信息按照应用程序指定的采样策略传递给 jaeger-agent。在 Application 中调用 Jaeger Client Library 记录 Span 的过程通常被称为埋点。</li>
+<li><strong>Agent</strong> - 它是一个监听在 UDP 端口上接收 span 数据的网络守护进程，它会将数据批量发送给 collector。它被设计成一个基础组件，部署到所有的宿主机上。Agent 将 client library 和 collector 解耦，为 client library 屏蔽了路由和发现 collector 的细节。</li>
+<li><strong>Collector</strong> - 接收 jaeger-agent 发送来的数据，然后将数据写入后端存储。Collector 被设计成无状态的组件，因此您可以同时运行任意数量的 jaeger-collector。</li>
+<li><strong>Data Store</strong> - 后端存储被设计成一个可插拔的组件，支持将数据写入 cassandra、elastic search。</li>
+<li><strong>Query</strong> - 接收查询请求，然后从后端存储系统中检索 trace 并通过 UI 进行展示。Query 是无状态的，您可以启动多个实例，把它们部署在 nginx 这样的负载均衡器后面。</li>
+</ul>
+<h1 id="Istio-Trace链路追踪方案"><a href="#Istio-Trace链路追踪方案" class="headerlink" title="Istio Trace链路追踪方案"></a>Istio Trace链路追踪方案</h1><ul>
+<li><p><code>Envoy</code>原生就支持分布式追踪系统的接入，如支持<code>jaeger</code>和<code>zipkin</code>；</p>
+</li>
+<li><p>生成<code>Request Id</code>，填充<code>HTTP</code>的<code>header</code>字段<code>x-request-id</code>;</p>
+</li>
+<li><p>如果<code>incoming</code>的请求没有trace相关的headers，则会在流量进入pods之前创建一个<code>root span</code>;</p>
+</li>
+<li><p>如果<code>incoming</code>的请求包含有trace相关的headers，Sidecar的proxy将会extract这些span的上下文信息，然后在流量进入pods之前创建一个继承上一个span的新的span;</p>
+</li>
+<li><p>Jaeger本身支持在client端调整和通过collector调整采样策略，但是在Istio中并没有Jaeger的client，只是envoy里面支持了trace，不过Istio中提供了一个全局的设置，通过设置pilot的参数可以用来控制采用策略。</p>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/ri-zhi-ju-he-gong-ju-loki-an-zhuang-shi-yong-cai-yong-helm-an-zhuang/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -860,159 +954,10 @@ libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-wai-jian-guan-lian-yi-zhang-biao-liang-ge-zi-duan-fen-bie-yu-ling-yi-zhang-biao-zhu-jian-guan-lian/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-wai-jian-guan-lian-yi-zhang-biao-liang-ge-zi-duan-fen-bie-yu-ling-yi-zhang-biao-zhu-jian-guan-lian/" class="post-title-link" itemprop="url">Mysql外键关联【一张表两个字段分别与另一张表主键关联】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-05 16:00:19" itemprop="dateCreated datePublished" datetime="2019-12-05T16:00:19+08:00">2019-12-05</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="用户表"><a href="#用户表" class="headerlink" title="用户表"></a>用户表</h3><table>
-<thead>
-<tr>
-<th>user_id</th>
-<th>user_name</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>zhangsan</td>
-</tr>
-<tr>
-<td>2</td>
-<td>lisi</td>
-</tr>
-<tr>
-<td>3</td>
-<td>wangwu</td>
-</tr>
-<tr>
-<td>4</td>
-<td>zhaoliu</td>
-</tr>
-</tbody></table>
-<h3 id="另一张money表，表示了借钱的关系"><a href="#另一张money表，表示了借钱的关系" class="headerlink" title="另一张money表，表示了借钱的关系"></a>另一张money表，表示了借钱的关系</h3><table>
-<thead>
-<tr>
-<th>id</th>
-<th>from</th>
-<th>to</th>
-<th>how</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>1</td>
-<td>2</td>
-<td>100</td>
-</tr>
-<tr>
-<td>2</td>
-<td>3</td>
-<td>4</td>
-<td>100</td>
-</tr>
-</tbody></table>
-<h3 id="关联查询"><a href="#关联查询" class="headerlink" title="关联查询"></a>关联查询</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">select</span> m<span class="token punctuation">.</span>id<span class="token punctuation">,</span>u1<span class="token punctuation">.</span>user_name<span class="token punctuation">,</span>u2<span class="token punctuation">.</span>user_name<span class="token punctuation">,</span>m<span class="token punctuation">.</span>how
-<span class="token keyword">from</span> money <span class="token keyword">as</span> m
-<span class="token keyword">left</span> <span class="token keyword">outer</span> <span class="token keyword">join</span> <span class="token keyword">user</span> u1 <span class="token keyword">on</span> u2<span class="token punctuation">.</span>user_id<span class="token operator">=</span>m<span class="token punctuation">.</span><span class="token keyword">from</span>
-<span class="token keyword">left</span> <span class="token keyword">outer</span> <span class="token keyword">join</span> <span class="token keyword">user</span> u3 <span class="token keyword">on</span> u3<span class="token punctuation">.</span>user_id<span class="token operator">=</span>m<span class="token punctuation">.</span><span class="token keyword">to</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="显示的结果"><a href="#显示的结果" class="headerlink" title="显示的结果"></a>显示的结果</h3><table>
-<thead>
-<tr>
-<th>id</th>
-<th>user_name</th>
-<th>user_name</th>
-<th>how</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>zhangsan</td>
-<td>lisi</td>
-<td>100</td>
-</tr>
-<tr>
-<td>2</td>
-<td>wangwu</td>
-<td>zhaoliu</td>
-<td>100</td>
-</tr>
-</tbody></table>
-<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>这里有个小问题，中间两列显示的名称一样，都是<code>user_name</code>，这样就不好辨别了，在<code>Mybatis</code>中如果想用</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@ResultType</span><span class="token punctuation">(</span>实体类名称<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>来定义返回的类型，因为两个字段名一样，定义的实体类肯定不能一样，就会导致返回没有结果，怎么处理呢？</p>
-<p>关联查询时，指定结果字段别名</p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">select</span> m<span class="token punctuation">.</span>id<span class="token punctuation">,</span>u1<span class="token punctuation">.</span>user_name <span class="token keyword">as</span> user_name1<span class="token punctuation">,</span>u2<span class="token punctuation">.</span>user_name <span class="token keyword">as</span> user_name2<span class="token punctuation">,</span>m<span class="token punctuation">.</span>how
-<span class="token keyword">from</span> money <span class="token keyword">as</span> m
-<span class="token keyword">left</span> <span class="token keyword">outer</span> <span class="token keyword">join</span> <span class="token keyword">user</span> u1 <span class="token keyword">on</span> u2<span class="token punctuation">.</span>user_id<span class="token operator">=</span>m<span class="token punctuation">.</span><span class="token keyword">from</span>
-<span class="token keyword">left</span> <span class="token keyword">outer</span> <span class="token keyword">join</span> <span class="token keyword">user</span> u3 <span class="token keyword">on</span> u3<span class="token punctuation">.</span>user_id<span class="token operator">=</span>m<span class="token punctuation">.</span><span class="token keyword">to</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/46/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/46/">46</a><span class="page-number current">47</span><a class="page-number" href="/page/48/">48</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><a class="extend next" rel="next" href="/page/48/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/46/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/46/">46</a><span class="page-number current">47</span><a class="page-number" href="/page/48/">48</a><span class="space">&hellip;</span><a class="page-number" href="/page/55/">55</a><a class="extend next" rel="next" href="/page/48/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1080,20 +1025,20 @@ libcrc32c              12644  3 ip_vs,nf_nat,nf_conntrack
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">324</span>
+          <span class="site-state-item-count">325</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">206</span>
+        <span class="site-state-item-count">207</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -30666,4 +30666,62 @@ spring:
         <tag>限流</tag>
       </tags>
   </entry>
+  <entry>
+    <title>loki采集docker日志</title>
+    <url>/loki-cai-ji-docker-ri-zhi/</url>
+    <content><![CDATA[<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本文通过安装 docker loki plugin 直接采集docker容器日志，并推送至loki。<a href="https://grafana.com/docs/loki/latest/clients/docker-driver/">官方文档</a></p>
+<h3 id="插件安装"><a href="#插件安装" class="headerlink" title="插件安装"></a>插件安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装最新的插件</span>
+docker plugin <span class="token function">install</span> grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+<span class="token comment" spellcheck="true"># 查看插件</span>
+<span class="token punctuation">[</span>root@data1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker plugin ls</span>
+ID             NAME          DESCRIPTION           ENABLED
+744b79d5d1a9   loki:latest   Loki Logging Driver   <span class="token boolean">true</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="插件升级"><a href="#插件升级" class="headerlink" title="插件升级"></a>插件升级</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 停用</span>
+docker plugin disable loki --force
+<span class="token comment" spellcheck="true"># 升级</span>
+docker plugin upgrade loki grafana/loki-docker-driver:latest --grant-all-permissions
+<span class="token comment" spellcheck="true"># 启用</span>
+docker plugin <span class="token function">enable</span> loki
+<span class="token comment" spellcheck="true"># 重启docker</span>
+systemctl restart docker
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="插件卸载"><a href="#插件卸载" class="headerlink" title="插件卸载"></a>插件卸载</h3><pre class="line-numbers language-bash"><code class="language-bash">docker plugin disable loki --force
+docker plugin <span class="token function">rm</span> loki
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><h4 id="单独为一个容器设置日志驱动"><a href="#单独为一个容器设置日志驱动" class="headerlink" title="单独为一个容器设置日志驱动"></a>单独为一个容器设置日志驱动</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># --log-driver=loki</span>
+docker run --log-driver<span class="token operator">=</span>loki \
+    --log-opt loki-url<span class="token operator">=</span><span class="token string">"http://IP:3100/loki/api/v1/push"</span> \
+    --log-opt loki-retries<span class="token operator">=</span>5 \
+    --log-opt loki-batch-size<span class="token operator">=</span>400 \
+    --log-opt max-size<span class="token operator">=</span>50m \
+    --log-opt max-file<span class="token operator">=</span>3 \
+    grafana/grafana
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="为所有的容器设置默认参数"><a href="#为所有的容器设置默认参数" class="headerlink" title="为所有的容器设置默认参数"></a>为所有的容器设置默认参数</h4><p>编辑<code>/etc/docker/daemon.json</code>文件(如果没有就新建).</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+    <span class="token property">"debug"</span> <span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+    <span class="token property">"log-driver"</span><span class="token operator">:</span> <span class="token string">"loki"</span><span class="token punctuation">,</span>
+    <span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"loki-url"</span><span class="token operator">:</span> <span class="token string">"http://IP:3100/loki/api/v1/push"</span><span class="token punctuation">,</span>
+        <span class="token property">"loki-batch-size"</span><span class="token operator">:</span> <span class="token string">"400"</span><span class="token punctuation">,</span>
+        <span class="token property">"loki-retries"</span><span class="token operator">:</span> <span class="token number">5</span><span class="token punctuation">,</span>
+        <span class="token property">"max-size"</span><span class="token operator">:</span> <span class="token string">"50m"</span><span class="token punctuation">,</span>
+        <span class="token property">"max-file"</span><span class="token operator">:</span> <span class="token string">"10"</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>更多如<code>docker-compose</code>的用法参考<a href="https://grafana.com/docs/loki/latest/clients/docker-driver/configuration/">官网文档</a>.</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>docker</category>
+        <category>loki</category>
+      </categories>
+      <tags>
+        <tag>loki</tag>
+        <tag>docker plugin</tag>
+      </tags>
+  </entry>
 </search>

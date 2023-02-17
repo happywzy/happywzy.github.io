@@ -196,6 +196,93 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-jia-gou/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-jia-gou/" class="post-title-link" itemprop="url">istio架构【数据平面与控制平面】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-15 10:40:23" itemprop="dateCreated datePublished" datetime="2020-01-15T10:40:23+08:00">2020-01-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="架构综述"><a href="#架构综述" class="headerlink" title="架构综述"></a>架构综述</h3><p><code>Istio</code>在逻辑上分为数据平面(<code>data plane</code>)和控制平面(<code>control plane</code>)两部分：</p>
+<ul>
+<li><strong>数据平面</strong>：由一系列以<code>sidecar</code>形式部署的智能代理(<code>Envoy</code>)组成。这些代理可以调节和控制微服务及混合器(Mixer)之间的所有网络通信</li>
+<li><strong>控制平面</strong>：负责管理和配置代理来路由流量，除此之外控制平面还配置混合器(<code>Mixer</code>)以执行策略和收集遥测数据</li>
+</ul>
+<p><img data-src="/images/istio2.png" alt="istio 架构"></p>
+<h3 id="数据平面"><a href="#数据平面" class="headerlink" title="数据平面"></a>数据平面</h3><ul>
+<li><code>Envoy</code>是以C++开发的高性能代理，用于接管服务网格中所有服务的所有<code>inbound</code>和<code>outbound</code>流量。 Istio实际上利用了很多Envoy已有的特性，例如：服务的动态发现、负载均衡、TSL终止、HTTP/2和gRPC代理、断路器、健康检查、基于百分比流量拆分的灰度发布、故障注入以及丰富的度量指标。</li>
+<li>Envoy以sidecar部署，与对应的服务在同一个Kubernetes Pod中。这样的部署方式使得Istio可以将大量了关于流量行为的信号作为属性(<code>Attribute</code>)提取出来。这些属性可以被用来在混合器(Mixer)中执行策略决策，并发送给监控系统，以提供整个Service Mesh的行为信息。Sidecar模式允许我们将istio的功能添加到现有的部署中，而无需重构或重写现有的代码。</li>
+</ul>
+<h3 id="控制平面"><a href="#控制平面" class="headerlink" title="控制平面"></a>控制平面</h3><ul>
+<li><p><strong>Pilot为</strong> Envoy <code>sidecar</code> 提供服务发现功能，为智能路由（例如 A/B 测试、金丝雀部署等）和弹性（超时、重试、熔断器等）提供流量管理功能。 将控制流量行为的高级路由规则转换为Envoy的相关配置，并在运行时将它们传播到sidecar。</p>
+</li>
+<li><p><strong>Mixer</strong>分为<code>Policy</code>和<code>Telemetry</code>两个子模块。<code>Policy</code>用于向Envoy提供准入策略控制，黑白名单控制，速率限制等相关策略；<code>Telemetry</code>为Envoy提供了数据上报和日志搜集服务，以用于监控告警和日志查询。</p>
+</li>
+<li><p><strong>Galley</strong>在Istio中，承担配置的导入、处理和分发任务，为Istio提供了配置管理服务,提供在k8s服务端验证Istio的<code>CRD</code> 资源的合法性的方法，是整个控制面的配置管理中心。</p>
+</li>
+<li><p><strong>Citadel</strong>主要关注安全，为服务之间以及与终端用户提供认证、授权、凭据管理等功能。</p>
+</li>
+</ul>
+<h3 id="类比"><a href="#类比" class="headerlink" title="类比"></a>类比</h3><p><img data-src="/images/istio3.jpg" alt="istio 架构"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/fu-wu-wang-ge/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -878,94 +965,10 @@ quay.io/jetstack/cert-manager-acmesolver:v0.12.0
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-la-qu-guo-wai-jing-xiang-shi-bai-quay-io-he-gcr-io-jie-jue-ban-fa/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-la-qu-guo-wai-jing-xiang-shi-bai-quay-io-he-gcr-io-jie-jue-ban-fa/" class="post-title-link" itemprop="url">docker拉取国外镜像失败【quay.io和gcr.io解决办法】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-01-07 14:53:44" itemprop="dateCreated datePublished" datetime="2020-01-07T14:53:44+08:00">2020-01-07</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>使用国内镜像源。</p>
-</blockquote>
-<h3 id="quay-io"><a href="#quay-io" class="headerlink" title="quay.io"></a>quay.io</h3><p>例如下面拉取比较慢</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker pull quay.io/jetstack/cert-manager-cainjector:v0.12.0
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>可以换成</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker pull quay-mirror.qiniu.com/jetstack/cert-manager-cainjector:v0.12.0
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="gcr-io"><a href="#gcr-io" class="headerlink" title="gcr.io"></a>gcr.io</h3><p>例如下面拉取比较慢</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker pull gcr.io/google_containers/kube-proxy
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>可以换成阿里云的</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker pull registry.aliyuncs.com/google_containers/kube-proxy
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="下载完成"><a href="#下载完成" class="headerlink" title="下载完成"></a>下载完成</h3><p>可以使用tag命令改回去</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker tag 
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/42/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/42/">42</a><span class="page-number current">43</span><a class="page-number" href="/page/44/">44</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><a class="extend next" rel="next" href="/page/44/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/42/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/42/">42</a><span class="page-number current">43</span><a class="page-number" href="/page/44/">44</a><span class="space">&hellip;</span><a class="page-number" href="/page/55/">55</a><a class="extend next" rel="next" href="/page/44/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1033,20 +1036,20 @@ quay.io/jetstack/cert-manager-acmesolver:v0.12.0
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">324</span>
+          <span class="site-state-item-count">325</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">206</span>
+        <span class="site-state-item-count">207</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
