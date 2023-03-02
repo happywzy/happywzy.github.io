@@ -196,6 +196,264 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-zhong-returns-han-shu-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flink-zhong-returns-han-shu-shi-yong/" class="post-title-link" itemprop="url">flink中returns函数使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-18 17:14:57" itemprop="dateCreated datePublished" datetime="2020-03-18T17:14:57+08:00">2020-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Java8出来之后，lambda表达式由于简单易读，在流式计算中的使用开始变得普遍。</p>
+<p>同样,Flink也支持lambda表达式，例如我们改写一下wordcount样例</p>
+<pre class="line-numbers language-java"><code class="language-java">DataSource<span class="token operator">&lt;</span>String<span class="token operator">></span> lines <span class="token operator">=</span> env<span class="token punctuation">.</span><span class="token function">fromElements</span><span class="token punctuation">(</span>
+    <span class="token string">"Apache Flink is a community-driven open source framework for distributed big data analytics,"</span><span class="token punctuation">,</span>
+    <span class="token string">"like Hadoop and Spark. The core of Apache Flink is a distributed streaming dataflow engine written"</span><span class="token punctuation">,</span>
+            <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+lines<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">FlatMapFunction</span><span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Object<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">flatMap</span><span class="token punctuation">(</span>String line<span class="token punctuation">,</span> Collector<span class="token operator">&lt;</span> Object<span class="token operator">></span> out<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span>String word <span class="token operator">:</span> line<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">"\\W+"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            out<span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Tuple2</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>word<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">groupBy</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sum</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这段代码很简单，先把每一行按空格拆分成若干单词，并将每个单词和数字1组成一个Tuple，然后把所有Tuple按照单词聚合，计算出每个单词的出现次数</p>
+<p>尝试用lambda表达式来替换FlatMapFunction，代码如下</p>
+<pre class="line-numbers language-java"><code class="language-java">lines<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span><span class="token punctuation">(</span>line<span class="token punctuation">,</span> out<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>String word <span class="token operator">:</span> line<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">"\\W+"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        out<span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Tuple2</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>word<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">groupBy</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sum</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>但当运行这段代码时，会抛出如下异常：</p>
+<pre class="line-numbers language-java"><code class="language-java">Caused by<span class="token operator">:</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>common<span class="token punctuation">.</span>functions<span class="token punctuation">.</span>InvalidTypesException<span class="token operator">:</span> The generic type parameters of <span class="token string">'Collector'</span> are missing<span class="token punctuation">.</span> 
+It seems that your compiler has not stored them into the <span class="token punctuation">.</span><span class="token keyword">class</span> <span class="token class-name">file<span class="token punctuation">.</span></span> 
+Currently<span class="token punctuation">,</span> only the Eclipse JDT compiler preserves the type information necessary to use the lambdas feature type<span class="token operator">-</span>safely<span class="token punctuation">.</span> 
+See the documentation <span class="token keyword">for</span> more information about how to compile jobs containing lambda expressions<span class="token punctuation">.</span>
+    at org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>java<span class="token punctuation">.</span>typeutils<span class="token punctuation">.</span>TypeExtractor<span class="token punctuation">.</span><span class="token function">validateLambdaGenericParameter</span><span class="token punctuation">(</span>TypeExtractor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1653</span><span class="token punctuation">)</span>
+    at org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>java<span class="token punctuation">.</span>typeutils<span class="token punctuation">.</span>TypeExtractor<span class="token punctuation">.</span><span class="token function">validateLambdaGenericParameters</span><span class="token punctuation">(</span>TypeExtractor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1639</span><span class="token punctuation">)</span>
+    at org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>java<span class="token punctuation">.</span>typeutils<span class="token punctuation">.</span>TypeExtractor<span class="token punctuation">.</span><span class="token function">getUnaryOperatorReturnType</span><span class="token punctuation">(</span>TypeExtractor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">573</span><span class="token punctuation">)</span>
+    at org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>java<span class="token punctuation">.</span>typeutils<span class="token punctuation">.</span>TypeExtractor<span class="token punctuation">.</span><span class="token function">getFlatMapReturnTypes</span><span class="token punctuation">(</span>TypeExtractor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">188</span><span class="token punctuation">)</span>
+    at org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>java<span class="token punctuation">.</span>DataSet<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>DataSet<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">266</span><span class="token punctuation">)</span>
+    at TestFlink<span class="token punctuation">.</span><span class="token function">main</span><span class="token punctuation">(</span>TestFlink<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">21</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这是因为Flink在用户自定义的函数中会使用泛型来创建serializer，当我们使用匿名函数时，类型信息会被保留。但Lambda表达式并不是匿名函数，所以javac编译的时候并不会把泛型保存到class文件里。</p>
+<p>解决办法有两种:</p>
+<p>第一种办法在异常中已经提示，使用Eclipse JDT编译器会保留对lambda表达式来说必要的类型信息。在Maven中使用Eclipse JDT编译器，只需要在把下面的插件加入到pom.xml中</p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>maven-compiler-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>source</span><span class="token punctuation">></span></span>1.8<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>source</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>target</span><span class="token punctuation">></span></span>1.8<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>target</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>compilerId</span><span class="token punctuation">></span></span>jdt<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>compilerId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependencies</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.eclipse.tycho<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>tycho-compiler-jdt<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>0.21.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependencies</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>另一种办法是，使用Flink提供的returns方法来指定flatMap的返回类型，</p>
+<pre class="line-numbers language-java"><code class="language-java">text<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span><span class="token punctuation">(</span>line<span class="token punctuation">,</span> out<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>String word <span class="token operator">:</span> line<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">"\\W+"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        out<span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Tuple2</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>word<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">returns</span><span class="token punctuation">(</span><span class="token punctuation">(</span>TypeInformation<span class="token punctuation">)</span> TupleTypeInfo<span class="token punctuation">.</span><span class="token function">getBasicTupleTypeInfo</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> Integer<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">groupBy</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sum</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-java"><code class="language-java">text<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span><span class="token punctuation">(</span>line<span class="token punctuation">,</span> out<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>String word <span class="token operator">:</span> line<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">"\\W+"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        out<span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Tuple2</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>word<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">returns</span><span class="token punctuation">(</span>Types<span class="token punctuation">.</span><span class="token function">TUPLE</span><span class="token punctuation">(</span>Types<span class="token punctuation">.</span>STRING<span class="token punctuation">,</span> Types<span class="token punctuation">.</span>INT<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">groupBy</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sum</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>returns</code>函数接收TypeInformation类型的参数，这里我们创建TupleTypeInfo来指定Tuple的参数类型。</p>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="http://kane-xie.github.io/2017/07/12/2017-07-12_Flink%E4%BD%BF%E7%94%A8lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F/">参考链接1</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/November_28/article/details/100020400">参考链接2</a></p>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-duo-shu-ju-liu-zhuan-huan-cao-zuo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flink-duo-shu-ju-liu-zhuan-huan-cao-zuo/" class="post-title-link" itemprop="url">flink多数据流转换操作：join、union、connect</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-18 14:23:13" itemprop="dateCreated datePublished" datetime="2020-03-18T14:23:13+08:00">2020-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="操作概览"><a href="#操作概览" class="headerlink" title="操作概览"></a>操作概览</h3><p><img data-src="/images/flink13.png" alt="操作概览"></p>
+<p>本文主要讲flink中多条数据流转换操作：join、union、connect</p>
+<h3 id="join"><a href="#join" class="headerlink" title="join"></a>join</h3><p>批处理经常要解决的问题是将两个数据源做关联Join操作。比如，很多手机APP都有一个用户数据源User，同时APP会记录用户的行为，我们称之为Behavior，两个表按照userId来进行Join。在流处理场景下，Flink也支持了Join，只不过Flink是在一个时间窗口上来进行两个表的Join。<br><img data-src="/images/flink14.png" alt="操作概览"><br>目前，Flink支持了两种Join：<code>Window Join</code>（窗口连接）和<code>Interval Join</code>（时间间隔连接）。</p>
+<h4 id="Window-Join"><a href="#Window-Join" class="headerlink" title="Window Join"></a>Window Join</h4><p>从名字中能猜到，Window Join主要在Flink的窗口上进行操作，它将两个流中落在相同窗口的元素按照某个Key进行Join。一个Window Join的大致骨架结构为：</p>
+<pre class="line-numbers language-java"><code class="language-java">input1<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span>input2<span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">where</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>KeySelector<span class="token operator">></span><span class="token punctuation">)</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> input1使用哪个字段作为Key
+    <span class="token punctuation">.</span><span class="token function">equalTo</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>KeySelector<span class="token operator">></span><span class="token punctuation">)</span>    <span class="token operator">&lt;</span><span class="token operator">-</span> input2使用哪个字段作为Key
+    <span class="token punctuation">.</span><span class="token function">window</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>WindowAssigner<span class="token operator">></span><span class="token punctuation">)</span>  <span class="token operator">&lt;</span><span class="token operator">-</span> 指定WindowAssigner
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token function">trigger</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>Trigger<span class="token operator">></span><span class="token punctuation">)</span><span class="token punctuation">]</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> 指定Trigger（可选）
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token function">evictor</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>Evictor<span class="token operator">></span><span class="token punctuation">)</span><span class="token punctuation">]</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> 指定Evictor（可选）
+    <span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>JoinFunction<span class="token operator">></span><span class="token punctuation">)</span>     <span class="token operator">&lt;</span><span class="token operator">-</span> 指定JoinFunction
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>下图展示了Join的大致过程。两个输入数据流先分别按Key进行分组，然后将元素划分到窗口中。窗口的划分需要使用WindowAssigner来定义，这里可以使用Flink提供的滚动窗口、滑动窗口或会话窗口等默认的WindowAssigner。随后两个数据流中的元素会被分配到各个窗口上，也就是说一个窗口会包含来自两个数据流的元素。相同窗口内的数据会以INNER JOIN的语义来相互关联，形成一个数据对。当窗口的时间结束，Flink会调用JoinFunction来对窗口内的数据对进行处理。当然，我们也可以使用Trigger或Evictor做一些自定义优化，他们的使用方法和普通窗口的使用方法一样。<br><img data-src="/images/flink15.png" alt="join"></p>
+<p>接下来我们重点分析一下两个数据流是如何INNER JOIN的：<br><img data-src="/images/flink16.png" alt="join"><br>一般滴，INNER JOIN只对两个数据源都出现的元素做Join，形成一个数据对，即数据源input1中的某个元素与数据源input2中的所有元素逐个配对。当数据源某个窗口内没数据时，比如图中的第三个窗口，Join的结果也是空的。</p>
+<p>如果INNER JOIN不能满足我们的需求，CoGroupFunction提供了更多可自定义的功能。需要注意的是，在调用时，要写成<code>input1.coGroup(input2).where(&lt;KeySelector&gt;).equalTo(&lt;KeySelecotr&gt;)</code>。</p>
+<h4 id="Interval-Join"><a href="#Interval-Join" class="headerlink" title="Interval Join"></a>Interval Join</h4><p>与Window Join不同，Interval Join不依赖Flink的WindowAssigner，而是根据一个时间间隔（Interval）界定时间。Interval需要一个时间下界（<code>lower bound</code>）和上界（<code>upper bound</code>），如果我们将input1和input2进行Interval Join，input1中的某个元素为<code>input1.element1</code>，时间戳为<code>input1.element1.ts</code>，那么一个Interval就是<code>[input1.element1.ts + lower bound, input1.element1.ts + upper bound]</code>，input2中落在这个时间段内的元素将会和<code>input1.element1</code>组成一个数据对。</p>
+<p>用数学公式表达为，凡是符合下面公式<code>input1.element1.ts + lower bound &lt;= input2.elementx.ts &lt;=input1.element1.ts + upper bound</code>的元素使用INNER JOIN语义，两两组合在一起。上下界可以是正数也可以是负数。</p>
+<p>注意，目前Flink（1.9）的Interval Join只支持<code>Event Time</code>语义。</p>
+<p><img data-src="/images/flink17.png" alt="join"></p>
+<p>默认的时间间隔是包含上下界的，我们可以使用<code>.lowerBoundExclusive()</code> 和<code>.upperBoundExclusive</code>来确定是否需要包含上下界。</p>
+<pre class="line-numbers language-java"><code class="language-java">val intervalJoinResult <span class="token operator">=</span> input1<span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span>_<span class="token punctuation">.</span>_1<span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">intervalJoin</span><span class="token punctuation">(</span>input2<span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span>_<span class="token punctuation">.</span>_1<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">between</span><span class="token punctuation">(</span>Time<span class="token punctuation">.</span><span class="token function">milliseconds</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Time<span class="token punctuation">.</span><span class="token function">milliseconds</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">upperBoundExclusive</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">lowerBoundExclusive</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">process</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MyProcessFunction</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Interval Join内部是用缓存来存储所有数据的，因此需要注意缓存数据不能太大，以免对内存造成绝大压力。</p>
+<h3 id="union"><a href="#union" class="headerlink" title="union"></a>union</h3><p>在<code>DataStream</code>上使用union算子可以合并多个同类型的数据流，并生成同类型的数据流，即可以将多个<code>DataStream[T]</code>合并为一个新的<code>DataStream[T]</code>。数据将按照先进先出（<code>First In First Out</code>）的模式合并，且<strong>不去重</strong>。下图<code>union</code>对白色和深色两个数据流进行合并，生成一个数据流。</p>
+<p><img data-src="/images/flink18.png" alt="union"></p>
+<h3 id="connect"><a href="#connect" class="headerlink" title="connect"></a>connect</h3><p><code>union</code>虽然可以合并多个数据流，但有一个限制，即多个数据流的数据类型必须相同。<code>connect</code>提供了和<code>union</code>类似的功能，用来连接两个数据流，它与<code>union</code>的区别在于：</p>
+<ul>
+<li><code>connect</code>只能连接<strong>两个数据流</strong>，<code>union</code>可以连接<strong>多个数据流</strong>。</li>
+<li><code>connect</code>所连接的两个数据流的<strong>数据类型可以不一致</strong>，<code>union</code>所连接的两个数据流的<strong>数据类型必须一致</strong>。</li>
+<li>两个<code>DataStream</code>经过<code>connect</code>之后被转化为<code>ConnectedStreams</code>，<code>ConnectedStreams</code>会对两个流的数据应用不同的处理方法，且双流之间可以<strong>共享状态</strong>。</li>
+</ul>
+<p><code>connect</code>经常被应用在对一个数据流使用另外一个流进行控制处理的场景上，如下图所示。控制流可以是阈值、规则、机器学习模型或其他参数。<br><img data-src="/images/flink19.png" alt="connect"></p>
+<ul>
+<li>对于ConnectedStreams，我们需要重写CoMapFunction或CoFlatMapFunction。这两个接口都提供了三个泛型，这三个泛型分别对应第一个输入流的数据类型、第二个输入流的数据类型和输出流的数据类型。</li>
+<li>在重写函数时，对于CoMapFunction，map1处理第一个流的数据，map2处理第二个流的数据；对于CoFlatMapFunction，flatMap1处理第一个流的数据，flatMap2处理第二个流的数据。</li>
+<li>Flink并不能保证两个函数调用顺序，两个函数的调用依赖于两个数据流数据的流入先后顺序，即第一个数据流有数据到达时，map1或flatMap1会被调用，第二个数据流有数据到达时，map2或flatMap2会被调用。</li>
+<li>Flink允许我们将connect和keyBy或broadcast结合起来使用。</li>
+</ul>
+<h3 id="原文链接"><a href="#原文链接" class="headerlink" title="原文链接"></a>原文链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/103342602">Flink时间系列：如何在两个DataStream上进行Join操作</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/99425612">Flink算子使用方法及实例演示：union和connect</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-shu-ju-lei-xing-zhuan-huan/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -653,193 +911,6 @@ KeyedStream<span class="token operator">&lt;</span>Tuple3<span class="token oper
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-shi-pin-jiao-cheng-xue-xi-bi-ji/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/flink-shi-pin-jiao-cheng-xue-xi-bi-ji/" class="post-title-link" itemprop="url">flink视频教程学习笔记</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-10 10:10:33" itemprop="dateCreated datePublished" datetime="2020-03-10T10:10:33+08:00">2020-03-10</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="视频地址"><a href="#视频地址" class="headerlink" title="视频地址"></a>视频地址</h1><p><a target="_blank" rel="noopener" href="https://ververica.cn/developers/flink-training-course1/">视频地址</a></p>
-<h2 id="基础定义"><a href="#基础定义" class="headerlink" title="基础定义"></a>基础定义</h2><h3 id="有界-x2F-无界数据流"><a href="#有界-x2F-无界数据流" class="headerlink" title="有界/无界数据流"></a>有界/无界数据流</h3><h3 id="有状态计算"><a href="#有状态计算" class="headerlink" title="有状态计算"></a>有状态计算</h3><blockquote>
-<p>例如：过去一段时间的点击量<br><strong>状态可持久化</strong></p>
-</blockquote>
-<h3 id="时间官网"><a href="#时间官网" class="headerlink" title="时间官网"></a>时间<a target="_blank" rel="noopener" href="https://flink.apache.org/zh/flink-applications.html">官网</a></h3><ul>
-<li>事件发生时间</li>
-<li>事件进入flink时间</li>
-<li>flink处理事件时间</li>
-</ul>
-<h3 id="API"><a href="#API" class="headerlink" title="API"></a>API</h3><p>3层API</p>
-<h3 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h3><ul>
-<li>Data Pipeline</li>
-<li>Data Analytics</li>
-<li>Data Driven</li>
-</ul>
-<h1 id="flink-maven构建项目命令"><a href="#flink-maven构建项目命令" class="headerlink" title="flink - maven构建项目命令"></a>flink - maven构建项目命令</h1><pre><code>mvn archetype:generate -DarchetypeGroupId=org.apache.flink -DarchetypeArtifactId=flink-quickstart-java -DarchetypeVersion=1.10.0
-</code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kafka-dan-ji-ban-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/kafka-dan-ji-ban-bu-shu/" class="post-title-link" itemprop="url">kafka单机版部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-03 15:11:36" itemprop="dateCreated datePublished" datetime="2020-03-03T15:11:36+08:00">2020-03-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="下载kafka"><a href="#下载kafka" class="headerlink" title="下载kafka"></a>下载kafka</h1><p>在官网<a target="_blank" rel="noopener" href="https://kafka.apache.org/downloads">下载</a>kafka最新版本。</p>
-<p>如：当前最新<code>2.4.0</code>，针对Scala不同版本有不同的编译包，下载<code>Scala 2.12</code>的测试。</p>
-<pre><code>wget http://mirrors.tuna.tsinghua.edu.cn/apache/kafka/2.4.0/kafka_2.12-2.4.0.tgz
-</code></pre>
-<pre class="line-numbers language-sh"><code class="language-sh"># 解压
-tar -xzf kafka_2.12-2.4.0.tgz
-
-#进入目录
-cd kafka_2.12-2.4.0
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h1 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h1><h2 id="启动zookeeper"><a href="#启动zookeeper" class="headerlink" title="启动zookeeper"></a>启动zookeeper</h2><pre><code>bin/zookeeper-server-start.sh config/zookeeper.properties
-</code></pre>
-<h2 id="启动kafka"><a href="#启动kafka" class="headerlink" title="启动kafka"></a>启动kafka</h2><pre><code>bin/kafka-server-start.sh config/server.properties
-</code></pre>
-<blockquote>
-<p>如果需要放到后台运行，可以加上<code>&amp;</code>或者 <code>nohup</code>命令.<br><code>nohup bin/zookeeper-server-start.sh config/zookeeper.properties &amp;</code></p>
-</blockquote>
-<h1 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h1><h2 id="创建主题"><a href="#创建主题" class="headerlink" title="创建主题"></a>创建主题</h2><pre><code>bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic test
-</code></pre>
-<h2 id="查看主题列表"><a href="#查看主题列表" class="headerlink" title="查看主题列表"></a>查看主题列表</h2><pre><code>bin/kafka-topics.sh --list --bootstrap-server localhost:9092
-</code></pre>
-<h2 id="向主题发送消息"><a href="#向主题发送消息" class="headerlink" title="向主题发送消息"></a>向主题发送消息</h2><pre><code>bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
-</code></pre>
-<h2 id="从主题消费消息"><a href="#从主题消费消息" class="headerlink" title="从主题消费消息"></a>从主题消费消息</h2><pre><code>bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
-</code></pre>
-<h1 id="搭建kafka集群"><a href="#搭建kafka集群" class="headerlink" title="搭建kafka集群"></a>搭建kafka集群</h1><p>参考<a target="_blank" rel="noopener" href="https://kafka.apache.org/quickstart">官网</a></p>
-<h2 id=""><a href="#" class="headerlink" title=""></a></h2><pre class="line-numbers language-bash"><code class="language-bash">./kafka-topics.sh --create --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --replication-factor 1 --partitions 1 --topic first_kafka
-
-./kafka-console-producer.sh --broker-list 192.168.3.17:9092,192.168.3.19:9092,192.168.3.20:9092 --topic first_kafka
-
-./kafka-console-consumer.sh --bootstrap-server 192.168.3.17:9092,192.168.3.19:9092,192.168.3.20:9092 --topic first_kafka --from-beginning
-
-./kafka-topics.sh --describe --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --topic first_kafka
-
-./kafka-topics.sh --list --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181
-
-./kafka-topics.sh --delete --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --topic first_kafka
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -911,7 +982,7 @@ cd kafka_2.12-2.4.0
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">325</span>
+          <span class="site-state-item-count">327</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
