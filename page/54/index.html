@@ -196,6 +196,320 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-docker-compose-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/consul-docker-compose-bu-shu/" class="post-title-link" itemprop="url">consul【docker-compose部署】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-04 11:14:57" itemprop="dateCreated datePublished" datetime="2019-09-04T11:14:57+08:00">2019-09-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="前章回顾"><a href="#前章回顾" class="headerlink" title="前章回顾"></a>前章回顾</h3><p>上一章使用了<code>docker</code>命令部署<code>consul</code>集群，但是每次都敲命令太麻烦了，可以使用<code>docker-compose</code>简化。</p>
+<h3 id="docker-compose简介"><a href="#docker-compose简介" class="headerlink" title="docker-compose简介"></a>docker-compose简介</h3><p>本章内容参考官网：<code>https://docs.docker.com/compose/</code></p>
+<p>Compose是一个用于定义和运行多容器Docker应用程序的工具。使用Compose，您可以使用YAML文件来配置应用程序的服务。然后，使用单个命令，您可以从配置中创建并启动所有服务。</p>
+<h3 id="docker-compose安装"><a href="#docker-compose安装" class="headerlink" title="docker-compose安装"></a>docker-compose安装</h3><p>进入官网，<code>https://docs.docker.com/compose/install/</code>，选择<code>linux</code>，可以找到安装命令</p>
+<pre class="line-numbers language-sh"><code class="language-sh">#运行此命令以下载Docker Compose的当前稳定版本：
+sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+ 
+#对二进制文件应用可执行权限：
+sudo chmod +x /usr/local/bin/docker-compose
+ 
+#可以移到到你需要的目录下，也可以不移动，如果移动，例如
+mv /usr/local/bin/docker-compose /docker/docker-compose
+ 
+#可以再创建一个链接就行
+sudo ln -s /docker/docker-compose /usr/bin/docker-compose
+ 
+#测试安装
+$ docker-compose --version
+docker-compose version 1.24.1, build 1110ad01
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="编写docker-compose-yml"><a href="#编写docker-compose-yml" class="headerlink" title="编写docker-compose.yml"></a>编写docker-compose.yml</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">'3'</span>
+<span class="token key atrule">services</span><span class="token punctuation">:</span>
+  <span class="token comment" spellcheck="true">#服务名</span>
+  <span class="token key atrule">consul_server_1</span><span class="token punctuation">:</span>
+    <span class="token comment" spellcheck="true">#容器名</span>
+    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> consul_server_1
+    <span class="token comment" spellcheck="true">#使用的镜像</span>
+    <span class="token key atrule">image</span><span class="token punctuation">:</span> consul<span class="token punctuation">:</span>1.6.0
+    <span class="token comment" spellcheck="true">#映射的端口</span>
+    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token string">"8500:8500"</span>
+    <span class="token comment" spellcheck="true">#使用的网络</span>
+    <span class="token key atrule">networks</span><span class="token punctuation">:</span> 
+      <span class="token punctuation">-</span> consul
+    <span class="token comment" spellcheck="true">#映射的目录</span>
+    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> /docker/consul/server1/config<span class="token punctuation">:</span>/consul/config
+      <span class="token punctuation">-</span> /docker/consul/server1/data<span class="token punctuation">:</span>/consul/data
+    <span class="token comment" spellcheck="true">#需要导入的环境变量</span>
+    <span class="token key atrule">environment</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> CONSUL_BIND_INTERFACE=eth0
+      <span class="token punctuation">-</span> TZ=Asia/Shanghai
+    <span class="token comment" spellcheck="true">#是否伴随docker重启</span>
+    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
+    <span class="token comment" spellcheck="true">#执行的命令</span>
+    <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+      <span class="token string">'agent'</span>
+    <span class="token punctuation">]</span>
+ 
+<span class="token comment" spellcheck="true">#使用自定义网络，这样每次启动就不会创建新的网络了，ip相对固定</span>
+<span class="token key atrule">networks</span><span class="token punctuation">:</span>
+  <span class="token key atrule">consul</span><span class="token punctuation">:</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="docker-compose启动"><a href="#docker-compose启动" class="headerlink" title="docker-compose启动"></a>docker-compose启动</h3><pre class="line-numbers language-sh"><code class="language-sh">#启动/停止都需要进入到docker-compose.yml目录下
+#启动命令-前台运行
+docker-compose up
+ 
+#启动命令-后台运行
+docker-compose up -d
+ 
+#停止命令
+docker-compose stop
+ 
+#更多命令进入官网学习：https://docs.docker.com/compose/
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="注意网络问题"><a href="#注意网络问题" class="headerlink" title="注意网络问题"></a>注意网络问题</h3><p><code>docker-compose</code>使用的是<code>docker网络</code></p>
+<pre class="line-numbers language-sh"><code class="language-sh">#查看现有docker网络
+docker network ls
+ 
+#删除一个网络
+docker network rm +name
+ 
+#查看一个网络的详情
+docker network inspect +name
+ 
+#docker-compose网络设置
+#自定义网络
+networks:
+  frontend:
+  backend:  
+ 
+#使用默认网络
+networks:
+  default:
+    # Use a custom driver
+    driver: custom-driver-1
+ 
+#使用现有网络
+networks:
+  default:
+    external:
+      name: my-pre-existing-network
+#更多参考官网：https://docs.docker.com/compose/networking/
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="修改consul另外节点的join-IP"><a href="#修改consul另外节点的join-IP" class="headerlink" title="修改consul另外节点的join IP"></a>修改consul另外节点的join IP</h3><p>获取<code>consul_server_1</code>的<code>ip</code>，可以根据启动日志，或者运行完之后执行<code>docker exec consul_server_1 consul members</code>查看<code>IP</code><br><img data-src="/images/consul9.png" alt="consul"><br>或<br><img data-src="/images/consul10.png" alt="consul"></p>
+<p>修改其余<code>consul</code>配置的<code>join ip</code><br><img data-src="/images/consul11.png" alt="consul"></p>
+<p>在<code>docker-compose.yml</code>中增加其他节点服务，完整配置如下：</p>
+<pre class="line-numbers language-yml"><code class="language-yml">version: '3'
+services:
+  consul_server_1:
+    container_name: consul_server_1
+    image: consul:1.6.0
+    ports:
+      - "8500:8500"
+    networks: 
+      - consul
+    volumes:
+      - /docker/consul/server1/config:/consul/config
+      - /docker/consul/server1/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+    restart: always
+    command: [
+      'agent'
+    ]
+ 
+  consul_server_2:
+    container_name: consul_server_2
+    image: consul:1.6.0
+    networks: 
+      - consul
+    volumes:
+      - /docker/consul/server2/config:/consul/config
+      - /docker/consul/server2/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+    restart: always
+    command: [
+      'agent'
+    ]
+ 
+  consul_server_3:
+    container_name: consul_server_3
+    image: consul:1.6.0
+    networks: 
+      - consul
+    volumes:
+      - /docker/consul/server3/config:/consul/config
+      - /docker/consul/server3/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+    restart: always
+    command: [
+      'agent'
+    ]
+ 
+  consul_client_1:
+    container_name: consul_client_1
+    image: consul:1.6.0
+    networks: 
+      - consul
+    volumes:
+      - /docker/consul/client1/config:/consul/config
+      - /docker/consul/client1/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+    restart: always
+    command: [
+      'agent'
+    ]
+ 
+networks:
+  consul:
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动，查看"><a href="#启动，查看" class="headerlink" title="启动，查看"></a>启动，查看</h3><p><img data-src="/images/consul12.png" alt="consul"><br><img data-src="/images/consul13.png" alt="consul"><br><img data-src="/images/consul14.png" alt="consul"></p>
+<p>服务均正常，以后启动只需要<code>docker-compose up -d</code> 和 <code>docker-compose stop</code>即可，大大方便！</p>
+<h3 id="增加固定IP部署配置"><a href="#增加固定IP部署配置" class="headerlink" title="增加固定IP部署配置"></a>增加固定IP部署配置</h3><pre class="line-numbers language-yml"><code class="language-yml">version: '3'
+services:
+  consul_server_1:
+    container_name: consul_server_1
+    image: consul:1.6.0
+    ports:
+      - "8500:8500"
+    networks: 
+      consul:
+        ipv4_address: 172.20.0.2
+    volumes:
+      - /docker/consul/server1/config:/consul/config
+      - /docker/consul/server1/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+    restart: always
+    command: [
+      'agent'
+    ]
+ 
+  consul_server_2:
+    container_name: consul_server_2
+    image: consul:1.6.0
+    networks: 
+      consul:
+        ipv4_address: 172.20.0.3
+    volumes:
+      - /docker/consul/server2/config:/consul/config
+      - /docker/consul/server2/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+    restart: always
+    command: [
+      'agent'
+    ]
+ 
+  consul_server_3:
+    container_name: consul_server_3
+    image: consul:1.6.0
+    networks: 
+      consul:
+        ipv4_address: 172.20.0.4
+    volumes:
+      - /docker/consul/server3/config:/consul/config
+      - /docker/consul/server3/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+    restart: always
+    command: [
+      'agent'
+    ]
+ 
+  consul_client_1:
+    container_name: consul_client_1
+    image: consul:1.6.0
+    networks: 
+      consul:
+        ipv4_address: 172.20.0.5
+    volumes:
+      - /docker/consul/client1/config:/consul/config
+      - /docker/consul/client1/data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - TZ=Asia/Shanghai
+    restart: always
+    command: [
+      'agent'
+    ]
+ 
+networks:
+  consul:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/linux-xu-ni-ji-she-zhi-gu-ding-ip-bing-qie-ke-yi-fang-wen-wai-wang-pei-zhi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -830,106 +1144,6 @@ echo "buid success"
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hexo-bo-ke-an-zhuang-bu-zou/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/hexo-bo-ke-an-zhuang-bu-zou/" class="post-title-link" itemprop="url">Hexo博客安装步骤</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-07-31 13:20:58" itemprop="dateCreated datePublished" datetime="2019-07-31T13:20:58+08:00">2019-07-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="安装git"><a href="#安装git" class="headerlink" title="安装git"></a>安装git</h3><pre><code>git -v
-</code></pre>
-<h3 id="安装nodejs"><a href="#安装nodejs" class="headerlink" title="安装nodejs"></a>安装nodejs</h3><pre><code>node -v
-npm -v
-</code></pre>
-<pre><code>npm config set registry https://registry.npm.taobao.org
-</code></pre>
-<h3 id="安装hexo"><a href="#安装hexo" class="headerlink" title="安装hexo"></a>安装hexo</h3><pre><code>npm install -g hexo-cli
-</code></pre>
-<pre><code>hexo init MyBlog
-</code></pre>
-<pre><code>cd MyBlog      //进入这个MyBlog文件夹
-npm install
-</code></pre>
-<h3 id="生成SSH添加到GitHub"><a href="#生成SSH添加到GitHub" class="headerlink" title="生成SSH添加到GitHub"></a>生成SSH添加到GitHub</h3><p>详细的百度~</p>
-<pre><code>git config --global user.name "yourname"
-git config --global user.email "youremail"
-</code></pre>
-<h3 id="安装一些插件"><a href="#安装一些插件" class="headerlink" title="安装一些插件"></a>安装一些插件</h3><p>上传到GitHub上需要的插件</p>
-<pre><code>npm install hexo-deployer-git --save
-</code></pre>
-<p><a target="_blank" rel="noopener" href="https://github.com/blinkfox/hexo-theme-matery/blob/develop/README_CN.md">matery主题需要的插件</a></p>
-<pre><code>npm i -S hexo-prism-plugin
-</code></pre>
-<pre><code>npm install hexo-generator-search --save
-</code></pre>
-<pre><code>npm i hexo-permalink-pinyin --save
-</code></pre>
-<pre><code>npm i --save hexo-wordcount
-</code></pre>
-<pre><code>npm install hexo-filter-github-emojis --save
-</code></pre>
-<pre><code>npm install hexo-generator-feed --save
-</code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1001,7 +1215,7 @@ git config --global user.email "youremail"
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">327</span>
+          <span class="site-state-item-count">328</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
