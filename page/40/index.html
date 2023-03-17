@@ -196,6 +196,134 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-dai-ma-xue-xi-bi-ji/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flink-dai-ma-xue-xi-bi-ji/" class="post-title-link" itemprop="url">flink代码学习笔记</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-16 11:16:11" itemprop="dateCreated datePublished" datetime="2020-03-16T11:16:11+08:00">2020-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="一些关键字的解释说明"><a href="#一些关键字的解释说明" class="headerlink" title="一些关键字的解释说明"></a>一些关键字的解释说明</h2><h3 id="split-“-s”"><a href="#split-“-s”" class="headerlink" title=".split(“\s”)"></a>.split(“\s”)</h3><p><code>\\s</code>表示空格、回车、换行等空白符<br><code>\\s+</code>表示一个或多个空格、回车、换行等空白符</p>
+<h3 id="split-“-w-”"><a href="#split-“-w-”" class="headerlink" title=".split(“\w+”)"></a>.split(“\w+”)</h3><p>表示匹配数字和字母下划线的多个字符</p>
+<h3 id="tuple元组"><a href="#tuple元组" class="headerlink" title="tuple元组"></a>tuple元组</h3><p><code>tuple</code>是flink中自定义的一种组合类型，类似java中Map&lt;String,String&gt;，只不过Map只有两个字段，相当于<code>Tuple2</code>。</p>
+<p>flink中<code>tuple</code>最多支持25个字段，不支持空字段.</p>
+<blockquote>
+<p>复合类型有：</p>
+<ul>
+<li>Flink Java Tuples(Flink Java API的一部分)：最多25个字段，空字段不支持</li>
+<li>Scala Case classes(包括Scala tuples):最多25个字段，空字段不支持</li>
+<li>Row:具有任意数量字段的元组，并支持空字段</li>
+<li>POJO:遵循某种Bean模式的类</li>
+</ul>
+</blockquote>
+<h4 id="tuple使用"><a href="#tuple使用" class="headerlink" title="tuple使用"></a>tuple使用</h4><p>最简单的情况是在元组的一个或多个字段上对元组进行分组：</p>
+<pre class="line-numbers language-java"><code class="language-java">DataStream<span class="token operator">&lt;</span>Tuple3<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span>String<span class="token punctuation">,</span>Long<span class="token operator">>></span> input <span class="token operator">=</span> <span class="token comment" spellcheck="true">// [...]</span>
+KeyedStream<span class="token operator">&lt;</span>Tuple3<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span>String<span class="token punctuation">,</span>Long<span class="token operator">></span><span class="token punctuation">,</span>Tuple<span class="token operator">></span> keyed <span class="token operator">=</span> input<span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>元组在第一个字段（整数类型）上分组。</p>
+<pre class="line-numbers language-java"><code class="language-java">DataStream<span class="token operator">&lt;</span>Tuple3<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span>String<span class="token punctuation">,</span>Long<span class="token operator">>></span> input <span class="token operator">=</span> <span class="token comment" spellcheck="true">// [...]</span>
+KeyedStream<span class="token operator">&lt;</span>Tuple3<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span>String<span class="token punctuation">,</span>Long<span class="token operator">></span><span class="token punctuation">,</span>Tuple<span class="token operator">></span> keyed <span class="token operator">=</span> input<span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>在这里，我们将元组分组在由第一个和第二个字段组成的复合键上。</p>
+<p>关于嵌套元组的注释：如果你有一个带有嵌套元组的DataStream，例如：</p>
+<pre class="line-numbers language-java"><code class="language-java">DataStream<span class="token operator">&lt;</span>Tuple3<span class="token operator">&lt;</span>Tuple2<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span> Float<span class="token operator">></span><span class="token punctuation">,</span>String<span class="token punctuation">,</span>Long<span class="token operator">>></span> ds<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>指定keyBy(0)将导致系统使用full Tuple2作为键（以Integer和Float为键）。</p>
+<p>更多参考<a target="_blank" rel="noopener" href="https://flink.sojb.cn/dev/api_concepts.html">官网</a></p>
+<h3 id="map和flatMap"><a href="#map和flatMap" class="headerlink" title="map和flatMap"></a>map和flatMap</h3><h4 id="map"><a href="#map" class="headerlink" title="map"></a>map</h4><p>把数组流中的每一个值，使用所提供的函数执行一遍，一一对应。得到元素个数相同的数组流。<br><img data-src="/images/flink6.png" alt="map"></p>
+<p>map算子对一个DataStream中的每个元素使用用户自定义的map函数进行处理，每个输入元素对应一个输出元素，最终整个数据流被转换成一个新的DataStream。输出的数据流DataStream[OUT]类型可能和输入的数据流DataStream[IN]不同。</p>
+<h4 id="flatMap"><a href="#flatMap" class="headerlink" title="flatMap"></a>flatMap</h4><p>flat是扁平的意思。它把数组流中的每一个值，使用所提供的函数执行一遍，一一对应。得到元素相同的数组流。只不过，里面的元素也是一个子数组流。把这些子数组合并成一个数组以后，元素个数大概率会和原数组流的个数不同。<br><img data-src="/images/flink7.png" alt="flatMap"></p>
+<h3 id="filter"><a href="#filter" class="headerlink" title="filter"></a>filter</h3><p>filter算子对每个元素进行过滤，过滤的过程使用一个filter函数进行逻辑判断。对于输入的每个元素，如果filter函数返回True，则保留，如果返回False，则丢弃。<br><img data-src="/images/flink12.png" alt="filter"></p>
+<h3 id="keyBy"><a href="#keyBy" class="headerlink" title="keyBy"></a><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/98975650">keyBy</a></h3><p>绝大多数情况，我们要根据事件的某种属性或数据的某个字段进行分组，对一个分组内的数据进行处理。如下图所示，keyBy算子根据元素的形状对数据进行分组，相同形状的元素被分到了一起，可被后续算子统一处理。比如，多支股票数据流处理时，可以根据股票代号进行分组，然后对同一股票代号的数据统计其价格变动。又如，电商用户行为日志把所有用户的行为都记录了下来，如果要分析某一个用户行为，需要先按用户ID进行分组。<br><img data-src="/images/flink10.png" alt="keyby"></p>
+<h3 id="aggregation"><a href="#aggregation" class="headerlink" title="aggregation"></a>aggregation</h3><p>常见的聚合操作有sum、max、min等，这些聚合操作统称为aggregation。aggregation需要一个参数来指定按照哪个字段进行聚合。跟keyBy相似，我们可以使用数字位置来指定对哪个字段进行聚合，也可以使用字段名。</p>
+<p>与批处理不同，这些聚合函数是对流数据进行数据，流数据是依次进入Flink的，聚合操作是对之前流入的数据进行统计聚合。</p>
+<ul>
+<li>max算子对该字段求最大值，并将结果保存在该字段上。对于其他字段，该操作并不能保证其数值。</li>
+<li>maxBy算子对该字段求最大值，maxBy与max的区别在于，maxBy同时保留其他字段的数值，即maxBy可以得到数据流中最大的元素。</li>
+<li>同样，min和minBy的区别在于，min算子对某字段求最小值，minBy返回具有最小值的元素。</li>
+</ul>
+<blockquote>
+<p>其实，这些aggregation操作里已经封装了状态数据，比如，sum算子内部记录了当前的和，max算子内部记录了当前的最大值。由于内部封装了状态数据，而且状态数据并不会被清理，因此一定要避免在一个无限数据流上使用aggregation。</p>
+</blockquote>
+<blockquote>
+<p>注意，对于一个KeyedStream,一次只能使用一个aggregation操作，无法链式使用多个。</p>
+</blockquote>
+<h3 id="reduce"><a href="#reduce" class="headerlink" title="reduce"></a>reduce</h3><p>前面几个aggregation是几个较为特殊的操作，对分组数据进行处理更为通用的方法是使用reduce算子。<br><img data-src="/images/flink11.png" alt="reduce"></p>
+<p>上图展示了reduce算子的原理：reduce在按照同一个Key分组的数据流上生效，它接受两个输入，生成一个输出，即两两合一地进行汇总操作，生成一个同类型的新元素。</p>
+<pre class="line-numbers language-java"><code class="language-java">DataStream<span class="token operator">&lt;</span>Tuple2<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Integer<span class="token operator">>></span> counts <span class="token operator">=</span>
+    <span class="token comment" spellcheck="true">// split up the lines in pairs (2-tuples) containing: (word,1)</span>
+    text<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Tokenizer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token comment" spellcheck="true">// group by the tuple field "0" and sum up tuple field "1"</span>
+        <span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+        <span class="token comment" spellcheck="true">//ReduceFunction定义了reduce方法，它主要是用来将两个同类型的值操作为一个同类型的值，第一个参数为前面reduce的结果，第二参数为当前的元素</span>
+        <span class="token punctuation">.</span><span class="token function">reduce</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ReduceFunction</span><span class="token operator">&lt;</span>Tuple2<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Integer<span class="token operator">>></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">public</span> Tuple2<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Integer<span class="token operator">></span> <span class="token function">reduce</span><span class="token punctuation">(</span>Tuple2<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Integer<span class="token operator">></span> value1<span class="token punctuation">,</span> Tuple2<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Integer<span class="token operator">></span> value2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"value1:"</span><span class="token operator">+</span>value1<span class="token punctuation">.</span>f1<span class="token operator">+</span><span class="token string">";value2:"</span><span class="token operator">+</span>value2<span class="token punctuation">.</span>f1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Tuple2</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>value1<span class="token punctuation">.</span>f0<span class="token punctuation">,</span> value1<span class="token punctuation">.</span>f1 <span class="token operator">+</span> value2<span class="token punctuation">.</span>f1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/c_1127896820252299264">皮皮鲁的AI星球</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-dian-xing-ying-yong-chang-jing/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -687,101 +815,6 @@ cd apache-zookeeper-3.5.7-bin/
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/centos-xie-zai-openjdk-bing-an-zhuang-jdk/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/centos-xie-zai-openjdk-bing-an-zhuang-jdk/" class="post-title-link" itemprop="url">centos卸载openjdk，并安装jdk</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-02-28 17:03:48" itemprop="dateCreated datePublished" datetime="2020-02-28T17:03:48+08:00">2020-02-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="查找本机安装的openjdk"><a href="#查找本机安装的openjdk" class="headerlink" title="查找本机安装的openjdk"></a>查找本机安装的openjdk</h1><pre class="line-numbers language-sh"><code class="language-sh">rpm -qa | grep java
-
-python-javapackages-3.4.1-11.el7.noarch
-java-1.8.0-openjdk-1.8.0.181-7.b13.el7.x86_64
-java-1.8.0-openjdk-headless-1.8.0.181-7.b13.el7.x86_64
-tzdata-java-2018e-3.el7.noarch
-javapackages-tools-3.4.1-11.el7.noarch
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h1 id="卸载"><a href="#卸载" class="headerlink" title="卸载"></a>卸载</h1><p>依次使用命令<code>rpm -e --nodeps</code>卸载</p>
-<pre><code>rpm -e --nodeps java-1.8.0-openjdk-1.8.0.181-7.b13.el7.x86_64
-</code></pre>
-<h1 id="安装jdk1-8"><a href="#安装jdk1-8" class="headerlink" title="安装jdk1.8"></a>安装jdk1.8</h1><pre><code>#进入到安装目录
-cd /usr/local/
-
-tar -zxvf jdk-8u112-linux-x64.tar.gz
-</code></pre>
-<pre><code>vim /etc/profile
-</code></pre>
-<p>文件末尾增加</p>
-<pre><code>#java_home
-export JAVA_HOME=/usr/local/bin/jdk1.8.0_112
-export PATH=$PATH:$JAVA_HOME/bin
-</code></pre>
-<p>测试</p>
-<pre class="line-numbers language-sh"><code class="language-sh">[root@node1 jdk1.8.0_112]# java -version
-java version "1.8.0_112"
-Java(TM) SE Runtime Environment (build 1.8.0_112-b15)
-Java HotSpot(TM) 64-Bit Server VM (build 25.112-b15, mixed mode)
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -853,14 +886,14 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.112-b15, mixed mode)
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">328</span>
+          <span class="site-state-item-count">329</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-count">44</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
