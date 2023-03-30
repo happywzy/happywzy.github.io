@@ -196,6 +196,204 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-zheng-shu-ren-zheng/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/springboot-zheng-shu-ren-zheng/" class="post-title-link" itemprop="url">springboot证书单向/双向认证</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-11-10 13:40:45" itemprop="dateCreated datePublished" datetime="2022-11-10T13:40:45+08:00">2022-11-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="springboot单向认证和双向认证"><a href="#springboot单向认证和双向认证" class="headerlink" title="springboot单向认证和双向认证"></a>springboot单向认证和双向认证</h3><ul>
+<li>单向认证<br>服务端开启 SSL 证书,通过 springboot 或者 nginx 都可以实现, 开启单向认证后访问服务端接口需要使用 https 协议即可。</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">server</span><span class="token punctuation">:</span>
+  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8443</span>
+  <span class="token key atrule">ssl</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token comment" spellcheck="true">#服务端证书路径, classpath:local-dev.p12</span>
+    <span class="token key atrule">key-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
+    <span class="token comment" spellcheck="true">#证书密码</span>
+    <span class="token key atrule">key-store-passwd</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+    <span class="token comment" spellcheck="true">#证书类型</span>
+    <span class="token key atrule">key-store-type</span><span class="token punctuation">:</span> JKS
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>双向认证<br>springboot 服务端除了开启 SSL 证书,还要开启客户端证书认证 <code>client-auth: need</code>, 需要将客户端证书导入到服务端<code>信任库</code>中, 否则访问报错, 提示<code>无法建立连接, 不接受您的登录证书, 或者您可能没有提供登录证书</code> 等报错信息.</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">server</span><span class="token punctuation">:</span>
+  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8443</span>
+  <span class="token key atrule">ssl</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token comment" spellcheck="true">#服务端证书路径, classpath:local-dev.p12</span>
+    <span class="token key atrule">key-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
+    <span class="token comment" spellcheck="true">#证书密码</span>
+    <span class="token key atrule">key-store-passwd</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+    <span class="token comment" spellcheck="true">#证书类型</span>
+    <span class="token key atrule">key-store-type</span><span class="token punctuation">:</span> JKS
+    <span class="token comment" spellcheck="true">#是否需要进行认证,可选: need/want/none</span>
+    <span class="token key atrule">client-auth</span><span class="token punctuation">:</span> need
+    <span class="token comment" spellcheck="true">#可信任的客户端证书, classpath:local-dev.p12</span>
+    <span class="token key atrule">trust-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
+    <span class="token comment" spellcheck="true">#密码，即步骤一中输入的密码</span>
+    <span class="token key atrule">trust-store-password</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+    <span class="token key atrule">trust-store-type</span><span class="token punctuation">:</span> JKS
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="使用-keytool-创建证书"><a href="#使用-keytool-创建证书" class="headerlink" title="使用 keytool 创建证书"></a>使用 keytool 创建证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建 test_server, 如果是单向认证创建完 test_server.jks 并配置正确即可.</span>
+keytool -genkeypair -alias test_server -keypass 123456 -storepass 123456  -dname <span class="token string">"C=CN,ST=JS,L=NJ,O=test,OU=dev,CN=test.server.cn"</span> -keyalg RSA -keysize 20
+48 -validity 3650 -keystore test_server.jks
+
+<span class="token comment" spellcheck="true"># 双向认证还需要进行以下步骤</span>
+<span class="token comment" spellcheck="true"># 使用 keytool 创建 test_client 证书库</span>
+keytool -genkeypair -alias test_client -keypass 123456 -storepass 123456  -dname <span class="token string">"C=CN,ST=JS,L=NJ,O=test,OU=dev,CN=test.client.cn"</span> -keyalg RSA -keysize 20
+48 -validity 3650 -keystore test_client.jks
+<span class="token comment" spellcheck="true"># 从证书库中导出客户端证书, 注意：加上 -rfc 选项输出PEM编码格式的证书, 否则导入服务端信任库会报错.</span>
+keytool -exportcert -keystore test_client.jks -rfc -file test_client.cer -alias test_client -storepass 123456
+<span class="token comment" spellcheck="true"># 将客户端证书导入到服务端信任库</span>
+keytool -importcert -keystore test_server.jks -file test_client.cer -alias test_client -storepass 123456 -noprompt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>在信任库中, 导入后的证书为 <code>trustedCertEntry</code> 实体类型，而私钥证书为 <code>PrivateKeyEntry</code>.   </p>
+</blockquote>
+<blockquote>
+<p>上述操作完成后, 就可以通过客户端证书调用服务端接口，但是想要服务端调用客户端，需要按照上述步骤将服务端证书导入到客户端信任库.</p>
+</blockquote>
+<ul>
+<li>keytool 查看<code>证书库</code>详情</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">keytool -list -keystore test_server.jks -storepass 123456
+<span class="token comment" spellcheck="true"># 加 -v 查看详情</span>
+keytool -list -v -keystore test_server.jks -storepass 123456
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>keytool 查看<code>证书</code>详情</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">keytool -printcert -file test_client.cer
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="openssl-创建自签名证书"><a href="#openssl-创建自签名证书" class="headerlink" title="openssl 创建自签名证书"></a>openssl 创建自签名证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建私钥（.key）</span>
+openssl genrsa -out my.key 2048
+<span class="token comment" spellcheck="true"># 基于私钥（.key）创建证书签名请求（.csr）</span>
+openssl req -new -key my.key -out my.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span class="token comment" spellcheck="true"># （可选）直接同时生成私钥（.key）和证书签名请求（.csr）</span>
+openssl req -new -newkey rsa:2048 -nodes -keyout my.key -out my.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span class="token comment" spellcheck="true"># 使用自己的私钥（.key）签署自己的证书签名请求（.csr），生成自签名证书（.crt）</span>
+openssl x509 -req -in my.csr -out my.crt -signkey my.key -days 3650
+<span class="token comment" spellcheck="true"># （可选）直接同时生成私钥（.key）和自签名证书（.crt）</span>
+openssl req -x509 -newkey rsa:2048 -nodes -keyout my.key -out my.crt -days 3650  -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="openssl-创建私有CA签发的证书"><a href="#openssl-创建私有CA签发的证书" class="headerlink" title="openssl 创建私有CA签发的证书"></a>openssl 创建私有CA签发的证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成CA私钥（ca.key）和CA自签名证书（ca.crt）</span>
+openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt -days 3650  -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span class="token comment" spellcheck="true"># 生成Server端私钥（server.key）和证书签名请求（server.csr）</span>
+openssl req -new -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span class="token comment" spellcheck="true"># 使用CA证书（ca.crt）与密钥（ca.key）签署服务器的证书签名请求（server.csr），生成私有CA签名的服务器证书（server.crt）</span>
+openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 3650
+<span class="token comment" spellcheck="true"># 验证server.crt是否真得是由ca签发的, 结果显示 ok</span>
+openssl verify -CAfile ca.crt server.crt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="openssl创建的证书导入java证书信任库"><a href="#openssl创建的证书导入java证书信任库" class="headerlink" title="openssl创建的证书导入java证书信任库"></a>openssl创建的证书导入java证书信任库</h3><pre class="line-numbers language-bash"><code class="language-bash">keytool -importcert -keystore test_server.jks -file openssl_client.crt -alias test_client -storepass 123456 -noprompt
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="证书格式转换-参考链接"><a href="#证书格式转换-参考链接" class="headerlink" title="证书格式转换(参考链接)"></a>证书格式转换(<a target="_blank" rel="noopener" href="https://www.cnblogs.com/littleatp/p/5922362.html">参考链接</a>)</h3><ul>
+<li>jks / pkcs12 格式转换</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># jks 转 p12</span>
+keytool -importkeystore -srckeystore server.keystore -destkeystore server.p12 -srcalias serverkey -destalias serverkey \
+    -srcstoretype jks -deststoretype pkcs12 -srcstorepass 111111 -deststorepass 111111  -destkeypass  111111 -noprompt
+<span class="token comment" spellcheck="true"># p12 转 jks 同理</span>
+keytool -importkeystore -srckeystore server.p12 -destkeystore server.keystore \
+-srcstoretype pkcs12 -deststoretype jks -srcalias server -destalias server \
+-deststorepass 111111 -srcstorepass 111111
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>Nginx 证书 转 JKS<br>Java 通常使用 JKS 作为证书存储格式，而Nginx往往采用 PEM 证书格式</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># pem证书和私钥合成p12,注意定义-name 选项，这将作为keystore识别实体的参数</span>
+openssl pkcs12 -export -in server.crt -inkey server.key -passin pass:111111 -password pass:111111 -name server -out server.p12
+<span class="token comment" spellcheck="true"># p12 证书转jks 证书</span>
+keytool -importkeystore -srckeystore server.p12 -destkeystore server.keystore \
+-srcstoretype pkcs12 -deststoretype jks -srcalias server -destalias server \
+-deststorepass 111111 -srcstorepass 111111
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>如果 p12 文件中未指定实体名称，使用 keytool 转换时则不需提供 srcalias/destalias 参数，而输出的 keystore 实体名称默认为 1</p>
+</blockquote>
+<ul>
+<li>JKS 证书 转 Nginx证书</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># jks 证书转p12</span>
+keytool -importkeystore -srckeystore server.keystore  -destkeystore server.p12 \
+-srcstoretype jks -deststoretype pkcs12 -srcalias server -destalias server \
+-deststorepass 111111 -destkeypass 111111 -srcstorepass 111111
+<span class="token comment" spellcheck="true"># p12 证书提取pem证书和私钥</span>
+openssl pkcs12 -in server.p12 -clcerts -nokeys -password pass:111111 -out server.crt
+openssl pkcs12 -in server.p12  -nocerts -password pass:111111 -passout pass:111111 -out server.key
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="postman-双向认证测试"><a href="#postman-双向认证测试" class="headerlink" title="postman 双向认证测试"></a>postman 双向认证测试</h3><ol>
+<li>创建服务端信任库</li>
+<li>创建客户端证书</li>
+<li>将客户端证书添加到服务端信任库</li>
+<li><code>postman</code> 设置选择：<code>setting</code> - <code>General</code> - 关闭<code>SSL certificate verification</code></li>
+<li><code>postman</code> 设置选择：<code>setting</code> - <code>Certificates</code> - <code>Client Certificates</code> - 选择 <code>Add Certificates</code></li>
+<li>设置<code>地址</code>和<code>端口号</code>、<code>CAR file</code> 、<code>KEY file</code>，证书有密码就输入<code>Passphrase</code></li>
+<li>测试</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubernetes-geng-xin-zheng-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -671,118 +869,10 @@ dive <span class="token operator">&lt;</span>source<span class="token operator">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-zi-ding-yi-banner/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-zi-ding-yi-banner/" class="post-title-link" itemprop="url">springboot自定义banner</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-09-19 14:15:04" itemprop="dateCreated datePublished" datetime="2022-09-19T14:15:04+08:00">2022-09-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><p>在 resources 目录下 (application.yml 同目录)创建 banner.txt 文件, springboot 启动时会自动加载这个文件替换原有的 spring boot banner.</p>
-<h3 id="生成banner"><a href="#生成banner" class="headerlink" title="生成banner"></a>生成banner</h3><ul>
-<li><a target="_blank" rel="noopener" href="http://www.network-science.de/ascii/">http://www.network-science.de/ascii/</a></li>
-<li><a target="_blank" rel="noopener" href="http://patorjk.com/software/taag">http://patorjk.com/software/taag</a></li>
-</ul>
-<h3 id="其他配置"><a href="#其他配置" class="headerlink" title="其他配置"></a>其他配置</h3><ul>
-<li>banner.txt 内配置</li>
-</ul>
-<pre class="line-numbers language-yml"><code class="language-yml">${AnsiColor.BRIGHT_RED}: 设置控制台中输出内容的颜色
-${application.version}: 用来获取MANIFEST.MF文件中的版本号
-${application.formatted-version}: 格式化后的${application.version}版本信息
-${spring-boot.version}: Spring Boot的版本号
-${spring-boot.formatted-version}: 格式化后的${spring-boot.version}版本信息
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>application.yml 配置</li>
-</ul>
-<pre class="line-numbers language-yml"><code class="language-yml">spring:
-  banner:
-    charset: UTF-8
-    location: classpath:banner.txt
-    image:
-      location: classpath:banner.gif
-      width: 76
-      height:
-      margin: 2
-      invert: false
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>关闭 banner</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@SpringBootApplication</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SpringbootBannerApplication</span> <span class="token punctuation">{</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        SpringApplication springApplication <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SpringApplication</span><span class="token punctuation">(</span>SpringbootBannerApplication<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//Banner.Mode.OFF 关闭</span>
-        springApplication<span class="token punctuation">.</span><span class="token function">setBannerMode</span><span class="token punctuation">(</span>Banner<span class="token punctuation">.</span>Mode<span class="token punctuation">.</span>OFF<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        springApplication<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/55/">55</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/56/">56</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -850,7 +940,7 @@ ${spring-boot.formatted-version}: 格式化后的${spring-boot.version}版本信
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">330</span>
+          <span class="site-state-item-count">331</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
