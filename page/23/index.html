@@ -196,6 +196,136 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-zheng-ze-biao-da-shi-de-ying-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/influxdb-zheng-ze-biao-da-shi-de-ying-yong/" class="post-title-link" itemprop="url">influxdb正则表达式的应用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-18 10:08:23" itemprop="dateCreated datePublished" datetime="2020-09-18T10:08:23+08:00">2020-09-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="准备测试数据"><a href="#准备测试数据" class="headerlink" title="准备测试数据"></a>准备测试数据</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        InfluxDB influxDB <span class="token operator">=</span> InfluxDBFactory<span class="token punctuation">.</span><span class="token function">connect</span><span class="token punctuation">(</span><span class="token string">"http://192.168.41.128:8086"</span><span class="token punctuation">,</span> <span class="token string">"root"</span><span class="token punctuation">,</span> <span class="token string">"root"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        String dbName <span class="token operator">=</span> <span class="token string">"mydb"</span><span class="token punctuation">;</span>
+        influxDB<span class="token punctuation">.</span><span class="token function">query</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Query</span><span class="token punctuation">(</span><span class="token string">"CREATE DATABASE "</span> <span class="token operator">+</span> dbName<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">long</span> time <span class="token operator">=</span> 1600327592000L<span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 每张表内5w条数据</span>
+        <span class="token keyword">int</span> count <span class="token operator">=</span> <span class="token number">50000</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>count <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            count<span class="token operator">--</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 每条数据间隔5秒</span>
+            time <span class="token operator">=</span> time <span class="token operator">+</span> <span class="token number">5000</span><span class="token punctuation">;</span>
+            BatchPoints batchPoints <span class="token operator">=</span> BatchPoints
+                    <span class="token punctuation">.</span><span class="token function">database</span><span class="token punctuation">(</span>dbName<span class="token punctuation">)</span>
+                    <span class="token punctuation">.</span><span class="token function">tag</span><span class="token punctuation">(</span><span class="token string">"async"</span><span class="token punctuation">,</span> <span class="token string">"true"</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">.</span><span class="token function">consistency</span><span class="token punctuation">(</span>InfluxDB<span class="token punctuation">.</span>ConsistencyLevel<span class="token punctuation">.</span>ALL<span class="token punctuation">)</span>
+                    <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">10000</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token comment" spellcheck="true">// 表名node-0 ~ node-9999,共10000张表,数据随机生成</span>
+                Point point1 <span class="token operator">=</span> Point<span class="token punctuation">.</span><span class="token function">measurement</span><span class="token punctuation">(</span><span class="token string">"node-"</span> <span class="token operator">+</span> i<span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">time</span><span class="token punctuation">(</span>time<span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MILLISECONDS<span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">addField</span><span class="token punctuation">(</span><span class="token string">"idle"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">addField</span><span class="token punctuation">(</span><span class="token string">"user"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">addField</span><span class="token punctuation">(</span><span class="token string">"system"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                batchPoints<span class="token punctuation">.</span><span class="token function">point</span><span class="token punctuation">(</span>point1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            influxDB<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>batchPoints<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        influxDB<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="使用正则表达式查询测试"><a href="#使用正则表达式查询测试" class="headerlink" title="使用正则表达式查询测试"></a>使用正则表达式查询测试</h3><p>目前<code>influxdb</code>支持在以下场景中使用正则表达式：</p>
+<ul>
+<li><code>field keys</code> and <code>tag keys</code> in the <code>SELECT</code> clause</li>
+<li><code>measurements</code> in the <code>FROM</code> clause</li>
+<li><code>tag values</code> and <code>string field values</code> in the <code>WHERE</code> clause.</li>
+<li><code>tag keys</code> in the <code>GROUP BY</code> clause</li>
+</ul>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查询格式</span>
+<span class="token comment" spellcheck="true">-- Supported operators</span>
+<span class="token comment" spellcheck="true">-- =~ matches against !~ doesn’t match against</span>
+<span class="token keyword">SELECT</span> <span class="token operator">/</span><span class="token operator">&lt;</span>regular_expression_field_key<span class="token operator">></span><span class="token operator">/</span> <span class="token keyword">FROM</span> <span class="token operator">/</span><span class="token operator">&lt;</span>regular_expression_measurement<span class="token operator">></span><span class="token operator">/</span> <span class="token keyword">WHERE</span> <span class="token punctuation">[</span><span class="token operator">&lt;</span>tag_key<span class="token operator">></span> <span class="token operator">&lt;</span>operator<span class="token operator">></span> <span class="token operator">/</span><span class="token operator">&lt;</span>regular_expression_tag_value<span class="token operator">></span><span class="token operator">/</span> <span class="token operator">|</span> <span class="token operator">&lt;</span>field_key<span class="token operator">></span> <span class="token operator">&lt;</span>operator<span class="token operator">></span> <span class="token operator">/</span><span class="token operator">&lt;</span>regular_expression_field_value<span class="token operator">></span><span class="token operator">/</span><span class="token punctuation">]</span> <span class="token keyword">GROUP</span> <span class="token keyword">BY</span> <span class="token operator">/</span><span class="token operator">&lt;</span>regular_expression_tag_key<span class="token operator">></span><span class="token operator">/</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 测试用例</span>
+<span class="token keyword">SELECT</span> <span class="token operator">/</span>l<span class="token operator">/</span> <span class="token keyword">FROM</span> <span class="token string">"h2o_feet"</span> <span class="token keyword">LIMIT</span> <span class="token number">1</span>
+<span class="token keyword">SELECT</span> MEAN<span class="token punctuation">(</span><span class="token string">"degrees"</span><span class="token punctuation">)</span> <span class="token keyword">FROM</span> <span class="token operator">/</span>temperature<span class="token operator">/</span>
+<span class="token keyword">SELECT</span> MEAN<span class="token punctuation">(</span>water_level<span class="token punctuation">)</span> <span class="token keyword">FROM</span> <span class="token string">"h2o_feet"</span> <span class="token keyword">WHERE</span> <span class="token string">"location"</span> <span class="token operator">=</span><span class="token operator">~</span> <span class="token operator">/</span><span class="token punctuation">[</span>m<span class="token punctuation">]</span><span class="token operator">/</span> <span class="token operator">AND</span> <span class="token string">"water_level"</span> <span class="token operator">></span> <span class="token number">3</span>
+<span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token string">"h2o_feet"</span> <span class="token keyword">WHERE</span> <span class="token string">"location"</span> <span class="token operator">!</span><span class="token operator">~</span> <span class="token operator">/</span><span class="token punctuation">.</span><span class="token operator">/</span>
+<span class="token keyword">SELECT</span> MEAN<span class="token punctuation">(</span><span class="token string">"water_level"</span><span class="token punctuation">)</span> <span class="token keyword">FROM</span> <span class="token string">"h2o_feet"</span> <span class="token keyword">WHERE</span> <span class="token string">"location"</span> <span class="token operator">=</span><span class="token operator">~</span> <span class="token operator">/</span><span class="token punctuation">.</span><span class="token operator">/</span>
+<span class="token keyword">SELECT</span> MEAN<span class="token punctuation">(</span><span class="token string">"water_level"</span><span class="token punctuation">)</span> <span class="token keyword">FROM</span> <span class="token string">"h2o_feet"</span> <span class="token keyword">WHERE</span> <span class="token string">"location"</span> <span class="token operator">=</span> <span class="token string">'santa_monica'</span> <span class="token operator">AND</span> <span class="token string">"level description"</span> <span class="token operator">=</span><span class="token operator">~</span> <span class="token operator">/</span><span class="token operator">between</span><span class="token operator">/</span>
+<span class="token keyword">SELECT</span> <span class="token function">FIRST</span><span class="token punctuation">(</span><span class="token string">"index"</span><span class="token punctuation">)</span> <span class="token keyword">FROM</span> <span class="token string">"h2o_quality"</span> <span class="token keyword">GROUP</span> <span class="token keyword">BY</span> <span class="token operator">/</span>l<span class="token operator">/</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>测试使用正则表达式进行切面查询</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查询某个时间点,所有表的数据,切面查询</span>
+<span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token operator">/</span>node<span class="token operator">-</span><span class="token operator">/</span> <span class="token keyword">WHERE</span> time<span class="token operator">=</span><span class="token string">'2020-09-18T01:43:27Z'</span>
+<span class="token comment" spellcheck="true">-- 查询node-1001,node-1002,node-1003,node-1004,node-1005数据</span>
+<span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> <span class="token operator">/</span><span class="token punctuation">(</span>node<span class="token number">-100</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">]</span><span class="token operator">/</span> <span class="token keyword">WHERE</span> time<span class="token operator">=</span><span class="token string">'2020-09-18T01:43:27Z'</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/query_language/data_exploration/#regular-expressions">Regular expressions</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/query_language/data_exploration/#examples-14">测试用例参考</a></li>
+<li><a target="_blank" rel="noopener" href="https://golang.org/pkg/regexp/syntax/">GO syntax</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-shi-yong-docker-bu-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -794,142 +924,6 @@ ALTER USER '</span>furrywall<span class="token string">'@'</span>localhost' ACCO
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/loki-chi-jiu-hua/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/loki-chi-jiu-hua/" class="post-title-link" itemprop="url">loki持久化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-08-18 16:56:40" itemprop="dateCreated datePublished" datetime="2020-08-18T16:56:40+08:00">2020-08-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="查看配置"><a href="#查看配置" class="headerlink" title="查看配置"></a>查看配置</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># 查看helm安装Loki默认配置</span>
-<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># helm inspect values loki/loki > loki.yaml</span>
-<span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># cat loki.yaml</span>
-<span class="token comment" spellcheck="true"># 部分配置</span>
-<span class="token key atrule">config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">storage_config</span><span class="token punctuation">:</span>
-    <span class="token key atrule">boltdb</span><span class="token punctuation">:</span>
-      <span class="token key atrule">directory</span><span class="token punctuation">:</span> /data/loki/index
-    <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
-      <span class="token key atrule">directory</span><span class="token punctuation">:</span> /data/loki/chunks
-  <span class="token key atrule">table_manager</span><span class="token punctuation">:</span>
-    <span class="token key atrule">retention_deletes_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-    <span class="token key atrule">retention_period</span><span class="token punctuation">:</span> <span class="token number">0</span>
-
-<span class="token key atrule">image</span><span class="token punctuation">:</span>
-  <span class="token key atrule">repository</span><span class="token punctuation">:</span> grafana/loki
-  <span class="token key atrule">tag</span><span class="token punctuation">:</span> v1.2.0
-  <span class="token key atrule">pullPolicy</span><span class="token punctuation">:</span> IfNotPresent
-
-<span class="token comment" spellcheck="true">## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/</span>
-<span class="token comment" spellcheck="true">## If you set enabled as "True", you need :</span>
-<span class="token comment" spellcheck="true">## - create a pv which above 10Gi and has same namespace with loki</span>
-<span class="token comment" spellcheck="true">## - keep storageClassName same with below setting</span>
-<span class="token key atrule">persistence</span><span class="token punctuation">:</span>
-  <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-  <span class="token key atrule">accessModes</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> ReadWriteOnce
-  <span class="token key atrule">size</span><span class="token punctuation">:</span> 10Gi
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
-  <span class="token comment" spellcheck="true"># subPath: ""</span>
-  <span class="token comment" spellcheck="true"># existingClaim:</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置循环删除"><a href="#配置循环删除" class="headerlink" title="配置循环删除"></a>配置循环删除</h3><ul>
-<li>参考[<a target="_blank" rel="noopener" href="https://github.com/grafana/loki/blob/v1.5.0/docs/operations/storage/retention.md]">https://github.com/grafana/loki/blob/v1.5.0/docs/operations/storage/retention.md]</a></li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">table_manager</span><span class="token punctuation">:</span>
-    <span class="token key atrule">retention_deletes_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-    <span class="token comment" spellcheck="true"># 注意是168的倍数:168 * 4</span>
-    <span class="token key atrule">retention_period</span><span class="token punctuation">:</span> 672h
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置持久化"><a href="#配置持久化" class="headerlink" title="配置持久化"></a>配置持久化</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">persistence</span><span class="token punctuation">:</span>
-  <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">accessModes</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> ReadWriteOnce
-  <span class="token key atrule">size</span><span class="token punctuation">:</span> 100Gi
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
-  <span class="token key atrule">existingClaim</span><span class="token punctuation">:</span> loki<span class="token punctuation">-</span>pvc
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>创建<code>PVC</code></p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">kind</span><span class="token punctuation">:</span> PersistentVolumeClaim
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> loki<span class="token punctuation">-</span>pvc
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> monitoring
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">accessModes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> ReadWriteOnce
-  <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-    <span class="token key atrule">requests</span><span class="token punctuation">:</span>
-        <span class="token key atrule">storage</span><span class="token punctuation">:</span> 100Gi
-  <span class="token key atrule">storageClassName</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>client
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 卸载重新安装</span>
-helm delete --purge loki
-helm <span class="token function">install</span> loki/loki --name loki --namespace monitoring -f loki.yaml
-
-<span class="token comment" spellcheck="true"># 升级命令</span>
-helm upgrade loki --values loki.yaml loki/loki
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1001,14 +995,14 @@ helm upgrade loki --values loki.yaml loki/loki
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">329</span>
+          <span class="site-state-item-count">330</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-count">45</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
