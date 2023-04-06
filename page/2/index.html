@@ -196,6 +196,119 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-ji-cheng-kafka/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/springboot-ji-cheng-kafka/" class="post-title-link" itemprop="url">springboot集成kafka</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-03-02 15:11:06" itemprop="dateCreated datePublished" datetime="2023-03-02T15:11:06+08:00">2023-03-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="引入依赖"><a href="#引入依赖" class="headerlink" title="引入依赖"></a>引入依赖</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.kafka<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-kafka<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spring</span><span class="token punctuation">:</span>
+  <span class="token key atrule">kafka</span><span class="token punctuation">:</span>
+    <span class="token key atrule">bootstrap-servers</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span>KAFKA_SERVERS<span class="token punctuation">:</span>localhost<span class="token punctuation">:</span><span class="token number">9092</span><span class="token punctuation">}</span>
+    <span class="token key atrule">producer</span><span class="token punctuation">:</span>
+      <span class="token key atrule">retries</span><span class="token punctuation">:</span> <span class="token number">0</span>
+      <span class="token key atrule">acks</span><span class="token punctuation">:</span> <span class="token number">1</span>
+      <span class="token key atrule">batch-size</span><span class="token punctuation">:</span> <span class="token number">100000</span>
+      <span class="token key atrule">buffer-memory</span><span class="token punctuation">:</span> <span class="token number">33554432</span>
+      <span class="token key atrule">key-serializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringSerializer
+      <span class="token key atrule">value-serializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringSerializer
+    <span class="token key atrule">consumer</span><span class="token punctuation">:</span>
+    <span class="token comment" spellcheck="true"># 默认的group名称</span>
+      <span class="token key atrule">group-id</span><span class="token punctuation">:</span> service<span class="token punctuation">-</span>group
+    <span class="token comment" spellcheck="true">#   关闭自动提交</span>
+      <span class="token key atrule">enable-auto-commit</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+      <span class="token key atrule">auto-commit-interval</span><span class="token punctuation">:</span> <span class="token number">1000</span>
+      <span class="token key atrule">auto-offset-reset</span><span class="token punctuation">:</span> latest
+      <span class="token key atrule">max-poll-records</span><span class="token punctuation">:</span> <span class="token number">1000</span>
+      <span class="token key atrule">key-deserializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringDeserializer
+      <span class="token key atrule">value-deserializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringDeserializer
+    <span class="token key atrule">listener</span><span class="token punctuation">:</span>
+      <span class="token key atrule">ack-mode</span><span class="token punctuation">:</span> manual_immediate
+      <span class="token key atrule">missing-topics-fatal</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> batch
+<span class="token comment" spellcheck="true"># 自定义配置监听的topic</span>
+<span class="token key atrule">log</span><span class="token punctuation">:</span>
+  <span class="token key atrule">topics</span><span class="token punctuation">:</span> topic1<span class="token punctuation">,</span>topic2<span class="token punctuation">,</span>topic3
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="java"><a href="#java" class="headerlink" title="java"></a>java</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@KafkaListener</span><span class="token punctuation">(</span>topics <span class="token operator">=</span><span class="token string">"#{'${log.topics}'.split(',')}"</span><span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true">// public void processMessage(List&lt;String> records, Acknowledgment ack) {</span>
+<span class="token comment" spellcheck="true">// public void processMessage(ConsumerRecord&lt;?, ?> records, Acknowledgment ack) {</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">processMessage</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>ConsumerRecord<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token punctuation">,</span> <span class="token operator">?</span><span class="token operator">>></span> records<span class="token punctuation">,</span> Acknowledgment ack<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>records<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>records<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 手动提交</span>
+        ack<span class="token punctuation">.</span><span class="token function">acknowledge</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/loki-cai-ji-docker-ri-zhi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -796,136 +909,6 @@ curl --cacert ./ca.crt --cert ./client.crt --key ./client.key https://foo.bar.co
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-zheng-shu-shuang-xiang-ren-zheng/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/nginx-zheng-shu-shuang-xiang-ren-zheng/" class="post-title-link" itemprop="url">nginx证书双向认证</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-11-11 10:47:23" itemprop="dateCreated datePublished" datetime="2022-11-11T10:47:23+08:00">2022-11-11</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/nginx/" itemprop="url" rel="index"><span itemprop="name">nginx</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>nginx 证书双向认证是认证<code>客户端证书</code>是否是配置的<code>根证书</code>颁发的.</p>
-<h3 id="创建根证书"><a href="#创建根证书" class="headerlink" title="创建根证书"></a>创建根证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true">#创建根证书私钥：</span>
-openssl genrsa -out ca.key 1024
-<span class="token comment" spellcheck="true">#创建根证书请求文件：</span>
-openssl req -new -out ca.csr -key ca.key
-<span class="token comment" spellcheck="true">#创建根证书：</span>
-openssl x509 -req -in ca.csr -out ca.crt -signkey ca.key -CAcreateserial -days 3650
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>ca.crt : 签名有效期为10年的根证书</li>
-<li>ca.key: 根证书私钥文件</li>
-<li>ca.csr: 根证书请求文件</li>
-</ul>
-<h3 id="根据根证书创建服务端证书"><a href="#根据根证书创建服务端证书" class="headerlink" title="根据根证书创建服务端证书"></a>根据根证书创建服务端证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true">#生成服务器端证书私钥：</span>
-openssl genrsa -out server.key 1024
-<span class="token comment" spellcheck="true">#生成服务器证书请求文件，过程和注意事项参考根证书，本节不详述：</span>
-openssl req -new -out server.csr -key server.key
-<span class="token comment" spellcheck="true">#生成服务器端公钥证书</span>
-openssl x509 -req -in server.csr -out server.crt -signkey server.key -CA ca.crt -CAkey ca.key -CAcreateserial -days 3650
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="根据根证书创建客户端证书"><a href="#根据根证书创建客户端证书" class="headerlink" title="根据根证书创建客户端证书"></a>根据根证书创建客户端证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true">#生成客户端证书秘钥：</span>
-openssl genrsa -out client.key 1024
-<span class="token comment" spellcheck="true">#生成客户端证书请求文件，过程和注意事项参考根证书，本节不详述：</span>
-openssl req -new -out client.csr -key client.key
-<span class="token comment" spellcheck="true">#生客户端证书</span>
-openssl x509 -req -in client.csr -out client.crt -signkey client.key -CA ca.crt -CAkey ca.key -CAcreateserial -days 3650
-<span class="token comment" spellcheck="true">#生客户端p12格式证书，需要输入一个密码，比如123456</span>
-openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>client.p12：客户端 p12 格式，这个证书文件包含客户端的公钥和私钥，主要用来给浏览器或 postman 访问使用.</p>
-</blockquote>
-<h3 id="nginx配置"><a href="#nginx配置" class="headerlink" title="nginx配置"></a>nginx配置</h3><pre class="line-numbers language-conf"><code class="language-conf">server {
-    listen       443 ssl;
-    server_name  www.yourdomain.com;# 无域名可填写ip
-    ssl                  on;  
-    ssl_certificate      /data/sslKey/server.crt;  #server公钥证书
-    ssl_certificate_key  /data/sslKey/server.key;  #server私钥
-    ssl_client_certificate /data/sslKey/ca.crt;  #根证书，可以验证所有它颁发的客户端证书
-    ssl_verify_client on;  #开启客户端证书验证  
-    ssl_verify_depth 1; #如果客户端证书不是由根证书直接颁发,需要开启此参数
-
-    location / {
-        proxy_pass http://127.0.0.1:8080/;
-    }
-    
-    #location / {
-    #    root   html;
-    #    index  index.html index.htm;
-    # }
-}
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="访问测试"><a href="#访问测试" class="headerlink" title="访问测试"></a>访问测试</h3><ul>
-<li>curl 带证书访问</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">   curl --cert ./client.crt --key ./client.key https://foo.bar.com
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ul>
-<li>postman</li>
-</ul>
-<ol>
-<li>设置 <code>General</code> 中先把 <code>SSL certificate verification</code> 关掉.</li>
-<li><code>Certificates</code> 中选择<code>Add Certificates</code>,<code>PFX file</code> 配置客户端 <code>p12</code> 文件和<code>密码</code>.</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -997,7 +980,7 @@ openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">331</span>
+          <span class="site-state-item-count">332</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
