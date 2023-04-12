@@ -295,6 +295,100 @@ docker run --log-driver<span class="token operator">=</span>loki \
 <blockquote>
 <p>更多如<code>docker-compose</code>的用法参考<a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/clients/docker-driver/configuration/">官网文档</a>.</p>
 </blockquote>
+<ul>
+<li>loki.yaml</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">auth_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+
+<span class="token key atrule">server</span><span class="token punctuation">:</span>
+  <span class="token key atrule">http_listen_port</span><span class="token punctuation">:</span> <span class="token number">3100</span>
+  <span class="token key atrule">grpc_listen_port</span><span class="token punctuation">:</span> <span class="token number">9095</span>
+
+<span class="token key atrule">ingester</span><span class="token punctuation">:</span>
+  <span class="token key atrule">chunk_idle_period</span><span class="token punctuation">:</span> 3m
+  <span class="token key atrule">chunk_block_size</span><span class="token punctuation">:</span> <span class="token number">262144</span>
+  <span class="token key atrule">chunk_retain_period</span><span class="token punctuation">:</span> 1m
+  <span class="token key atrule">max_transfer_retries</span><span class="token punctuation">:</span> <span class="token number">0</span>
+  <span class="token key atrule">lifecycler</span><span class="token punctuation">:</span>
+    <span class="token key atrule">ring</span><span class="token punctuation">:</span>
+      <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
+        <span class="token key atrule">store</span><span class="token punctuation">:</span> inmemory
+      <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
+
+<span class="token key atrule">limits_config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">reject_old_samples</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">reject_old_samples_max_age</span><span class="token punctuation">:</span> 168h
+
+<span class="token key atrule">common</span><span class="token punctuation">:</span>
+  <span class="token key atrule">path_prefix</span><span class="token punctuation">:</span> /tmp/loki
+  <span class="token key atrule">storage</span><span class="token punctuation">:</span>
+    <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
+      <span class="token key atrule">chunks_directory</span><span class="token punctuation">:</span> /tmp/loki/chunks
+      <span class="token key atrule">rules_directory</span><span class="token punctuation">:</span> /tmp/loki/rules
+  <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
+  <span class="token key atrule">ring</span><span class="token punctuation">:</span>
+    <span class="token key atrule">instance_addr</span><span class="token punctuation">:</span> 127.0.0.1
+    <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
+      <span class="token key atrule">store</span><span class="token punctuation">:</span> inmemory
+
+<span class="token key atrule">storage_config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">boltdb_shipper</span><span class="token punctuation">:</span>
+    <span class="token key atrule">active_index_directory</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>active
+    <span class="token key atrule">cache_location</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>cache
+    <span class="token key atrule">cache_ttl</span><span class="token punctuation">:</span> 24h
+    <span class="token key atrule">shared_store</span><span class="token punctuation">:</span> filesystem
+  <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
+    <span class="token key atrule">directory</span><span class="token punctuation">:</span> /tmp/loki/chunks
+
+<span class="token key atrule">chunk_store_config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">max_look_back_period</span><span class="token punctuation">:</span> 672h
+
+<span class="token key atrule">table_manager</span><span class="token punctuation">:</span>
+  <span class="token key atrule">retention_deletes_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">retention_period</span><span class="token punctuation">:</span> 672h
+
+<span class="token key atrule">compactor</span><span class="token punctuation">:</span>
+  <span class="token key atrule">working_directory</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>compactor
+  <span class="token key atrule">shared_store</span><span class="token punctuation">:</span> filesystem
+  <span class="token key atrule">retention_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">retention_delete_delay</span><span class="token punctuation">:</span> 2h
+
+<span class="token key atrule">query_range</span><span class="token punctuation">:</span>
+  <span class="token key atrule">results_cache</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cache</span><span class="token punctuation">:</span>
+      <span class="token key atrule">embedded_cache</span><span class="token punctuation">:</span>
+        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+        <span class="token key atrule">max_size_mb</span><span class="token punctuation">:</span> <span class="token number">200</span>
+
+<span class="token key atrule">querier</span><span class="token punctuation">:</span>
+  <span class="token key atrule">query_timeout</span><span class="token punctuation">:</span> 2m
+
+<span class="token key atrule">schema_config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">configs</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token datetime number">2020-10-24</span>
+      <span class="token key atrule">store</span><span class="token punctuation">:</span> boltdb<span class="token punctuation">-</span>shipper
+      <span class="token key atrule">object_store</span><span class="token punctuation">:</span> filesystem
+      <span class="token key atrule">schema</span><span class="token punctuation">:</span> v11
+      <span class="token key atrule">index</span><span class="token punctuation">:</span>
+        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> index_
+        <span class="token key atrule">period</span><span class="token punctuation">:</span> 24h
+
+<span class="token comment" spellcheck="true"># ruler:</span>
+<span class="token comment" spellcheck="true">#   alertmanager_url: http://localhost:9093</span>
+
+<span class="token comment" spellcheck="true"># By default, Loki will send anonymous, but uniquely-identifiable usage and configuration</span>
+<span class="token comment" spellcheck="true"># analytics to Grafana Labs. These statistics are sent to https://stats.grafana.org/</span>
+<span class="token comment" spellcheck="true">#</span>
+<span class="token comment" spellcheck="true"># Statistics help us better understand how Loki is used, and they show us performance</span>
+<span class="token comment" spellcheck="true"># levels for most users. This helps us prioritize features and documentation.</span>
+<span class="token comment" spellcheck="true"># For more information on what's sent, look at</span>
+<span class="token comment" spellcheck="true"># https://github.com/grafana/loki/blob/main/pkg/usagestats/stats.go</span>
+<span class="token comment" spellcheck="true"># Refer to the buildReport method to see what goes into a report.</span>
+<span class="token comment" spellcheck="true">#</span>
+<span class="token comment" spellcheck="true"># If you would like to disable reporting, uncomment the following lines:</span>
+<span class="token key atrule">analytics</span><span class="token punctuation">:</span>
+ <span class="token key atrule">reporting_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
     </div>
 
@@ -395,14 +489,14 @@ docker run --log-driver<span class="token operator">=</span>loki \
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">332</span>
+          <span class="site-state-item-count">333</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">45</span>
+        <span class="site-state-item-count">46</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
