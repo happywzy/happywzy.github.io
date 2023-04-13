@@ -196,6 +196,210 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-api/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/influxdb-api/" class="post-title-link" itemprop="url">influxdb-API</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-25 16:28:39" itemprop="dateCreated datePublished" datetime="2020-02-25T16:28:39+08:00">2020-02-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="支持的API-client"><a href="#支持的API-client" class="headerlink" title="支持的API client"></a>支持的API client</h3><p><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/tools/api_client_libraries/">参考官网</a></p>
+<h3 id="http"><a href="#http" class="headerlink" title="http"></a>http</h3><h4 id="创建数据库"><a href="#创建数据库" class="headerlink" title="创建数据库"></a>创建数据库</h4><pre><code>curl -i -XPOST http://localhost:8086/query --data-urlencode "q=CREATE DATABASE mydb"
+</code></pre>
+<h4 id="写入数据"><a href="#写入数据" class="headerlink" title="写入数据"></a>写入数据</h4><pre><code>curl -i -XPOST 'http://localhost:8086/write?db=mydb' --data-binary 'cpu_load_short,host=server01,region=us-west value=0.64 1434055562000000000'
+</code></pre>
+<h4 id="配置gzip压缩"><a href="#配置gzip压缩" class="headerlink" title="配置gzip压缩"></a>配置gzip压缩</h4><p>InfluxDB支持gzip压缩。要减少网络流量，请考虑以下选项：</p>
+<ul>
+<li>要接受来自InfluxDB的压缩数据，请将Accept-Encoding: gzip标头添加到InfluxDB API请求中。</li>
+<li>要在将数据发送到InfluxDB之前压缩数据，请将Content-Encoding: gzip标头添加到InfluxDB API请求中。</li>
+</ul>
+<h4 id="批量写入"><a href="#批量写入" class="headerlink" title="批量写入"></a>批量写入</h4><pre><code>curl -i -XPOST 'http://localhost:8086/write?db=mydb' --data-binary 'cpu_load_short,host=server02 value=0.67
+cpu_load_short,host=server02,region=us-west value=0.55 1422568543702900257
+cpu_load_short,direction=in,host=server01,region=us-west value=2.0 1422568543702900257
+</code></pre>
+<h4 id="从文件写入"><a href="#从文件写入" class="headerlink" title="从文件写入"></a>从文件写入</h4><p>通过传递<code>@filename</code>到文件来写入文件中的点curl。文件中的数据应遵循InfluxDB行协议语法。</p>
+<p>格式正确的文件（cpu_data.txt）的示例：</p>
+<pre><code>cpu_load_short,host=server02 value=0.67
+cpu_load_short,host=server02,region=us-west value=0.55 1422568543702900257
+cpu_load_short,direction=in,host=server01,region=us-west value=2.0 1422568543702900257
+</code></pre>
+<p>写入数据<code>cpu_data.txt</code>到<code>mydb</code>与数据库：</p>
+<pre><code>curl -i -XPOST 'http://localhost:8086/write?db=mydb' --data-binary @cpu_data.txt
+</code></pre>
+<blockquote>
+<p>注意：如果您的数据文件具有5,000个以上的点，则可能有必要将该文件拆分为几个文件，以便将数据批量写入InfluxDB。默认情况下，HTTP请求在五秒钟后超时。超时后，InfluxDB仍将尝试写入这些点，但是不会确认它们已成功写入。</p>
+</blockquote>
+<h4 id="HTTP响应摘要"><a href="#HTTP响应摘要" class="headerlink" title="HTTP响应摘要"></a>HTTP响应摘要</h4><ul>
+<li>2xx：如果收到您的写请求HTTP 204 No Content，那就成功了！</li>
+<li>4xx：InfluxDB无法理解该请求。</li>
+<li>5xx：系统过载或严重损坏</li>
+</ul>
+<h4 id="查询数据"><a href="#查询数据" class="headerlink" title="查询数据"></a>查询数据</h4><pre><code>curl -G 'http://localhost:8086/query?pretty=true' --data-urlencode "db=mydb" --data-urlencode "q=SELECT \"value\" FROM \"cpu_load_short\" WHERE \"region\"='us-west'"
+</code></pre>
+<p>InfluxDB返回JSON。您的查询结果将显示在”results”数组中。如果发生错误，InfluxDB会设置一个”error”包含错误说明的密钥。</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+    <span class="token property">"results"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+        <span class="token punctuation">{</span>
+            <span class="token property">"statement_id"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+            <span class="token property">"series"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                <span class="token punctuation">{</span>
+                    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"cpu_load_short"</span><span class="token punctuation">,</span>
+                    <span class="token property">"columns"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                        <span class="token string">"time"</span><span class="token punctuation">,</span>
+                        <span class="token string">"value"</span>
+                    <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                    <span class="token property">"values"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                        <span class="token punctuation">[</span>
+                            <span class="token string">"2015-01-29T21:55:43.702900257Z"</span><span class="token punctuation">,</span>
+                            <span class="token number">2</span>
+                        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                        <span class="token punctuation">[</span>
+                            <span class="token string">"2015-01-29T21:55:43.702900257Z"</span><span class="token punctuation">,</span>
+                            <span class="token number">0.55</span>
+                        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                        <span class="token punctuation">[</span>
+                            <span class="token string">"2015-06-11T20:46:02Z"</span><span class="token punctuation">,</span>
+                            <span class="token number">0.64</span>
+                        <span class="token punctuation">]</span>
+                    <span class="token punctuation">]</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">]</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：附加pretty=true到URL会启用精美打印的JSON输出。尽管这对于调试或在使用诸如之类的工具直接查询时很有用curl，但不建议用于生产环境，因为它会消耗不必要的网络带宽。</p>
+</blockquote>
+<h4 id="多个查询"><a href="#多个查询" class="headerlink" title="多个查询"></a>多个查询</h4><p>通过单个API调用将多个查询发送到InfluxDB。只需使用分号分隔每个查询，例如：</p>
+<pre><code>curl -G 'http://localhost:8086/query?pretty=true' --data-urlencode "db=mydb" --data-urlencode "q=SELECT \"value\" FROM \"cpu_load_short\" WHERE \"region\"='us-west';SELECT count(\"value\") FROM \"cpu_load_short\" WHERE \"region\"='us-west'"
+</code></pre>
+<p>返回：</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+    <span class="token property">"results"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+        <span class="token punctuation">{</span>
+            <span class="token property">"statement_id"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+            <span class="token property">"series"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                <span class="token punctuation">{</span>
+                    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"cpu_load_short"</span><span class="token punctuation">,</span>
+                    <span class="token property">"columns"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                        <span class="token string">"time"</span><span class="token punctuation">,</span>
+                        <span class="token string">"value"</span>
+                    <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                    <span class="token property">"values"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                        <span class="token punctuation">[</span>
+                            <span class="token string">"2015-01-29T21:55:43.702900257Z"</span><span class="token punctuation">,</span>
+                            <span class="token number">2</span>
+                        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                        <span class="token punctuation">[</span>
+                            <span class="token string">"2015-01-29T21:55:43.702900257Z"</span><span class="token punctuation">,</span>
+                            <span class="token number">0.55</span>
+                        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                        <span class="token punctuation">[</span>
+                            <span class="token string">"2015-06-11T20:46:02Z"</span><span class="token punctuation">,</span>
+                            <span class="token number">0.64</span>
+                        <span class="token punctuation">]</span>
+                    <span class="token punctuation">]</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">]</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">{</span>
+            <span class="token property">"statement_id"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+            <span class="token property">"series"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                <span class="token punctuation">{</span>
+                    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"cpu_load_short"</span><span class="token punctuation">,</span>
+                    <span class="token property">"columns"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                        <span class="token string">"time"</span><span class="token punctuation">,</span>
+                        <span class="token string">"count"</span>
+                    <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                    <span class="token property">"values"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+                        <span class="token punctuation">[</span>
+                            <span class="token string">"1970-01-01T00:00:00Z"</span><span class="token punctuation">,</span>
+                            <span class="token number">3</span>
+                        <span class="token punctuation">]</span>
+                    <span class="token punctuation">]</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">]</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="java"><a href="#java" class="headerlink" title="java"></a>java</h3><p><a target="_blank" rel="noopener" href="https://github.com/influxdata/influxdb-java">influxdb-java</a></p>
+<blockquote>
+<ul>
+<li>Java 1.8+ (tested with jdk8 and jdk11)</li>
+<li>Maven 3.0+ (tested with maven 3.5.0)</li>
+</ul>
+</blockquote>
+<pre class="line-numbers language-maven"><code class="language-maven"><dependency>
+  <groupId>org.influxdb</groupId>
+  <artifactId>influxdb-java</artifactId>
+  <version>2.17</version>
+</dependency>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-gradle"><code class="language-gradle">compile 'org.influxdb:influxdb-java:2.17'
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="python"><a href="#python" class="headerlink" title="python"></a>python</h3><p><a target="_blank" rel="noopener" href="https://github.com/influxdb/influxdb-python">influxdb-python</a></p>
+<h3 id="go"><a href="#go" class="headerlink" title="go"></a>go</h3><p><a target="_blank" rel="noopener" href="https://github.com/influxdata/influxdb1-client">influxdb1-client</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-shi-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -756,125 +960,6 @@ unzip kapacitor-1.5.4_windows_amd64.zip
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/linux-xi-tong-ci-pan-shi-yong-qing-kuang-xiang-guan-ming-ling/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/linux-xi-tong-ci-pan-shi-yong-qing-kuang-xiang-guan-ming-ling/" class="post-title-link" itemprop="url">Linux系统磁盘使用情况相关命令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-01-08 11:16:42" itemprop="dateCreated datePublished" datetime="2020-01-08T11:16:42+08:00">2020-01-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="df命令"><a href="#df命令" class="headerlink" title="df命令"></a>df命令</h3><p>Linux df命令用于显示目前在Linux系统上的文件系统的磁盘使用情况统计。</p>
-<pre><code>df -h
-</code></pre>
-<pre><code>df -h /home
-</code></pre>
-<pre><code>df --total
-</code></pre>
-<h3 id="du命令"><a href="#du命令" class="headerlink" title="du命令"></a>du命令</h3><p>Linux du命令用于显示目录或文件的大小。<br>du会显示指定的目录或文件所占用的磁盘空间。</p>
-<ul>
-<li>查看当前目录下文件夹所占磁盘大小</li>
-</ul>
-<pre><code>du
-</code></pre>
-<ul>
-<li>查看当前目录下文件夹所占磁盘大小，并格式单位</li>
-</ul>
-<pre><code>du -h
-</code></pre>
-<ul>
-<li>查看当前目录下文件夹所占磁盘大小，并显示时间</li>
-</ul>
-<pre><code>du --time
-</code></pre>
-<ul>
-<li>查看文件占用空间</li>
-</ul>
-<pre><code>du test.log
-</code></pre>
-<ul>
-<li>查看文件占用空间</li>
-</ul>
-<pre><code>du test
-</code></pre>
-<ul>
-<li>以M为单位</li>
-</ul>
-<pre><code>du -m
-</code></pre>
-<ul>
-<li>以K为单位</li>
-</ul>
-<pre><code>du -k
-</code></pre>
-<ul>
-<li>只显示总计，不显示子目录</li>
-</ul>
-<pre><code>du -s
-</code></pre>
-<ul>
-<li>设置目录层数</li>
-</ul>
-<pre><code>du --max-depth=1
-</code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -946,14 +1031,14 @@ unzip kapacitor-1.5.4_windows_amd64.zip
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">333</span>
+          <span class="site-state-item-count">334</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">46</span>
+        <span class="site-state-item-count">48</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
