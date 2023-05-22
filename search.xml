@@ -31610,4 +31610,62 @@ helm <span class="token function">install</span> nfs-client nfs-subdir-external-
         <category>java</category>
       </categories>
   </entry>
+  <entry>
+    <title>批量备份k8s资源的脚本</title>
+    <url>/pi-liang-bei-fen-k8s-zi-yuan-de-jiao-ben/</url>
+    <content><![CDATA[<p>使用方式：执行时传入参数namespace,则会将该namespace下所有资源通过yaml方式备份</p>
+<pre class="line-numbers language-bash"><code class="language-bash">NAMESPACE<span class="token operator">=</span><span class="token variable">$1</span>
+
+deployments<span class="token operator">=</span><span class="token punctuation">$(</span>kubectl get deployments -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> <span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'NR>1  {print <span class="token variable">$1</span>}'</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> deployment <span class="token keyword">in</span> <span class="token variable">$deployments</span><span class="token punctuation">;</span> <span class="token keyword">do</span>
+    <span class="token function">mkdir</span> -p <span class="token variable">$NAMESPACE</span>/deploy
+    output_file<span class="token operator">=</span><span class="token string">"<span class="token variable">$NAMESPACE</span>/deploy/<span class="token variable">$deployment</span>.yaml"</span>
+    kubectl get deployment <span class="token string">"<span class="token variable">$deployment</span>"</span> -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> -o yaml <span class="token operator">></span> <span class="token string">"<span class="token variable">$output_file</span>"</span>
+    <span class="token keyword">echo</span> <span class="token string">"Downloaded <span class="token variable">$deployment</span>.yaml"</span>
+<span class="token keyword">done</span>
+
+
+services<span class="token operator">=</span><span class="token punctuation">$(</span>kubectl get <span class="token function">service</span> -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> <span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'NR>1  {print <span class="token variable">$1</span>}'</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> <span class="token function">service</span> <span class="token keyword">in</span> <span class="token variable">$services</span><span class="token punctuation">;</span> <span class="token keyword">do</span>
+    <span class="token function">mkdir</span> -p <span class="token variable">$NAMESPACE</span>/service
+    output_file<span class="token operator">=</span><span class="token string">"<span class="token variable">$NAMESPACE</span>/service/<span class="token variable">$service</span>.yaml"</span>
+    kubectl get <span class="token function">service</span> <span class="token string">"<span class="token variable">$service</span>"</span> -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> -o yaml <span class="token operator">></span> <span class="token string">"<span class="token variable">$output_file</span>"</span>
+    <span class="token keyword">echo</span> <span class="token string">"Downloaded <span class="token variable">$service</span>.yaml"</span>
+<span class="token keyword">done</span>
+
+
+services<span class="token operator">=</span><span class="token punctuation">$(</span>kubectl get ConfigMap -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> <span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'NR>1  {print <span class="token variable">$1</span>}'</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> <span class="token function">service</span> <span class="token keyword">in</span> <span class="token variable">$services</span><span class="token punctuation">;</span> <span class="token keyword">do</span>
+    <span class="token function">mkdir</span> -p <span class="token variable">$NAMESPACE</span>/cm 
+    output_file<span class="token operator">=</span><span class="token string">"<span class="token variable">$NAMESPACE</span>/cm/<span class="token variable">$service</span>.yaml"</span>
+    kubectl get ConfigMap <span class="token string">"<span class="token variable">$service</span>"</span> -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> -o yaml <span class="token operator">></span> <span class="token string">"<span class="token variable">$output_file</span>"</span>
+    <span class="token keyword">echo</span> <span class="token string">"Downloaded <span class="token variable">$service</span>.yaml"</span>
+<span class="token keyword">done</span>
+
+
+
+services<span class="token operator">=</span><span class="token punctuation">$(</span>kubectl get Secret -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> <span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'NR>1  {print <span class="token variable">$1</span>}'</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> <span class="token function">service</span> <span class="token keyword">in</span> <span class="token variable">$services</span><span class="token punctuation">;</span> <span class="token keyword">do</span>
+    <span class="token function">mkdir</span> -p <span class="token variable">$NAMESPACE</span>/secret
+    output_file<span class="token operator">=</span><span class="token string">"<span class="token variable">$NAMESPACE</span>/secret/<span class="token variable">$service</span>.yaml"</span>
+    kubectl get Secret <span class="token string">"<span class="token variable">$service</span>"</span> -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> -o yaml <span class="token operator">></span> <span class="token string">"<span class="token variable">$output_file</span>"</span>
+    <span class="token keyword">echo</span> <span class="token string">"Downloaded <span class="token variable">$service</span>.yaml"</span>
+<span class="token keyword">done</span>
+
+
+services<span class="token operator">=</span><span class="token punctuation">$(</span>kubectl get ingress -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> <span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'NR>1  {print <span class="token variable">$1</span>}'</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> <span class="token function">service</span> <span class="token keyword">in</span> <span class="token variable">$services</span><span class="token punctuation">;</span> <span class="token keyword">do</span>
+    <span class="token function">mkdir</span> -p <span class="token variable">$NAMESPACE</span>/ingress
+    output_file<span class="token operator">=</span><span class="token string">"<span class="token variable">$NAMESPACE</span>/ingress/<span class="token variable">$service</span>.yaml"</span>
+    kubectl get Secret <span class="token string">"<span class="token variable">$service</span>"</span> -n <span class="token string">"<span class="token variable">$NAMESPACE</span>"</span> -o yaml <span class="token operator">></span> <span class="token string">"<span class="token variable">$output_file</span>"</span>
+    <span class="token keyword">echo</span> <span class="token string">"Downloaded <span class="token variable">$service</span>.yaml"</span>
+<span class="token keyword">done</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+  </entry>
 </search>

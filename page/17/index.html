@@ -196,6 +196,132 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ntp-fu-wu-qi-da-jian-yu-ke-hu-duan-tong-bu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ntp-fu-wu-qi-da-jian-yu-ke-hu-duan-tong-bu/" class="post-title-link" itemprop="url">NTP服务器搭建与客户端同步</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-01 17:43:17" itemprop="dateCreated datePublished" datetime="2021-07-01T17:43:17+08:00">2021-07-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="NTP安装"><a href="#NTP安装" class="headerlink" title="NTP安装"></a>NTP安装</h3><blockquote>
+<p>服务端和客户端都需要安装,需关闭防火墙或开通端口</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装</span>
+yum <span class="token function">install</span> ntp ntpdate -y
+
+<span class="token comment" spellcheck="true"># 设置开机自启动</span>
+systemctl <span class="token function">enable</span> ntpd
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="NTP服务端"><a href="#NTP服务端" class="headerlink" title="NTP服务端"></a>NTP服务端</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改配置</span>
+vim /etc/ntp.conf
+
+<span class="token comment" spellcheck="true"># 注释默认的,改成本地IP</span>
+<span class="token comment" spellcheck="true">#server 0.centos.pool.ntp.org iburst</span>
+<span class="token comment" spellcheck="true">#server 1.centos.pool.ntp.org iburst</span>
+<span class="token comment" spellcheck="true">#server 2.centos.pool.ntp.org iburst</span>
+<span class="token comment" spellcheck="true">#server 3.centos.pool.ntp.org iburst</span>
+server 127.0.0.1 iburst
+
+<span class="token comment" spellcheck="true"># 重启服务</span>
+systemctl restart ntpd
+systemctl status ntpd
+<span class="token comment" spellcheck="true"># 查看同步情况</span>
+ntpq -p
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="NTP客户端"><a href="#NTP客户端" class="headerlink" title="NTP客户端"></a>NTP客户端</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改配置</span>
+vim /etc/ntp.conf
+
+<span class="token comment" spellcheck="true"># 注释掉默认的</span>
+<span class="token comment" spellcheck="true">#server 0.centos.pool.ntp.org iburst</span>
+<span class="token comment" spellcheck="true">#server 1.centos.pool.ntp.org iburst</span>
+<span class="token comment" spellcheck="true">#server 2.centos.pool.ntp.org iburst</span>
+<span class="token comment" spellcheck="true">#server 3.centos.pool.ntp.org iburst</span>
+<span class="token comment" spellcheck="true">#修改为本地的ntpd Server服务器</span>
+server 192.168.3.13 iburst
+<span class="token comment" spellcheck="true">#配置允许上游时间服务器主动修改本机的时间</span>
+restrict 192.168.3.13 nomodify notrap noquery
+
+<span class="token comment" spellcheck="true"># 重启服务</span>
+systemctl restart ntpd
+systemctl status ntpd
+<span class="token comment" spellcheck="true"># 查看同步情况</span>
+ntpq -p
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="timedatectl"><a href="#timedatectl" class="headerlink" title="timedatectl"></a>timedatectl</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># timedatectl显示synchronized一直处于no状态</span>
+<span class="token punctuation">[</span>root@node2 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># timedatectl </span>
+      Local time: Mon 2021-07-12 10:27:02 CST
+  Universal time: Mon 2021-07-12 02:27:02 UTC
+        RTC time: Mon 2021-07-12 02:27:02
+       Time zone: Asia/Shanghai <span class="token punctuation">(</span>CST, +0800<span class="token punctuation">)</span>
+     NTP enabled: <span class="token function">yes</span>
+NTP synchronized: no
+ RTC <span class="token keyword">in</span> local TZ: no
+      DST active: n/a
+
+<span class="token comment" spellcheck="true"># 解决办法,等一会儿就好了</span>
+systemctl stop ntpd
+ntpd -gq
+systemctl start ntpd
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/centos-ci-pan-fen-qu-yu-gua-zai/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1075,85 +1201,6 @@ CMD <span class="token punctuation">[</span><span class="token string">"./restfu
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-guan-li-gong-ju-dockerfly/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-guan-li-gong-ju-dockerfly/" class="post-title-link" itemprop="url">docker管理工具-dockerfly</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-04-12 13:35:40" itemprop="dateCreated datePublished" datetime="2021-04-12T13:35:40+08:00">2021-04-12</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>dockerfly</code>提供一个<code>web</code>页面，可以非常方便的管理主机上<code>镜像</code>、<code>容器</code>、<code>网络</code>等。</p>
-<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 采用docker部署即可</span>
-docker pull helyho/dockerfly:latest
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h3><ul>
-<li><code>28083</code>：web端口</li>
-<li><code>2735</code>：管理端口</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">docker run --name dockerfly -d -v /var/run/docker.sock:/var/run/docker.sock --restart always -p 2735:2735 -p 28083:28083 helyho/dockerfly
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="访问"><a href="#访问" class="headerlink" title="访问"></a>访问</h3><ul>
-<li><a href="">http://ip:28083</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1225,7 +1272,7 @@ docker pull helyho/dockerfly:latest
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">334</span>
+          <span class="site-state-item-count">335</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

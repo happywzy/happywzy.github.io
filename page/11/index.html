@@ -196,6 +196,151 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-cha-xun/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/elasticsearch-cha-xun/" class="post-title-link" itemprop="url">Elasticsearch查询</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-02 16:21:59" itemprop="dateCreated datePublished" datetime="2021-11-02T16:21:59+08:00">2021-11-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="空查询"><a href="#空查询" class="headerlink" title="空查询"></a>空查询</h3><pre class="line-numbers language-json"><code class="language-json">// 查询所有
+GET /index/_search
+<span class="token punctuation">{</span><span class="token punctuation">}</span>
+// 分页查询
+GET /index/_search
+<span class="token punctuation">{</span>
+  <span class="token property">"from"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+  <span class="token property">"size"</span><span class="token operator">:</span> <span class="token number">2</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="bool联合查询"><a href="#bool联合查询" class="headerlink" title="bool联合查询"></a>bool联合查询</h3><ul>
+<li>must: 文档必须完全匹配条件</li>
+<li>should: should下面会带一个以上的条件，至少满足一个条件</li>
+<li>must_not: 文档必须不匹配条件</li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json">GET /index/_search
+<span class="token punctuation">{</span>
+  <span class="token property">"query"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"bool"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"must_not"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+        <span class="token punctuation">{</span><span class="token property">"match"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+          <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"中国"</span>
+        <span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">{</span>
+          <span class="token property">"match"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"平均"</span>
+          <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">]</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="高级检索"><a href="#高级检索" class="headerlink" title="高级检索"></a>高级检索</h3><pre class="line-numbers language-json"><code class="language-json">// 正则检索
+GET /index/_search
+<span class="token punctuation">{</span>
+  <span class="token property">"query"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"regexp"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"FIELD"</span><span class="token operator">:</span> <span class="token string">"REGEXP"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+// 前缀检索
+GET /index/_search
+<span class="token punctuation">{</span>
+  <span class="token property">"query"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"prefix"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"content"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"value"</span><span class="token operator">:</span> <span class="token string">"美国"</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+// 不分词检索
+GET /index/_search
+<span class="token punctuation">{</span>
+  <span class="token property">"query"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"term"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"content"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"value"</span><span class="token operator">:</span> <span class="token string">"美国"</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+// 通配符检索
+GET /index/_search
+<span class="token punctuation">{</span>
+  <span class="token property">"query"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"wildcard"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"content"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"value"</span><span class="token operator">:</span> <span class="token string">"*天*"</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+// 过滤filter
+// 模糊fuzzy
+// 权重
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-zhong-wen-fen-ci-qi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -757,79 +902,6 @@ ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role mas
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/tdengine-shu-ju-geng-xin/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/tdengine-shu-ju-geng-xin/" class="post-title-link" itemprop="url">TDengine数据更新</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-11-01 09:07:15" itemprop="dateCreated datePublished" datetime="2021-11-01T09:07:15+08:00">2021-11-01</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/TDengine/" itemprop="url" rel="index"><span itemprop="name">TDengine</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="开启数据库更新功能"><a href="#开启数据库更新功能" class="headerlink" title="开启数据库更新功能"></a>开启数据库更新功能</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 创建数据库时使用默认参数，数据库的update属性为0，即不允许数据的更新</span>
-<span class="token keyword">CREATE</span> <span class="token keyword">DATABASE</span> power <span class="token keyword">UPDATE</span> <span class="token number">1</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ul>
-<li>向不支持数据更新的表中写入重复时间戳的数据，后写入的数据会被丢弃;</li>
-<li>向支持数据更新功能的表中，写入重复时间戳的数据时，老的数据会被覆盖.</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -901,7 +973,7 @@ ip           heap.percent ram.percent cpu load_1m load_5m load_15m node.role mas
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">334</span>
+          <span class="site-state-item-count">335</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
