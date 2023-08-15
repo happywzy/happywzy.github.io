@@ -196,6 +196,93 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-suo-yin/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-suo-yin/" class="post-title-link" itemprop="url">mysql索引</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-21 14:33:43" itemprop="dateCreated datePublished" datetime="2020-04-21T14:33:43+08:00">2020-04-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="索引结构——B-树"><a href="#索引结构——B-树" class="headerlink" title="索引结构——B+树"></a>索引结构——B+树</h3><h3 id="回表查询"><a href="#回表查询" class="headerlink" title="回表查询"></a>回表查询</h3><p>InnoDB 引擎中使用的是聚簇索引，其主索引的实现树中的叶子结点存储的是完整的数据记录，而辅助索引中存储的则只是辅助键和主键的值。</p>
+<h3 id="索引覆盖"><a href="#索引覆盖" class="headerlink" title="索引覆盖"></a>索引覆盖</h3><p>如果索引已经包含了所有满足查询需要的数据，这时我们称之为覆盖索引（Covering Index），这时就不再需要回表操作。</p>
+<h3 id="最左匹配"><a href="#最左匹配" class="headerlink" title="最左匹配"></a>最左匹配</h3><p>一个查询可以只使用索引中的一部分，更准确地说是最左侧部分（最左优先），这就是传说中的最左匹配原则。</p>
+<p>即最左优先，如：</p>
+<ul>
+<li>如果有一个 2 列的索引 (col1,col2)，则相当于已经对 (col1)、(col1,col2) 上建立了索引；</li>
+<li>如果有一个 3 列索引 (col1,col2,col3)，则相当于已经对 (col1)、(col1,col2)、(col1,col2,col3) 上建立了索引；但是 (col2,col3) 上并没有。</li>
+</ul>
+<h3 id="索引下推"><a href="#索引下推" class="headerlink" title="索引下推"></a>索引下推</h3><p>对索引中包含的字段先做判断，过滤掉不符合条件的记录，减少回表字数。</p>
+<h3 id="建立索引原则"><a href="#建立索引原则" class="headerlink" title="建立索引原则"></a>建立索引原则</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://tech.meituan.com/2014/06/30/mysql-index.html">原文链接</a></li>
+<li>最左前缀匹配原则，非常重要的原则，mysql会一直向右匹配直到遇到范围查询(<code>&gt;、&lt;、between、like</code>)就停止匹配，比如<code>a = 1 and b = 2 and c &gt; 3 and d = 4</code>如果建立(<code>a,b,c,d</code>)顺序的索引，d是用不到索引的，如果建立(<code>a,b,d,c</code>)的索引则都可以用到，<code>a,b,d</code>的顺序可以任意调整。</li>
+<li><code>=</code>和<code>in</code>可以乱序，比如<code>a = 1 and b = 2 and c = 3</code> 建立(<code>a,b,c</code>)索引可以任意顺序，<code>mysql</code>的查询优化器会帮你优化成索引可以识别的形式。</li>
+<li>尽量选择区分度高的列作为索引，区分度的公式是<code>count(distinct col)/count(*)</code>，表示字段不重复的比例，比例越大我们扫描的记录数越少，<code>唯一键</code>的区分度是1，而一些<code>状态、性别</code>字段可能在大数据面前区分度就是0;</li>
+<li>索引列不能参与计算，保持列<code>干净</code>，比如<code>from_unixtime(create_time) = ’2014-05-29’</code>就不能使用到索引，原因很简单，b+树中存的都是数据表中的字段值，但进行检索时，需要把所有元素都应用函数才能比较，显然成本太大。所以语句应该写成<code>create_time = unix_timestamp(’2014-05-29’)</code></li>
+<li>尽量的扩展索引，不要新建索引。比如表中已经有a的索引，现在要加(a,b)的索引，那么只需要修改原来的索引即可。</li>
+</ul>
+<h3 id="查询优化神器-explain命令"><a href="#查询优化神器-explain命令" class="headerlink" title="查询优化神器 - explain命令"></a>查询优化神器 - explain命令</h3><h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/d0d3de6832b9">https://www.jianshu.com/p/d0d3de6832b9</a></li>
+<li><a target="_blank" rel="noopener" href="https://hoxis.github.io/mysql-zhuanlan-05-high-performance-index.html">https://hoxis.github.io/mysql-zhuanlan-05-high-performance-index.html</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/dom4j-huo-qu-xml-suo-you-jie-dian/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1064,168 +1151,10 @@ call methods.
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-mo-ren-duan-kou-shuo-ming/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/hbase-mo-ren-duan-kou-shuo-ming/" class="post-title-link" itemprop="url">hbase默认端口说明</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-13 11:07:13" itemprop="dateCreated datePublished" datetime="2020-04-13T11:07:13+08:00">2020-04-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <table>
-   <tbody><tr>
-      <td>节点</td>
-      <td>端口号</td>
-      <td>协议</td>
-      <td>使用</td>
-      <td>说明</td>
-   </tr>
-   <tr>
-      <td rowspan="3">zookeeper</td>
-      <td>2181</td>
-      <td></td>
-      <td>zkCli.sh -server zookeeper1:2181</td>
-      <td>客户端接入</td>
-   </tr>
-   <tr>
-      <td>2888</td>
-      <td></td>
-      <td>N/A</td>
-      <td>集群内部通讯</td>
-   </tr>
-      <tr>
-      <td>3888</td>
-      <td></td>
-      <td>N/A</td>
-      <td>集群内部通讯</td>
-   </tr>
-   <tr>
-      <td rowspan="2">HDFS Namenode</td>
-      <td>9000</td>
-      <td>HDFS</td>
-      <td>hdfs dfs -ls hdfs://namenode1:9000/</td>
-      <td>客户端接入</td>
-   </tr>
-   <tr>
-      <td>50070</td>
-      <td>HTTP</td>
-      <td>http://namenode1:50070/</td>
-      <td>集群监控</td>
-   </tr>
-   <tr>
-      <td>HDFS SecondaryNamenode</td>
-      <td>50090</td>
-      <td>HTTP</td>
-      <td>http://namenode1:50090/</td>
-      <td>secondary监控</td>
-   </tr>
-   <tr>
-      <td rowspan="3">HDFS Datanode</td>
-      <td>50010</td>
-      <td></td>
-      <td>N/A</td>
-      <td>客户端接入/其他节点接入</td>
-   </tr>
-   <tr>
-      <td>50020</td>
-      <td></td>
-      <td>N/A</td>
-      <td></td>
-   </tr>
-   <tr>
-      <td>50075</td>
-      <td>HTTP</td>
-      <td>http://datanode1:50075/</td>
-      <td>节点监控</td>
-   </tr>
-   <tr>
-      <td rowspan="2">HBase Master</td>
-      <td>16000</td>
-      <td></td>
-      <td>hbase-client-1.x.x.jar</td>
-      <td>RegionServer接入</td>
-   </tr>
-   <tr>
-      <td>16010</td>
-      <td>HTTP</td>
-      <td>http://namenode1:16010/</td>
-      <td>集群监控</td>
-   </tr>
-   <tr>
-      <td rowspan="2">HBase RegionServer</td>
-      <td>16020</td>
-      <td></td>
-      <td>N/A</td>
-      <td>客户端接入</td>
-   </tr>
-   <tr>
-      <td>16030</td>
-      <td>HTTP</td>
-      <td>http://datanode1:16030/</td>
-      <td>节点监控</td>
-   </tr>
-</tbody></table>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/35/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><span class="page-number current">36</span><a class="page-number" href="/page/37/">37</a><span class="space">&hellip;</span><a class="page-number" href="/page/56/">56</a><a class="extend next" rel="next" href="/page/37/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/35/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><span class="page-number current">36</span><a class="page-number" href="/page/37/">37</a><span class="space">&hellip;</span><a class="page-number" href="/page/57/">57</a><a class="extend next" rel="next" href="/page/37/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1293,7 +1222,7 @@ call methods.
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">336</span>
+          <span class="site-state-item-count">337</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1306,7 +1235,7 @@ call methods.
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">207</span>
+        <span class="site-state-item-count">208</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

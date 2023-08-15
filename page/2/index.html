@@ -196,6 +196,114 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-shi-yong-xin-ban-nfs-client/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-shi-yong-xin-ban-nfs-client/" class="post-title-link" itemprop="url">k8s使用新版nfs-client</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-03-30 15:31:04" itemprop="dateCreated datePublished" datetime="2023-03-30T15:31:04+08:00">2023-03-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="nfs-client"><a href="#nfs-client" class="headerlink" title="nfs-client"></a>nfs-client</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner">官方github地址</a></li>
+</ul>
+<h3 id="安装NFS"><a href="#安装NFS" class="headerlink" title="安装NFS"></a>安装NFS</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装并设置自动启动</span>
+yum <span class="token function">install</span> nfs-utils
+systemctl <span class="token function">enable</span> rpcbind
+systemctl <span class="token function">enable</span> nfs
+<span class="token comment" spellcheck="true"># 启动</span>
+systemctl start rpcbind
+systemctl start nfs
+<span class="token comment" spellcheck="true"># 服务启动之后，我们在服务端配置一个共享目录</span>
+<span class="token function">mkdir</span> /data
+<span class="token function">chmod</span> 755 /data
+<span class="token comment" spellcheck="true"># 根据这个目录，相应配置导出目录</span>
+<span class="token function">vi</span> /etc/exports
+<span class="token comment" spellcheck="true"># 添加如下配置</span>
+/data/     192.168.0.0/24<span class="token punctuation">(</span>rw,sync,no_root_squash,no_all_squash<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true"># 保存设置之后，重启 NFS 服务</span>
+systemctl restart nfs
+<span class="token comment" spellcheck="true"># 可以检查一下本地的共享目录</span>
+showmount -e localhost
+Export list <span class="token keyword">for</span> localhost:
+/data 192.168.0.0/24
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="helm安装nfs-client"><a href="#helm安装nfs-client" class="headerlink" title="helm安装nfs-client"></a>helm安装nfs-client</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 添加仓库</span>
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+<span class="token comment" spellcheck="true"># 更新</span>
+helm repo update
+<span class="token comment" spellcheck="true"># 安装</span>
+helm <span class="token function">install</span> my-nfs nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+    --set nfs.server<span class="token operator">=</span>x.x.x.x \
+    --set nfs.path<span class="token operator">=</span>/data
+
+<span class="token comment" spellcheck="true"># 设置镜像仓库,默认仓库拉不下来</span>
+--set image.repository<span class="token operator">=</span>hub.deri.org.cn/k8s/nfs-subdir-external-provisioner
+<span class="token comment" spellcheck="true"># 设置SC名字,默认nfs-client</span>
+--set storageClass.name<span class="token operator">=</span>my-nfs
+<span class="token comment" spellcheck="true"># 设置供应商名字,默认自动生成一个</span>
+--set storageClass.provisionerName<span class="token operator">=</span>cluster.local/nfsxxx
+<span class="token comment" spellcheck="true"># 完整安装命令</span>
+helm <span class="token function">install</span> nfs-client nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --set nfs.server<span class="token operator">=</span>192.168.3.22 --set nfs.path<span class="token operator">=</span>/data/nfs --set image.repository<span class="token operator">=</span>hub.deri.org.cn/k8s/nfs-subdir-external-provisioner --set storageClass.name<span class="token operator">=</span>nfs-client --set storageClass.provisionerName<span class="token operator">=</span>cluster.local/nfs-client
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/etcd-jian-kong-ming-ling/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -661,219 +769,10 @@ innodb_flush_log_at_trx_commit=2
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/loki-cai-ji-docker-ri-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/loki-cai-ji-docker-ri-zhi/" class="post-title-link" itemprop="url">loki采集docker日志</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-02-17 14:56:58" itemprop="dateCreated datePublished" datetime="2023-02-17T14:56:58+08:00">2023-02-17</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/loki/" itemprop="url" rel="index"><span itemprop="name">loki</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本文通过安装 docker loki plugin 直接采集docker容器日志，并推送至loki。<a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/clients/docker-driver/">官方文档</a></p>
-<h3 id="插件安装"><a href="#插件安装" class="headerlink" title="插件安装"></a>插件安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装最新的插件</span>
-docker plugin <span class="token function">install</span> grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
-<span class="token comment" spellcheck="true"># 查看插件</span>
-<span class="token punctuation">[</span>root@data1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker plugin ls</span>
-ID             NAME          DESCRIPTION           ENABLED
-744b79d5d1a9   loki:latest   Loki Logging Driver   <span class="token boolean">true</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="插件升级"><a href="#插件升级" class="headerlink" title="插件升级"></a>插件升级</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 停用</span>
-docker plugin disable loki --force
-<span class="token comment" spellcheck="true"># 升级</span>
-docker plugin upgrade loki grafana/loki-docker-driver:latest --grant-all-permissions
-<span class="token comment" spellcheck="true"># 启用</span>
-docker plugin <span class="token function">enable</span> loki
-<span class="token comment" spellcheck="true"># 重启docker</span>
-systemctl restart docker
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="插件卸载"><a href="#插件卸载" class="headerlink" title="插件卸载"></a>插件卸载</h3><pre class="line-numbers language-bash"><code class="language-bash">docker plugin disable loki --force
-docker plugin <span class="token function">rm</span> loki
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><h4 id="单独为一个容器设置日志驱动"><a href="#单独为一个容器设置日志驱动" class="headerlink" title="单独为一个容器设置日志驱动"></a>单独为一个容器设置日志驱动</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># --log-driver=loki</span>
-docker run --log-driver<span class="token operator">=</span>loki \
-    --log-opt loki-url<span class="token operator">=</span><span class="token string">"http://IP:3100/loki/api/v1/push"</span> \
-    --log-opt loki-retries<span class="token operator">=</span>5 \
-    --log-opt loki-batch-size<span class="token operator">=</span>400 \
-    --log-opt max-size<span class="token operator">=</span>50m \
-    --log-opt max-file<span class="token operator">=</span>3 \
-    grafana/grafana
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="为所有的容器设置默认参数"><a href="#为所有的容器设置默认参数" class="headerlink" title="为所有的容器设置默认参数"></a>为所有的容器设置默认参数</h4><p>编辑<code>/etc/docker/daemon.json</code>文件(如果没有就新建).</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-    <span class="token property">"debug"</span> <span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"log-driver"</span><span class="token operator">:</span> <span class="token string">"loki"</span><span class="token punctuation">,</span>
-    <span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"loki-url"</span><span class="token operator">:</span> <span class="token string">"http://IP:3100/loki/api/v1/push"</span><span class="token punctuation">,</span>
-        <span class="token property">"loki-batch-size"</span><span class="token operator">:</span> <span class="token string">"400"</span><span class="token punctuation">,</span>
-        <span class="token property">"loki-retries"</span><span class="token operator">:</span> <span class="token number">5</span><span class="token punctuation">,</span>
-        <span class="token property">"max-size"</span><span class="token operator">:</span> <span class="token string">"50m"</span><span class="token punctuation">,</span>
-        <span class="token property">"max-file"</span><span class="token operator">:</span> <span class="token string">"10"</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>更多如<code>docker-compose</code>的用法参考<a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/clients/docker-driver/configuration/">官网文档</a>.</p>
-</blockquote>
-<ul>
-<li>loki.yaml</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">auth_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-
-<span class="token key atrule">server</span><span class="token punctuation">:</span>
-  <span class="token key atrule">http_listen_port</span><span class="token punctuation">:</span> <span class="token number">3100</span>
-  <span class="token key atrule">grpc_listen_port</span><span class="token punctuation">:</span> <span class="token number">9095</span>
-
-<span class="token key atrule">ingester</span><span class="token punctuation">:</span>
-  <span class="token key atrule">chunk_idle_period</span><span class="token punctuation">:</span> 3m
-  <span class="token key atrule">chunk_block_size</span><span class="token punctuation">:</span> <span class="token number">262144</span>
-  <span class="token key atrule">chunk_retain_period</span><span class="token punctuation">:</span> 1m
-  <span class="token key atrule">max_transfer_retries</span><span class="token punctuation">:</span> <span class="token number">0</span>
-  <span class="token key atrule">lifecycler</span><span class="token punctuation">:</span>
-    <span class="token key atrule">ring</span><span class="token punctuation">:</span>
-      <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
-        <span class="token key atrule">store</span><span class="token punctuation">:</span> inmemory
-      <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
-
-<span class="token key atrule">limits_config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">reject_old_samples</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">reject_old_samples_max_age</span><span class="token punctuation">:</span> 168h
-
-<span class="token key atrule">common</span><span class="token punctuation">:</span>
-  <span class="token key atrule">path_prefix</span><span class="token punctuation">:</span> /tmp/loki
-  <span class="token key atrule">storage</span><span class="token punctuation">:</span>
-    <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
-      <span class="token key atrule">chunks_directory</span><span class="token punctuation">:</span> /tmp/loki/chunks
-      <span class="token key atrule">rules_directory</span><span class="token punctuation">:</span> /tmp/loki/rules
-  <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
-  <span class="token key atrule">ring</span><span class="token punctuation">:</span>
-    <span class="token key atrule">instance_addr</span><span class="token punctuation">:</span> 127.0.0.1
-    <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
-      <span class="token key atrule">store</span><span class="token punctuation">:</span> inmemory
-
-<span class="token key atrule">storage_config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">boltdb_shipper</span><span class="token punctuation">:</span>
-    <span class="token key atrule">active_index_directory</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>active
-    <span class="token key atrule">cache_location</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>cache
-    <span class="token key atrule">cache_ttl</span><span class="token punctuation">:</span> 24h
-    <span class="token key atrule">shared_store</span><span class="token punctuation">:</span> filesystem
-  <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
-    <span class="token key atrule">directory</span><span class="token punctuation">:</span> /tmp/loki/chunks
-
-<span class="token key atrule">chunk_store_config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">max_look_back_period</span><span class="token punctuation">:</span> 672h
-
-<span class="token key atrule">table_manager</span><span class="token punctuation">:</span>
-  <span class="token key atrule">retention_deletes_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">retention_period</span><span class="token punctuation">:</span> 672h
-
-<span class="token key atrule">compactor</span><span class="token punctuation">:</span>
-  <span class="token key atrule">working_directory</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>compactor
-  <span class="token key atrule">shared_store</span><span class="token punctuation">:</span> filesystem
-  <span class="token key atrule">retention_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">retention_delete_delay</span><span class="token punctuation">:</span> 2h
-
-<span class="token key atrule">query_range</span><span class="token punctuation">:</span>
-  <span class="token key atrule">results_cache</span><span class="token punctuation">:</span>
-    <span class="token key atrule">cache</span><span class="token punctuation">:</span>
-      <span class="token key atrule">embedded_cache</span><span class="token punctuation">:</span>
-        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-        <span class="token key atrule">max_size_mb</span><span class="token punctuation">:</span> <span class="token number">200</span>
-
-<span class="token key atrule">querier</span><span class="token punctuation">:</span>
-  <span class="token key atrule">query_timeout</span><span class="token punctuation">:</span> 2m
-
-<span class="token key atrule">schema_config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">configs</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token datetime number">2020-10-24</span>
-      <span class="token key atrule">store</span><span class="token punctuation">:</span> boltdb<span class="token punctuation">-</span>shipper
-      <span class="token key atrule">object_store</span><span class="token punctuation">:</span> filesystem
-      <span class="token key atrule">schema</span><span class="token punctuation">:</span> v11
-      <span class="token key atrule">index</span><span class="token punctuation">:</span>
-        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> index_
-        <span class="token key atrule">period</span><span class="token punctuation">:</span> 24h
-
-<span class="token comment" spellcheck="true"># ruler:</span>
-<span class="token comment" spellcheck="true">#   alertmanager_url: http://localhost:9093</span>
-
-<span class="token comment" spellcheck="true"># By default, Loki will send anonymous, but uniquely-identifiable usage and configuration</span>
-<span class="token comment" spellcheck="true"># analytics to Grafana Labs. These statistics are sent to https://stats.grafana.org/</span>
-<span class="token comment" spellcheck="true">#</span>
-<span class="token comment" spellcheck="true"># Statistics help us better understand how Loki is used, and they show us performance</span>
-<span class="token comment" spellcheck="true"># levels for most users. This helps us prioritize features and documentation.</span>
-<span class="token comment" spellcheck="true"># For more information on what's sent, look at</span>
-<span class="token comment" spellcheck="true"># https://github.com/grafana/loki/blob/main/pkg/usagestats/stats.go</span>
-<span class="token comment" spellcheck="true"># Refer to the buildReport method to see what goes into a report.</span>
-<span class="token comment" spellcheck="true">#</span>
-<span class="token comment" spellcheck="true"># If you would like to disable reporting, uncomment the following lines:</span>
-<span class="token key atrule">analytics</span><span class="token punctuation">:</span>
- <span class="token key atrule">reporting_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/56/">56</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/57/">57</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -941,7 +840,7 @@ docker run --log-driver<span class="token operator">=</span>loki \
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">336</span>
+          <span class="site-state-item-count">337</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -954,7 +853,7 @@ docker run --log-driver<span class="token operator">=</span>loki \
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">207</span>
+        <span class="site-state-item-count">208</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
