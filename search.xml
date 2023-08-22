@@ -31743,4 +31743,55 @@ System<span class="token punctuation">.</span>out<span class="token punctuation"
         <tag>StrSubstitutor</tag>
       </tags>
   </entry>
+  <entry>
+    <title>使用sysbench对MySQL压测</title>
+    <url>/shi-yong-sysbench-dui-mysql-ya-ce/</url>
+    <content><![CDATA[<h3 id="sysbench安装"><a href="#sysbench安装" class="headerlink" title="sysbench安装"></a>sysbench安装</h3><p><a href="https://github.com/akopytov/sysbench">官方文档</a></p>
+<ul>
+<li>安装依赖</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum -y <span class="token function">install</span> <span class="token function">make</span> automake libtool pkgconfig libaio-devel
+<span class="token comment" spellcheck="true"># For MySQL support, replace with mysql-devel on RHEL/CentOS 5</span>
+yum -y <span class="token function">install</span> mariadb-devel openssl-devel
+<span class="token comment" spellcheck="true"># For PostgreSQL support</span>
+yum -y <span class="token function">install</span> postgresql-devel
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>RHEL/CentOS 安装</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">curl -s https://packagecloud.io/install/repositories/akopytov/sysbench/script.rpm.sh <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">bash</span>
+<span class="token function">sudo</span> yum -y <span class="token function">install</span> sysbench
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="压测"><a href="#压测" class="headerlink" title="压测"></a>压测</h3><ul>
+<li>只读示例</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">./bin/sysbench --test<span class="token operator">=</span>./share/tests/db/oltp.lua \
+--mysql-host<span class="token operator">=</span>10.0.201.36 --mysql-port<span class="token operator">=</span>8066 --mysql-user<span class="token operator">=</span>ecuser --mysql-password<span class="token operator">=</span>ecuser \
+--mysql-db<span class="token operator">=</span>dbtest1a --oltp-tables-count<span class="token operator">=</span>10 --oltp-table-size<span class="token operator">=</span>500000 \
+--report-interval<span class="token operator">=</span>10 --oltp-dist-type<span class="token operator">=</span>uniform --rand-init<span class="token operator">=</span>on --max-requests<span class="token operator">=</span>0 \
+--oltp-test-mode<span class="token operator">=</span>nontrx --oltp-nontrx-mode<span class="token operator">=</span>select \
+--oltp-read-only<span class="token operator">=</span>on --oltp-skip-trx<span class="token operator">=</span>on \
+--max-time<span class="token operator">=</span>120 --num-threads<span class="token operator">=</span>12 \
+<span class="token punctuation">[</span>prepare<span class="token operator">|</span>run<span class="token operator">|</span>cleanup<span class="token punctuation">]</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>注意最后一行，一项测试开始前需要用<code>prepare</code>来准备好表和数据，<code>run</code>执行真正的压测，<code>cleanup</code>用来清除数据和表.</p>
+<ul>
+<li><a href="https://developer.aliyun.com/article/47347">参考文档</a></li>
+</ul>
+<h3 id="测试命令"><a href="#测试命令" class="headerlink" title="测试命令"></a>测试命令</h3><p><code>host</code>、<code>port</code>、<code>db</code>、<code>用户名</code>、<code>密码</code>等信息替换成自己的.</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 准备表和数据</span>
+sysbench --db-driver<span class="token operator">=</span>mysql /usr/share/sysbench/oltp_read_only.lua --mysql-host<span class="token operator">=</span>127.0.0.1 --mysql-port<span class="token operator">=</span>3306  --mysql-db<span class="token operator">=</span>sbtest --mysql-user<span class="token operator">=</span>root --mysql-password<span class="token operator">=</span>123456 --tables<span class="token operator">=</span>16 --table_size<span class="token operator">=</span>500000 --threads<span class="token operator">=</span>128 --time<span class="token operator">=</span>60 --report-interval<span class="token operator">=</span>1 prepare
+<span class="token comment" spellcheck="true"># 压测</span>
+sysbench --db-driver<span class="token operator">=</span>mysql /usr/share/sysbench/oltp_read_only.lua --mysql-host<span class="token operator">=</span>127.0.0.1 --mysql-port<span class="token operator">=</span>3306  --mysql-db<span class="token operator">=</span>sbtest --mysql-user<span class="token operator">=</span>root --mysql-password<span class="token operator">=</span>123456 --tables<span class="token operator">=</span>16 --table_size<span class="token operator">=</span>500000 --threads<span class="token operator">=</span>128 --time<span class="token operator">=</span>60 --report-interval<span class="token operator">=</span>1 run
+<span class="token comment" spellcheck="true"># 清理数据</span>
+sysbench --db-driver<span class="token operator">=</span>mysql /usr/share/sysbench/oltp_read_only.lua --mysql-host<span class="token operator">=</span>127.0.0.1 --mysql-port<span class="token operator">=</span>3306  --mysql-db<span class="token operator">=</span>sbtest --mysql-user<span class="token operator">=</span>root --mysql-password<span class="token operator">=</span>123456 --tables<span class="token operator">=</span>16 --table_size<span class="token operator">=</span>500000 --threads<span class="token operator">=</span>128 --time<span class="token operator">=</span>60 --report-interval<span class="token operator">=</span>1 cleanup
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>mysql</category>
+      </categories>
+      <tags>
+        <tag>sysbench</tag>
+      </tags>
+  </entry>
 </search>

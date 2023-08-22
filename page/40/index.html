@@ -196,6 +196,121 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-zhong-processfunction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flink-zhong-processfunction/" class="post-title-link" itemprop="url">flink中ProcessFunction</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-25 09:20:32" itemprop="dateCreated datePublished" datetime="2020-03-25T09:20:32+08:00">2020-03-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="ProcessFunction简介"><a href="#ProcessFunction简介" class="headerlink" title="ProcessFunction简介"></a>ProcessFunction简介</h3><p><code>ProcessFunction</code>是flink中最底层的API。<br><img data-src="/images/flink26.png" alt="low-api"></p>
+<p>Flink的一些算子和函数能够进行一些时间上的操作，但是不能获取算子当前的<code>Processing Time</code>或者是<code>Watermark时间戳</code>，调用起来简单但功能相对受限。如果想获取数据流中Watermark的时间戳，或者在时间上前后穿梭，需要使用<code>ProcessFunction</code>系列函数，它们是Flink体系中<strong>最底层的API</strong>，提供了对数据流<strong>更细粒度的操作权限</strong>。Flink SQL是基于这些函数实现的，一些需要高度个性化的业务场景也需要使用这些函数。</p>
+<p>目前，这个系列函数主要包括<code>KeyedProcessFunction</code>、<code>ProcessFunction</code>、<code>CoProcessFunction</code>、<code>KeyedCoProcessFunction</code>、<code>ProcessJoinFunction</code>和<code>ProcessWindowFunction</code>等多种函数，这些函数各有侧重，但核心功能比较相似，主要包括两点：</p>
+<ul>
+<li>状态：我们可以在这些函数中访问和更新<code>Keyed State</code>。</li>
+<li>定时器（Timer）：像定闹钟一样设置定时器，我们可以在时间维度上设计更复杂的业务逻辑。使用前先在Timer中注册一个未来的时间，当这个时间到达，闹钟会“响起”，程序会执行一个回调函数，回调函数中执行一定的业务逻辑。</li>
+</ul>
+<h3 id="ProcessFunction使用"><a href="#ProcessFunction使用" class="headerlink" title="ProcessFunction使用"></a>ProcessFunction使用</h3><p><code>ProcessFunction</code>有两个重要的接口<code>processElement</code>和<code>onTimer</code></p>
+<p>其中processElement函数在源码中的Java签名如下：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 处理数据流中的一条元素</span>
+<span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">void</span> <span class="token function">processElement</span><span class="token punctuation">(</span>I value<span class="token punctuation">,</span> Context ctx<span class="token punctuation">,</span> Collector<span class="token operator">&lt;</span>O<span class="token operator">></span> out<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p><code>processElement</code>方法处理数据流中的一条元素，并通过<code>Collector&lt;O&gt;</code>输出出来。<code>Context</code>是它的区别于<code>FlatMapFunction</code>等普通函数的特色，<strong>开发者可以通过Context来获取时间戳，访问<code>TimerService</code>，设置Timer</strong>。</p>
+<p>另外一个接口是<code>onTimer</code>：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 时间到达后的回调函数</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onTimer</span><span class="token punctuation">(</span><span class="token keyword">long</span> timestamp<span class="token punctuation">,</span> OnTimerContext ctx<span class="token punctuation">,</span> Collector<span class="token operator">&lt;</span>O<span class="token operator">></span> out<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这是一个回调函数，当到了“闹钟”时间，<code>Flink</code>会调用<code>onTimer</code>，并执行一些业务逻辑。这里也有一个参数<code>OnTimerContext</code>，它实际上是继承了前面的<code>Context</code>，与<code>Context</code>几乎相同。</p>
+<p>使用Timer的方法主要逻辑为：</p>
+<ol>
+<li>在<code>processElement</code>方法中通过<code>Context</code>注册一个未来的时间戳<code>t</code>。这个时间戳的语义可以是<code>Processing Time</code>，也可以是<code>Event Time</code>，根据业务需求来选择。</li>
+<li>在<code>onTimer</code>方法中实现一些逻辑，到达<code>t</code>时刻，<code>onTimer</code>方法被自动调用。</li>
+</ol>
+<p><strong>获取、注册和删除<code>Timer</code></strong></p>
+<ul>
+<li><p>从<code>Context</code>中，我们可以获取一个<code>TimerService</code>，这是一个访问时间戳和Timer的接口。</p>
+</li>
+<li><p>我们可以通过<code>Context.timerService.registerProcessingTimeTimer</code>或<code>Context.timerService.registerEventTimeTimer</code>这两个方法来注册<code>Timer</code>，只需要传入一个时间戳即可。</p>
+</li>
+<li><p>我们可以通过<code>Context.timerService.deleteProcessingTimeTimer</code>和<code>Context.timerService.deleteEventTimeTimer</code>来删除之前注册的Timer。</p>
+</li>
+<li><p>此外，还可以从中获取当前的时间戳：<code>Context.timerService.currentProcessingTime</code>和<code>Context.timerService.currentWatermark</code>。</p>
+</li>
+</ul>
+<blockquote>
+<p>注意，我们只能在KeyedStream上注册Timer。每个Key下可以使用不同的时间戳注册不同的Timer，但是每个Key的每个时间戳只能注册一个Timer。如果想在一个DataStream上应用Timer，可以将所有数据映射到一个伪造的Key上，但这样所有数据会流入一个算子子任务。</p>
+</blockquote>
+<blockquote>
+<p>Flink 框架会自动忽略同一时间的重复注册Timer。</p>
+</blockquote>
+<h3 id="使用ProcessFunction实现Join"><a href="#使用ProcessFunction实现Join" class="headerlink" title="使用ProcessFunction实现Join"></a>使用ProcessFunction实现Join</h3><p>如果想从更细的粒度上实现两个数据流的<code>Join</code>，可以使用<code>CoProcessFunction</code>或<code>KeyedCoProcessFunction</code>。这两个函数都有<code>processElement1</code>和<code>processElement2</code>方法，分别对第一个数据流和第二个数据流的每个元素进行处理。两个数据流的数据类型以及输出类型可以互不相同。尽管数据来自两个不同的流，但是他们可以共享同样的状态，所以可以参考下面的逻辑来实现<code>Join</code>：</p>
+<ul>
+<li>创建一到多个状态，两个数据流都能访问到这些状态，这里以状态<code>a</code>为例。</li>
+<li><code>processElement1</code>方法处理第一个数据流，更新状态<code>a</code>。</li>
+<li><code>processElement2</code>方法处理第二个数据流，根据状态<code>a</code>中的数据，生成相应的输出。</li>
+</ul>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://juejin.im/post/5e3a7ebfe51d4526e03f8f8f">ProcessFunction：Flink最底层API使用教程</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/java8-list-pai-xu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2065,119 +2180,6 @@ See the documentation <span class="token keyword">for</span> more information ab
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-duo-shu-ju-liu-zhuan-huan-cao-zuo/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/flink-duo-shu-ju-liu-zhuan-huan-cao-zuo/" class="post-title-link" itemprop="url">flink多数据流转换操作：join、union、connect</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-18 14:23:13" itemprop="dateCreated datePublished" datetime="2020-03-18T14:23:13+08:00">2020-03-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="操作概览"><a href="#操作概览" class="headerlink" title="操作概览"></a>操作概览</h3><p><img data-src="/images/flink13.png" alt="操作概览"></p>
-<p>本文主要讲flink中多条数据流转换操作：join、union、connect</p>
-<h3 id="join"><a href="#join" class="headerlink" title="join"></a>join</h3><p>批处理经常要解决的问题是将两个数据源做关联Join操作。比如，很多手机APP都有一个用户数据源User，同时APP会记录用户的行为，我们称之为Behavior，两个表按照userId来进行Join。在流处理场景下，Flink也支持了Join，只不过Flink是在一个时间窗口上来进行两个表的Join。<br><img data-src="/images/flink14.png" alt="操作概览"><br>目前，Flink支持了两种Join：<code>Window Join</code>（窗口连接）和<code>Interval Join</code>（时间间隔连接）。</p>
-<h4 id="Window-Join"><a href="#Window-Join" class="headerlink" title="Window Join"></a>Window Join</h4><p>从名字中能猜到，Window Join主要在Flink的窗口上进行操作，它将两个流中落在相同窗口的元素按照某个Key进行Join。一个Window Join的大致骨架结构为：</p>
-<pre class="line-numbers language-java"><code class="language-java">input1<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span>input2<span class="token punctuation">)</span>
-    <span class="token punctuation">.</span><span class="token function">where</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>KeySelector<span class="token operator">></span><span class="token punctuation">)</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> input1使用哪个字段作为Key
-    <span class="token punctuation">.</span><span class="token function">equalTo</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>KeySelector<span class="token operator">></span><span class="token punctuation">)</span>    <span class="token operator">&lt;</span><span class="token operator">-</span> input2使用哪个字段作为Key
-    <span class="token punctuation">.</span><span class="token function">window</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>WindowAssigner<span class="token operator">></span><span class="token punctuation">)</span>  <span class="token operator">&lt;</span><span class="token operator">-</span> 指定WindowAssigner
-    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token function">trigger</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>Trigger<span class="token operator">></span><span class="token punctuation">)</span><span class="token punctuation">]</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> 指定Trigger（可选）
-    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token function">evictor</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>Evictor<span class="token operator">></span><span class="token punctuation">)</span><span class="token punctuation">]</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> 指定Evictor（可选）
-    <span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>JoinFunction<span class="token operator">></span><span class="token punctuation">)</span>     <span class="token operator">&lt;</span><span class="token operator">-</span> 指定JoinFunction
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>下图展示了Join的大致过程。两个输入数据流先分别按Key进行分组，然后将元素划分到窗口中。窗口的划分需要使用WindowAssigner来定义，这里可以使用Flink提供的滚动窗口、滑动窗口或会话窗口等默认的WindowAssigner。随后两个数据流中的元素会被分配到各个窗口上，也就是说一个窗口会包含来自两个数据流的元素。相同窗口内的数据会以INNER JOIN的语义来相互关联，形成一个数据对。当窗口的时间结束，Flink会调用JoinFunction来对窗口内的数据对进行处理。当然，我们也可以使用Trigger或Evictor做一些自定义优化，他们的使用方法和普通窗口的使用方法一样。<br><img data-src="/images/flink15.png" alt="join"></p>
-<p>接下来我们重点分析一下两个数据流是如何INNER JOIN的：<br><img data-src="/images/flink16.png" alt="join"><br>一般滴，INNER JOIN只对两个数据源都出现的元素做Join，形成一个数据对，即数据源input1中的某个元素与数据源input2中的所有元素逐个配对。当数据源某个窗口内没数据时，比如图中的第三个窗口，Join的结果也是空的。</p>
-<p>如果INNER JOIN不能满足我们的需求，CoGroupFunction提供了更多可自定义的功能。需要注意的是，在调用时，要写成<code>input1.coGroup(input2).where(&lt;KeySelector&gt;).equalTo(&lt;KeySelecotr&gt;)</code>。</p>
-<h4 id="Interval-Join"><a href="#Interval-Join" class="headerlink" title="Interval Join"></a>Interval Join</h4><p>与Window Join不同，Interval Join不依赖Flink的WindowAssigner，而是根据一个时间间隔（Interval）界定时间。Interval需要一个时间下界（<code>lower bound</code>）和上界（<code>upper bound</code>），如果我们将input1和input2进行Interval Join，input1中的某个元素为<code>input1.element1</code>，时间戳为<code>input1.element1.ts</code>，那么一个Interval就是<code>[input1.element1.ts + lower bound, input1.element1.ts + upper bound]</code>，input2中落在这个时间段内的元素将会和<code>input1.element1</code>组成一个数据对。</p>
-<p>用数学公式表达为，凡是符合下面公式<code>input1.element1.ts + lower bound &lt;= input2.elementx.ts &lt;=input1.element1.ts + upper bound</code>的元素使用INNER JOIN语义，两两组合在一起。上下界可以是正数也可以是负数。</p>
-<p>注意，目前Flink（1.9）的Interval Join只支持<code>Event Time</code>语义。</p>
-<p><img data-src="/images/flink17.png" alt="join"></p>
-<p>默认的时间间隔是包含上下界的，我们可以使用<code>.lowerBoundExclusive()</code> 和<code>.upperBoundExclusive</code>来确定是否需要包含上下界。</p>
-<pre class="line-numbers language-java"><code class="language-java">val intervalJoinResult <span class="token operator">=</span> input1<span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span>_<span class="token punctuation">.</span>_1<span class="token punctuation">)</span>
-      <span class="token punctuation">.</span><span class="token function">intervalJoin</span><span class="token punctuation">(</span>input2<span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span>_<span class="token punctuation">.</span>_1<span class="token punctuation">)</span><span class="token punctuation">)</span>
-      <span class="token punctuation">.</span><span class="token function">between</span><span class="token punctuation">(</span>Time<span class="token punctuation">.</span><span class="token function">milliseconds</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Time<span class="token punctuation">.</span><span class="token function">milliseconds</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-      <span class="token punctuation">.</span><span class="token function">upperBoundExclusive</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-      <span class="token punctuation">.</span><span class="token function">lowerBoundExclusive</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-      <span class="token punctuation">.</span><span class="token function">process</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MyProcessFunction</span><span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>Interval Join内部是用缓存来存储所有数据的，因此需要注意缓存数据不能太大，以免对内存造成绝大压力。</p>
-<h3 id="union"><a href="#union" class="headerlink" title="union"></a>union</h3><p>在<code>DataStream</code>上使用union算子可以合并多个同类型的数据流，并生成同类型的数据流，即可以将多个<code>DataStream[T]</code>合并为一个新的<code>DataStream[T]</code>。数据将按照先进先出（<code>First In First Out</code>）的模式合并，且<strong>不去重</strong>。下图<code>union</code>对白色和深色两个数据流进行合并，生成一个数据流。</p>
-<p><img data-src="/images/flink18.png" alt="union"></p>
-<h3 id="connect"><a href="#connect" class="headerlink" title="connect"></a>connect</h3><p><code>union</code>虽然可以合并多个数据流，但有一个限制，即多个数据流的数据类型必须相同。<code>connect</code>提供了和<code>union</code>类似的功能，用来连接两个数据流，它与<code>union</code>的区别在于：</p>
-<ul>
-<li><code>connect</code>只能连接<strong>两个数据流</strong>，<code>union</code>可以连接<strong>多个数据流</strong>。</li>
-<li><code>connect</code>所连接的两个数据流的<strong>数据类型可以不一致</strong>，<code>union</code>所连接的两个数据流的<strong>数据类型必须一致</strong>。</li>
-<li>两个<code>DataStream</code>经过<code>connect</code>之后被转化为<code>ConnectedStreams</code>，<code>ConnectedStreams</code>会对两个流的数据应用不同的处理方法，且双流之间可以<strong>共享状态</strong>。</li>
-</ul>
-<p><code>connect</code>经常被应用在对一个数据流使用另外一个流进行控制处理的场景上，如下图所示。控制流可以是阈值、规则、机器学习模型或其他参数。<br><img data-src="/images/flink19.png" alt="connect"></p>
-<ul>
-<li>对于ConnectedStreams，我们需要重写CoMapFunction或CoFlatMapFunction。这两个接口都提供了三个泛型，这三个泛型分别对应第一个输入流的数据类型、第二个输入流的数据类型和输出流的数据类型。</li>
-<li>在重写函数时，对于CoMapFunction，map1处理第一个流的数据，map2处理第二个流的数据；对于CoFlatMapFunction，flatMap1处理第一个流的数据，flatMap2处理第二个流的数据。</li>
-<li>Flink并不能保证两个函数调用顺序，两个函数的调用依赖于两个数据流数据的流入先后顺序，即第一个数据流有数据到达时，map1或flatMap1会被调用，第二个数据流有数据到达时，map2或flatMap2会被调用。</li>
-<li>Flink允许我们将connect和keyBy或broadcast结合起来使用。</li>
-</ul>
-<h3 id="原文链接"><a href="#原文链接" class="headerlink" title="原文链接"></a>原文链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/103342602">Flink时间系列：如何在两个DataStream上进行Join操作</a></li>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/99425612">Flink算子使用方法及实例演示：union和connect</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -2249,7 +2251,7 @@ See the documentation <span class="token keyword">for</span> more information ab
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">337</span>
+          <span class="site-state-item-count">338</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -2262,7 +2264,7 @@ See the documentation <span class="token keyword">for</span> more information ab
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">208</span>
+        <span class="site-state-item-count">209</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
