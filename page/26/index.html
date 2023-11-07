@@ -196,6 +196,143 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-wang-luo-mo-shi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-wang-luo-mo-shi/" class="post-title-link" itemprop="url">docker网络模式</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-18 09:24:01" itemprop="dateCreated datePublished" datetime="2020-08-18T09:24:01+08:00">2020-08-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="网络模式"><a href="#网络模式" class="headerlink" title="网络模式"></a>网络模式</h3><table>
+<thead>
+<tr>
+<th>Docker网络模式</th>
+<th>配置</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>host</code></td>
+<td><code>–net=host</code></td>
+<td>容器和宿主机共享Network namespace。</td>
+</tr>
+<tr>
+<td><code>container</code></td>
+<td><code>–net=container:NAME</code></td>
+<td>容器和另外一个容器共享Network namespace。</td>
+</tr>
+<tr>
+<td><code>none</code></td>
+<td><code>–net=none</code></td>
+<td>容器有独立的Network namespace，但并没有对其进行任何网络设置，如分配veth pair 和网桥连接，配置IP等。</td>
+</tr>
+<tr>
+<td><code>bridge</code></td>
+<td><code>–net=bridge</code></td>
+<td>默认为该模式</td>
+</tr>
+</tbody></table>
+<h3 id="默认创建3种模式"><a href="#默认创建3种模式" class="headerlink" title="默认创建3种模式"></a>默认创建3种模式</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker network ls</span>
+NETWORK ID          NAME                DRIVER              SCOPE
+fa18c3cc657d        bridge              bridge              local
+c1196f6c46ca        host                host                local
+c20416a61dd3        none                null                local
+
+<span class="token comment" spellcheck="true"># 手动创建一个bridge网络</span>
+<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker network create test</span>
+1ed592b9d91ae8c49f5de4b975e5adb104264bf3b03973fcf3040683a4dfcf0e
+<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker network ls</span>
+NETWORK ID          NAME                DRIVER              SCOPE
+fa18c3cc657d        bridge              bridge              local
+c1196f6c46ca        host                host                local
+c20416a61dd3        none                null                local
+1ed592b9d91a        <span class="token function">test</span>                bridge              local
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>测试</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动两个容器</span>
+docker run -itd --name<span class="token operator">=</span>c1 busybox
+docker run -itd --name<span class="token operator">=</span>c2 --net<span class="token operator">=</span>test busybox
+
+<span class="token comment" spellcheck="true"># 查看他们ip</span>
+docker <span class="token function">exec</span> -it c1 ip ad
+docker <span class="token function">exec</span> -it c2 ip ad
+
+<span class="token comment" spellcheck="true"># 因为使用的不同的bridge,他们之间ping不通</span>
+docker <span class="token function">exec</span> -it c2 <span class="token function">ping</span> 172.19.0.2
+<span class="token comment" spellcheck="true"># 手动将c1加入到test网络</span>
+docker network connect <span class="token function">test</span> c1
+<span class="token comment" spellcheck="true"># 查看c1网卡,会增加一个</span>
+docker <span class="token function">exec</span> -it c1 ip ad
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>与另一个容器共享一个网络IP</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 先启动一个</span>
+docker run -itd --name c1 busybox
+<span class="token comment" spellcheck="true"># 共享另一个容器网络</span>
+docker run -itd --net<span class="token operator">=</span>container:c1 --name c2 busybox
+
+<span class="token comment" spellcheck="true"># 网卡完全一致</span>
+docker <span class="token function">exec</span> c1 ip ad
+docker <span class="token function">exec</span> c2 ip ad
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/threadlocal-yong-fa-xin-de/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1121,215 +1258,6 @@ NUM<span class="token operator">=</span><span class="token punctuation">$(</span
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-zhu-cong-tong-bu-gong-ju-maatkit-an-zhuang-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-zhu-cong-tong-bu-gong-ju-maatkit-an-zhuang-shi-yong/" class="post-title-link" itemprop="url">mysql【主从同步工具Maatkit安装使用】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-08-05 16:36:13" itemprop="dateCreated datePublished" datetime="2020-08-05T16:36:13+08:00">2020-08-05</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题说明"><a href="#问题说明" class="headerlink" title="问题说明"></a>问题说明</h3><p><code>mysql</code>主从同步时难免出现问题导致数据不一致情况.此时需要手动将主从数据同步.</p>
-<p><code>Maatkit</code>是一个开源的工具包，为<code>mySQL</code>日常管理提供了帮助，它包含很多工具，这里主要说下面两个：</p>
-<ul>
-<li><code>mk-table-checksum</code> : 用来检测<code>master</code>和<code>slave</code>上的表结构和数据是否一致的；</li>
-<li><code>mk-table-sync</code> : 在主从数据不一致时，用来修复数据的；先主后从有效保证表一致的工具，不必重载从表而能够保证一致。<blockquote>
-<p>上面两个perl脚本在运行时都会锁表，表的大小取决于执行的快慢，勿在高峰期间运行，可选择凌晨</p>
-</blockquote>
-</li>
-</ul>
-<h3 id="安装Maatkit"><a href="#安装Maatkit" class="headerlink" title="安装Maatkit"></a>安装Maatkit</h3><ol>
-<li>安装依赖</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装依赖</span>
-yum <span class="token function">install</span> perl-IO-Socket-SSL perl-DBD-MySQL perl-Time-HiRes perl perl-DBI -y
-
-yum <span class="token function">install</span> perl-ExtUtils-Embed perl-ExtUtils-CBuilder perl-ExtUtils-MakeMaker -y
-
-yum -y <span class="token function">install</span> perl-Digest-MD5
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>下载<code>maatkit</code></li>
-</ol>
-<ul>
-<li>需要翻墙到官网下载：<a target="_blank" rel="noopener" href="https://code.google.com/archive/p/maatkit/downloads">https://code.google.com/archive/p/maatkit/downloads</a></li>
-<li>百度云盘下载地址：<a target="_blank" rel="noopener" href="https://pan.baidu.com/s/1c1AufW8">https://pan.baidu.com/s/1c1AufW8</a>    （提取密码：<code>vbi1</code>）</li>
-</ul>
-<ol start="3">
-<li>安装<code>maatkit</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 解压进入目录</span>
-<span class="token function">tar</span> -zvxf maatkit-7540.tar.gz  <span class="token operator">&amp;&amp;</span> <span class="token function">cd</span> maatkit-7540 
-
-<span class="token punctuation">[</span>root@mysql01 maatkit-7540<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># perl Makefile.PL</span>
-Checking <span class="token keyword">if</span> your kit is complete<span class="token punctuation">..</span>.
-Looks good
-Writing Makefile <span class="token keyword">for</span> maatkit
-
-<span class="token comment" spellcheck="true"># 安装</span>
-<span class="token function">make</span> <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token function">install</span>
-
-<span class="token comment" spellcheck="true"># 测试查看mk-相关命令</span>
-<span class="token punctuation">[</span>root@mysql01 maatkit-7540<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mk-</span>
-mk-archiver               mk-duplicate-key-checker  mk-heartbeat              mk-log-player             mk-profile-compact        mk-query-profiler         mk-slave-move             mk-table-sync             mk-variable-advisor       
-mk-checksum-filter        mk-error-log              mk-index-usage            mk-merge-mqd-results      mk-purge-logs             mk-show-grants            mk-slave-prefetch         mk-table-usage            mk-visual-explain         
-mk-config-diff            mk-fifo-split             mk-kill                   mk-parallel-dump          mk-query-advisor          mk-slave-delay            mk-slave-restart          mk-tcp-model              
-mk-deadlock-logger        mk-find                   mk-loadavg                mk-parallel-restore       mk-query-digest           mk-slave-find             mk-table-checksum         mk-upgrade                
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="工具使用"><a href="#工具使用" class="headerlink" title="工具使用"></a>工具使用</h3><ol>
-<li>创建<code>mysql</code>检查帐号</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 主从服务器上创建只有SELECT权限的帐号</span>
-mysql<span class="token operator">></span> <span class="token keyword">GRANT</span> <span class="token keyword">SELECT</span> <span class="token keyword">ON</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">TO</span> <span class="token string">'data_check'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED BY '</span><span class="token number">123456</span>'<span class="token punctuation">;</span>
-Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
- 
-mysql<span class="token operator">></span> flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
-Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>检查一致性</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 第一个h：   填写主库ip</span>
-<span class="token comment" spellcheck="true"># 第一个u：   主库授权的用户名</span>
-<span class="token comment" spellcheck="true"># 第一个p：   主库授权的密码</span>
-<span class="token comment" spellcheck="true"># 第二个h：   填写从库ip</span>
-<span class="token comment" spellcheck="true"># 第二个u：   从库授权的用户名</span>
-<span class="token comment" spellcheck="true"># 第二个p：   从库授权的密码</span>
-<span class="token comment" spellcheck="true"># 大写P：   mysql的端口</span>
-<span class="token punctuation">[</span>root@mysql01 maatkit-7540<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mk-table-checksum h=192.168.41.141,u=data_check,p=123456,P=3306 h=192.168.41.142,u=data_check,p=123456,P=3306</span>
-DATABASE TABLE        CHUNK HOST           ENGINE      COUNT         CHECKSUM TIME WAIT STAT  LAG
-<span class="token function">test</span>     t_department     0 192.168.41.141 InnoDB       NULL         83657212    0    0 NULL NULL
-<span class="token function">test</span>     t_department     0 192.168.41.142 InnoDB       NULL       3344593131    0    0 NULL NULL
-<span class="token function">test</span>     testttt          0 192.168.41.141 InnoDB       NULL       3722958311    0    0 NULL NULL
-<span class="token function">test</span>     testttt          0 192.168.41.142 InnoDB       NULL       3722958311    0    0 NULL NULL
-DATABASE TABLE                     CHUNK HOST           ENGINE      COUNT         CHECKSUM TIME WAIT STAT  LAG
-mysql    columns_priv                  0 192.168.41.141 MyISAM       NULL                0    0    0 NULL NULL
-mysql    columns_priv                  0 192.168.41.142 MyISAM       NULL                0    0    0 NULL NULL
-mysql    db                            0 192.168.41.141 MyISAM       NULL       2629905140    0    0 NULL NULL
-mysql    db                            0 192.168.41.142 MyISAM       NULL       2629905140    0    0 NULL NULL
-mysql    engine_cost                   0 192.168.41.141 InnoDB       NULL       2678612005    0    0 NULL NULL
-<span class="token punctuation">..</span>.
-
-
-<span class="token comment" spellcheck="true"># 参数-d(或者--database) 指定要检查的数据库,多个数据库之间用逗号隔开，如果不加-d，校验的是所有库；</span>
-<span class="token comment" spellcheck="true"># --count    会计算出表的行数</span>
-<span class="token punctuation">[</span>root@mysql01 maatkit-7540<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mk-table-checksum h=192.168.41.141,u=data_check,p=123456,P=3306 h=192.168.41.142,u=data_check,p=123456,P=3306 --count -dtest</span>
-DATABASE TABLE        CHUNK HOST           ENGINE      COUNT         CHECKSUM TIME WAIT STAT  LAG
-<span class="token function">test</span>     t_department     0 192.168.41.141 InnoDB         13         5e339d70    0    0 NULL NULL
-<span class="token function">test</span>     t_department     0 192.168.41.142 InnoDB         13         7a4c9153    0    0 NULL NULL
-<span class="token function">test</span>     testttt          0 192.168.41.141 InnoDB          8         41db7636    0    0 NULL NULL
-<span class="token function">test</span>     testttt          0 192.168.41.142 InnoDB          8         41db7636    0    0 NULL NULL
-
-<span class="token comment" spellcheck="true"># 结果参数说明</span>
-<span class="token comment" spellcheck="true"># DATABASE      检查的库名</span>
-<span class="token comment" spellcheck="true"># TABLE：       检查的库中的表名</span>
-<span class="token comment" spellcheck="true"># CHUNK：       checksum时的近似数值</span>
-<span class="token comment" spellcheck="true"># HOST：        主从MYSQL的地址</span>
-<span class="token comment" spellcheck="true"># ENGINE：      表引擎</span>
-<span class="token comment" spellcheck="true"># COUNT：       表的行数</span>
-<span class="token comment" spellcheck="true"># CHECKSUM：    校验值</span>
-<span class="token comment" spellcheck="true"># TIME：        所用时间</span>
-<span class="token comment" spellcheck="true"># WAIT：        等待时间</span>
-<span class="token comment" spellcheck="true"># STAT：        MASTER_POS_WAIT()返回值</span>
-<span class="token comment" spellcheck="true"># LAG：         slave的延时时间</span>
-
-
-<span class="token comment" spellcheck="true"># mk-checksum-filter过滤出不一样的结果</span>
-<span class="token punctuation">[</span>root@mysql01 maatkit-7540<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mk-table-checksum h=192.168.41.141,u=data_check,p=123456,P=3306 h=192.168.41.142,u=data_check,p=123456,P=3306 --count -dtest | mk-checksum-filter</span>
-<span class="token function">test</span>     t_department     0 192.168.41.141 InnoDB         13         5e339d70    0    0 NULL NULL
-<span class="token function">test</span>     t_department     0 192.168.41.142 InnoDB         13         7a4c9153    0    0 NULL NULL
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="3">
-<li>修复主从不同步的数据</li>
-</ol>
-<p><code>mk-table-sync</code>用来修复多个实例之间数据的不一致. <code>mk-table-sync</code>的工作方式是：先一行一行检查主从库的表是否一样，如果哪里不一样，就执行删除，更新，插入等操作，使其达到一致。</p>
-<p>由于上面在<code>mk-table-checksum</code>检查时用的<code>data_check</code>只有<code>select</code>权限，权限太小，不能用于<code>mk-table-sync</code>修复数据只用。<br>所以还需要在主库和从库数据库里创建用于<code>mk-table-sync</code>修复数据之用的账号权限</p>
-<pre class="line-numbers language-sql"><code class="language-sql">mysql<span class="token operator">></span> <span class="token keyword">GRANT</span> <span class="token keyword">ALL</span> <span class="token keyword">ON</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">to</span> mksync<span class="token variable">@'%'</span> identified <span class="token keyword">by</span> <span class="token string">"123456"</span><span class="token punctuation">;</span>
-Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
- 
-mysql<span class="token operator">></span> flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
-Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 注意：主从数据库表和表结构必须一致,否则会报错！</span>
-<span class="token comment" spellcheck="true"># --print               显示同步需要执行的语句</span>
-<span class="token comment" spellcheck="true"># --execute             执行数据同步</span>
-<span class="token comment" spellcheck="true"># --charset=utf8mb4     设置字符集，避免从库乱码。</span>
-<span class="token comment" spellcheck="true"># --no-check-slave      如果不加这个参数，会提示报错，因为此工具默认不允许在从库上修改数据</span>
-<span class="token comment" spellcheck="true"># -t                    指定同步的表名,多个表时可以在-t后加=号，即-t=tables1,tables2,..</span>
-<span class="token comment" spellcheck="true"># > /root/result        命令后面加上 > /root/result 将结果导出</span>
-
-<span class="token punctuation">[</span>root@mysql01 maatkit-7540<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mk-table-sync --execute --charset=utf8mb4 --print --no-check-slave --databases test h=192.168.41.141,u=mksync,p=123456,P=3306 h=192.168.41.142,u=mksync,p=123456,P=3306</span>
-UPDATE <span class="token variable"><span class="token variable">`</span><span class="token function">test</span><span class="token variable">`</span></span><span class="token keyword">.</span><span class="token variable"><span class="token variable">`</span>t_department<span class="token variable">`</span></span> SET <span class="token variable"><span class="token variable">`</span>department_name<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'44'</span>, <span class="token variable"><span class="token variable">`</span>parent_id<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'0'</span>, <span class="token variable"><span class="token variable">`</span>level<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'1'</span>, <span class="token variable"><span class="token variable">`</span>create_time<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'2020-07-28 16:06:24'</span>, <span class="token variable"><span class="token variable">`</span>update_time<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'2020-07-28 16:06:24'</span> WHERE <span class="token variable"><span class="token variable">`</span>department_id<span class="token variable">`</span></span><span class="token operator">=</span><span class="token string">'3'</span> LIMIT 1 /*maatkit src_db:test src_tbl:t_department src_dsn:A<span class="token operator">=</span>utf8mb4,P<span class="token operator">=</span>3306,h<span class="token operator">=</span>192.168.41.141,p<span class="token operator">=</span><span class="token punctuation">..</span>.,u<span class="token operator">=</span>mksync dst_db:test dst_tbl:t_department dst_dsn:A<span class="token operator">=</span>utf8mb4,P<span class="token operator">=</span>3306,h<span class="token operator">=</span>192.168.41.142,p<span class="token operator">=</span><span class="token punctuation">..</span>.,u<span class="token operator">=</span>mksync lock:0 transaction:1 changing_src:0 replicate:0 bidirectional:0 pid:3869 user:root host:mysql01*/<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修复之后检查主从,通过CHECKSUM可以看出,数据已经完全一样了</span>
-<span class="token punctuation">[</span>root@mysql01 maatkit-7540<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mk-table-checksum h=192.168.41.141,u=data_check,p=check@123,P=3306 h=192.168.41.142,u=data_check,p=check@123,P=3306 --count -dtest</span>
-DATABASE TABLE        CHUNK HOST           ENGINE      COUNT         CHECKSUM TIME WAIT STAT  LAG
-<span class="token function">test</span>     t_department     0 192.168.41.141 InnoDB         13         5e339d70    0    0 NULL NULL
-<span class="token function">test</span>     t_department     0 192.168.41.142 InnoDB         13         5e339d70    0    0 NULL NULL
-<span class="token function">test</span>     testttt          0 192.168.41.141 InnoDB          8         41db7636    0    0 NULL NULL
-<span class="token function">test</span>     testttt          0 192.168.41.142 InnoDB          8         41db7636    0    0 NULL NULL
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/kevingrace/p/6278200.html">利用 mk-table-checksum 监测 MySQL主从数据一致性操作记录</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1401,7 +1329,7 @@ DATABASE TABLE        CHUNK HOST           ENGINE      COUNT         CHECKSUM TI
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">340</span>
+          <span class="site-state-item-count">341</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
