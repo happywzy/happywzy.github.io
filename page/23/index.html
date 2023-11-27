@@ -196,6 +196,135 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-she-zhi-ttl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/hbase-she-zhi-ttl/" class="post-title-link" itemprop="url">hbase设置ttl</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-12 10:09:22" itemprop="dateCreated datePublished" datetime="2020-11-12T10:09:22+08:00">2020-11-12</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="Hbase关于TTL"><a href="#Hbase关于TTL" class="headerlink" title="Hbase关于TTL"></a>Hbase关于TTL</h3><ul>
+<li><code>ColumnFamilies</code>可以以秒为单位来设置 <code>TTL</code>（<code>Time To Live</code>）长度，一旦达到到期时间，<code>HBase</code> 将自动删除行。</li>
+<li>设置 <code>hbase.store.delete.expired.storefile</code> 为 <code>false</code> 将禁用此功能。将最小版本数设置为 <code>0</code> 以外的值也会禁用此功能。</li>
+<li>也支持设置时间以每个单元为基础生存。单元<code>TTL</code> 是使用突变 <code>setTTL</code> 作为突变请求（例如：<code>Appends</code>、<code>Increments</code>、<code>Puts</code>）的属性提交的.</li>
+<li>单元 <code>TTL</code> 以毫秒为单位而不是秒;</li>
+<li>单元 <code>TTL</code> 不能将一个单元的有效生命周期延长超过 <code>ColumnFamily</code> 级 <code>TTL</code> 设置.</li>
+</ul>
+<h3 id="设置TTL"><a href="#设置TTL" class="headerlink" title="设置TTL"></a>设置TTL</h3><ol>
+<li>创建表的时候指定</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">create</span> <span class="token string">'t_task_log'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'cf'</span><span class="token punctuation">,</span> TTL<span class="token operator">=</span><span class="token operator">></span><span class="token string">'86400'</span>}
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="2">
+<li>查看TTL</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">desc</span> <span class="token string">"t_task_log"</span>
+<span class="token comment" spellcheck="true">-- 默认: TTL => 'FOREVER'</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>修改TTL</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 禁用表</span>
+<span class="token keyword">disable</span> <span class="token string">"t_task_log"</span>
+<span class="token comment" spellcheck="true">-- 设置TTL值，作用于列族cf</span>
+<span class="token keyword">alter</span> <span class="token string">"t_task_log"</span><span class="token punctuation">,</span>NAME<span class="token operator">=</span><span class="token operator">></span><span class="token string">'cf'</span><span class="token punctuation">,</span>TTL<span class="token operator">=</span><span class="token operator">></span><span class="token string">'86400'</span>
+<span class="token comment" spellcheck="true">-- 恢复表</span>
+<span class="token keyword">enable</span>  <span class="token string">"t_task_log"</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>高版本<code>hbase</code>可以不需要先禁用表,可直接在线修改<code>TTL</code>.</p>
+</blockquote>
+<ol start="4">
+<li>编码设置列族TTL</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 1. 创建一个测试表,并添加列族cf</span>
+TableName tableName <span class="token operator">=</span> TableName<span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span><span class="token string">"test"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+TableDescriptor tableDescriptor <span class="token operator">=</span> TableDescriptorBuilder<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span>tableName<span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">setColumnFamily</span><span class="token punctuation">(</span>ColumnFamilyDescriptorBuilder<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span><span class="token string">"cf"</span><span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+admin<span class="token punctuation">.</span><span class="token function">createTable</span><span class="token punctuation">(</span>tableDescriptor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"创建表并添加列族cf成功"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">// 2.为当前的表添加一个ttl的列族(默认设定时间为10秒)</span>
+ColumnFamilyDescriptor cfDesc <span class="token operator">=</span> ColumnFamilyDescriptorBuilder<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span><span class="token string">"ttl-cf"</span><span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setTimeToLive</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+admin<span class="token punctuation">.</span><span class="token function">addColumnFamily</span><span class="token punctuation">(</span>tableName<span class="token punctuation">,</span> cfDesc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"为表添加一个具有TTL的列族ttl-cf,设定超时时间为10s"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>编码设置单元TTL</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Put put <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Put</span><span class="token punctuation">(</span>Bytes<span class="token punctuation">.</span><span class="token function">toBytes</span><span class="token punctuation">(</span><span class="token string">"row1"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+put<span class="token punctuation">.</span><span class="token function">setTTL</span><span class="token punctuation">(</span>86400L<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="怎么重置TTL为FOREVER"><a href="#怎么重置TTL为FOREVER" class="headerlink" title="怎么重置TTL为FOREVER"></a>怎么重置TTL为FOREVER</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- HBase TTL 最大值为INT最大值 2147483647，只需将TTL设为该整数即可</span>
+<span class="token keyword">alter</span> <span class="token string">'test'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'cf'</span><span class="token punctuation">,</span>TTL <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'2147483647'</span>}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/zpb2016/p/12649831.html">https://www.cnblogs.com/zpb2016/p/12649831.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_45492007/article/details/106804808">https://blog.csdn.net/weixin_45492007/article/details/106804808</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.w3cschool.cn/hbase_doc/hbase_doc-x41d2mmo.html">https://www.w3cschool.cn/hbase_doc/hbase_doc-x41d2mmo.html</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-compose-pei-zhi-yi-lai-he-qi-dong-shun-xu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -728,83 +857,6 @@ STARTS <span class="token string">'2020-10-01 00:00:00'</span>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/fei-root-yong-hu-shi-yong-docker-ming-ling-pei-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/fei-root-yong-hu-shi-yong-docker-ming-ling-pei-zhi/" class="post-title-link" itemprop="url">非root用户使用docker命令配置</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-10-27 13:40:48" itemprop="dateCreated datePublished" datetime="2020-10-27T13:40:48+08:00">2020-10-27</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>docker安装完成后，默认只能root用户才能使用docker命令.</p>
-<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建用户组,默认安装docker可能已经创建了</span>
-<span class="token function">groupadd</span> docker
-
-<span class="token comment" spellcheck="true"># 将当前用户加入到docker组</span>
-<span class="token function">usermod</span> -aG docker <span class="token variable">$USER</span>
-<span class="token comment" spellcheck="true"># 示例</span>
-<span class="token function">usermod</span> -aG docker hadoop
-
-<span class="token comment" spellcheck="true"># 重新登录即可使用docker命令</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -876,7 +928,7 @@ STARTS <span class="token string">'2020-10-01 00:00:00'</span>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">341</span>
+          <span class="site-state-item-count">342</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

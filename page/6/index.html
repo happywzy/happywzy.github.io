@@ -196,6 +196,147 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nei-wang-chuan-tou-gong-ju-frp/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/nei-wang-chuan-tou-gong-ju-frp/" class="post-title-link" itemprop="url">内网穿透工具frp</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-09-16 14:36:42" itemprop="dateCreated datePublished" datetime="2022-09-16T14:36:42+08:00">2022-09-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="内网穿透工具frp"><a href="#内网穿透工具frp" class="headerlink" title="内网穿透工具frp"></a>内网穿透工具frp</h3><p>通过在公网服务器部署 frp 服务端( <code>frps</code> )，内网部署 frp 客户端( <code>frpc</code> )，实现通过公网访问内网的服务.</p>
+<h3 id="frp目录说明"><a href="#frp目录说明" class="headerlink" title="frp目录说明"></a>frp目录说明</h3><pre class="line-numbers language-conf"><code class="language-conf">├── frpc //客户端
+├── frpc_full.ini
+├── frpc.ini//客户端配置
+├── frps//服务端
+├── frps_full.ini
+├── frps.ini//服务端配置
+└── LICENSE
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ul>
+<li>frps.ini</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>common<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true">#服务端口</span>
+bind_port <span class="token operator">=</span> 7000
+<span class="token comment" spellcheck="true">#监听地址</span>
+<span class="token comment" spellcheck="true">#bind_addr = 0.0.0.0</span>
+
+<span class="token comment" spellcheck="true">#认证token</span>
+<span class="token comment" spellcheck="true">#token = big_cat</span>
+<span class="token comment" spellcheck="true">#http服务端口</span>
+vhost_http_port <span class="token operator">=</span> 7080
+<span class="token comment" spellcheck="true">#https服务端口</span>
+vhost_https_port <span class="token operator">=</span> 70443
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>frpc.ini</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>common<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true">#frps的ip地址</span>
+server_addr <span class="token operator">=</span> 114.114.114.114
+<span class="token comment" spellcheck="true">#frps的端口</span>
+server_port <span class="token operator">=</span> 7000
+<span class="token comment" spellcheck="true">#认证token</span>
+<span class="token comment" spellcheck="true">#token = big_cat</span>
+
+<span class="token punctuation">[</span>web-01<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true"># 远端服务器定义好了 http 服务的端口 这里不需要指定</span>
+<span class="token comment" spellcheck="true"># 只需要指定 custom/sub_domains 用来做路由即可 </span>
+<span class="token comment" spellcheck="true"># 如果只是代理一台 则指定服务端ip 使用ip访问即可</span>
+<span class="token function">type</span> <span class="token operator">=</span> http
+<span class="token comment" spellcheck="true">#本地http服务端口</span>
+local_port <span class="token operator">=</span> 8081
+<span class="token comment" spellcheck="true">#本地http服务地址</span>
+local_ip <span class="token operator">=</span> 127.0.0.1
+<span class="token comment" spellcheck="true"># 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）</span>
+<span class="token comment" spellcheck="true">#custom_domains = 118.118.118.118</span>
+<span class="token comment" spellcheck="true"># 或者指定域名 可以使用其他域名继续绑定</span>
+custom_domains <span class="token operator">=</span> frp1.com
+
+<span class="token punctuation">[</span>web-02<span class="token punctuation">]</span>
+<span class="token function">type</span> <span class="token operator">=</span> http
+local_port <span class="token operator">=</span> 8082
+<span class="token comment" spellcheck="true">#本地http服务地址</span>
+local_ip <span class="token operator">=</span> 127.0.0.1
+<span class="token comment" spellcheck="true"># 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）</span>
+<span class="token comment" spellcheck="true">#custom_domains = 118.118.118.118</span>
+<span class="token comment" spellcheck="true"># 或者指定域名 可以使用其他域名继续绑定</span>
+custom_domains <span class="token operator">=</span> frp2.com
+
+<span class="token punctuation">[</span>ssh<span class="token punctuation">]</span>
+<span class="token function">type</span> <span class="token operator">=</span> tcp
+local_port <span class="token operator">=</span> 22
+local_ip <span class="token operator">=</span> 127.0.0.1
+<span class="token comment" spellcheck="true"># 在服务端注册端口 服务端将监听 7022 ssh root@118.118.118.118 -p 7022 即可代理到本机 ssh 登录</span>
+remote_port <span class="token operator">=</span> 7022
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动服务端服务</span>
+<span class="token function">nohup</span> ./frps -c ./frps.ini <span class="token operator">&amp;</span>
+<span class="token comment" spellcheck="true"># 启动客户端服务</span>
+<span class="token function">nohup</span> ./frpc -c ./frpc.ini <span class="token operator">&amp;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意: <code>http/https</code> 服务是在服务端配置中定义的端口，客户端指定协议后会自动关联，<code>ssh</code> 等使用 tcp 的则是在客户端定义好 <code>remote_port</code> ，服务端开放此端口即可。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-zhong-conditional-de-shi-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -926,83 +1067,6 @@ avg<span class="token punctuation">(</span>rate<span class="token punctuation">(
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/openvpn-zheng-shu-guo-qi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/openvpn-zheng-shu-guo-qi/" class="post-title-link" itemprop="url">openvpn证书过期</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-07-25 11:27:12" itemprop="dateCreated datePublished" datetime="2022-07-25T11:27:12+08:00">2022-07-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/openvpn/" itemprop="url" rel="index"><span itemprop="name">openvpn</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="查看crt证书有效期"><a href="#查看crt证书有效期" class="headerlink" title="查看crt证书有效期"></a>查看crt证书有效期</h3><pre class="line-numbers language-bash"><code class="language-bash">openssl x509 -in cert.crt -noout -text
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="重签服务端证书"><a href="#重签服务端证书" class="headerlink" title="重签服务端证书"></a>重签服务端证书</h3><pre class="line-numbers language-bash"><code class="language-bash">./easyrsa build-server-full server_name nopass
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>然后用新签的证书(<code>./pki/issue/</code> 和 <code>./pki/private/</code> 目录下)替换在用的 <code>server.crt</code> 和 <code>server.key</code>.</p>
-<h3 id="重签客户端证书"><a href="#重签客户端证书" class="headerlink" title="重签客户端证书"></a>重签客户端证书</h3><pre class="line-numbers language-bash"><code class="language-bash">./easyrsa build-client-full client_name nopass
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="修改证书有效期时间"><a href="#修改证书有效期时间" class="headerlink" title="修改证书有效期时间"></a>修改证书有效期时间</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改 easy-rsa 目录下 vars 模板文件参数</span>
-<span class="token comment" spellcheck="true"># /usr/share/doc/easy-rsa-3.0.8/vars.example 默认所有参数, 注意修改版本号</span>
-set_var EASYRSA_CERT_EXPIRE   3650
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1074,7 +1138,7 @@ set_var EASYRSA_CERT_EXPIRE   3650
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">341</span>
+          <span class="site-state-item-count">342</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

@@ -196,6 +196,104 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/an-zhuang-shi-yong-nfs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/an-zhuang-shi-yong-nfs/" class="post-title-link" itemprop="url">CentOS 7 安装使用NFS</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-15 15:43:29" itemprop="dateCreated datePublished" datetime="2019-11-15T15:43:29+08:00">2019-11-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="yum-安装"><a href="#yum-安装" class="headerlink" title="yum 安装"></a>yum 安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum <span class="token function">install</span> nfs-utils
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="设置-NFS-服务开机启动"><a href="#设置-NFS-服务开机启动" class="headerlink" title="设置 NFS 服务开机启动"></a>设置 NFS 服务开机启动</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl <span class="token function">enable</span> rpcbind
+<span class="token function">sudo</span> systemctl <span class="token function">enable</span> nfs
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="启动-NFS-服务"><a href="#启动-NFS-服务" class="headerlink" title="启动 NFS 服务"></a>启动 NFS 服务</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl start rpcbind
+<span class="token function">sudo</span> systemctl start nfs
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="服务启动之后，我们在服务端配置一个共享目录"><a href="#服务启动之后，我们在服务端配置一个共享目录" class="headerlink" title="服务启动之后，我们在服务端配置一个共享目录"></a>服务启动之后，我们在服务端配置一个共享目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">mkdir</span> /data
+<span class="token function">sudo</span> <span class="token function">chmod</span> 755 /data
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="根据这个目录，相应配置导出目录"><a href="#根据这个目录，相应配置导出目录" class="headerlink" title="根据这个目录，相应配置导出目录"></a>根据这个目录，相应配置导出目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">vi</span> /etc/exports
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="添加如下配置"><a href="#添加如下配置" class="headerlink" title="添加如下配置"></a>添加如下配置</h3><pre><code>/data/     192.168.0.0/24(rw,sync,no_root_squash,no_all_squash)
+</code></pre>
+<blockquote>
+<ol>
+<li><code>/data</code>: 共享目录位置。</li>
+<li><code>192.168.0.0/24</code>: 客户端 <code>IP</code> 范围，<code>*</code> 代表所有，即没有限制。</li>
+<li><code>rw</code>: 权限设置，可读可写。</li>
+<li><code>sync</code>: 同步共享目录。</li>
+<li><code>no_root_squash</code>: 可以使用 <code>root</code> 授权。</li>
+<li><code>no_all_squash</code>: 可以使用普通用户授权。</li>
+</ol>
+</blockquote>
+<h3 id="wq-保存设置之后，重启-NFS-服务"><a href="#wq-保存设置之后，重启-NFS-服务" class="headerlink" title=":wq 保存设置之后，重启 NFS 服务"></a><code>:wq </code>保存设置之后，重启 <code>NFS</code> 服务</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl restart nfs
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="可以检查一下本地的共享目录"><a href="#可以检查一下本地的共享目录" class="headerlink" title="可以检查一下本地的共享目录"></a>可以检查一下本地的共享目录</h3><pre class="line-numbers language-bash"><code class="language-bash">showmount -e localhost
+Export list <span class="token keyword">for</span> localhost:
+/data 192.168.0.0/24
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a target="_blank" rel="noopener" href="https://qizhanming.com/blog/2018/08/08/how-to-install-nfs-on-centos-7">参考</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-jian-kong-metrics-server-bu-shu-shi-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -953,130 +1051,6 @@ Events:              <span class="token operator">&lt;</span>none<span class="to
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/keepalived-haproxy-shi-xian-shuang-ji-re-bei/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/keepalived-haproxy-shi-xian-shuang-ji-re-bei/" class="post-title-link" itemprop="url">keepalived+haproxy实现双机热备</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-10-29 16:36:24" itemprop="dateCreated datePublished" datetime="2019-10-29T16:36:24+08:00">2019-10-29</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="安装haproxy"><a href="#安装haproxy" class="headerlink" title="安装haproxy"></a>安装<code>haproxy</code></h3><p>参考<a href="">Haproxy安装使用</a></p>
-<h3 id="安装keepalived"><a href="#安装keepalived" class="headerlink" title="安装keepalived"></a>安装<code>keepalived</code></h3><pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> keepalived -y
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="修改keepalived配置文件"><a href="#修改keepalived配置文件" class="headerlink" title="修改keepalived配置文件"></a>修改<code>keepalived</code>配置文件</h3><p>默认配置文件目录：<code>/etc/keepalived/keepalived.conf</code></p>
-<pre><code>global_defs {
-   router_id consul1    #虚拟路由名称
-}
- 
-vrrp_script chk_haproxy {
-    script "killall -0 haproxy"     #使用killall -0检查haproxy实例是否存在，性能高于ps命令
-    interval 2    #脚本运行周期
-    timeout 2    #每次检查的加权权重值
-    fall 3
-}
- 
-vrrp_instance haproxy {
-    state MASTER     #本机实例状态，MASTER/BACKUP，备机配置文件中请写BACKUP
-    interface ens33    #本机网卡名称，使用ifconfig命令查看
-    virtual_router_id 51    #虚拟路由编号，主备机保持一致
-    priority 100    #本机初始权重，备机请填写小于主机的值（例如100）
-    advert_int 1        #争抢虚地址的周期，秒
-    authentication {
-        auth_type PASS
-        auth_pass 1111
-    }
-    virtual_ipaddress {
-        192.168.41.150    #虚地址IP，主备机保持一致
-    }
-    track_script {
-        chk_haproxy        #对应的健康检查配置
-    }
-}
-</code></pre>
-<h3 id="启动keepalived服务"><a href="#启动keepalived服务" class="headerlink" title="启动keepalived服务"></a>启动<code>keepalived</code>服务</h3><p>主备机配置完成后，均启动<code>keepalived</code>服务</p>
-<pre><code>systemctl  start keepalived.service
-</code></pre>
-<h3 id="检查主备机网卡上是否有VIP"><a href="#检查主备机网卡上是否有VIP" class="headerlink" title="检查主备机网卡上是否有VIP"></a>检查主备机网卡上是否有<code>VIP</code></h3><p>执行命令：<code>ip addr sh ens33</code></p>
-<pre><code>2: ens33: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
-&nbsp; &nbsp; link/ether 00:0c:29:e8:3f:ba brd ff:ff:ff:ff:ff:ff
-&nbsp; &nbsp; inet 192.168.41.129/24 brd 192.168.41.255 scope global noprefixroute ens33
-&nbsp; &nbsp; &nbsp; &nbsp;valid_lft forever preferred_lft forever
-&nbsp; &nbsp; inet 192.168.41.150/32 scope global ens33
-&nbsp; &nbsp; &nbsp; &nbsp;valid_lft forever preferred_lft forever
-&nbsp; &nbsp; inet6 fe80::999f:e60:1951:9d4d/64 scope link tentative noprefixroute dadfailed&nbsp;
-&nbsp; &nbsp; &nbsp; &nbsp;valid_lft forever preferred_lft forever
-&nbsp; &nbsp; inet6 fe80::d5e3:a2fa:a42:31d3/64 scope link noprefixroute&nbsp;
-&nbsp; &nbsp; &nbsp; &nbsp;valid_lft forever preferred_lft forever
-</code></pre>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><ul>
-<li>停止<code>haproxy</code>服务，查看<code>VIP</code>是否转移</li>
-</ul>
-<pre><code>systemctl  stop haproxy.service
-</code></pre>
-<ul>
-<li>停止<code>keepalived</code>服务，查看<code>VIP</code>是否转移</li>
-</ul>
-<pre><code>systemctl  stop keepalived.service
-</code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1148,7 +1122,7 @@ vrrp_instance haproxy {
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">341</span>
+          <span class="site-state-item-count">342</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
