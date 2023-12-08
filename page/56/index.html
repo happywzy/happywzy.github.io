@@ -196,6 +196,150 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-watcher-handle-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/consul-watcher-handle-shi-yong/" class="post-title-link" itemprop="url">consul【watcher handle使用】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-08 14:13:19" itemprop="dateCreated datePublished" datetime="2019-10-08T14:13:19+08:00">2019-10-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><p>创建<code>watcher.json</code>文件，放在<code>consul</code>配置目录下，启动consul时指定<code>-config-dir</code>:</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"watches"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"key"</span><span class="token punctuation">,</span>
+      <span class="token property">"key"</span><span class="token operator">:</span> <span class="token string">"foo/data"</span><span class="token punctuation">,</span>
+      <span class="token property">"handler_type"</span><span class="token operator">:</span> <span class="token string">"http"</span><span class="token punctuation">,</span>
+      <span class="token property">"http_handler_config"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+         <span class="token property">"path"</span><span class="token operator">:</span><span class="token string">"http://127.0.0.1:8763/watch"</span><span class="token punctuation">,</span>
+         <span class="token property">"method"</span><span class="token operator">:</span> <span class="token string">"POST"</span><span class="token punctuation">,</span>
+         <span class="token property">"header"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"x-foo"</span><span class="token operator">:</span><span class="token punctuation">[</span><span class="token string">"bar"</span><span class="token punctuation">,</span> <span class="token string">"baz"</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+         <span class="token property">"timeout"</span><span class="token operator">:</span> <span class="token string">"10s"</span><span class="token punctuation">,</span>
+         <span class="token property">"tls_skip_verify"</span><span class="token operator">:</span> <span class="token boolean">false</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建handle"><a href="#创建handle" class="headerlink" title="创建handle"></a>创建handle</h3><p>创建一个<code>http服务</code>用于接收变更的<code>key</code>，<code>http://127.0.0.1:8763/watch</code></p>
+<pre class="line-numbers language-java"><code class="language-java">    <span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/watch"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">watcher</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">getMethod</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        BufferedReader reader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BufferedReader</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">InputStreamReader</span><span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        String str <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">;</span>
+        String wholeStr <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>str <span class="token operator">=</span> reader<span class="token punctuation">.</span><span class="token function">readLine</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            wholeStr <span class="token operator">+=</span> str<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"body:"</span> <span class="token operator">+</span> wholeStr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>在<code>consul ui</code>中新增 或者修改<code>foo/data</code>这个key值，<code>watcher</code>就会收到这个更新后的值</p>
+<pre class="line-numbers language-log"><code class="language-log">POST
+body:{"Key":"foo/data","CreateIndex":12,"ModifyIndex":12,"LockIndex":0,"Flags":0,"Value":"YWFhYWFhYQ==","Session":""}
+POST
+body:{"Key":"foo/data","CreateIndex":12,"ModifyIndex":17,"LockIndex":0,"Flags":0,"Value":"YWFhYWFhYXNzc3NkZHNkZHNk","Session":""}
+POST
+body:{"Key":"foo/data","CreateIndex":12,"ModifyIndex":25,"LockIndex":0,"Flags":0,"Value":"ewogICJ0ZXN0IjoidGVzdCIsCiAgInRlc3QyIjoidDMzM2VzdCIKfQ==","Session":""}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>value为<code>base64编码</code>，解码后得到需要的值。</p>
+<h3 id="sh脚本"><a href="#sh脚本" class="headerlink" title="sh脚本"></a>sh脚本</h3><p><code>handle</code>除了是<code>http</code>，还可以是<code>sh脚本</code>，如</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"key"</span><span class="token punctuation">,</span>
+  <span class="token property">"key"</span><span class="token operator">:</span> <span class="token string">"foo/bar/baz"</span><span class="token punctuation">,</span>
+  <span class="token property">"handler_type"</span><span class="token operator">:</span> <span class="token string">"script"</span><span class="token punctuation">,</span>
+  <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"/usr/bin/my-service-handler.sh"</span><span class="token punctuation">,</span> <span class="token string">"-redis"</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="官网说明"><a href="#官网说明" class="headerlink" title="官网说明"></a>官网说明</h3><p>以下摘自官网：<code>https://www.consul.io/docs/agent/watches.html#key</code></p>
+<p>Watch Types/支持的类型<br>The following types are supported. Detailed documentation on each is below:</p>
+<ul>
+<li>key&nbsp;- Watch a specific KV pair</li>
+<li>keyprefix&nbsp;- Watch a prefix in the KV store</li>
+<li>services&nbsp;- Watch the list of available services</li>
+<li>nodes&nbsp;- Watch the list of nodes</li>
+<li>service- Watch the instances of a service</li>
+<li>checks&nbsp;- Watch the value of health checks</li>
+<li>event&nbsp;- Watch for custom user events</li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"key"</span><span class="token punctuation">,</span>
+  <span class="token property">"key"</span><span class="token operator">:</span> <span class="token string">"foo/bar/baz"</span><span class="token punctuation">,</span>
+  <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"/usr/bin/my-service-handler.sh"</span><span class="token punctuation">,</span> <span class="token string">"-redis"</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"keyprefix"</span><span class="token punctuation">,</span>
+  <span class="token property">"prefix"</span><span class="token operator">:</span> <span class="token string">"foo/"</span><span class="token punctuation">,</span>
+  <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"/usr/bin/my-service-handler.sh"</span><span class="token punctuation">,</span> <span class="token string">"-redis"</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"service"</span><span class="token punctuation">,</span>
+  <span class="token property">"service"</span><span class="token operator">:</span> <span class="token string">"redis"</span><span class="token punctuation">,</span>
+  <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"/usr/bin/my-service-handler.sh"</span><span class="token punctuation">,</span> <span class="token string">"-redis"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"tag"</span><span class="token operator">:</span> <span class="token string">"bar"</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubernetes-v1-15-0-an-zhuang-shi-yong-kubeadm-bu-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1824,127 +1968,10 @@ docker run -d -e CONSUL_BIND_INTERFACE=eth0 -v /docker/consul/client1/config:/co
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-dan-ji-ban-windows-bu-shu-ji-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/consul-dan-ji-ban-windows-bu-shu-ji-shi-yong/" class="post-title-link" itemprop="url">consul【单机版windows部署及使用】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-08-30 16:55:26" itemprop="dateCreated datePublished" datetime="2019-08-30T16:55:26+08:00">2019-08-30</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="启动及常用配置项"><a href="#启动及常用配置项" class="headerlink" title="启动及常用配置项"></a>启动及常用配置项</h3><p>解压后，在目录下打开<code>cmd</code>窗口，运行</p>
-<pre class="line-numbers language-sh"><code class="language-sh">consul agent -dev -ui -node=nodeName
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h4 id="data-dir"><a href="#data-dir" class="headerlink" title="-data-dir"></a>-data-dir</h4><ul>
-<li>作用：指定agent储存状态的数据目录</li>
-<li>这是所有agent都必须的</li>
-<li>对于server尤其重要，因为他们必须持久化集群的状态</li>
-</ul>
-<h4 id="config-dir"><a href="#config-dir" class="headerlink" title="-config-dir"></a>-config-dir</h4><ul>
-<li>作用：指定service的配置文件和检查定义所在的位置</li>
-<li>通常会指定为”某一个路径/consul.d”（通常情况下，.d表示一系列配置文件存放的目录）</li>
-</ul>
-<h4 id="config-file"><a href="#config-file" class="headerlink" title="-config-file"></a>-config-file</h4><ul>
-<li>作用：指定一个要装载的配置文件</li>
-<li>该选项可以配置多次，进而配置多个配置文件（后边的会合并前边的，相同的值覆盖）</li>
-</ul>
-<h4 id="dev"><a href="#dev" class="headerlink" title="-dev"></a>-dev</h4><ul>
-<li>作用：创建一个开发环境下的server节点</li>
-<li>该参数配置下，不会有任何持久化操作，即不会有任何数据写入到磁盘</li>
-<li>这种模式不能用于生产环境（因为第二条）</li>
-</ul>
-<h4 id="node"><a href="#node" class="headerlink" title="-node"></a>-node</h4><ul>
-<li>作用：指定节点在集群中的名称</li>
-<li>该名称在集群中必须是唯一的（默认采用机器的<code>host</code>）</li>
-<li>推荐：直接采用机器的IP</li>
-</ul>
-<h4 id="bind"><a href="#bind" class="headerlink" title="-bind"></a>-bind</h4><ul>
-<li>作用：指明节点的IP地址</li>
-<li>有时候不指定绑定IP，会报<code>Failed to get advertise address: Multiple private IPs found. Please configure one.&nbsp;</code>的异常</li>
-</ul>
-<h4 id="server"><a href="#server" class="headerlink" title="-server"></a>-server</h4><ul>
-<li>作用：指定节点为<code>server</code></li>
-<li>每个数据中心（<code>DC</code>）的server数推荐至少为1，至多为5</li>
-<li>所有的server都采用raft一致性算法来确保事务的一致性和线性化，事务修改了集群的状态，且集群的状态保存在每一台server上保证可用性</li>
-<li>server也是与其他DC交互的门面（gateway）</li>
-</ul>
-<h4 id="bootstrap-expect"><a href="#bootstrap-expect" class="headerlink" title="-bootstrap-expect"></a>-bootstrap-expect</h4><ul>
-<li>作用：该命令通知consul server我们现在准备加入的server节点个数，该参数是为了延迟日志复制的启动直到我们指定数量的server节点成功的加入后启动。</li>
-</ul>
-<h4 id="join"><a href="#join" class="headerlink" title="-join"></a>-join</h4><ul>
-<li>作用：将节点加入到集群</li>
-</ul>
-<h4 id="datacenter（老版本叫-dc，-dc已经失效）"><a href="#datacenter（老版本叫-dc，-dc已经失效）" class="headerlink" title="-datacenter（老版本叫-dc，-dc已经失效）"></a>-datacenter（老版本叫-dc，-dc已经失效）</h4><ul>
-<li>作用：指定机器加入到哪一个数据中心中</li>
-</ul>
-<h4 id="client"><a href="#client" class="headerlink" title="-client"></a>-client</h4><ul>
-<li>作用：指定节点为<code>client</code>，指定客户端接口的绑定地址，包括：<code>HTTP、DNS、RPC</code></li>
-<li>默认是<code>127.0.0.1</code>，只允许回环接口访问</li>
-<li>若不指定为<code>-server</code>，其实就是<code>-client</code></li>
-</ul>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>浏览器访问<a target="_blank" rel="noopener" href="http://127.0.0.1:8500/">http://127.0.0.1:8500</a><br><img data-src="/images/consul1.png" alt="consul"></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/55/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/55/">55</a><span class="page-number current">56</span><a class="page-number" href="/page/57/">57</a><a class="extend next" rel="next" href="/page/57/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/55/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/55/">55</a><span class="page-number current">56</span><a class="page-number" href="/page/57/">57</a><a class="page-number" href="/page/58/">58</a><a class="extend next" rel="next" href="/page/57/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -2012,14 +2039,14 @@ docker run -d -e CONSUL_BIND_INTERFACE=eth0 -v /docker/consul/client1/config:/co
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">342</span>
+          <span class="site-state-item-count">343</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">

@@ -196,6 +196,155 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-wai-jian-guan-lian-yi-zhang-biao-liang-ge-zi-duan-fen-bie-yu-ling-yi-zhang-biao-zhu-jian-guan-lian/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-wai-jian-guan-lian-yi-zhang-biao-liang-ge-zi-duan-fen-bie-yu-ling-yi-zhang-biao-zhu-jian-guan-lian/" class="post-title-link" itemprop="url">Mysql外键关联【一张表两个字段分别与另一张表主键关联】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-05 16:00:19" itemprop="dateCreated datePublished" datetime="2019-12-05T16:00:19+08:00">2019-12-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="用户表"><a href="#用户表" class="headerlink" title="用户表"></a>用户表</h3><table>
+<thead>
+<tr>
+<th>user_id</th>
+<th>user_name</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>zhangsan</td>
+</tr>
+<tr>
+<td>2</td>
+<td>lisi</td>
+</tr>
+<tr>
+<td>3</td>
+<td>wangwu</td>
+</tr>
+<tr>
+<td>4</td>
+<td>zhaoliu</td>
+</tr>
+</tbody></table>
+<h3 id="另一张money表，表示了借钱的关系"><a href="#另一张money表，表示了借钱的关系" class="headerlink" title="另一张money表，表示了借钱的关系"></a>另一张money表，表示了借钱的关系</h3><table>
+<thead>
+<tr>
+<th>id</th>
+<th>from</th>
+<th>to</th>
+<th>how</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1</td>
+<td>2</td>
+<td>100</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>100</td>
+</tr>
+</tbody></table>
+<h3 id="关联查询"><a href="#关联查询" class="headerlink" title="关联查询"></a>关联查询</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">select</span> m<span class="token punctuation">.</span>id<span class="token punctuation">,</span>u1<span class="token punctuation">.</span>user_name<span class="token punctuation">,</span>u2<span class="token punctuation">.</span>user_name<span class="token punctuation">,</span>m<span class="token punctuation">.</span>how
+<span class="token keyword">from</span> money <span class="token keyword">as</span> m
+<span class="token keyword">left</span> <span class="token keyword">outer</span> <span class="token keyword">join</span> <span class="token keyword">user</span> u1 <span class="token keyword">on</span> u2<span class="token punctuation">.</span>user_id<span class="token operator">=</span>m<span class="token punctuation">.</span><span class="token keyword">from</span>
+<span class="token keyword">left</span> <span class="token keyword">outer</span> <span class="token keyword">join</span> <span class="token keyword">user</span> u3 <span class="token keyword">on</span> u3<span class="token punctuation">.</span>user_id<span class="token operator">=</span>m<span class="token punctuation">.</span><span class="token keyword">to</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="显示的结果"><a href="#显示的结果" class="headerlink" title="显示的结果"></a>显示的结果</h3><table>
+<thead>
+<tr>
+<th>id</th>
+<th>user_name</th>
+<th>user_name</th>
+<th>how</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>zhangsan</td>
+<td>lisi</td>
+<td>100</td>
+</tr>
+<tr>
+<td>2</td>
+<td>wangwu</td>
+<td>zhaoliu</td>
+<td>100</td>
+</tr>
+</tbody></table>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>这里有个小问题，中间两列显示的名称一样，都是<code>user_name</code>，这样就不好辨别了，在<code>Mybatis</code>中如果想用</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@ResultType</span><span class="token punctuation">(</span>实体类名称<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>来定义返回的类型，因为两个字段名一样，定义的实体类肯定不能一样，就会导致返回没有结果，怎么处理呢？</p>
+<p>关联查询时，指定结果字段别名</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">select</span> m<span class="token punctuation">.</span>id<span class="token punctuation">,</span>u1<span class="token punctuation">.</span>user_name <span class="token keyword">as</span> user_name1<span class="token punctuation">,</span>u2<span class="token punctuation">.</span>user_name <span class="token keyword">as</span> user_name2<span class="token punctuation">,</span>m<span class="token punctuation">.</span>how
+<span class="token keyword">from</span> money <span class="token keyword">as</span> m
+<span class="token keyword">left</span> <span class="token keyword">outer</span> <span class="token keyword">join</span> <span class="token keyword">user</span> u1 <span class="token keyword">on</span> u2<span class="token punctuation">.</span>user_id<span class="token operator">=</span>m<span class="token punctuation">.</span><span class="token keyword">from</span>
+<span class="token keyword">left</span> <span class="token keyword">outer</span> <span class="token keyword">join</span> <span class="token keyword">user</span> u3 <span class="token keyword">on</span> u3<span class="token punctuation">.</span>user_id<span class="token operator">=</span>m<span class="token punctuation">.</span><span class="token keyword">to</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/ding-ding-qun-ji-qi-ren-kai-fa/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1226,146 +1375,10 @@ url: <string>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-zi-ding-yi-prometheusrule/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/prometheus-operator-shi-yong-zi-ding-yi-prometheusrule/" class="post-title-link" itemprop="url">prometheus-operator使用【自定义PrometheusRule】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-28 11:39:33" itemprop="dateCreated datePublished" datetime="2019-11-28T11:39:33+08:00">2019-11-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="PrometheusRule介绍"><a href="#PrometheusRule介绍" class="headerlink" title="PrometheusRule介绍"></a>PrometheusRule介绍</h3><blockquote>
-<p><code>PrometheusRule</code>是安装<code>prometheus-operator</code>时默认安装的自定义资源对象（<code>CRD</code>），用来管理<code>Prometheus</code>上的<code>告警规则</code>，后面增删改查规则都可以通过这个资源对象查询。</p>
-</blockquote>
-<p>例如查询默认加入的规则，通过下面的命令可以查询。</p>
-<pre class="line-numbers language-sh"><code class="language-sh">[root@k8s-master prometheus-operator]# kubectl get PrometheusRule -n monitoring
-NAME                                                       AGE
-prometheus-operator-alertmanager.rules                     28m
-prometheus-operator-etcd                                   28m
-prometheus-operator-general.rules                          28m
-prometheus-operator-k8s.rules                              28m
-prometheus-operator-kube-apiserver.rules                   28m
-prometheus-operator-kube-prometheus-node-recording.rules   28m
-prometheus-operator-kube-scheduler.rules                   28m
-prometheus-operator-kubernetes-absent                      28m
-prometheus-operator-kubernetes-apps                        28m
-prometheus-operator-kubernetes-resources                   28m
-prometheus-operator-kubernetes-storage                     28m
-prometheus-operator-kubernetes-system                      28m
-prometheus-operator-kubernetes-system-apiserver            28m
-prometheus-operator-kubernetes-system-controller-manager   28m
-prometheus-operator-kubernetes-system-kubelet              28m
-prometheus-operator-kubernetes-system-scheduler            28m
-prometheus-operator-node-exporter                          28m
-prometheus-operator-node-exporter.rules                    28m
-prometheus-operator-node-network                           28m
-prometheus-operator-node-time                              28m
-prometheus-operator-node.rules                             28m
-prometheus-operator-prometheus                             28m
-prometheus-operator-prometheus-operator                    28m
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>也可以在<code>Prometheus -&gt; Dashboard -&gt; Status -&gt; Rules</code>中查看<br><img data-src="/images/k8s4.png" alt="prometheusRules"></p>
-<h3 id="Prometheus怎么识别这个资源对象"><a href="#Prometheus怎么识别这个资源对象" class="headerlink" title="Prometheus怎么识别这个资源对象"></a>Prometheus怎么识别这个资源对象</h3><p>简单来说，类似标签选择器，定义的<code>PrometheusRule</code>资源对象，需要带有一些<code>Labels</code>，具体哪些可以参考默认生成的<code>PrometheusRule</code>，然后新建的也给加上。</p>
-<p><img data-src="/images/k8s5.png" alt="prometheusRules"></p>
-<p>参考链接：<code>https://www.qikqiak.com/post/prometheus-operator-custom-alert/</code>。</p>
-<p>所有的Rules都有对应的文件，默认生成在<code>prometheus容器内</code>的</p>
-<pre><code>/etc/prometheus/rules/prometheus-prometheus-operator-prometheus-rulefiles-0/
-</code></pre>
-<p>目录下，新增一个<code>PrometheusRule资源</code>，也会在该目录下自动生成一个<code>YAML文件</code>。</p>
-<p>因此我们可以不用管理配置文件，只需要管理<code>PrometheusRule</code>，<code>prometheus-operator</code>使得<code>prometheus</code>监控更加<code>K8s</code>.</p>
-<h3 id="创建新的PrometheusRule资源"><a href="#创建新的PrometheusRule资源" class="headerlink" title="创建新的PrometheusRule资源"></a>创建新的PrometheusRule资源</h3><p><code>myrule.yaml</code></p>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-metadata:
-  name: myrule
-  labels:
-    app: prometheus-operator
-    chart: prometheus-operator-8.2.4
-    heritage: Tiller
-    release: prometheus-operator
-spec:
-  groups:
-  - name: my-node-time
-    rules:
-    - alert: myClockSkewDetected
-      annotations:
-        message: myClock skew detected on node-exporter {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}}. Ensure NTP is configured correctly on this host.
-      expr: abs(node_timex_offset_seconds{job="node-exporter"}) > 0.03
-      for: 2m
-      labels:
-        severity: warning
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意：上面配置中具体的规则只是拷贝了一个默认规则中的内容。</p>
-</blockquote>
-<h3 id="使用命令或者在dashboard中贴上以上YAML，即可创建。"><a href="#使用命令或者在dashboard中贴上以上YAML，即可创建。" class="headerlink" title="使用命令或者在dashboard中贴上以上YAML，即可创建。"></a>使用命令或者在dashboard中贴上以上YAML，即可创建。</h3><pre><code>kubectl create -f myrule.yaml
-</code></pre>
-<p>创建完之后，可以通过命令查看</p>
-<pre><code>kubectl get PrometheusRule -n monitoring
-</code></pre>
-<p>也可以在<code>Prometheus</code> -&gt; <code>Dashboard</code>中查看，最后在<code>Prometheus</code>容器<code>Rule</code>目录下确认是否新生成一个<code>myrule.yaml</code>的配置文件。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/50/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/50/">50</a><span class="page-number current">51</span><a class="page-number" href="/page/52/">52</a><span class="space">&hellip;</span><a class="page-number" href="/page/57/">57</a><a class="extend next" rel="next" href="/page/52/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/50/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/50/">50</a><span class="page-number current">51</span><a class="page-number" href="/page/52/">52</a><span class="space">&hellip;</span><a class="page-number" href="/page/58/">58</a><a class="extend next" rel="next" href="/page/52/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1433,14 +1446,14 @@ spec:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">342</span>
+          <span class="site-state-item-count">343</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
