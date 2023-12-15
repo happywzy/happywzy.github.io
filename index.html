@@ -241,20 +241,24 @@ test:$apr1$XV.xFTZA$Gvuw/g8TAYYS6Nm5c7w5Q1
 # 可以向这个文件继续添加用户test2，密码sss
 htpasswd -b pwd test2 sss
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="nginx-conf"><a href="#nginx-conf" class="headerlink" title="nginx.conf"></a>nginx.conf</h3><pre class="line-numbers language-conf"><code class="language-conf">server {
+<h3 id="nginx-conf"><a href="#nginx-conf" class="headerlink" title="nginx.conf"></a>nginx.conf</h3><p>将上面生成的文件 pwd 放到 /etc/nginx/pwd目录下,并在 nginx.conf 指定位置.</p>
+<pre class="line-numbers language-conf"><code class="language-conf">server {
         listen    80 default_server;
         server_name _;
         location / {
             auth_basic "you need login";
-            auth_basic_user_file /etc/nginx/htpasswd; 
+            auth_basic_user_file /etc/nginx/pwd; 
             proxy_pass   http://xxxx:222;
+            # Default is HTTP/1, keepalive is only enabled in HTTP/1.1
             proxy_http_version 1.1;
+            # Remove the Connection header if the client sends it,
+            # it could be "close" to close a keepalive connection
             proxy_set_header Connection ""; 
       }
     }
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <blockquote>
-<p>注意<code>proxy_set_header Connection ""</code>这个配置对于SSE长连接的接口很重要，一定要添加不然无数据返回.</p>
+<p>注意<code>proxy_http_version 1.1</code>、<code>proxy_set_header Connection ""</code>配置对于SSE这种需要保持长连接的接口很重要，一定要添加不然无数据返回. <code>proxy_http_version</code>指定版本,<code>proxy_set_header</code>设置<code>Connection</code>为空.</p>
 </blockquote>
 <h3 id="curl测试"><a href="#curl测试" class="headerlink" title="curl测试"></a>curl测试</h3><pre class="line-numbers language-shell"><code class="language-shell"># 第一种方式, -u 指定用户名密码
 curl -u "test2:sss"   http://172.16.20.91:38750/sse/test
