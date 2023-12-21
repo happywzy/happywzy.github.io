@@ -196,6 +196,117 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/spring-boot-ding-shi-ren-wu-cong-pei-zhi-wen-jian-zhong-huo-qu-cron-biao-da-shi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/spring-boot-ding-shi-ren-wu-cong-pei-zhi-wen-jian-zhong-huo-qu-cron-biao-da-shi/" class="post-title-link" itemprop="url">springboot定时任务从配置文件中获取cron表达式</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-07 17:27:05" itemprop="dateCreated datePublished" datetime="2020-04-07T17:27:05+08:00">2020-04-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="Scheduled"><a href="#Scheduled" class="headerlink" title="@Scheduled"></a>@Scheduled</h3><p>实现cron表达式从application.yml文件中获取</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">dbc</span><span class="token punctuation">:</span>
+  <span class="token key atrule">cron</span><span class="token punctuation">:</span> 0/5 * * * * <span class="token punctuation">?</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token annotation punctuation">@EnableScheduling</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CompareSchedule</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Scheduled</span><span class="token punctuation">(</span>cron <span class="token operator">=</span> <span class="token string">"${dbc.cron}"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">schedule</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="cron表达式含义"><a href="#cron表达式含义" class="headerlink" title="cron表达式含义"></a>cron表达式含义</h3><p>cron一共有7位，但是最后一位是年，可以留空，所以我们可以写6位：</p>
+<ul>
+<li>第一位，表示秒，取值0-59</li>
+<li>第二位，表示分，取值0-59&nbsp;</li>
+<li>第三位，表示小时，取值0-23&nbsp;</li>
+<li>第四位，日期天/日，取值1-31</li>
+<li>第五位，日期月份，取值1-12&nbsp;</li>
+<li>第六位，星期，取值1-7，星期一，星期二…，注：不是第1周，第二周的意思 另外：1表示星期天，2表示星期一。</li>
+<li>第七位，年份，可以留空，取值1970-2099</li>
+</ul>
+<p>&nbsp;</p>
+<p>cron中，还有一些特殊的符号，含义如下：</p>
+<ul>
+<li>(*)星号：可以理解为每的意思，每秒，每分，每天，每月，每年…&nbsp;</li>
+<li>(?)问号：问号只能出现在日期和星期这两个位置，表示这个位置的值不确定，每天3点执行，所以第六位星期的位置，我们是不需要关注的，就是不确定的值。同时：日期和星期是两个相互排斥的元素，通过问号来表明不指定值。比如，1月10日，比如是星期1，如果在星期的位置是另指定星期二，就前后冲突矛盾了。</li>
+<li>(-)减号：表达一个范围，如在小时字段中使用“10-12”，则表示从10到12点，即10,11,12&nbsp;</li>
+<li>(,)逗号：表达一个列表值，如在星期字段中使用“1,2,4”，则表示星期一，星期二，星期四&nbsp;</li>
+<li>(/)斜杠：如：x/y，x是开始值，y是步长，比如在第一位（秒） 0/15就是，从0秒开始，每15秒，最后就是0，15，30，45，60 另：*/y，等同于0/y</li>
+</ul>
+<p>&nbsp;</p>
+<p>下面列举几个例子供大家来验证：</p>
+<ul>
+<li>0 0 3 * * ? 每天3点执行&nbsp;</li>
+<li>0 5 3 * * ? 每天3点5分执行&nbsp;</li>
+<li>0 5 3 ? * * 每天3点5分执行，与上面作用相同</li>
+<li>0 5/10 3 * * ? 每天3点的 5分，15分，25分，35分，45分，55分这几个时间点执行&nbsp;</li>
+<li>0 10 3 ? * 1 每周星期天，3点10分 执行，注：1表示星期天&nbsp;</li>
+<li>0 10 3 ? * 1&nbsp;#3 每个月的第三个星期，星期天 执行，#号只能出现在星期的位置</li>
+</ul>
+<p>&nbsp;</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/ce-shi-wen-zhang-jia-mi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -717,379 +828,6 @@ ResultSetMetaData rsd <span class="token operator">=</span> rs<span class="token
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flinksql-client-chu-ti-yan/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/flinksql-client-chu-ti-yan/" class="post-title-link" itemprop="url">flinkSQL-client初体验</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-26 16:31:19" itemprop="dateCreated datePublished" datetime="2020-03-26T16:31:19+08:00">2020-03-26</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>本章创建一个模拟数据源将模拟数据源源不断写到<code>kafka</code>中，然后使用<code>Flink SQL client</code>查询<code>kafka</code>中的数据。</p>
-<p>模拟数据由java对象序列化而成的json格式字符串，包含book的id、type、price和时间。</p>
-<h3 id="BookPojo-java"><a href="#BookPojo-java" class="headerlink" title="BookPojo.java"></a>BookPojo.java</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">.</span>util<span class="token punctuation">;</span>
-
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>fastjson<span class="token punctuation">.</span>annotation<span class="token punctuation">.</span>JSONField<span class="token punctuation">;</span>
-
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>sql<span class="token punctuation">.</span>Timestamp<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Date<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">/**
- * @ClassName: BookPojo
- * @Description: TODO
- * @Author: wuzhiyong
- * @Time: 2020/3/20 9:48
- * @Version: v1.0
- **/</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BookPojo</span> <span class="token punctuation">{</span>
-    <span class="token keyword">private</span> <span class="token keyword">int</span> id<span class="token punctuation">;</span>
-    <span class="token keyword">private</span> String type<span class="token punctuation">;</span>
-    <span class="token keyword">private</span> <span class="token keyword">int</span> price<span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">//Currently, JSON format only allowed the timestamp data is in RFC-3339, i.e. "2019-07-09 02:02:00.040Z".</span>
-    <span class="token comment" spellcheck="true">//注意引入的是java.util.Date;而不是java.sql.Date;</span>
-    <span class="token annotation punctuation">@JSONField</span><span class="token punctuation">(</span>format <span class="token operator">=</span> <span class="token string">"yyyy-MM-dd'T'HH:mm:ss'Z'"</span><span class="token punctuation">)</span>
-    <span class="token keyword">private</span> Date ts<span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token function">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getId</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> id<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setId</span><span class="token punctuation">(</span><span class="token keyword">int</span> id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>id <span class="token operator">=</span> id<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> String <span class="token function">getType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> type<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setType</span><span class="token punctuation">(</span>String type<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>type <span class="token operator">=</span> type<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getPrice</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> price<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token keyword">int</span> price<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>price <span class="token operator">=</span> price<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> Date <span class="token function">getTs</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> ts<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setTs</span><span class="token punctuation">(</span>Date ts<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>ts <span class="token operator">=</span> ts<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="模拟书籍Books-java"><a href="#模拟书籍Books-java" class="headerlink" title="模拟书籍Books.java"></a>模拟书籍Books.java</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">.</span>util<span class="token punctuation">;</span>
-
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ArrayList<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>List<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Random<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">/**
- * @ClassName: Books
- * @Description: TODO
- * @Author: wuzhiyong
- * @Time: 2020/3/20 10:52
- * @Version: v1.0
- **/</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Books</span> <span class="token punctuation">{</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> BookPojo <span class="token function">getBook</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>BookPojo<span class="token operator">></span> bookPojos <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">{</span>
-            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"cs"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">80</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token punctuation">{</span>
-            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"math"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">70</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token punctuation">{</span>
-            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"ph"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">60</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token punctuation">{</span>
-            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"cs"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">50</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token punctuation">{</span>
-            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"math"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">40</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-
-        <span class="token punctuation">{</span>
-            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"ph"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">return</span> bookPojos<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="创建flink-source"><a href="#创建flink-source" class="headerlink" title="创建flink source"></a>创建flink source</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">.</span>util<span class="token punctuation">;</span>
-
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>fastjson<span class="token punctuation">.</span>JSON<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>functions<span class="token punctuation">.</span>source<span class="token punctuation">.</span>SourceFunction<span class="token punctuation">;</span>
-
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>sql<span class="token punctuation">.</span>Timestamp<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Arrays<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Date<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>List<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Random<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">/**
- * @ClassName: MyNoParalleSource
- * @Description: TODO
- * @Author: wuzhiyong
- * @Time: 2020/3/4 10:15
- * @Version: v1.0
- **/</span>
-<span class="token comment" spellcheck="true">//使用并行度为1的source</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyPojoSource</span> <span class="token keyword">implements</span> <span class="token class-name">SourceFunction</span><span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token punctuation">{</span><span class="token comment" spellcheck="true">//1</span>
-
-    <span class="token keyword">private</span> <span class="token keyword">boolean</span> isRunning <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span>SourceContext<span class="token operator">&lt;</span>String<span class="token operator">></span> ctx<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span>isRunning<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            BookPojo book <span class="token operator">=</span> Books<span class="token punctuation">.</span><span class="token function">getBook</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            book<span class="token punctuation">.</span><span class="token function">setTs</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            ctx<span class="token punctuation">.</span><span class="token function">collectWithTimestamp</span><span class="token punctuation">(</span>JSON<span class="token punctuation">.</span><span class="token function">toJSONString</span><span class="token punctuation">(</span>book<span class="token punctuation">)</span><span class="token punctuation">,</span>book<span class="token punctuation">.</span><span class="token function">getTs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">4000</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">cancel</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        isRunning <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="创建flink任务，此任务只是将模拟数据写到kafka中"><a href="#创建flink任务，此任务只是将模拟数据写到kafka中" class="headerlink" title="创建flink任务，此任务只是将模拟数据写到kafka中"></a>创建flink任务，此任务只是将模拟数据写到kafka中</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">;</span>
-
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">.</span>util<span class="token punctuation">.</span>MyPojoSource<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>common<span class="token punctuation">.</span>serialization<span class="token punctuation">.</span>SimpleStringSchema<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>datastream<span class="token punctuation">.</span>DataStreamSource<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>environment<span class="token punctuation">.</span>StreamExecutionEnvironment<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>connectors<span class="token punctuation">.</span>kafka<span class="token punctuation">.</span>FlinkKafkaProducer<span class="token punctuation">;</span>
-
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Properties<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">/**
- * @ClassName: KafkaProducer
- * @Description: TODO
- * @Author: wuzhiyong
- * @Time: 2020/3/4 10:16
- * @Version: v1.0
- **/</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">KafkaPojoProducer</span> <span class="token punctuation">{</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
-
-        StreamExecutionEnvironment env <span class="token operator">=</span> StreamExecutionEnvironment<span class="token punctuation">.</span><span class="token function">getExecutionEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        DataStreamSource<span class="token operator">&lt;</span>String<span class="token operator">></span> text <span class="token operator">=</span> env<span class="token punctuation">.</span><span class="token function">addSource</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MyPojoSource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setParallelism</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token comment" spellcheck="true">/*设置并行度*/</span><span class="token punctuation">;</span>
-
-        Properties properties <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Properties</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        properties<span class="token punctuation">.</span><span class="token function">setProperty</span><span class="token punctuation">(</span><span class="token string">"bootstrap.servers"</span><span class="token punctuation">,</span> <span class="token string">"192.168.41.128:9092"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//new FlinkKafkaProducer("topn",new KeyedSerializationSchemaWrapper(new SimpleStringSchema()),properties,FlinkKafkaProducer.Semantic.EXACTLY_ONCE);</span>
-        FlinkKafkaProducer<span class="token operator">&lt;</span>String<span class="token operator">></span> producer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">FlinkKafkaProducer</span><span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">(</span><span class="token string">"pojo4"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">SimpleStringSchema</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> properties<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        <span class="token comment" spellcheck="true">//event-timestamp事件的发生时间</span>
-        producer<span class="token punctuation">.</span><span class="token function">setWriteTimestampToKafka</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        text<span class="token punctuation">.</span><span class="token function">addSink</span><span class="token punctuation">(</span>producer<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        env<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token string">"POJO Kafka Source"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置sql-client-defaults-yaml"><a href="#配置sql-client-defaults-yaml" class="headerlink" title="配置sql-client-defaults.yaml"></a>配置sql-client-defaults.yaml</h3><p>配置文件位于<code>flink根目录/conf</code>下</p>
-<p>配置table</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">tables</span><span class="token punctuation">:</span> 
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> book
-    <span class="token key atrule">type</span><span class="token punctuation">:</span> source<span class="token punctuation">-</span>table
-    <span class="token key atrule">update-mode</span><span class="token punctuation">:</span> append
-    <span class="token key atrule">connector</span><span class="token punctuation">:</span> 
-      <span class="token key atrule">property-version</span><span class="token punctuation">:</span> <span class="token number">1</span>
-      <span class="token key atrule">type</span><span class="token punctuation">:</span> kafka
-      <span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">"universal"</span>
-      <span class="token key atrule">topic</span><span class="token punctuation">:</span> pojo4
-      <span class="token key atrule">startup-mode</span><span class="token punctuation">:</span> earliest<span class="token punctuation">-</span>offset
-      <span class="token key atrule">properties</span><span class="token punctuation">:</span>
-        <span class="token key atrule">zookeeper.connect</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">2181</span>
-        <span class="token key atrule">bootstrap.servers</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">9092</span>
-        <span class="token key atrule">group.id</span><span class="token punctuation">:</span> testGroup
-    <span class="token key atrule">format</span><span class="token punctuation">:</span> 
-      <span class="token key atrule">property-version</span><span class="token punctuation">:</span> <span class="token number">1</span>
-      <span class="token key atrule">type</span><span class="token punctuation">:</span> json
-      <span class="token comment" spellcheck="true"># derive-schema: true</span>
-      <span class="token key atrule">schema</span><span class="token punctuation">:</span> <span class="token string">"ROW&lt;id INT, type STRING, price INT, ts TIMESTAMP>"</span>
-    <span class="token key atrule">schema</span><span class="token punctuation">:</span> 
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> id
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> INT
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> type
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> STRING
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> price
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> INT
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> tss
-        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> TIMESTAMP
-        <span class="token key atrule">rowtime</span><span class="token punctuation">:</span>
-          <span class="token key atrule">timestamps</span><span class="token punctuation">:</span>
-            <span class="token key atrule">type</span><span class="token punctuation">:</span> <span class="token string">"from-field"</span>
-            <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token string">"ts"</span>
-          <span class="token key atrule">watermarks</span><span class="token punctuation">:</span>
-            <span class="token key atrule">type</span><span class="token punctuation">:</span> <span class="token string">"periodic-bounded"</span>
-            <span class="token key atrule">delay</span><span class="token punctuation">:</span> <span class="token string">"60000"</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="启动SQL-client"><a href="#启动SQL-client" class="headerlink" title="启动SQL client"></a>启动SQL client</h3><p>进入到flink根目录下，执行</p>
-<pre class="line-numbers language-sh"><code class="language-sh">./bin/sql-client.sh embedded
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>如果没有报错，可以看到一个小松鼠，并进入以下界面</p>
-<pre><code>...
-Flink SQL&gt; 
-</code></pre>
-<h3 id="一些测试SQL语句"><a href="#一些测试SQL语句" class="headerlink" title="一些测试SQL语句"></a>一些测试SQL语句</h3><ol>
-<li>最简单的查询</li>
-</ol>
-<pre class="line-numbers language-SQL"><code class="language-SQL">SELECT * FROM book;
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="2">
-<li>查询价格大于50的</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> book <span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  id<span class="token punctuation">,</span>price<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">,</span>tss  <span class="token keyword">having</span> price <span class="token operator">></span> <span class="token number">50</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="3">
-<li>每五分钟book的总销售额</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> 
-id<span class="token punctuation">,</span>
-<span class="token keyword">type</span><span class="token punctuation">,</span>
-TUMBLE_END<span class="token punctuation">(</span>tss<span class="token punctuation">,</span> INTERVAL <span class="token string">'5'</span> MINUTE<span class="token punctuation">)</span> <span class="token keyword">AS</span> window_end<span class="token punctuation">,</span>
-<span class="token function">SUM</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">AS</span> sumprice
-<span class="token keyword">FROM</span> book
-<span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  
-id<span class="token punctuation">,</span>
-<span class="token keyword">type</span><span class="token punctuation">,</span>
-TUMBLE<span class="token punctuation">(</span>tss<span class="token punctuation">,</span> INTERVAL <span class="token string">'5'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="4">
-<li>创建一个新的view，用于存放SELECT结果</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">VIEW</span> book_view <span class="token keyword">AS</span>
-<span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> book <span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  id<span class="token punctuation">,</span>price<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">,</span>tss  <span class="token keyword">having</span> price <span class="token operator">></span> <span class="token number">60</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>根据id查询卖出的总数量</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> id<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">AS</span> cnt <span class="token keyword">FROM</span> book <span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  id<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="6">
-<li>根据type查询卖出的总数量</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> <span class="token keyword">type</span><span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">AS</span> cnt <span class="token keyword">FROM</span> book <span class="token keyword">GROUP</span> <span class="token keyword">BY</span> <span class="token keyword">type</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="7">
-<li>查询过去5分钟不同id的书卖出的总额，每1分钟刷新一次</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> 
-id<span class="token punctuation">,</span>
-<span class="token keyword">type</span><span class="token punctuation">,</span>
-HOP_START <span class="token punctuation">(</span>tss<span class="token punctuation">,</span> INTERVAL <span class="token string">'60'</span> SECOND<span class="token punctuation">,</span> INTERVAL <span class="token string">'5'</span> MINUTE<span class="token punctuation">)</span> <span class="token keyword">AS</span> window_end<span class="token punctuation">,</span>
-<span class="token function">SUM</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">AS</span> sumprice
-<span class="token keyword">FROM</span> book
-<span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  
-id<span class="token punctuation">,</span>
-<span class="token keyword">type</span><span class="token punctuation">,</span>
-HOP <span class="token punctuation">(</span>tss<span class="token punctuation">,</span> INTERVAL <span class="token string">'60'</span> SECOND<span class="token punctuation">,</span> INTERVAL <span class="token string">'5'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="8">
-<li>创建一个模拟列，存放系统处理的时间</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">select</span> id<span class="token punctuation">,</span>price<span class="token punctuation">,</span>tss<span class="token punctuation">,</span> PROCTIME<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">AS</span> ts <span class="token keyword">from</span> book<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1161,7 +899,7 @@ HOP <span class="token punctuation">(</span>tss<span class="token punctuation">,
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">344</span>
+          <span class="site-state-item-count">345</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1174,7 +912,7 @@ HOP <span class="token punctuation">(</span>tss<span class="token punctuation">,
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">211</span>
+        <span class="site-state-item-count">212</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

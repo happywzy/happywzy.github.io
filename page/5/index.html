@@ -196,6 +196,119 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-ingress-zheng-shu-shuang-xiang-ren-zheng/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/nginx-ingress-zheng-shu-shuang-xiang-ren-zheng/" class="post-title-link" itemprop="url">nginx-ingress证书双向认证</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-11-11 10:47:42" itemprop="dateCreated datePublished" datetime="2022-11-11T10:47:42+08:00">2022-11-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>Nginx Ingress Controller 支持通过 annotation 的方式配置服务器与客户端之间的双向 HTTPS 认证来保证连接的安全性。</p>
+<h3 id="创建自签的CA证书"><a href="#创建自签的CA证书" class="headerlink" title="创建自签的CA证书"></a>创建自签的CA证书</h3><pre class="line-numbers language-bash"><code class="language-bash">openssl req -x509 -sha256 -newkey rsa:4096 -keyout ca.key -out ca.crt -days 356 -nodes -subj <span class="token string">'/CN=Fern Cert Authority'</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="创建Server端证书"><a href="#创建Server端证书" class="headerlink" title="创建Server端证书"></a>创建Server端证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成Server端证书的key和请求文件</span>
+openssl req -new -newkey rsa:4096 -keyout server.key -out server.csr -nodes -subj <span class="token string">'/CN=foo.bar.com'</span>
+<span class="token comment" spellcheck="true"># 使用根证书签发Server端请求文件，生成Server端证书</span>
+openssl x509 -req -sha256 -days 365 -in server.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out server.crt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建Client端证书"><a href="#创建Client端证书" class="headerlink" title="创建Client端证书"></a>创建Client端证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成Client端证书的请求文件</span>
+openssl req -new -newkey rsa:4096 -keyout client.key -out client.csr -nodes -subj <span class="token string">'/CN=Fern'</span>
+<span class="token comment" spellcheck="true"># 使用根证书签发Client端请求文件，生成Client端证书</span>
+openssl x509 -req -sha256 -days 365 -in client.csr -CA ca.crt -CAkey ca.key -set_serial 02 -out client.crt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建CA证书的Secret"><a href="#创建CA证书的Secret" class="headerlink" title="创建CA证书的Secret"></a>创建CA证书的Secret</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 默认default命名空间创建</span>
+kubectl create secret generic ca-secret --from-file<span class="token operator">=</span>ca.crt<span class="token operator">=</span>ca.crt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="创建Server证书的Secret"><a href="#创建Server证书的Secret" class="headerlink" title="创建Server证书的Secret"></a>创建Server证书的Secret</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl create secret generic tls-secret --from-file<span class="token operator">=</span>tls.crt<span class="token operator">=</span>server.crt --from-file<span class="token operator">=</span>tls.key<span class="token operator">=</span>server.key
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="创建测试用的Nginx-Ingress用例"><a href="#创建测试用的Nginx-Ingress用例" class="headerlink" title="创建测试用的Nginx Ingress用例"></a>创建测试用的Nginx Ingress用例</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.k8s.io/v1beta1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Ingress
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+    <span class="token key atrule">nginx.ingress.kubernetes.io/auth-tls-verify-client</span><span class="token punctuation">:</span> <span class="token string">"on"</span>
+    <span class="token key atrule">nginx.ingress.kubernetes.io/auth-tls-secret</span><span class="token punctuation">:</span> <span class="token string">"default/ca-secret"</span>
+    <span class="token key atrule">nginx.ingress.kubernetes.io/auth-tls-verify-depth</span><span class="token punctuation">:</span> <span class="token string">"1"</span>
+    <span class="token key atrule">nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>test
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">rules</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">host</span><span class="token punctuation">:</span> foo.bar.com
+    <span class="token key atrule">http</span><span class="token punctuation">:</span>
+      <span class="token key atrule">paths</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">backend</span><span class="token punctuation">:</span>
+          <span class="token key atrule">serviceName</span><span class="token punctuation">:</span> http<span class="token punctuation">-</span>svc
+          <span class="token key atrule">servicePort</span><span class="token punctuation">:</span> <span class="token number">80</span>
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> /
+  <span class="token key atrule">tls</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> foo.bar.com
+    <span class="token key atrule">secretName</span><span class="token punctuation">:</span> tls<span class="token punctuation">-</span>secret
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 客户端不传证书访问</span>
+curl --cacert ./ca.crt  https://foo.bar.com
+<span class="token comment" spellcheck="true"># 客户端传证书访问</span>
+curl --cacert ./ca.crt --cert ./client.crt --key ./client.key https://foo.bar.com
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-zheng-shu-shuang-xiang-ren-zheng/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -780,141 +893,6 @@ docker <span class="token function">ps</span> <span class="token operator">|</sp
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-fen-ceng-da-bao-docker-jing-xiang/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-fen-ceng-da-bao-docker-jing-xiang/" class="post-title-link" itemprop="url">springboot分层打包docker镜像</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-09-20 09:47:01" itemprop="dateCreated datePublished" datetime="2022-09-20T09:47:01+08:00">2022-09-20</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>springboot默认的打包插件</p>
-<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>及对应的Dockerfile文件</p>
-<pre class="line-numbers language-conf"><code class="language-conf">FROM openjdk:8-jdk-alpine
-MAINTAINER happywzy
-WORKDIR application
-EXPOSE 8080
-ADD ./target/*.jar ./app.jar
-CMD java  -jar app.jar
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>打包命令</p>
-<pre class="line-numbers language-bash"><code class="language-bash">mvn clean package
-docker build -t test:1.0.0 <span class="token keyword">.</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>这种方式打包 <code>springboot</code> 缺点是每次打包 docker 镜像都是全量上传 ja r包，如果 jar 很大会严重影响拉取镜像的速度.</p>
-<h3 id="springboot-分层打包"><a href="#springboot-分层打包" class="headerlink" title="springboot 分层打包"></a>springboot 分层打包</h3><p>springboot 分层打包需要 springboot 版本大于 <code>2.3.0.RELEASE</code>.</p>
-<h4 id="开启"><a href="#开启" class="headerlink" title="开启"></a>开启</h4><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
-                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>layers</span><span class="token punctuation">></span></span>
-                    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>enabled</span><span class="token punctuation">></span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>enabled</span><span class="token punctuation">></span></span>
-                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>layers</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>再次使用 <code>mvn clean package</code> 命令打包,可以使用 java 包分析工具查看</p>
-<pre class="line-numbers language-bash"><code class="language-bash">java -Djarmode<span class="token operator">=</span>layertools -jar target/test-0.0.1-SNAPSHOT.jar list
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>改造原有的 Dockerfile</p>
-<pre class="line-numbers language-conf"><code class="language-conf">FROM openjdk:8-jdk-alpine as builder
-WORKDIR application
-ADD ./target/*.jar ./app.jar
-RUN java -Djarmode=layertools -jar app.jar extract
-
-FROM openjdk:8-jdk-alpine
-MAINTAINER happywzy
-
-WORKDIR application
-
-COPY --from=builder application/dependencies/ ./
-COPY --from=builder application/spring-boot-loader/ ./
-COPY --from=builder application/snapshot-dependencies/ ./
-COPY --from=builder application/application/ ./
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>这个 dockerfile 表示先进行一次临时镜像构建标记为 builder，并加载一次全量 jar 包，然后执行 <code>java -Djarmode=layertools -jar app.jar extract</code> 命令将 jar 包分解为分层打包目录，再次构建一个新镜像，按照list 的目录顺序分批将分层目录加载到 docker 镜像中. 再次执行构建命令</p>
-<pre class="line-numbers language-bash"><code class="language-bash">docker build -t test:1.0.0 <span class="token keyword">.</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="docker镜像分析"><a href="#docker镜像分析" class="headerlink" title="docker镜像分析"></a>docker镜像分析</h3><p>可以使用 <code>docker inspect</code> 、<code>docker history</code> 或 <code>dive</code> 等工具对比全量打包和分层打包的区别. </p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -986,7 +964,7 @@ ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">344</span>
+          <span class="site-state-item-count">345</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -999,7 +977,7 @@ ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">211</span>
+        <span class="site-state-item-count">212</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

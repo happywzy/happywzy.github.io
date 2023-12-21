@@ -196,6 +196,141 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-fen-ceng-da-bao-docker-jing-xiang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/springboot-fen-ceng-da-bao-docker-jing-xiang/" class="post-title-link" itemprop="url">springboot分层打包docker镜像</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-09-20 09:47:01" itemprop="dateCreated datePublished" datetime="2022-09-20T09:47:01+08:00">2022-09-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>springboot默认的打包插件</p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>及对应的Dockerfile文件</p>
+<pre class="line-numbers language-conf"><code class="language-conf">FROM openjdk:8-jdk-alpine
+MAINTAINER happywzy
+WORKDIR application
+EXPOSE 8080
+ADD ./target/*.jar ./app.jar
+CMD java  -jar app.jar
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>打包命令</p>
+<pre class="line-numbers language-bash"><code class="language-bash">mvn clean package
+docker build -t test:1.0.0 <span class="token keyword">.</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这种方式打包 <code>springboot</code> 缺点是每次打包 docker 镜像都是全量上传 ja r包，如果 jar 很大会严重影响拉取镜像的速度.</p>
+<h3 id="springboot-分层打包"><a href="#springboot-分层打包" class="headerlink" title="springboot 分层打包"></a>springboot 分层打包</h3><p>springboot 分层打包需要 springboot 版本大于 <code>2.3.0.RELEASE</code>.</p>
+<h4 id="开启"><a href="#开启" class="headerlink" title="开启"></a>开启</h4><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>layers</span><span class="token punctuation">></span></span>
+                    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>enabled</span><span class="token punctuation">></span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>enabled</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>layers</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>再次使用 <code>mvn clean package</code> 命令打包,可以使用 java 包分析工具查看</p>
+<pre class="line-numbers language-bash"><code class="language-bash">java -Djarmode<span class="token operator">=</span>layertools -jar target/test-0.0.1-SNAPSHOT.jar list
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>改造原有的 Dockerfile</p>
+<pre class="line-numbers language-conf"><code class="language-conf">FROM openjdk:8-jdk-alpine as builder
+WORKDIR application
+ADD ./target/*.jar ./app.jar
+RUN java -Djarmode=layertools -jar app.jar extract
+
+FROM openjdk:8-jdk-alpine
+MAINTAINER happywzy
+
+WORKDIR application
+
+COPY --from=builder application/dependencies/ ./
+COPY --from=builder application/spring-boot-loader/ ./
+COPY --from=builder application/snapshot-dependencies/ ./
+COPY --from=builder application/application/ ./
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个 dockerfile 表示先进行一次临时镜像构建标记为 builder，并加载一次全量 jar 包，然后执行 <code>java -Djarmode=layertools -jar app.jar extract</code> 命令将 jar 包分解为分层打包目录，再次构建一个新镜像，按照list 的目录顺序分批将分层目录加载到 docker 镜像中. 再次执行构建命令</p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker build -t test:1.0.0 <span class="token keyword">.</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="docker镜像分析"><a href="#docker镜像分析" class="headerlink" title="docker镜像分析"></a>docker镜像分析</h3><p>可以使用 <code>docker inspect</code> 、<code>docker history</code> 或 <code>dive</code> 等工具对比全量打包和分层打包的区别. </p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-jing-xiang-fen-xi-gong-ju-dive/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -909,96 +1044,6 @@ systemctl restart kubelet
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/wei-wang-ji-chu-zhi-shi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/wei-wang-ji-chu-zhi-shi/" class="post-title-link" itemprop="url">微网基础知识</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-08-05 09:27:21" itemprop="dateCreated datePublished" datetime="2022-08-05T09:27:21+08:00">2022-08-05</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="储能系统"><a href="#储能系统" class="headerlink" title="储能系统"></a>储能系统</h3><p>储能系统（Energy Storage System，简称ESS）：是一个可完成存储电能和供电的系统，具有平滑过渡、削峰填谷、调频调压等功能。可以使太阳能、风能发电平滑输出，减少其随机性、间歇性、波动性给电网和用户带来的冲击；通过谷价时段充电，峰价时段放电可以减少用户的电费支出；在大电网断电时，能够孤岛运行，确保对用户不间断供电。</p>
-<table>
-<thead>
-<tr>
-<th>名词</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>BA</td>
-<td>储能电池组</td>
-</tr>
-<tr>
-<td>BMS</td>
-<td>电池管理系统</td>
-</tr>
-<tr>
-<td>PCS</td>
-<td>储能变流器，功率变换系统</td>
-</tr>
-<tr>
-<td>EMS</td>
-<td>能量管理系统</td>
-</tr>
-</tbody></table>
-<h3 id="变流器控制策略"><a href="#变流器控制策略" class="headerlink" title="变流器控制策略"></a>变流器控制策略</h3><ul>
-<li>PQ控制：指恒定有功无功控制，控制储能变流器输出的有功功率和无功功率等于其参考功率。PQ控制是新能源并网最常用的控制方式，只有在储能系统并网模式下才可能运用</li>
-<li>VF控制：指储能变流器维持输出电压和频率不变；而输出的有功功率和无功功率由负荷决定</li>
-<li>VSG控制：虚拟同步机模式，该模式下储能可以构网，同时可以和并网型或者构网型系统并机运行</li>
-</ul>
-<h3 id="名词"><a href="#名词" class="headerlink" title="名词"></a>名词</h3><ul>
-<li>使能：所谓使能信号，英文叫Enable，通过这个信号可以控制某颗芯片/某个电路有没有被“启用”。一个大型的数字系统中，通常都需要使用多个芯片/电路单元来配合完成一个功能。而这些芯片并不是每时每刻都在工作的。因此需要用使能信号来控制应该“启动”哪个芯片来工作。</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1070,7 +1115,7 @@ systemctl restart kubelet
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">344</span>
+          <span class="site-state-item-count">345</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1083,7 +1128,7 @@ systemctl restart kubelet
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">211</span>
+        <span class="site-state-item-count">212</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
