@@ -196,6 +196,212 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-prometheus-pei-zhi-shuo-ming/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/prometheus-operator-shi-yong-prometheus-pei-zhi-shuo-ming/" class="post-title-link" itemprop="url">prometheus-operator使用【prometheus配置说明】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-29 15:23:20" itemprop="dateCreated datePublished" datetime="2019-11-29T15:23:20+08:00">2019-11-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="全局配置"><a href="#全局配置" class="headerlink" title="全局配置"></a>全局配置</h2><p>参考官网：<code>https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">global:
+  # How frequently to scrape targets by default.
+  [ scrape_interval: <duration> | default = 1m ]
+ 
+  # How long until a scrape request times out.
+  [ scrape_timeout: <duration> | default = 10s ]
+ 
+  # How frequently to evaluate rules.
+  [ evaluation_interval: <duration> | default = 1m ]
+ 
+  # The labels to add to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    [ <labelname>: <labelvalue> ... ]
+ 
+# Rule files specifies a list of globs. Rules and alerts are read from
+# all matching files.
+rule_files:
+  [ - <filepath_glob> ... ]
+ 
+# A list of scrape configurations.
+scrape_configs:
+  [ - <scrape_config> ... ]
+ 
+# Alerting specifies settings related to the Alertmanager.
+alerting:
+  alert_relabel_configs:
+    [ - <relabel_config> ... ]
+  alertmanagers:
+    [ - <alertmanager_config> ... ]
+ 
+# Settings related to the remote write feature.
+remote_write:
+  [ - <remote_write> ... ]
+ 
+# Settings related to the remote read feature.
+remote_read:
+  [ - <remote_read> ... ]
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="更改指标标签"><a href="#更改指标标签" class="headerlink" title="更改指标标签"></a>更改指标标签</h2><p>更改标签的时机：抓取前修改、抓取后修改、告警时修改</p>
+<ul>
+<li>采集数据之前，通过<code>relabel_config</code>；</li>
+<li>采集数据之后，写入存储之前，通过<code>metric_relabel_configs</code></li>
+<li>在告警前修改标签，通过<code>alert_relabel_configs</code></li>
+</ul>
+<h2 id="JOB配置"><a href="#JOB配置" class="headerlink" title="JOB配置"></a>JOB配置</h2><pre class="line-numbers language-yml"><code class="language-yml">- job_name: prometheus
+  honor_labels: false
+  kubernetes_sd_configs:
+  - role: endpoints
+    namespaces:
+      names:
+      - monitoring
+  scrape_interval: 30s
+  relabel_configs:
+  - action: keep
+    source_labels:
+    - __meta_kubernetes_service_label_prometheus
+    regex: k8s
+  - source_labels:
+    - __meta_kubernetes_endpoint_address_target_kind
+    - __meta_kubernetes_endpoint_address_target_name
+    separator: ;
+    regex: Pod;(.*)
+    replacement: ${1}
+    target_label: pod
+  - source_labels:
+    - __meta_kubernetes_namespace
+    target_label: namespace
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>kubernetes_sd_configs</code>：使用这个配置可以自动发现 k8s 中 node、service、pod、endpoint、ingress，并为其添加监控，更多的内容可以直接查看官方文档。__meta_kubernetes_xxxxx具体什么意思都可以在官网找到。</li>
+<li><code>endpoints</code>:采用endpoints方式采集，每创建一个 service 就会创建一个对应的 endpoint，通过endpoint方式可以将service下所有的pod都采集到。</li>
+<li>下面配置的意思是只有 service 的标签包含 prometheus=k8s，k8s 才会对其对应的 endpoint 进行采集。所以我们后面要为 Prometheus 创建一个 service，并且要为这个 service 加上 prometheus: k8s 这样的标签。</li>
+</ul>
+<pre class="line-numbers language-yml"><code class="language-yml">  - action: keep
+    source_labels:
+    - __meta_kubernetes_service_label_prometheus
+    regex: k8s
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>下面配置意识是如果 __meta_kubernetes_endpoint_address_target_kind 的值为 Pod，__meta_kubernetes_endpoint_address_target_name 的值为 prometheus-0，在它们之间加上一个 ; 之后，它们合起来就是 Pod;prometheus-0。使用正则表达式 Pod;(.*) 对其进行匹配，那么 ${1} 就是取第一个分组，它值就是 prometheus-0，最后将这个值交给 pod 这个标签。因此这一段配置就是为所有采集到的监控指标增加一个 pod=prometheus-0 的标签。如果&nbsp;__meta_kubernetes_endpoint_address_target_kind&nbsp;的值不是 Pod，那么不会添加任何标签。</li>
+</ul>
+<pre class="line-numbers language-yml"><code class="language-yml">- source_labels:
+    - __meta_kubernetes_endpoint_address_target_kind
+    - __meta_kubernetes_endpoint_address_target_name
+  separator: ;
+  regex: Pod;(.*)
+  replacement: ${1}
+  target_label: pod
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>没有指定 url，Prometheus 会采集默认的 url <code>/metrics</code>。</li>
+</ul>
+<h2 id="定义告警规则"><a href="#定义告警规则" class="headerlink" title="定义告警规则"></a>定义告警规则</h2><pre class="line-numbers language-yml"><code class="language-yml">groups:
+- name: example
+  rules:
+  - alert: HighRequestLatency
+    expr: job:request_latency_seconds:mean5m{job="myjob"} > 0.5
+    for: 10m
+    labels:
+      severity: page
+    annotations:
+      summary: High request latency
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>参考官网： <code>https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/</code></p>
+<ul>
+<li><code>for</code>：Prometheus将在每次发出警报之前检查警报在10分钟内是否继续处于活动状态</li>
+<li><code>labels</code>：允许指定一组附加标签来附加到警报。任何现有的冲突标签都将被覆盖。标签值可以模板化。</li>
+<li><code>annotations</code>：指定了一组信息标签，可用于存储更长的附加信息，例如警报说明或运行手册链接。注释值可以模板化。</li>
+</ul>
+<h2 id="模板化"><a href="#模板化" class="headerlink" title="模板化"></a>模板化</h2><p>标签和注释值可以使用<a target="_blank" rel="noopener" href="https://prometheus.io/docs/visualization/consoles/">控制台模板进行模板化</a>。该<code>$labels</code> 变量保存警报实例的标签键/值对。可以通过<code>$externalLabels</code>变量访问已组态的外部标签。该 <code>$value</code>变量保存警报实例的评估值。</p>
+<pre class="line-numbers language-yml"><code class="language-yml"># To insert a firing element's label values:
+{{ $labels.<labelname> }}
+# To insert the numeric expression value of the firing element:
+{{ $value }}
+</labelname><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>例子：</p>
+<pre class="line-numbers language-yml"><code class="language-yml">groups:
+- name: example
+  rules:
+ 
+  # Alert for any instance that is unreachable for >5 minutes.
+  - alert: InstanceDown
+    expr: up == 0
+    for: 5m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} down"
+      description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5 minutes."
+ 
+  # Alert for any instance that has a median request latency >1s.
+  - alert: APIHighRequestLatency
+    expr: api_http_request_latencies_second{quantile="0.5"} > 1
+    for: 10m
+    annotations:
+      summary: "High request latency on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has a median request latency above 1s (current value: {{ $value }}s)"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-chuang-jian-xin-de-alertmanager/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1172,146 +1378,6 @@ spec:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-she-zhi-https-zheng-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ingress-nginx-she-zhi-https-zheng-shu/" class="post-title-link" itemprop="url">ingress-nginx设置https证书</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-19 11:26:00" itemprop="dateCreated datePublished" datetime="2019-11-19T11:26:00+08:00">2019-11-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="创建自签署证书"><a href="#创建自签署证书" class="headerlink" title="创建自签署证书"></a>创建自签署证书</h3><blockquote>
-<p>注意证书中的<code>CN=tls.echo.example</code>改成自己的域名地址。</p>
-</blockquote>
-<pre><code>echo "生成自签署的 ca 证书"
-openssl req -x509 -sha256 -newkey rsa:4096 -keyout ca.key -out ca.crt -days 3560 -nodes -subj '/CN=My Cert Authority'
- 
-echo "生成用上述 ca 签署的 server 证书"
-openssl req -new -newkey rsa:4096 -keyout server.key -out server.csr -nodes -subj '/CN=tls.echo.example'
-openssl x509 -req -sha256 -days 3650 -in server.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out server.crt
-</code></pre>
-<h3 id="将-server-证书上传到-kubernetes"><a href="#将-server-证书上传到-kubernetes" class="headerlink" title="将 server 证书上传到 kubernetes"></a>将 server 证书上传到 kubernetes</h3><blockquote>
-<p>注意其中的命名空间<code>demo-echo和secret</code>名称<code>tls-echo-exmaple-secret</code>，改成自己的。</p>
-</blockquote>
-<pre><code>kubectl -n demo-echo create secret generic tls-echo-exmaple-secret --from-file=tls.crt=server.crt --from-file=tls.key=server.key
-</code></pre>
-<h3 id="配置ingress"><a href="#配置ingress" class="headerlink" title="配置ingress"></a>配置ingress</h3><blockquote>
-<p><code>ignress</code> 中的 <code>host</code> 一定要与证书的 <code>CN</code> 相同，在 <code>tls</code> 配置中引用前面创建的 <code>secret</code></p>
-</blockquote>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: ingress-echo-with-tls
-spec:
-  rules:
-  - host: tls.echo.example
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: echo
-          servicePort: 80
-  tls:
-  - hosts:
-    - tls.echo.example
-    secretName: tls-echo-exmaple-secret
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="为多个域名配置证书"><a href="#为多个域名配置证书" class="headerlink" title="为多个域名配置证书"></a>为多个域名配置证书</h3><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: foo-tls
-  namespace: default
-spec:
-  tls:
-  - hosts:
-    - foo.bar.com
-    # This secret must exist beforehand
-    # The cert must also contain the subj-name foo.bar.com
-    # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
-    secretName: foobar
-  - hosts:
-    - bar.baz.com
-    # This secret must exist beforehand
-    # The cert must also contain the subj-name bar.baz.com
-    # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
-    secretName: barbaz
-  rules:
-  - host: foo.bar.com
-    http:
-      paths:
-      - backend:
-          serviceName: http-svc
-          servicePort: 80
-        path: /
-  - host: bar.baz.com
-    http:
-      paths:
-      - backend:
-          serviceName: nginx
-          servicePort: 80
-        path: /
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://www.lijiaocn.com/soft/k8s/ingress-nginx/tls.html">https://www.lijiaocn.com/soft/k8s/ingress-nginx/tls.html</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1383,7 +1449,7 @@ spec:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">345</span>
+          <span class="site-state-item-count">346</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1396,7 +1462,7 @@ spec:
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">212</span>
+        <span class="site-state-item-count">214</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1456,7 +1522,7 @@ spec:
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2023</span>
+  <span itemprop="copyrightYear">2024</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
