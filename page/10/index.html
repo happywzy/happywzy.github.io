@@ -196,6 +196,128 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-cha-xun-rong-qi-shi-yong-nei-cun/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-cha-xun-rong-qi-shi-yong-nei-cun/" class="post-title-link" itemprop="url">docker查询容器使用内存</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-04-28 14:44:24" itemprop="dateCreated datePublished" datetime="2022-04-28T14:44:24+08:00">2022-04-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="docker-stats"><a href="#docker-stats" class="headerlink" title="docker stats"></a>docker stats</h3><blockquote>
+<p><code>docker stats --no-stream</code></p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker stats</span>
+CONTAINER ID   NAME             CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+b4fb48ce6a23   magical_bell     147.29%   4.207GiB / 7.638GiB   55.08%    8.72GB / 7.79GB   2.46GB / 7.21GB   71
+e189b149f025   kafka            3.94%     1.549GiB / 7.638GiB   20.27%    0B / 0B           637GB / 25GB      78
+14cc0c468a14   zookeeper        0.24%     178.2MiB / 7.638GiB   2.28%     0B / 0B           381GB / 7.49MB    102
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>统计的结果和实际有出入.</p>
+<h3 id="TOP"><a href="#TOP" class="headerlink" title="TOP"></a>TOP</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 获取容器的PID</span>
+docker inspect -f <span class="token string">'{{.State.Pid}}'</span> container_name
+<span class="token comment" spellcheck="true"># 根据pid查询</span>
+<span class="token punctuation">[</span>root@data1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># top -p 2203</span>
+PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+  COMMAND 
+2203 1001      20   0 6470744   1.3g   6076 S   0.0 16.6   2717:49 java
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="VmRSS"><a href="#VmRSS" class="headerlink" title="VmRSS"></a>VmRSS</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># cat /proc/2203/status</span>
+VmPeak:	 6475388 kB
+VmSize:	 6470744 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	 1336420 kB
+VmRSS:	 1329516 kB <span class="token comment" spellcheck="true"># 此处是所要查询的内存大小</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="脚本"><a href="#脚本" class="headerlink" title="脚本"></a>脚本</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 找出所有运行的容器</span>
+idNames<span class="token operator">=</span>`docker <span class="token function">ps</span> --format <span class="token string">"{{.ID}}|{{.Names}},"</span>`
+
+<span class="token comment" spellcheck="true"># 按,号分隔</span>
+OLD_IFS<span class="token operator">=</span><span class="token string">"<span class="token variable">$IFS</span>"</span>
+IFS<span class="token operator">=</span><span class="token string">","</span>
+arr<span class="token operator">=</span><span class="token punctuation">(</span><span class="token variable">$idNames</span><span class="token punctuation">)</span>
+IFS<span class="token operator">=</span><span class="token string">"<span class="token variable">$OLD_IFS</span>"</span>
+
+<span class="token comment" spellcheck="true"># 输出 Title</span>
+<span class="token function">printf</span> <span class="token string">"%-15s %-30s %-15s\n"</span> Id Name Mem
+
+<span class="token comment" spellcheck="true"># 遍历所有容器</span>
+<span class="token keyword">for</span> item <span class="token keyword">in</span> <span class="token variable">${arr[@]}</span>
+<span class="token keyword">do</span>
+    <span class="token comment" spellcheck="true"># 容器ID和容器名字 按 | 分隔</span>
+    OLD_IFS<span class="token operator">=</span><span class="token string">"<span class="token variable">$IFS</span>"</span>
+    IFS<span class="token operator">=</span><span class="token string">"|"</span>
+    array<span class="token operator">=</span><span class="token punctuation">(</span><span class="token variable">$item</span><span class="token punctuation">)</span>
+    IFS<span class="token operator">=</span><span class="token string">"<span class="token variable">$OLD_IFS</span>"</span>
+    
+    <span class="token comment" spellcheck="true"># 当前容器的Pid</span>
+    pid<span class="token operator">=</span>`docker inspect -f <span class="token string">'{{.State.Pid}}'</span> <span class="token variable">${array[0]}</span>`
+    
+    <span class="token comment" spellcheck="true"># 当前容器的内存</span>
+    mem<span class="token operator">=</span><span class="token punctuation">$(</span>cat /proc/<span class="token variable">$pid</span>/status<span class="token operator">|</span><span class="token function">grep</span> -e VmRSS<span class="token operator">|</span> <span class="token function">awk</span> <span class="token string">'{print <span class="token variable">$2</span>}'</span><span class="token punctuation">)</span>
+
+    <span class="token comment" spellcheck="true"># 输出结果</span>
+    <span class="token function">printf</span> <span class="token string">"%-15s %-30s %-15s\n"</span> <span class="token variable">${array[0]}</span> <span class="token variable">${array[1]}</span> $<span class="token punctuation">[</span><span class="token variable">$mem</span> / 1024<span class="token punctuation">]</span>M
+<span class="token keyword">done</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-suo-yin-you-hua-can-kao/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -814,583 +936,6 @@ BulkRequest requests <span class="token operator">=</span> <span class="token ke
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/git-chang-yong-ming-ling/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/git-chang-yong-ming-ling/" class="post-title-link" itemprop="url">git常用命令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-03-24 17:17:54" itemprop="dateCreated datePublished" datetime="2022-03-24T17:17:54+08:00">2022-03-24</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="config"><a href="#config" class="headerlink" title="config"></a>config</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git init</code></td>
-<td>初始化</td>
-</tr>
-<tr>
-<td><code>git config -l</code></td>
-<td>查看当前config配置</td>
-</tr>
-<tr>
-<td><code>git config --global user.name "username"</code></td>
-<td>设置用户名</td>
-</tr>
-<tr>
-<td><code>git config --global user.email "email@gmail.com"</code></td>
-<td>设置邮箱</td>
-</tr>
-</tbody></table>
-<h3 id="远程仓库"><a href="#远程仓库" class="headerlink" title="远程仓库"></a>远程仓库</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git clone [url]</code></td>
-<td>检出仓库</td>
-</tr>
-<tr>
-<td><code>git remote -v</code></td>
-<td>查看远程仓库</td>
-</tr>
-<tr>
-<td><code>git remote add [name] [url]</code></td>
-<td>添加远程仓库</td>
-</tr>
-<tr>
-<td><code>git remote rm [name]</code></td>
-<td>删除远程仓库</td>
-</tr>
-<tr>
-<td><code>git remote set-url origin [newUrl]</code></td>
-<td>修改远程仓库</td>
-</tr>
-<tr>
-<td><code>git push -u -f origin</code></td>
-<td>仓库迁移</td>
-</tr>
-<tr>
-<td><code>git push -u -f origin --all</code></td>
-<td>把所有分支迁移过去</td>
-</tr>
-<tr>
-<td><code>git push -u -f origin --tags</code></td>
-<td>把所有tag迁移过去</td>
-</tr>
-<tr>
-<td><code>git fetch</code></td>
-<td>下载远程仓库最新的commit到本地</td>
-</tr>
-<tr>
-<td><code>git fetch --all</code></td>
-<td>下载远程仓库最新的commit到本地</td>
-</tr>
-<tr>
-<td><code>git fetch origin --prune</code></td>
-<td>更新远程分支,<code>--prune</code>同<code>-p</code></td>
-</tr>
-<tr>
-<td><code>git remote update origin --prune</code></td>
-<td>更新远程分支</td>
-</tr>
-</tbody></table>
-<h3 id="分支"><a href="#分支" class="headerlink" title="分支"></a>分支</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git branch</code></td>
-<td>查看本地分支</td>
-</tr>
-<tr>
-<td><code>git branch -r</code></td>
-<td>查看远程分支</td>
-</tr>
-<tr>
-<td><code>git ls-remote --heads origin</code></td>
-<td>查看远程分支</td>
-</tr>
-<tr>
-<td><code>git branch -a</code></td>
-<td>查看所有分支</td>
-</tr>
-<tr>
-<td><code>git branch [name]</code></td>
-<td>创建本地分支,创建后不会自动切换</td>
-</tr>
-<tr>
-<td><code>git checkout [name]</code></td>
-<td>切换分支</td>
-</tr>
-<tr>
-<td><code>git checkout -b [name]</code></td>
-<td>创建分支并切换</td>
-</tr>
-<tr>
-<td><code>git checkout [name] -f</code></td>
-<td><code>--force</code>或者<code>-f</code>,强制切换分支,未提交的会被丢弃</td>
-</tr>
-<tr>
-<td><code>git branch -d [name]</code></td>
-<td>删除分支,如果分支没有合并是不能被删除的</td>
-</tr>
-<tr>
-<td><code>git branch -D [name]</code></td>
-<td>删除分支,没有合并也能被强制删除</td>
-</tr>
-<tr>
-<td><code>git push origin [name]</code></td>
-<td>本地分支push到远程,远程没有该分支则自动创建</td>
-</tr>
-<tr>
-<td><code>git push origin [local]:[name]</code></td>
-<td>本地分支push到远程</td>
-</tr>
-<tr>
-<td><code>git push origin --delete [name]</code></td>
-<td>删除远程分支,<code>-d</code>也行</td>
-</tr>
-<tr>
-<td><code>git push origin :heads/[name]</code></td>
-<td>删除远程分支</td>
-</tr>
-<tr>
-<td><code>git push origin :[name]</code></td>
-<td>删除远程分支</td>
-</tr>
-</tbody></table>
-<h3 id="合并"><a href="#合并" class="headerlink" title="合并"></a>合并</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git merge [name]</code></td>
-<td>将名称为[name]的分支与当前分支合并</td>
-</tr>
-<tr>
-<td><code>git merge --no-ff [name]</code></td>
-<td>将名称为[name]的分支与当前分支合并,并保存之前的分支历史</td>
-</tr>
-<tr>
-<td><code>git merge --abort</code></td>
-<td>合并产生冲突后,抛弃合并过程并且尝试重建合并前的状态</td>
-</tr>
-<tr>
-<td><code>git rebase [name]</code></td>
-<td>将<code>name</code>分支合并到当前分支</td>
-</tr>
-<tr>
-<td><code>git rebase [name1] [name2]</code></td>
-<td>将<code>name1</code>分支合并到<code>name2</code>分支,等同于先<code>git checkout name2</code>在执行<code>git rebase name1</code></td>
-</tr>
-<tr>
-<td><code>git rebase [start] [end] --onto [name]</code></td>
-<td>从开始到结束复制到name分支,注意:<code>前开后闭</code></td>
-</tr>
-</tbody></table>
-<h3 id="tag"><a href="#tag" class="headerlink" title="tag"></a>tag</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git tag</code></td>
-<td>查看本地tag</td>
-</tr>
-<tr>
-<td><code>git tag [name]</code></td>
-<td>创建轻量tag</td>
-</tr>
-<tr>
-<td><code>git tag -a [name] -m [message]</code></td>
-<td>创建附注tag,不带-m会提示你输入message</td>
-</tr>
-<tr>
-<td><code>git tag [name] [commitId]</code></td>
-<td>对历史commit创建tag</td>
-</tr>
-<tr>
-<td><code>git tag -l "[tag规则]"</code></td>
-<td>按规则查询tag,注意规则在双引号内,如<code>git tag -l "v2.*"</code></td>
-</tr>
-<tr>
-<td><code>git push origin [name]</code></td>
-<td>推送tag到服务器</td>
-</tr>
-<tr>
-<td><code>git push origin --tags</code></td>
-<td>推送所有tag到服务器</td>
-</tr>
-<tr>
-<td><code>git tag -d [name]</code></td>
-<td>删除tag</td>
-</tr>
-<tr>
-<td><code>git push origin :refs/tags/[name]</code></td>
-<td>删除远程tag</td>
-</tr>
-<tr>
-<td><code>git show [name]</code></td>
-<td>查询tag具体信息</td>
-</tr>
-<tr>
-<td><code>git pull --tags</code></td>
-<td>拉取远程仓库的标签</td>
-</tr>
-<tr>
-<td><code>git push --tags</code></td>
-<td>推送标签到远程仓库</td>
-</tr>
-<tr>
-<td><code>git ls-remote --tags origin</code></td>
-<td>查看远程仓库tag</td>
-</tr>
-<tr>
-<td><code>git checkout [tag]</code></td>
-<td>切换到tag的位置,默认不会创建新的分支</td>
-</tr>
-<tr>
-<td><code>git checkout -b [name] [tag]</code></td>
-<td>创建新的分支并切换到tag的位置,<code>[name]</code>非必须</td>
-</tr>
-</tbody></table>
-<blockquote>
-<p>如果创建的不是轻量tag,推送到远程后用<code>git ls-remote --tags origin</code>命令查看会产生一个后缀为<code>^{}</code>的同名tag.</p>
-</blockquote>
-<h3 id="switch"><a href="#switch" class="headerlink" title="switch"></a>switch</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git switch [name]</code></td>
-<td>切换分支,如果没有则报错,如果本地没有远程有则拉取</td>
-</tr>
-<tr>
-<td><code>git switch -</code></td>
-<td>切换到上一个分支</td>
-</tr>
-<tr>
-<td><code>git switch -c [name]</code></td>
-<td>创建并切换分支,如果有则报错</td>
-</tr>
-<tr>
-<td><code>git switch -c [name] [commit]</code></td>
-<td>以一个提交来创建分支</td>
-</tr>
-<tr>
-<td><code>git switch --detach [commit]</code></td>
-<td>切换到一个提交,不创建分支</td>
-</tr>
-<tr>
-<td><code>git switch --orphan [name]</code></td>
-<td>创建一个没有任何提交记录的分支,内容为空</td>
-</tr>
-<tr>
-<td><code>git switch -c [name] [tagName]</code></td>
-<td>以一个tag创建分支</td>
-</tr>
-</tbody></table>
-<h3 id="提交"><a href="#提交" class="headerlink" title="提交"></a>提交</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git status</code></td>
-<td>查看当前分支状态</td>
-</tr>
-<tr>
-<td><code>git status -sb</code></td>
-<td>简洁输出当前分支状态,<code>short branch</code></td>
-</tr>
-<tr>
-<td><code>git show --stat</code></td>
-<td>查看当前状态</td>
-</tr>
-<tr>
-<td><code>git commit [filename] -m [message]</code></td>
-<td>提交一个文件</td>
-</tr>
-<tr>
-<td><code>git commit -am [message]</code></td>
-<td>提交所有文件</td>
-</tr>
-<tr>
-<td><code>git add [filename]</code></td>
-<td>新增文件</td>
-</tr>
-<tr>
-<td><code>git add .</code></td>
-<td>新增所有文件</td>
-</tr>
-<tr>
-<td><code>git rm [filename]</code></td>
-<td>删除文件</td>
-</tr>
-</tbody></table>
-<h3 id="暂存区"><a href="#暂存区" class="headerlink" title="暂存区"></a>暂存区</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git stash</code></td>
-<td>存到暂存区,如果有修改没有提交无法切换分支,可以先暂存</td>
-</tr>
-<tr>
-<td><code>git stash list</code></td>
-<td>查看暂存区</td>
-</tr>
-<tr>
-<td><code>git stash pop</code></td>
-<td>从暂存区取出,暂存区删除</td>
-</tr>
-<tr>
-<td><code>git stash apply</code></td>
-<td>从暂存区取出,暂存区不删除</td>
-</tr>
-<tr>
-<td><code>git stash clear</code></td>
-<td>删除所有缓存</td>
-</tr>
-</tbody></table>
-<h3 id="回退"><a href="#回退" class="headerlink" title="回退"></a>回退</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git diff</code></td>
-<td>查看尚未暂存的更新</td>
-</tr>
-<tr>
-<td><code>git clean [-n]</code></td>
-<td>显示当前目录下没有被add的文件</td>
-</tr>
-<tr>
-<td><code>git clean [-f]</code></td>
-<td>删除当前目录下没有被add的文件</td>
-</tr>
-<tr>
-<td><code>git reset --hard [commitid]</code></td>
-<td>回退到上一个commit,所有提交都被删除</td>
-</tr>
-<tr>
-<td><code>git reset --hard origin/master</code></td>
-<td>强制更新本地内容,一般搭配<code>git fetch</code>命令一起使用</td>
-</tr>
-<tr>
-<td><code>git reset --soft [commitid]</code></td>
-<td>回退到上一个commit,所有提交都保留</td>
-</tr>
-<tr>
-<td><code>git reset --mixed [commitid]</code></td>
-<td>回退到上一个commit,所有提交都保留</td>
-</tr>
-</tbody></table>
-<blockquote>
-<p><code>git reset --soft</code>和<code>--mixed</code>区别在于如果当前commit和上一个commit之间有新增的文件,<code>--soft</code>回退之后该文件处于已add的状态,<code>--mixed</code>回退之后该文件处于未add的状态,需要在执行<code>git add</code>.</p>
-</blockquote>
-<h3 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h3><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>git reflog</code></td>
-<td>查看所有分支所有日志,log的其它参数同样使用reflog</td>
-</tr>
-<tr>
-<td><code>git log</code></td>
-<td>查看当前分支所有日志</td>
-</tr>
-<tr>
-<td><code>git log --pretty=oneline</code></td>
-<td>单行模式查看当前分支所有日志</td>
-</tr>
-<tr>
-<td><code>git log -n 5</code></td>
-<td>查看前5条日志</td>
-</tr>
-<tr>
-<td><code>git log --stat -n 5</code></td>
-<td>查看前5条日志,并简要显示增改行数</td>
-</tr>
-<tr>
-<td><code>git log --since=2.days</code></td>
-<td>查看最近2天的日志</td>
-</tr>
-<tr>
-<td><code>git log --grep=test</code></td>
-<td>查看关键字包含为<code>test</code>的日志</td>
-</tr>
-<tr>
-<td><code>git log --author=Wuzhiyong</code></td>
-<td>查看指定作者的日志</td>
-</tr>
-<tr>
-<td><code>git log --committer=Wuzhiyong</code></td>
-<td>查看指定作者的日志</td>
-</tr>
-<tr>
-<td><code>git show [commitid]</code></td>
-<td>查看某次commit的修改</td>
-</tr>
-<tr>
-<td><code>git log --graph --oneline --decorate --simplify-by-decoration --all</code></td>
-<td>查看分支图</td>
-</tr>
-<tr>
-<td><code>git show-ref</code></td>
-<td>查看本地refs,添加<code>--tags</code>查看本地tag,<code>--heads</code>查看本地分支</td>
-</tr>
-</tbody></table>
-<h3 id="版本回退-x2F-复原"><a href="#版本回退-x2F-复原" class="headerlink" title="版本回退/复原"></a>版本回退/复原</h3><p><code>HEAD</code>表示当前版本,<code>HEAD^</code>表示上一个版本,<code>HEAD^^</code>表示上上个版本,<code>HEAD~5</code>表示上 5 个版本.</p>
-<blockquote>
-<p>Windows <code>cmd</code> 窗口下执行 <code>git reset --hard HEAD^</code> 会报错, 需要为 <code>HEAD^</code> 添加双引号 <code>git reset --hard "HEAD^"</code></p>
-</blockquote>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 回退</span>
-<span class="token function">git</span> reset --hard HEAD^
-<span class="token function">git</span> reset --hard HEAD^^
-<span class="token comment" spellcheck="true"># 查看提交历史,根据commit_id回退</span>
-<span class="token function">git</span> log
-<span class="token function">git</span> reset --hard commit_id
-<span class="token comment" spellcheck="true"># 查看未来提交日志恢复提交</span>
-<span class="token function">git</span> reflog
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><ul>
-<li>配置公钥</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成公钥,过程中按3次回车</span>
-ssh-keygen -t ed25519 -C <span class="token string">"xxxxx@xxxxx.com"</span> 
-<span class="token comment" spellcheck="true"># 进入gitee添加公钥</span>
-<span class="token comment" spellcheck="true"># 测试公钥是否能用</span>
-<span class="token function">ssh</span> -T git@gitee.com
-<span class="token comment" spellcheck="true"># 返回以下内容证明配置正确</span>
-Hi XXX<span class="token operator">!</span> You've successfully authenticated, but Gitee.com does not provide shell access.
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>如果配置正确还是让输入用户密码,首先<code>git remote -v</code>检查远程地址是<code>https</code>还是<code>ssh</code>.使用<code>git remote set-url origin git@gitee.com:happywzy/xxxx.git</code>修改.</p>
-</blockquote>
-<ul>
-<li>rebase操作</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 目标希望将fd75768和e87d4921两个连续的提交rebase到master分支</span>
-<span class="token comment" spellcheck="true"># 因为是前开后闭,这里start通过^向前指定了一个区间</span>
-<span class="token comment" spellcheck="true"># 也可以start设置为fd75768前一个commitid</span>
-$ <span class="token function">git</span> rebase fd75768^ e87d4921 --onto master
-fatal: It seems that there is already a rebase-merge directory, and
-I wonder <span class="token keyword">if</span> you are <span class="token keyword">in</span> the middle of another rebase.  If that is the
-case, please try
-        <span class="token function">git</span> rebase <span class="token punctuation">(</span>--continue <span class="token operator">|</span> --abort <span class="token operator">|</span> --skip<span class="token punctuation">)</span>
-If that is not the case, please
-        <span class="token function">rm</span> -fr <span class="token string">".git/rebase-merge"</span>
-and run me again.  I am stopping <span class="token keyword">in</span> <span class="token keyword">case</span> you still have something
-valuable there.
-<span class="token comment" spellcheck="true"># 上面提示已经存在一个rebase-merge目录,先删除了</span>
-$ <span class="token function">rm</span> -fr <span class="token string">".git/rebase-merge"</span>
-<span class="token comment" spellcheck="true"># 再次执行</span>
-$ <span class="token function">git</span> rebase fd75768^ e87d4921 --onto master
-Successfully rebased and updated detached HEAD.
-<span class="token comment" spellcheck="true"># 切换到master分支,提示刚刚复制了两个提交,即HEAD后面还有两个提交</span>
-$ <span class="token function">git</span> checkout master
-Warning: you are leaving 2 commits behind, not connected to
-any of your branches:
-  b9bb17a step 5
-  f2d9256 step 4
-If you want to keep them by creating a new branch, this may be a good <span class="token function">time</span>
-to <span class="token keyword">do</span> so with:
- <span class="token function">git</span> branch <span class="token operator">&lt;</span>new-branch-name<span class="token operator">></span> b9bb17a
-Switched to branch <span class="token string">'master'</span>
-<span class="token comment" spellcheck="true"># 现在切回master看不到复制过来的提交</span>
-<span class="token comment" spellcheck="true"># 通过下面的命令可以将HEAD重置到最新提交,即可看到rebase过来的2个提交</span>
-$ <span class="token function">git</span> reset --hard b9bb17a
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1462,7 +1007,7 @@ $ <span class="token function">git</span> reset --hard b9bb17a
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">347</span>
+          <span class="site-state-item-count">348</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1475,7 +1020,7 @@ $ <span class="token function">git</span> reset --hard b9bb17a
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">214</span>
+        <span class="site-state-item-count">216</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

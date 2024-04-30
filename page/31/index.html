@@ -196,6 +196,154 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/java-er-wei-ma-gong-ju-google-zxing-de-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/java-er-wei-ma-gong-ju-google-zxing-de-shi-yong/" class="post-title-link" itemprop="url">java二维码工具google.zxing的使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-10 10:57:45" itemprop="dateCreated datePublished" datetime="2020-07-10T10:57:45+08:00">2020-07-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="引入依赖"><a href="#引入依赖" class="headerlink" title="引入依赖"></a>引入依赖</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>com.google.zxing<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>javase<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>3.3.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="编写工具类"><a href="#编写工具类" class="headerlink" title="编写工具类"></a>编写工具类</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">QRCodeUtil</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 设置二维码长宽</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">int</span> width <span class="token operator">=</span> <span class="token number">400</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">int</span> height <span class="token operator">=</span> <span class="token number">400</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> String format <span class="token operator">=</span> <span class="token string">"png"</span><span class="token punctuation">;</span>
+
+    <span class="token comment" spellcheck="true">// 将文本信息封装到二维码中,并返回图片的Base64编码后的字符串</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">encodeQRCode</span><span class="token punctuation">(</span>String text<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        ByteArrayOutputStream outputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ByteArrayOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        String result <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            Map<span class="token operator">&lt;</span>EncodeHintType<span class="token punctuation">,</span> Object<span class="token operator">></span> hints <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 设置字符集编码</span>
+            hints<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>EncodeHintType<span class="token punctuation">.</span>CHARACTER_SET<span class="token punctuation">,</span> <span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// ErrorCorrectionLevel：误差校正等级，L = ~7% correction、M = ~15% correction、Q = ~25% correction、H = ~30% correction</span>
+            <span class="token comment" spellcheck="true">// 不设置时，默认为 L 等级，等级不一样，生成的图案不同，但扫描的结果是一样的</span>
+            hints<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>EncodeHintType<span class="token punctuation">.</span>ERROR_CORRECTION<span class="token punctuation">,</span> ErrorCorrectionLevel<span class="token punctuation">.</span>M<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 设置二维码边距，单位像素，值越小，二维码距离四周越近</span>
+            hints<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>EncodeHintType<span class="token punctuation">.</span>MARGIN<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 生成二维码矩阵</span>
+            BitMatrix bitMatrix <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MultiFormatWriter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>text<span class="token punctuation">,</span> BarcodeFormat<span class="token punctuation">.</span>QR_CODE<span class="token punctuation">,</span> width<span class="token punctuation">,</span> height<span class="token punctuation">,</span> hints<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 写入文件</span>
+            MatrixToImageWriter<span class="token punctuation">.</span><span class="token function">writeToStream</span><span class="token punctuation">(</span>bitMatrix<span class="token punctuation">,</span> format<span class="token punctuation">,</span> outputStream<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bitMatrix<span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            result <span class="token operator">=</span> <span class="token string">"data:image/png;base64,"</span> <span class="token operator">+</span> Base64<span class="token punctuation">.</span><span class="token function">getEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encodeToString</span><span class="token punctuation">(</span>outputStream<span class="token punctuation">.</span><span class="token function">toByteArray</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                outputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">// 通过base64编码后的图片，解析出二维码中的文本信息</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">decodeQRCode</span><span class="token punctuation">(</span>String base64<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Result result <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        BufferedImage image <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        ByteArrayInputStream inputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ByteArrayInputStream</span><span class="token punctuation">(</span>Base64<span class="token punctuation">.</span><span class="token function">getDecoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>base64<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// 读取图片</span>
+            image <span class="token operator">=</span> ImageIO<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span>inputStream<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 多步解析</span>
+            LuminanceSource source <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BufferedImageLuminanceSource</span><span class="token punctuation">(</span>image<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            Binarizer binarizer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HybridBinarizer</span><span class="token punctuation">(</span>source<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            BinaryBitmap binaryBitmap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BinaryBitmap</span><span class="token punctuation">(</span>binarizer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 设置字符集编码</span>
+            Map<span class="token operator">&lt;</span>DecodeHintType<span class="token punctuation">,</span> String<span class="token operator">></span> hints <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            hints<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>DecodeHintType<span class="token punctuation">.</span>CHARACTER_SET<span class="token punctuation">,</span> <span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 对图像进行解码</span>
+            result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MultiFormatReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>binaryBitmap<span class="token punctuation">,</span> hints<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            image<span class="token punctuation">.</span><span class="token function">getGraphics</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">dispose</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                inputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">.</span><span class="token function">getText</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-java"><code class="language-java">    <span class="token comment" spellcheck="true">// 测试准确率还是非常高的</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 生成二维码</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token function">encodeQRCode</span><span class="token punctuation">(</span><span class="token string">"我叫XX勇~~~"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 解码二维码</span>
+        <span class="token comment" spellcheck="true">// 注意：需要去掉data:image/png;base64,</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token function">decodeQRCode</span><span class="token punctuation">(</span><span class="token string">"xxxxxxxxxx.....xxxxxxxx"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/gou-jian-zui-xiao-de-java8-jing-xiang/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1070,132 +1218,6 @@ options ndots:5
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-nei-cun-you-hua/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/influxdb-nei-cun-you-hua/" class="post-title-link" itemprop="url">influxDB内存优化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-30 14:58:54" itemprop="dateCreated datePublished" datetime="2020-06-30T14:58:54+08:00">2020-06-30</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="查询series-cardinality命令"><a href="#查询series-cardinality命令" class="headerlink" title="查询series cardinality命令"></a>查询<code>series cardinality</code>命令</h3><ul>
-<li>InfluxDB官网说明：<a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/troubleshooting/frequently-asked-questions/#why-does-series-cardinality-matter">Why does series cardinality matter?</a></li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java">InfluxDB maintains an in<span class="token operator">-</span>memory index of every series in the system<span class="token punctuation">.</span> As the number of unique series grows<span class="token punctuation">,</span> so does the RAM usage<span class="token punctuation">.</span> High series cardinality can lead to the operating system killing the InfluxDB process with an out of <span class="token function">memory</span> <span class="token punctuation">(</span>OOM<span class="token punctuation">)</span> exception<span class="token punctuation">.</span> See SHOW CARDINALITY to learn about the InfluxSQL commands <span class="token keyword">for</span> series cardinality<span class="token punctuation">.</span>
-
-<span class="token comment" spellcheck="true">// 翻译</span>
-InfluxDB会在系统上为每个series维护一个内存索引，而随着这些series的增加，RAM内存使用率也会增加。如果series cardinality如果太高，就会导致操作系统触发OOMKiller机制，将Influxdb进程KILL掉<span class="token punctuation">.</span> 使用 SHOW CARDINALITY 命令可以查看到 series cardinality。
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/query_language/spec/#show-cardinality">SHOW CARDINALITY命令</a></li>
-</ul>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- show estimated cardinality of the series on current database</span>
-<span class="token keyword">SHOW</span> SERIES CARDINALITY
-<span class="token comment" spellcheck="true">-- show estimated cardinality of the series on specified database</span>
-<span class="token keyword">SHOW</span> SERIES CARDINALITY <span class="token keyword">ON</span> mydb
-<span class="token comment" spellcheck="true">-- show exact series cardinality</span>
-<span class="token keyword">SHOW</span> SERIES EXACT CARDINALITY
-<span class="token comment" spellcheck="true">-- show series cardinality of the series on specified database</span>
-<span class="token keyword">SHOW</span> SERIES EXACT CARDINALITY <span class="token keyword">ON</span> mydb
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/troubleshooting/frequently-asked-questions/#how-can-i-remove-series-from-the-index">How can I remove series from the index?</a></li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java">To reduce series cardinality<span class="token punctuation">,</span> series must be dropped from the index<span class="token punctuation">.</span> DROP DATABASE<span class="token punctuation">,</span> DROP MEASUREMENT<span class="token punctuation">,</span> and DROP SERIES will all remove series from the index and reduce the overall series cardinality<span class="token punctuation">.</span>
-
-<span class="token comment" spellcheck="true">//大意</span>
-要减少或者删除series cardinality<span class="token punctuation">,</span> 需要删除库<span class="token operator">/</span>表<span class="token operator">/</span>series
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="将series由保存到内存改为保存到TSI文件"><a href="#将series由保存到内存改为保存到TSI文件" class="headerlink" title="将series由保存到内存改为保存到TSI文件"></a>将series由保存到内存改为保存到TSI文件</h3><h4 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h4><ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/config/#index-version-inmem">官网influxdb详细配置说明</a></li>
-</ul>
-<p>这里我们需要修改的配置是<code>index-version</code>项,可以在<code>influxdb.conf</code>中<code>[data]</code>下修改，也可以通过环境变量<code>INFLUXDB_DATA_INDEX_VERSION</code>修改.</p>
-<pre class="line-numbers language-conf"><code class="language-conf">[data]
-  # The type of shard index to use for new shards.  The default is an in-memory index that is
-  # recreated at startup.  A value of "tsi1" will use a disk based index that supports higher
-  # cardinality datasets.
-  # 这个配置项默认值inmem,可以取消注释修改为tsi1，那么后续的index将会保存在TSI文件中了.重启生效.
-  # index-version = "inmem"
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/config/#settings-for-the-tsm-engine">其它关于内存的配置</a></li>
-</ul>
-<h4 id="重构TSI索引"><a href="#重构TSI索引" class="headerlink" title="重构TSI索引"></a>重构TSI索引</h4><ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/tools/influx_inspect#influx-inspect-utility">influx_inspect buildtsi命令</a></li>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/rebuild-tsi-index/">Rebuild the TSI index</a></li>
-</ul>
-<ol>
-<li>停止<code>InfluxDB</code>服务</li>
-<li>删除所有<code>_series</code>文件夹<br>默认情况下,<code>_series</code>保存在<code>/data/&lt;dbName&gt;/_series</code>,检查并删除<code>/data</code>目录下所有<code>_series</code></li>
-<li>删除所有<code>index</code>文件夹<br>默认情况下,<code>index</code>文件夹在<code>/data/&lt;dbName/&lt;rpName&gt;/&lt;shardID&gt;/index</code></li>
-<li>使用<code>influx_inspect</code>重构<code>TSI index</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 格式</span>
-influx_inspect buildtsi -datadir <span class="token operator">&lt;</span>data_dir<span class="token operator">></span> -waldir <span class="token operator">&lt;</span>wal_dir<span class="token operator">></span>
-<span class="token comment" spellcheck="true"># 示例</span>
-influx_inspect buildtsi -datadir /data -waldir /wal
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>启动<code>influxDB</code>服务</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1267,7 +1289,7 @@ influx_inspect buildtsi -datadir /data -waldir /wal
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">347</span>
+          <span class="site-state-item-count">348</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1280,7 +1302,7 @@ influx_inspect buildtsi -datadir /data -waldir /wal
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">214</span>
+        <span class="site-state-item-count">216</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

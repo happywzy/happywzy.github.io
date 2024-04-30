@@ -196,6 +196,132 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-nei-cun-you-hua/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/influxdb-nei-cun-you-hua/" class="post-title-link" itemprop="url">influxDB内存优化</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-30 14:58:54" itemprop="dateCreated datePublished" datetime="2020-06-30T14:58:54+08:00">2020-06-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="查询series-cardinality命令"><a href="#查询series-cardinality命令" class="headerlink" title="查询series cardinality命令"></a>查询<code>series cardinality</code>命令</h3><ul>
+<li>InfluxDB官网说明：<a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/troubleshooting/frequently-asked-questions/#why-does-series-cardinality-matter">Why does series cardinality matter?</a></li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java">InfluxDB maintains an in<span class="token operator">-</span>memory index of every series in the system<span class="token punctuation">.</span> As the number of unique series grows<span class="token punctuation">,</span> so does the RAM usage<span class="token punctuation">.</span> High series cardinality can lead to the operating system killing the InfluxDB process with an out of <span class="token function">memory</span> <span class="token punctuation">(</span>OOM<span class="token punctuation">)</span> exception<span class="token punctuation">.</span> See SHOW CARDINALITY to learn about the InfluxSQL commands <span class="token keyword">for</span> series cardinality<span class="token punctuation">.</span>
+
+<span class="token comment" spellcheck="true">// 翻译</span>
+InfluxDB会在系统上为每个series维护一个内存索引，而随着这些series的增加，RAM内存使用率也会增加。如果series cardinality如果太高，就会导致操作系统触发OOMKiller机制，将Influxdb进程KILL掉<span class="token punctuation">.</span> 使用 SHOW CARDINALITY 命令可以查看到 series cardinality。
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/query_language/spec/#show-cardinality">SHOW CARDINALITY命令</a></li>
+</ul>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- show estimated cardinality of the series on current database</span>
+<span class="token keyword">SHOW</span> SERIES CARDINALITY
+<span class="token comment" spellcheck="true">-- show estimated cardinality of the series on specified database</span>
+<span class="token keyword">SHOW</span> SERIES CARDINALITY <span class="token keyword">ON</span> mydb
+<span class="token comment" spellcheck="true">-- show exact series cardinality</span>
+<span class="token keyword">SHOW</span> SERIES EXACT CARDINALITY
+<span class="token comment" spellcheck="true">-- show series cardinality of the series on specified database</span>
+<span class="token keyword">SHOW</span> SERIES EXACT CARDINALITY <span class="token keyword">ON</span> mydb
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/troubleshooting/frequently-asked-questions/#how-can-i-remove-series-from-the-index">How can I remove series from the index?</a></li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java">To reduce series cardinality<span class="token punctuation">,</span> series must be dropped from the index<span class="token punctuation">.</span> DROP DATABASE<span class="token punctuation">,</span> DROP MEASUREMENT<span class="token punctuation">,</span> and DROP SERIES will all remove series from the index and reduce the overall series cardinality<span class="token punctuation">.</span>
+
+<span class="token comment" spellcheck="true">//大意</span>
+要减少或者删除series cardinality<span class="token punctuation">,</span> 需要删除库<span class="token operator">/</span>表<span class="token operator">/</span>series
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="将series由保存到内存改为保存到TSI文件"><a href="#将series由保存到内存改为保存到TSI文件" class="headerlink" title="将series由保存到内存改为保存到TSI文件"></a>将series由保存到内存改为保存到TSI文件</h3><h4 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h4><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/config/#index-version-inmem">官网influxdb详细配置说明</a></li>
+</ul>
+<p>这里我们需要修改的配置是<code>index-version</code>项,可以在<code>influxdb.conf</code>中<code>[data]</code>下修改，也可以通过环境变量<code>INFLUXDB_DATA_INDEX_VERSION</code>修改.</p>
+<pre class="line-numbers language-conf"><code class="language-conf">[data]
+  # The type of shard index to use for new shards.  The default is an in-memory index that is
+  # recreated at startup.  A value of "tsi1" will use a disk based index that supports higher
+  # cardinality datasets.
+  # 这个配置项默认值inmem,可以取消注释修改为tsi1，那么后续的index将会保存在TSI文件中了.重启生效.
+  # index-version = "inmem"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/config/#settings-for-the-tsm-engine">其它关于内存的配置</a></li>
+</ul>
+<h4 id="重构TSI索引"><a href="#重构TSI索引" class="headerlink" title="重构TSI索引"></a>重构TSI索引</h4><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/tools/influx_inspect#influx-inspect-utility">influx_inspect buildtsi命令</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/rebuild-tsi-index/">Rebuild the TSI index</a></li>
+</ul>
+<ol>
+<li>停止<code>InfluxDB</code>服务</li>
+<li>删除所有<code>_series</code>文件夹<br>默认情况下,<code>_series</code>保存在<code>/data/&lt;dbName&gt;/_series</code>,检查并删除<code>/data</code>目录下所有<code>_series</code></li>
+<li>删除所有<code>index</code>文件夹<br>默认情况下,<code>index</code>文件夹在<code>/data/&lt;dbName/&lt;rpName&gt;/&lt;shardID&gt;/index</code></li>
+<li>使用<code>influx_inspect</code>重构<code>TSI index</code></li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 格式</span>
+influx_inspect buildtsi -datadir <span class="token operator">&lt;</span>data_dir<span class="token operator">></span> -waldir <span class="token operator">&lt;</span>wal_dir<span class="token operator">></span>
+<span class="token comment" spellcheck="true"># 示例</span>
+influx_inspect buildtsi -datadir /data -waldir /wal
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>启动<code>influxDB</code>服务</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/spring-cloud-gateway-bu-shu-dao-k8s-shang-urlencode-wen-ti/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -707,136 +833,6 @@ spring:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-compose-chang-yong-ming-ling/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-compose-chang-yong-ming-ling/" class="post-title-link" itemprop="url">docker-compose常用命令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-22 11:27:00" itemprop="dateCreated datePublished" datetime="2020-06-22T11:27:00+08:00">2020-06-22</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <table>
-<thead>
-<tr>
-<th>命令</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>build</code></td>
-<td>构建或重建服务</td>
-</tr>
-<tr>
-<td><code>help</code></td>
-<td>命令帮助</td>
-</tr>
-<tr>
-<td><code>kill</code></td>
-<td>杀掉容器</td>
-</tr>
-<tr>
-<td><code>logs</code></td>
-<td>显示容器的输出内容</td>
-</tr>
-<tr>
-<td><code>port</code></td>
-<td>打印绑定的开放端口</td>
-</tr>
-<tr>
-<td><code>ps</code></td>
-<td>显示容器</td>
-</tr>
-<tr>
-<td><code>pull</code></td>
-<td>拉取服务镜像</td>
-</tr>
-<tr>
-<td><code>restart</code></td>
-<td>重启服务,指定服务</td>
-</tr>
-<tr>
-<td><code>rm</code></td>
-<td>删除停止的容器,指定服务</td>
-</tr>
-<tr>
-<td><code>run</code></td>
-<td>运行一个一次性命令</td>
-</tr>
-<tr>
-<td><code>scale</code></td>
-<td>设置服务的容器数目</td>
-</tr>
-<tr>
-<td><code>start</code></td>
-<td>开启服务,指定服务</td>
-</tr>
-<tr>
-<td><code>stop</code></td>
-<td>停止服务,指定服务</td>
-</tr>
-<tr>
-<td><code>up</code></td>
-<td>创建并启动容器,<code>-d</code>放到后台运行</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -908,7 +904,7 @@ spring:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">347</span>
+          <span class="site-state-item-count">348</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -921,7 +917,7 @@ spring:
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">214</span>
+        <span class="site-state-item-count">216</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
