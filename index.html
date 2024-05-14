@@ -196,6 +196,138 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/keepalived-tong-guo-jian-ce-duan-kou-jue-ding-vip/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/keepalived-tong-guo-jian-ce-duan-kou-jue-ding-vip/" class="post-title-link" itemprop="url">keepalived通过检测端口决定vip漂移到哪台机器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-14 15:08:38" itemprop="dateCreated datePublished" datetime="2024-05-14T15:08:38+08:00">2024-05-14</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> keepalived -y
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="编写检查端口是否通的脚本"><a href="#编写检查端口是否通的脚本" class="headerlink" title="编写检查端口是否通的脚本"></a>编写检查端口是否通的脚本</h3><pre class="line-numbers language-shell"><code class="language-shell">#!/bin/bash
+CHK_PORT=$1
+if [ -n "$CHK_PORT" ];then
+        PORT_PROCESS=`ss -lnt|grep $CHK_PORT|wc -l`
+        if [ $PORT_PROCESS -eq 0 ];then
+                echo "Port $CHK_PORT Is Not Used,End."
+                exit 1
+        fi
+else
+        echo "Check Port Cant Be Empty!"
+fi
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>测试：<code>./check_port.sh 8080</code>检测8080端口是否开通.</p>
+<h3 id="keepalived主节点配置"><a href="#keepalived主节点配置" class="headerlink" title="keepalived主节点配置"></a>keepalived主节点配置</h3><pre class="line-numbers language-conf"><code class="language-conf">! Configuration File for keepalived
+
+global_defs {
+   router_id 20.153
+}
+
+vrrp_script chk_port {
+    script "/etc/keepalived/check_port.sh 8080"
+    interval 2
+    weight -20
+}
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface ens192
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    virtual_ipaddress {
+        172.16.20.99
+    }
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="keepalived备节点配置"><a href="#keepalived备节点配置" class="headerlink" title="keepalived备节点配置"></a>keepalived备节点配置</h3><pre class="line-numbers language-conf"><code class="language-conf">! Configuration File for keepalived
+
+global_defs {
+   router_id 20.154
+}
+
+vrrp_script chk_port {
+    script "/etc/keepalived/check_port.sh 8080"
+    interval 2
+    weight -20
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface ens192
+    virtual_router_id 51
+    priority 90
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    virtual_ipaddress {
+        172.16.20.99
+    }
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/ognl-he-spel-biao-da-shi-yu-yan/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -774,167 +906,10 @@ curl -H "Authorization:Basic base64加密后的字符串" http://127.0.0.1:38750
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/idea-kuai-jie-jian/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/idea-kuai-jie-jian/" class="post-title-link" itemprop="url">开发工具快捷键</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-12-08 14:13:19" itemprop="dateCreated datePublished" datetime="2023-12-08T14:13:19+08:00">2023-12-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="IDEA快捷键"><a href="#IDEA快捷键" class="headerlink" title="IDEA快捷键"></a>IDEA快捷键</h3><table>
-<thead>
-<tr>
-<th>快捷键</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>Shift + Ctrl + V</code></td>
-<td>选择要粘贴的内容</td>
-</tr>
-<tr>
-<td><code>Ctrl + Alt + L</code></td>
-<td>重新格式化代码</td>
-</tr>
-<tr>
-<td><code>Ctrl + F12</code></td>
-<td>显示文件结构</td>
-</tr>
-<tr>
-<td>Ctrl + `</td>
-<td>更改视图模式</td>
-</tr>
-<tr>
-<td><code>Ctrl + G</code></td>
-<td>转到行:列</td>
-</tr>
-<tr>
-<td><code>Ctrl -/+</code></td>
-<td>收起和展开代码块</td>
-</tr>
-<tr>
-<td><code>Alt + Shift + ,/.</code></td>
-<td>缩小/放大字体</td>
-</tr>
-</tbody></table>
-<ul>
-<li><code>https://blog.jetbrains.com/zh-hans/idea/2022/11/intellij-idea-3/</code></li>
-</ul>
-<h3 id="VS-Code快捷键"><a href="#VS-Code快捷键" class="headerlink" title="VS Code快捷键"></a>VS Code快捷键</h3><table>
-<thead>
-<tr>
-<th>快捷键</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>Shift + Ctrl + K</code></td>
-<td>删除一行</td>
-</tr>
-<tr>
-<td><code>Shift + Alt + ↑/↓</code></td>
-<td>向上/向下复制一行</td>
-</tr>
-<tr>
-<td><code>Alt + ↑/↓</code></td>
-<td>向上/向下移动一行</td>
-</tr>
-<tr>
-<td><code>Shift + Alt + f</code></td>
-<td>代码格式化</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + n</code></td>
-<td>新建一个窗口</td>
-</tr>
-<tr>
-<td><code>Ctrl + ]/[</code></td>
-<td>行增加/减少缩进</td>
-</tr>
-<tr>
-<td><code>Ctrl -/+</code></td>
-<td>字体放大/减小</td>
-</tr>
-<tr>
-<td><code>Ctrl + b</code></td>
-<td>显示/隐藏左侧目录栏</td>
-</tr>
-<tr>
-<td><code>Ctrl + ~</code></td>
-<td>打开/关闭终端</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + ~</code></td>
-<td>打开新的终端</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + c</code></td>
-<td>当前目录打开cmd窗口</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/58/">58</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/59/">59</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1002,7 +977,7 @@ curl -H "Authorization:Basic base64加密后的字符串" http://127.0.0.1:38750
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">348</span>
+          <span class="site-state-item-count">349</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

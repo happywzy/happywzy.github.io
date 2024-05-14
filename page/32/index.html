@@ -196,6 +196,180 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-dns-jie-xi-wen-ti/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-dns-jie-xi-wen-ti/" class="post-title-link" itemprop="url">k8s【coredns解析问题】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-02 10:31:47" itemprop="dateCreated datePublished" datetime="2020-07-02T10:31:47+08:00">2020-07-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master busybox<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod -nkube-system -owide</span>
+NAME                             READY   STATUS    RESTARTS   AGE     IP               NODE     NOMINATED NODE   READINESS GATES
+coredns-5c98db65d4-8zjps         1/1     Running   1          2d23h   10.244.0.13      master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
+coredns-5c98db65d4-d2kth         1/1     Running   1          2d23h   10.244.0.14      master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master busybox<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod -owide</span>
+NAME                      READY   STATUS    RESTARTS   AGE    IP            NODE     NOMINATED NODE   READINESS GATES
+curl-6bf6db5c4f-pjld9     1/1     Running   1          3d     10.244.1.2    node2    <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
+gateway-99b655cc6-np685   1/1     Running   0          44s    10.244.0.54   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
+test-post-start1          1/1     Running   0          115s   10.244.1.6    node2    <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
+test-post-start2          1/1     Running   0          115s   10.244.0.52   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
+test-post-start3          1/1     Running   0          115s   10.244.0.53   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如上所示，出现部署在<code>master</code>节点上的<code>pod</code>，无法解析<code>gateway.default.svc.cluster.local</code>域名，但是部署在<code>node2</code>，确可以解析，如上<code>curl-6bf6db5c4f-pjld9</code>,<code>test-post-start1</code>通过<code>nslookup</code>都可以解析.</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 报错</span>
+/ <span class="token comment" spellcheck="true"># nslookup gateway</span>
+nslookup: can<span class="token string">'t resolve '</span><span class="token punctuation">(</span>null<span class="token punctuation">)</span><span class="token string">': Name does not resolve
+
+nslookup: can'</span>t resolve <span class="token string">'gateway'</span><span class="token keyword">:</span> Try again
+
+/ <span class="token comment" spellcheck="true"># nslookup gateway.default.svc.cluster.local</span>
+Server:    10.244.0.10
+Address 1: 10.244.0.10
+
+nslookup: can<span class="token string">'t resolve '</span>gateway.default.svc.cluster.local'
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>进入<code>master</code>节点<code>pod</code>，直接通过<code>coredns pod ip</code>解析测试</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">exec</span> -it test-post-start2 sh
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">/ <span class="token comment" spellcheck="true"># nslookup gateway.default.svc.cluster.local 10.244.0.13</span>
+Server:    10.244.0.13
+Address 1: 10.244.0.13 10-244-0-13.kube-dns.kube-system.svc.cluster.local
+
+Name:      gateway.default.svc.cluster.local
+Address 1: 10.244.106.29 gateway.default.svc.cluster.local
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>发现直接通过<code>coredns pod ip</code>解析可以成功，证明<code>coredns</code>服务本身没有问题.</p>
+<p>查看<code>dns clusterIP</code>.</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc -nkube-system</span>
+NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>                  AGE
+kube-dns        ClusterIP   10.244.0.10    <span class="token operator">&lt;</span>none<span class="token operator">></span>        53/UDP,53/TCP,9153/TCP   21m
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 通过clusterIP解析域名失败</span>
+<span class="token function">nslookup</span> gateway.default.svc.cluster.local 10.244.0.10
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>通过以上测试证明问题出现在<code>coredns service</code>上.</p>
+<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><p>导出现有<code>kube-dns service</code>配置</p>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl get svc -nkube-system kube-dns -oyaml <span class="token operator">></span> kube-dns-svc.yaml
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>修改<code>kube-dns-svc.yaml</code>.</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+    <span class="token key atrule">prometheus.io/port</span><span class="token punctuation">:</span> <span class="token string">"9153"</span>
+    <span class="token key atrule">prometheus.io/scrape</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">k8s-app</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns
+    <span class="token key atrule">kubernetes.io/cluster-service</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+    <span class="token key atrule">kubernetes.io/name</span><span class="token punctuation">:</span> KubeDNS
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>system
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> dns
+    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">53</span>
+    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> UDP
+    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">53</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> dns<span class="token punctuation">-</span>tcp
+    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">53</span>
+    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
+    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">53</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> metrics
+    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9153</span>
+    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
+    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">9153</span>
+  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">k8s-app</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns
+  <span class="token key atrule">sessionAffinity</span><span class="token punctuation">:</span> None
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f kube-dns-svc.yaml
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>查看最新的<code>coredns clusterIP</code>,当前为<code>10.244.47.231</code>.</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc -nkube-system</span>
+NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>                  AGE
+kube-dns        ClusterIP   10.244.47.231    <span class="token operator">&lt;</span>none<span class="token operator">></span>        53/UDP,53/TCP,9153/TCP   21m
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>进去之前无法解析的<code>pod</code>中测试，证明新的<code>clusterIP</code>没有问题.</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">nslookup</span> gateway.default.svc.cluster.local 10.244.47.231
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>修改<code>kubelet --clusterDNS</code>,这样新创建的<code>pod /etc/resolv.conf</code>中<code>nameserver</code>为新的<code>coredns clusterIP</code>.</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改kubelet配置</span>
+vim  /var/lib/kubelet/config.yaml
+
+<span class="token comment" spellcheck="true"># 找到clusterDNS</span>
+clusterDNS:
+- 10.244.47.231
+
+<span class="token comment" spellcheck="true"># 重启kubelet生效,注意k8s中所有节点都需要修改重启</span>
+systemctl restart kubelet.service
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>最后测试，新的<code>pod</code>中<code>/etc/resolv.conf</code>.解析没有问题.</p>
+<pre class="line-numbers language-bash"><code class="language-bash">/ <span class="token comment" spellcheck="true"># cat /etc/resolv.conf </span>
+nameserver 10.244.47.231
+search default.svc.cluster.local svc.cluster.local cluster.local
+options ndots:5
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-nei-cun-you-hua/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -715,128 +889,10 @@ spring.redis.lettuce.pool.min-idle=1
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/url-lu-jing-zhong-wen-can-shu-luan-ma-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/url-lu-jing-zhong-wen-can-shu-luan-ma-wen-ti/" class="post-title-link" itemprop="url">url路径中文参数乱码问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-22 14:21:05" itemprop="dateCreated datePublished" datetime="2020-06-22T14:21:05+08:00">2020-06-22</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p><code>http://localhost:8080/test?name=管理</code>这样参数存在中文情况，<code>spring boot</code>代码</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> RoleResponse <span class="token function">selectById</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"name"</span><span class="token punctuation">,</span> required <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">)</span> String name<span class="token punctuation">)</span><span class="token punctuation">{</span>
-    <span class="token keyword">return</span> roleService<span class="token punctuation">.</span><span class="token function">selectByName</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p><strong>可能存在</strong>接收到的<code>name</code>是<code>%E7%AE%A1%E7%90%86</code>这样的情况,这是浏览器自动为<code>URL</code>做了<code>UrlEncode</code>;</p>
-<p>即使你的<code>application.yml</code>配置了<code>UTF-8</code>编码，也不一定能解决这样的问题:</p>
-<pre class="line-numbers language-yml"><code class="language-yml"># application.properties
-server:
-  tomcat:
-    uri-encoding: UTF-8
-spring:
-  http:
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>网上查找的方法一：【添加配置类】</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Configuration</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CustomMVCConfiguration</span> <span class="token keyword">extends</span> <span class="token class-name">WebMvcConfigurerAdapter</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@Bean</span>
-    <span class="token keyword">public</span> HttpMessageConverter<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token function">responseBodyConverter</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        StringHttpMessageConverter converter <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StringHttpMessageConverter</span><span class="token punctuation">(</span>
-                Charset<span class="token punctuation">.</span><span class="token function">forName</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> converter<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">configureMessageConverters</span><span class="token punctuation">(</span>
-            List<span class="token operator">&lt;</span>HttpMessageConverter<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">>></span> converters<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">configureMessageConverters</span><span class="token punctuation">(</span>converters<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        converters<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token function">responseBodyConverter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">configureContentNegotiation</span><span class="token punctuation">(</span>
-            ContentNegotiationConfigurer configurer<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        configurer<span class="token punctuation">.</span><span class="token function">favorPathExtension</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>测试并未解决问题！</p>
-<p>方法二：【强制解码】</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> RoleResponse <span class="token function">selectById</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"name"</span><span class="token punctuation">,</span> required <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">)</span> String name<span class="token punctuation">)</span> <span class="token keyword">throws</span> UnsupportedEncodingException <span class="token punctuation">{</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>name <span class="token operator">!=</span> null<span class="token punctuation">)</span><span class="token punctuation">{</span>
-        name <span class="token operator">=</span> URLDecoder<span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> <span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-    <span class="token keyword">return</span> roleService<span class="token punctuation">.</span><span class="token function">selectByName</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>测试可以解决问题！</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/31/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><span class="page-number current">32</span><a class="page-number" href="/page/33/">33</a><span class="space">&hellip;</span><a class="page-number" href="/page/58/">58</a><a class="extend next" rel="next" href="/page/33/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/31/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><span class="page-number current">32</span><a class="page-number" href="/page/33/">33</a><span class="space">&hellip;</span><a class="page-number" href="/page/59/">59</a><a class="extend next" rel="next" href="/page/33/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -904,7 +960,7 @@ spring:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">348</span>
+          <span class="site-state-item-count">349</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
