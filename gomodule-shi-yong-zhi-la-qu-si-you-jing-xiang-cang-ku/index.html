@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="拉取非公共module通过 Go 命令拉取项目依赖的公共 Go Module，只需要在每个开发机上设置环境变量 GOPROXY，配置一个高效且可靠的公共 GOPROXY 服务，如 set GOPROXY&#x3D;https:&#x2F;&#x2F;goproxy.cn,direct。但是如果同时需要拉取私有的包怎么办呢？如企业自己开发的module依赖。这时我们需要配置set GOPRIVATE&#x3D;*gitee.com，表示">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go module使用之拉取私有镜像仓库">
+<meta property="og:url" content="https://happywzy.top/gomodule-shi-yong-zhi-la-qu-si-you-jing-xiang-cang-ku/index.html">
+<meta property="og:site_name" content="Happywzy">
+<meta property="og:description" content="拉取非公共module通过 Go 命令拉取项目依赖的公共 Go Module，只需要在每个开发机上设置环境变量 GOPROXY，配置一个高效且可靠的公共 GOPROXY 服务，如 set GOPROXY&#x3D;https:&#x2F;&#x2F;goproxy.cn,direct。但是如果同时需要拉取私有的包怎么办呢？如企业自己开发的module依赖。这时我们需要配置set GOPRIVATE&#x3D;*gitee.com，表示">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-05-24T03:10:08.000Z">
+<meta property="article:modified_time" content="2024-05-24T03:10:08.000Z">
+<meta property="article:author" content="wuzhiyong">
+<meta property="article:tag" content="go module">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://happywzy.top/gomodule-shi-yong-zhi-la-qu-si-you-jing-xiang-cang-ku/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>go module使用之拉取私有镜像仓库 | Happywzy</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
+<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Happywzy</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">enjoy coding...</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gomodule-shi-yong-zhi-la-qu-si-you-jing-xiang-cang-ku/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go module使用之拉取私有镜像仓库
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-24 11:10:08" itemprop="dateCreated datePublished" datetime="2024-05-24T11:10:08+08:00">2024-05-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="拉取非公共module"><a href="#拉取非公共module" class="headerlink" title="拉取非公共module"></a>拉取非公共module</h3><p>通过 Go 命令拉取项目依赖的公共 Go Module，只需要在每个开发机上设置环境变量 GOPROXY，配置一个高效且可靠的公共 GOPROXY 服务，如 <code>set GOPROXY=https://goproxy.cn,direct</code>。但是如果同时需要拉取私有的包怎么办呢？如企业自己开发的module依赖。这时我们需要配置<code>set GOPRIVATE=*gitee.com</code>，表示 <code>gitee.com</code>的包不使用代理而是直接拉取。通过<code>go env</code>命令可以看出：</p>
+<pre class="line-numbers language-shell"><code class="language-shell">set GONOPROXY=*gitee.com
+set GONOSUMDB=*gitee.com
+set GOPRIVATE=*gitee.com
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="开发私有module"><a href="#开发私有module" class="headerlink" title="开发私有module"></a>开发私有module</h3><ol>
+<li>如我们开发一个打印版本的方法，封装在了<code>gitee.com/happywzy/go-module-test</code>包中。</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> pkg
+
+<span class="token keyword">func</span> <span class="token function">Version</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">string</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token string">"version 1"</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>我们模拟提交了很多个版本，并在不同的commit打上了一些tag，提交到了远程仓库。</p>
+<pre class="line-numbers language-shell"><code class="language-shell"># 查看版本号
+> git ls-remote -q origin          
+9da810c37c774a3775a518d16cfe032a39f862ea        HEAD
+9da810c37c774a3775a518d16cfe032a39f862ea        refs/heads/master
+9da810c37c774a3775a518d16cfe032a39f862ea        refs/tags/v1.0.0
+f4c3585328e0a686ad35537e390473917c4b202b        refs/tags/v1.0.0-test
+1e40db9baf18cbb8ed5784858bc9418c738792a7        refs/tags/v2
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>我们需要在另一个Module中使用<code>Version()</code>方法<br>go.mod配置如下：</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go">module gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module
+
+<span class="token keyword">go</span> <span class="token number">1.19</span>
+
+<span class="token function">require</span> <span class="token punctuation">(</span>
+    gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test v1<span class="token number">.0</span><span class="token punctuation">.</span><span class="token number">0</span><span class="token operator">-</span>test
+<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>版本号可以配置成commitId，执行<code>go mod tidy</code>后，会根据<code>commitId</code>自动生成伪版本号，如<code>gitee.com/happywzy/go-module-test v0.0.0-20240524023550-1e40db9baf18</code>，这个版本号不要手敲，防止出错。</li>
+<li>版本号可以配置成tag，如<code>v1.0.0</code>、<code>v1.0.0-test</code>，但是配置成<code>v2</code>这种好像无法识别。</li>
+</ul>
+<h3 id="如何使用本地的Module"><a href="#如何使用本地的Module" class="headerlink" title="如何使用本地的Module"></a>如何使用本地的Module</h3><p>前面介绍的方式需要Module推送到远程仓库后才能使用，这在开发阶段非常不适用，如何直接使用本地的Module呢？有两种方式。</p>
+<ol>
+<li>使用 go.mod 中 replace</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token function">replace</span> <span class="token punctuation">(</span>
+    gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test v1<span class="token number">.0</span><span class="token punctuation">.</span><span class="token number">0</span><span class="token operator">-</span>test <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token operator">/</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test
+<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>表示<code>gitee.com/happywzy/go-module-test v1.0.0-test</code>这个包直接使用本地路径下的代码。这种方式需要注意在提交代码前需要将<code>replace</code>删除，防止出错。</p>
+<ol start="2">
+<li>使用 go.work<blockquote>
+<p><code>go.work</code> 在 <code>1.18</code> 版本之后才有。</p>
+</blockquote>
+</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">go</span> <span class="token number">1.19</span>
+
+<span class="token function">use</span> <span class="token punctuation">(</span>
+    <span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test
+    <span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module
+<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>go.work</code>文件需要位于两个模块的上层目录，通过<code>go work init</code>初始化生成，使用<code>go work use gitee.com/happywzy/go-module-test</code>添加。</p>
+<blockquote>
+<p><code>go.work</code> 这个文件无需提交到git，仅用于本地开发即可。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/go-module/" rel="tag"># go module</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/keepalived-tong-guo-jian-ce-duan-kou-jue-ding-vip/" rel="prev" title="keepalived通过检测端口决定vip漂移到哪台机器">
+      <i class="fa fa-chevron-left"></i> keepalived通过检测端口决定vip漂移到哪台机器
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8B%89%E5%8F%96%E9%9D%9E%E5%85%AC%E5%85%B1module"><span class="nav-number">1.</span> <span class="nav-text">拉取非公共module</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%8F%91%E7%A7%81%E6%9C%89module"><span class="nav-number">2.</span> <span class="nav-text">开发私有module</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%E6%9C%AC%E5%9C%B0%E7%9A%84Module"><span class="nav-number">3.</span> <span class="nav-text">如何使用本地的Module</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="wuzhiyong"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">wuzhiyong</p>
+  <div class="site-description" itemprop="description">日常学习笔记,共同进步</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">350</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/happywzy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;happywzy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:1154365135@qq.com" title="E-Mail → mailto:1154365135@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/wzy_168" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;wzy_168" rel="noopener" target="_blank">CSDN</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://gitee.com/happywzy" title="https:&#x2F;&#x2F;gitee.com&#x2F;happywzy" rel="noopener" target="_blank">Gitee</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/gpwz.html" title="&#x2F;gpwz.html">狗屁文章</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/lmbtfy" title="&#x2F;lmbtfy">教你百度</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/chinamap.html" title="&#x2F;chinamap.html">中国地图</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/md2all" title="&#x2F;md2all">Md2All</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">wuzhiyong</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/lozad.js/1.14.0/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+  
+  <script type="text/javascript" color="0,0,0" opacity='0.7' zIndex="-2" count="99" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+  
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/miku.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":true},"react":{"opacity":0.7}});</script></body>
+</html>

@@ -196,6 +196,169 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/chi-xian-huan-jing-an-zhuang-docker-he-docker-compose/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/chi-xian-huan-jing-an-zhuang-docker-he-docker-compose/" class="post-title-link" itemprop="url">离线环境安装docker和docker-compose</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-29 09:54:55" itemprop="dateCreated datePublished" datetime="2021-03-29T09:54:55+08:00">2021-03-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="下载软件包"><a href="#下载软件包" class="headerlink" title="下载软件包"></a>下载软件包</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://download.docker.com/linux/static/stable/x86_64/">docker软件包下载地址</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/docker/compose/releases">docker-compose软件包下载地址</a><blockquote>
+<p>本次安装下载的软件包版本:</p>
+<ul>
+<li><code>docker-19.03.9.tgz</code></li>
+<li><code>docker-compose 1.24.1</code></li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h3 id="关闭防火墙"><a href="#关闭防火墙" class="headerlink" title="关闭防火墙"></a>关闭防火墙</h3><blockquote>
+<p>本次安装使用<code>centos7.5</code>操作系统.</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 关闭防火墙</span>
+systemctl stop firewalld
+systemctl disable firewalld
+<span class="token comment" spellcheck="true"># 查看防火墙状态</span>
+systemctl status firewalld
+
+<span class="token comment" spellcheck="true"># 关闭selinux</span>
+setenforce 0
+vim /etc/selinux/config
+<span class="token comment" spellcheck="true"># 查看selinux状态</span>
+/usr/sbin/sestatus -v
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装docker"><a href="#安装docker" class="headerlink" title="安装docker"></a>安装docker</h3><ul>
+<li>准备<code>docker.service</code>，<code>docker</code>服务化配置文件</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>Unit<span class="token punctuation">]</span>
+Description<span class="token operator">=</span>Docker Application Container Engine
+Documentation<span class="token operator">=</span>https://docs.docker.com
+After<span class="token operator">=</span>network-online.target firewalld.service
+Wants<span class="token operator">=</span>network-online.target
+
+<span class="token punctuation">[</span>Service<span class="token punctuation">]</span>
+Type<span class="token operator">=</span>notify
+<span class="token comment" spellcheck="true"># the default is not to use systemd for cgroups because the delegate issues still</span>
+<span class="token comment" spellcheck="true"># exists and systemd currently does not support the cgroup feature set required</span>
+<span class="token comment" spellcheck="true"># for containers run by docker</span>
+ExecStart<span class="token operator">=</span>/usr/bin/dockerd
+ExecReload<span class="token operator">=</span>/bin/kill -s HUP <span class="token variable">$MAINPID</span>
+<span class="token comment" spellcheck="true"># Having non-zero Limit*s causes performance problems due to accounting overhead</span>
+<span class="token comment" spellcheck="true"># in the kernel. We recommend using cgroups to do container-local accounting.</span>
+LimitNOFILE<span class="token operator">=</span>infinity
+LimitNPROC<span class="token operator">=</span>infinity
+LimitCORE<span class="token operator">=</span>infinity
+<span class="token comment" spellcheck="true"># Uncomment TasksMax if your systemd version supports it.</span>
+<span class="token comment" spellcheck="true"># Only systemd 226 and above support this version.</span>
+<span class="token comment" spellcheck="true">#TasksMax=infinity</span>
+TimeoutStartSec<span class="token operator">=</span>0
+<span class="token comment" spellcheck="true"># set delegate yes so that systemd does not reset the cgroups of docker containers</span>
+Delegate<span class="token operator">=</span>yes
+<span class="token comment" spellcheck="true"># kill only the docker process, not all processes in the cgroup</span>
+KillMode<span class="token operator">=</span>process
+<span class="token comment" spellcheck="true"># restart the docker process if it exits prematurely</span>
+Restart<span class="token operator">=</span>on-failure
+StartLimitBurst<span class="token operator">=</span>3
+StartLimitInterval<span class="token operator">=</span>60s
+
+<span class="token punctuation">[</span>Install<span class="token punctuation">]</span>
+WantedBy<span class="token operator">=</span>multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>依次执行命令安装</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 解压tar包</span>
+<span class="token function">tar</span> -xvf docker-19.03.9.tgz
+<span class="token comment" spellcheck="true"># 将docker目录移到/usr/bin目录下</span>
+<span class="token function">cp</span> docker/* /usr/bin/
+<span class="token comment" spellcheck="true"># 将docker.service 移到/etc/systemd/system/ 目录</span>
+<span class="token function">cp</span> docker.service /etc/systemd/system/
+<span class="token comment" spellcheck="true"># 添加文件权限</span>
+<span class="token function">chmod</span> +x /etc/systemd/system/docker.service
+<span class="token comment" spellcheck="true"># 重新加载配置文件</span>
+systemctl daemon-reload
+<span class="token comment" spellcheck="true"># 启动docker</span>
+systemctl start docker
+<span class="token comment" spellcheck="true"># 设置开机自启</span>
+systemctl <span class="token function">enable</span> docker.service
+<span class="token comment" spellcheck="true"># 验证docker安装是否成功</span>
+docker -v
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装docker-compose"><a href="#安装docker-compose" class="headerlink" title="安装docker-compose"></a>安装docker-compose</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 添加文件权限</span>
+<span class="token function">chmod</span> +x /xxx/docker-compose
+<span class="token comment" spellcheck="true"># 创建软链接</span>
+<span class="token function">ln</span> -s /xxx/docker-compose /usr/bin/docker-compose
+<span class="token comment" spellcheck="true"># 验证安装是否成功</span>
+docker-compose --version
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置普通用户可以使用docker命令"><a href="#配置普通用户可以使用docker命令" class="headerlink" title="配置普通用户可以使用docker命令"></a>配置普通用户可以使用docker命令</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建用户组,默认安装docker可能已经创建了</span>
+<span class="token function">sudo</span> <span class="token function">groupadd</span> docker
+<span class="token comment" spellcheck="true"># 示例</span>
+<span class="token function">sudo</span> <span class="token function">usermod</span> -aG docker testuser
+<span class="token comment" spellcheck="true"># 重新服务再登录即可使用docker命令</span>
+<span class="token function">sudo</span> systemctl restart docker
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/jia-mi-shu-ju-ru-he-jin-xing-mo-hu-cha-xun/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -862,91 +1025,6 @@ http {
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/java-rong-qi-zhong-shi-qu-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/java-rong-qi-zhong-shi-qu-wen-ti/" class="post-title-link" itemprop="url">java容器中时区问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-12-31 15:38:37" itemprop="dateCreated datePublished" datetime="2020-12-31T15:38:37+08:00">2020-12-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>容器时间与主机差8个小时,如果里面运行的是java程序，那么程序时间还是有8个小时时差.</p>
-<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><ul>
-<li>容器内时间与宿主机时间不一样</li>
-</ul>
-<pre class="line-numbers language-sh"><code class="language-sh">#启动容器时增加
--v /etc/localtime:/etc/localtime
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ul>
-<li>java时区主要从<code>/etc/timezone</code>获取</li>
-</ul>
-<pre class="line-numbers language-sh"><code class="language-sh">#dockerfile增加
-RUN echo "Asia/shanghai" > /etc/timezone
-
-#也也可以从宿主机映射，宿主机可能没有该文件，则需要先新增
--v /etc/timezone:/etc/timezone
-
-#或者jvm参数传递
--Duser.timezone=GMT+08
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1018,7 +1096,7 @@ RUN echo "Asia/shanghai" > /etc/timezone
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">349</span>
+          <span class="site-state-item-count">350</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1031,7 +1109,7 @@ RUN echo "Asia/shanghai" > /etc/timezone
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">216</span>
+        <span class="site-state-item-count">217</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

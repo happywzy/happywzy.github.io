@@ -196,6 +196,111 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-shao-bing-mo-shi-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/redis-shao-bing-mo-shi-bu-shu/" class="post-title-link" itemprop="url">redis哨兵模式部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-19 17:03:53" itemprop="dateCreated datePublished" datetime="2021-08-19T17:03:53+08:00">2021-08-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="配置文件sentinel-conf"><a href="#配置文件sentinel-conf" class="headerlink" title="配置文件sentinel.conf"></a>配置文件sentinel.conf</h3><pre class="line-numbers language-bash"><code class="language-bash">port 26379
+sentinel monitor mymaster 192.168.41.128 6379 2
+sentinel down-after-milliseconds mymaster 30000
+sentinel parallel-syncs mymaster 1
+sentinel failover-timeout mymaster 10000
+sentinel deny-scripts-reconfig <span class="token function">yes</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动1主2从"><a href="#启动1主2从" class="headerlink" title="启动1主2从"></a>启动1主2从</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动主节点</span>
+docker run -d --net host --name redis-server redis:6.2.5 redis-server --port 6379
+<span class="token comment" spellcheck="true"># 启动从节点</span>
+docker run -d --net host --name redis-slave1 redis:6.2.5 redis-server --slaveof 192.168.41.128 6379  --port 6378
+docker run -d --net host --name redis-slave2 redis:6.2.5 redis-server --slaveof 192.168.41.128 6379  --port 6377
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动哨兵"><a href="#启动哨兵" class="headerlink" title="启动哨兵"></a>启动哨兵</h3><pre class="line-numbers language-bash"><code class="language-bash">docker run -d -p 26379:26379 --name redis-sentinel1 -v <span class="token variable">$PWD</span>/sentinel1.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
+docker run -d -p 26378:26379 --name redis-sentinel2 -v <span class="token variable">$PWD</span>/sentinel2.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
+docker run -d -p 26377:26379 --name redis-sentinel3 -v <span class="token variable">$PWD</span>/sentinel2.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="查看状态"><a href="#查看状态" class="headerlink" title="查看状态"></a>查看状态</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node1 redis<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker exec -it redis-sentinel1 bash</span>
+root@be853924137f:/data<span class="token comment" spellcheck="true"># redis-cli -p 26379</span>
+127.0.0.1:26379<span class="token operator">></span> info sentinel
+<span class="token comment" spellcheck="true"># Sentinel</span>
+sentinel_masters:1
+sentinel_tilt:0
+sentinel_running_scripts:0
+sentinel_scripts_queue_length:0
+sentinel_simulate_failure_flags:0
+master0:name<span class="token operator">=</span>mymaster,status<span class="token operator">=</span>sdown,address<span class="token operator">=</span>192.168.41.128:6379,slaves<span class="token operator">=</span>1,sentinels<span class="token operator">=</span>3
+
+<span class="token comment" spellcheck="true"># 查看masters</span>
+127.0.0.1:26379<span class="token operator">></span> SENTINEL masters
+
+<span class="token comment" spellcheck="true"># 查看slaves</span>
+127.0.0.1:26379<span class="token operator">></span> SENTINEL slaves mymaster
+
+<span class="token comment" spellcheck="true"># 关闭redis-server</span>
+docker stop redis-server
+<span class="token comment" spellcheck="true"># 刷新查看master节点是否更换</span>
+docker <span class="token function">exec</span> -it  redis-sentinel1 redis-cli -p 26379 sentinel masters
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-zhu-cong-mo-shi-bu-shu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -850,199 +955,6 @@ mvn protobuf:compile-custom
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/rook-ceph-an-zhuang-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/rook-ceph-an-zhuang-shi-yong/" class="post-title-link" itemprop="url">rook-ceph安装使用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-07-06 09:58:13" itemprop="dateCreated datePublished" datetime="2021-07-06T09:58:13+08:00">2021-07-06</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://rook.github.io/docs/rook/master/ceph-quickstart.html">官网</a></li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 检查磁盘是否满足条件</span>
-lsblk -f
-
-<span class="token comment" spellcheck="true"># 2. clone相关配置</span>
-<span class="token function">git</span> clone --single-branch --branch master https://github.com/rook/rook.git
-
-<span class="token comment" spellcheck="true"># 3. 进入rook ceph目录</span>
-<span class="token function">cd</span> rook/cluster/examples/kubernetes/ceph
-
-<span class="token comment" spellcheck="true"># 4. 安装crd,operator</span>
-kubectl create -f crds.yaml -f common.yaml -f operator.yaml
-
-<span class="token comment" spellcheck="true"># 5. 检查pod运行情况</span>
-kubectl -n rook-ceph get pod
-
-<span class="token comment" spellcheck="true"># 6. 安装ceph cluster</span>
-kubectl create -f cluster.yaml
-
-<span class="token comment" spellcheck="true"># 7. 检查pod运行情况</span>
-kubectl -n rook-ceph get pod
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="安装ceph-tool"><a href="#安装ceph-tool" class="headerlink" title="安装ceph tool"></a>安装ceph tool</h3><p>保存<code>toolbox.yaml</code></p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph
-  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">1</span>
-  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
-      <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-  <span class="token key atrule">template</span><span class="token punctuation">:</span>
-    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-        <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
-      <span class="token key atrule">dnsPolicy</span><span class="token punctuation">:</span> ClusterFirstWithHostNet
-      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-        <span class="token key atrule">image</span><span class="token punctuation">:</span> rook/ceph<span class="token punctuation">:</span>master
-        <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/tini"</span><span class="token punctuation">]</span>
-        <span class="token key atrule">args</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"-g"</span><span class="token punctuation">,</span> <span class="token string">"--"</span><span class="token punctuation">,</span> <span class="token string">"/usr/local/bin/toolbox.sh"</span><span class="token punctuation">]</span>
-        <span class="token key atrule">imagePullPolicy</span><span class="token punctuation">:</span> IfNotPresent
-        <span class="token key atrule">env</span><span class="token punctuation">:</span>
-          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ROOK_CEPH_USERNAME
-            <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
-              <span class="token key atrule">secretKeyRef</span><span class="token punctuation">:</span>
-                <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon
-                <span class="token key atrule">key</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>username
-          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ROOK_CEPH_SECRET
-            <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
-              <span class="token key atrule">secretKeyRef</span><span class="token punctuation">:</span>
-                <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon
-                <span class="token key atrule">key</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>secret
-        <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
-          <span class="token punctuation">-</span> <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /etc/ceph
-            <span class="token key atrule">name</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>config
-          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoint<span class="token punctuation">-</span>volume
-            <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /etc/rook
-      <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoint<span class="token punctuation">-</span>volume
-          <span class="token key atrule">configMap</span><span class="token punctuation">:</span>
-            <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon<span class="token punctuation">-</span>endpoints
-            <span class="token key atrule">items</span><span class="token punctuation">:</span>
-            <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> data
-              <span class="token key atrule">path</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoints
-        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>config
-          <span class="token key atrule">emptyDir</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
-      <span class="token key atrule">tolerations</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"node.kubernetes.io/unreachable"</span>
-          <span class="token key atrule">operator</span><span class="token punctuation">:</span> <span class="token string">"Exists"</span>
-          <span class="token key atrule">effect</span><span class="token punctuation">:</span> <span class="token string">"NoExecute"</span>
-          <span class="token key atrule">tolerationSeconds</span><span class="token punctuation">:</span> <span class="token number">5</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 安装</span>
-kubectl create -f toolbox.yaml
-
-<span class="token comment" spellcheck="true"># 2. 进入容器</span>
-kubectl -n rook-ceph <span class="token function">exec</span> -it deploy/rook-ceph-tools -- <span class="token function">bash</span>
-
-<span class="token comment" spellcheck="true"># 3. 执行相关命令</span>
-ceph status
-ceph osd status
-ceph <span class="token function">df</span>
-rados <span class="token function">df</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="block存储-被单个pod使用"><a href="#block存储-被单个pod使用" class="headerlink" title="block存储(被单个pod使用)"></a>block存储(被单个pod使用)</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl create -f cluster/examples/kubernetes/ceph/csi/rbd/storageclass.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="Shared-Filesystem存储-被多个pod共享使用"><a href="#Shared-Filesystem存储-被多个pod共享使用" class="headerlink" title="Shared Filesystem存储(被多个pod共享使用)"></a>Shared Filesystem存储(被多个pod共享使用)</h3><ul>
-<li><code>filesystem.yaml</code></li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> ceph.rook.io/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> CephFilesystem
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> myfs
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">metadataPool</span><span class="token punctuation">:</span>
-    <span class="token key atrule">replicated</span><span class="token punctuation">:</span>
-      <span class="token key atrule">size</span><span class="token punctuation">:</span> <span class="token number">3</span>
-  <span class="token key atrule">dataPools</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">replicated</span><span class="token punctuation">:</span>
-        <span class="token key atrule">size</span><span class="token punctuation">:</span> <span class="token number">3</span>
-  <span class="token key atrule">preserveFilesystemOnDelete</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">metadataServer</span><span class="token punctuation">:</span>
-    <span class="token key atrule">activeCount</span><span class="token punctuation">:</span> <span class="token number">1</span>
-    <span class="token key atrule">activeStandby</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. </span>
-kubectl create -f filesystem.yaml
-
-<span class="token comment" spellcheck="true"># 2. </span>
-kubectl create -f cluster/examples/kubernetes/ceph/csi/cephfs/storageclass.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置自动扩容"><a href="#配置自动扩容" class="headerlink" title="配置自动扩容"></a>配置自动扩容</h3><blockquote>
-<p>新增一块设备后能被自动发现</p>
-</blockquote>
-<pre class="line-numbers language-yml"><code class="language-yml"># 开启自动发现磁盘
-# vim operator.yaml
-ROOK_ENABLE_DISCOVERY_DAEMON: "true"
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1114,7 +1026,7 @@ ROOK_ENABLE_DISCOVERY_DAEMON: "true"
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">349</span>
+          <span class="site-state-item-count">350</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1127,7 +1039,7 @@ ROOK_ENABLE_DISCOVERY_DAEMON: "true"
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">216</span>
+        <span class="site-state-item-count">217</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

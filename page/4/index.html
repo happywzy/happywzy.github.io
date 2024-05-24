@@ -196,6 +196,262 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/xml-he-bean-hu-zhuan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/xml-he-bean-hu-zhuan/" class="post-title-link" itemprop="url">xml和bean互转</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-04-06 09:38:36" itemprop="dateCreated datePublished" datetime="2023-04-06T09:38:36+08:00">2023-04-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本文通过 <code>JDK</code> 中原生的 <code>JAXB</code> 实现 <code>XML</code> 和 <code>java bean</code> 之间的互转，不依赖任何第三方包.</p>
+<ul>
+<li><code>JAXBContext</code> 类，是应用的入口，用于管理XML/Java绑定信息</li>
+<li><code>Marshaller</code> 接口，将Java对象序列化为XML数据</li>
+<li><code>Unmarshaller</code> 接口，将XML数据反序列化为Java对象</li>
+</ul>
+<h3 id="常用Annotation"><a href="#常用Annotation" class="headerlink" title="常用Annotation"></a>常用Annotation</h3><ol>
+<li><code>@XmlAccessorType(XmlAccessType.NONE)</code> ，控制字段或属性的序列化</li>
+</ol>
+<ul>
+<li><code>FIELD</code>: JAXB 绑定类中的每个非静态、非瞬态字段将会自动绑定到 XML，除非由 XmlTransient 注释。</li>
+<li><code>NONE</code>: 所有字段或属性都不能绑定到 XML，除非使用一些 JAXB 注释专门对它们进行注释。</li>
+<li><code>PROPERTY</code>: JAXB 绑定类中的每个获取方法/设置方法对将会自动绑定到 XML，除非由 XmlTransient 注释。</li>
+<li><code>PUBLIC_MEMBER</code>:每个公共获取方法/设置方法对和每个公共字段将会自动绑定到 XML，除非由 XmlTransient 注释。</li>
+</ul>
+<ol start="2">
+<li><p><code>@XmlRootElement</code><br>xml 文件的根元素</p>
+</li>
+<li><p><code>@XmlElement</code><br>代表的生成xml的属性名称，一般用在属性上，或者set方法上。</p>
+</li>
+</ol>
+<ul>
+<li>用法 <code>@XmlElement(name="elementName")</code></li>
+</ul>
+<ol start="4">
+<li><p><code>@XmlTransient</code><br>放在属性上，或者set方法上，代表不进行序列化</p>
+</li>
+<li><p><code>@XmlAttribute</code><br>该属性作为xml的attribute</p>
+</li>
+</ol>
+<ul>
+<li><code>@XmlAttribute(name = "NAME")</code></li>
+</ul>
+<ol start="6">
+<li><p><code>@XmlAccessorOrder</code><br>控制JAXB 绑定类中属性和字段的排序</p>
+</li>
+<li><p><code>@XmlJavaTypeAdapter</code><br>使用定制的适配器（即扩展抽象类XmlAdapter并覆盖marshal()和unmarshal()方法），以序列化Java类为XML</p>
+</li>
+<li><p><code>@XmlElementWrapper</code><br>对于数组或集合（即包含多个元素的成员变量），生成一个包装该数组或集合的XML元素（称为包装器）</p>
+</li>
+</ol>
+<h3 id="XML和Bean互转Util"><a href="#XML和Bean互转Util" class="headerlink" title="XML和Bean互转Util"></a>XML和Bean互转Util</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> javax<span class="token punctuation">.</span>xml<span class="token punctuation">.</span>bind<span class="token punctuation">.</span>JAXBContext<span class="token punctuation">;</span>
+<span class="token keyword">import</span> javax<span class="token punctuation">.</span>xml<span class="token punctuation">.</span>bind<span class="token punctuation">.</span>JAXBException<span class="token punctuation">;</span>
+<span class="token keyword">import</span> javax<span class="token punctuation">.</span>xml<span class="token punctuation">.</span>bind<span class="token punctuation">.</span>Marshaller<span class="token punctuation">;</span>
+<span class="token keyword">import</span> javax<span class="token punctuation">.</span>xml<span class="token punctuation">.</span>bind<span class="token punctuation">.</span>Unmarshaller<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>io<span class="token punctuation">.</span>StringReader<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>io<span class="token punctuation">.</span>StringWriter<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">/**
+ * @ClassName: FormatUtil
+ * @Description: XML 和 JSON 互转工具
+ * @Author: wuzhiyong
+ * @Time: 2023/4/4 14:39
+ * @Version: v1.0
+ **/</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FormatUtil</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">xmlToBean</span><span class="token punctuation">(</span>String xml<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> tClass<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Object object <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            JAXBContext context <span class="token operator">=</span> JAXBContext<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>tClass<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            Unmarshaller unmarshaller <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">createUnmarshaller</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            object <span class="token operator">=</span> unmarshaller<span class="token punctuation">.</span><span class="token function">unmarshal</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">StringReader</span><span class="token punctuation">(</span>xml<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">JAXBException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span>T<span class="token punctuation">)</span> object<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">/**
+     * 对象转xml
+     *
+     * @param obj
+     * @return
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">beanToXml</span><span class="token punctuation">(</span>Object obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        StringWriter writer <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            JAXBContext context <span class="token operator">=</span> JAXBContext<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            Marshaller marshaller <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">createMarshaller</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 格式化</span>
+            marshaller<span class="token punctuation">.</span><span class="token function">setProperty</span><span class="token punctuation">(</span>Marshaller<span class="token punctuation">.</span>JAXB_FORMATTED_OUTPUT<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 去掉生成xml的默认报文头 &lt;?xml version="1.0" encoding="utf-8" standalone="yes"?></span>
+            marshaller<span class="token punctuation">.</span><span class="token function">setProperty</span><span class="token punctuation">(</span>Marshaller<span class="token punctuation">.</span>JAXB_FRAGMENT<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            marshaller<span class="token punctuation">.</span><span class="token function">setProperty</span><span class="token punctuation">(</span>Marshaller<span class="token punctuation">.</span>JAXB_ENCODING<span class="token punctuation">,</span> <span class="token string">"utf-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            writer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StringWriter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            marshaller<span class="token punctuation">.</span><span class="token function">marshal</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> writer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">JAXBException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> writer <span class="token operator">!=</span> null <span class="token operator">?</span> writer<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><ul>
+<li>School.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@NoArgsConstructor</span>
+<span class="token annotation punctuation">@XmlRootElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"SCHOOL"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@XmlAccessorType</span><span class="token punctuation">(</span>XmlAccessType<span class="token punctuation">.</span>NONE<span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">School</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@XmlElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"ADDRESS"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> String addr<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@XmlElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"NUMBER"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> count<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@XmlElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"TEACHERS"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> Teachers teachers<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>Teachers.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@NoArgsConstructor</span>
+<span class="token annotation punctuation">@AllArgsConstructor</span>
+<span class="token annotation punctuation">@XmlAccessorType</span><span class="token punctuation">(</span>XmlAccessType<span class="token punctuation">.</span>FIELD<span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Teachers</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@XmlElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"TEACHER"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> List<span class="token operator">&lt;</span>Teacher<span class="token operator">></span> teachers<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>Teacher.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@NoArgsConstructor</span>
+<span class="token annotation punctuation">@AllArgsConstructor</span>
+<span class="token annotation punctuation">@XmlAccessorType</span><span class="token punctuation">(</span>XmlAccessType<span class="token punctuation">.</span>FIELD<span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Teacher</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@XmlAttribute</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"NAME"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@XmlValue</span>
+    <span class="token keyword">private</span> String desc<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>测试.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Test</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 测试数据</span>
+        School school <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">School</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        school<span class="token punctuation">.</span><span class="token function">setAddr</span><span class="token punctuation">(</span><span class="token string">"Nanjing"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        school<span class="token punctuation">.</span><span class="token function">setCount</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        List<span class="token operator">&lt;</span>Teacher<span class="token operator">></span> teachers <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        teachers<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Teacher</span><span class="token punctuation">(</span><span class="token string">"张三"</span><span class="token punctuation">,</span> <span class="token string">"高级教师"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        teachers<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Teacher</span><span class="token punctuation">(</span><span class="token string">"李四"</span><span class="token punctuation">,</span> <span class="token string">"中级教师"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        teachers<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Teacher</span><span class="token punctuation">(</span><span class="token string">"王五"</span><span class="token punctuation">,</span> <span class="token string">"初级教师"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        school<span class="token punctuation">.</span><span class="token function">setTeachers</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Teachers</span><span class="token punctuation">(</span>teachers<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token function">beanToXml</span><span class="token punctuation">(</span>school<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">/**
+         * 输出
+         * &lt;SCHOOL>
+         *     &lt;ADDRESS>Nanjing&lt;/ADDRESS>
+         *     &lt;NUMBER>1000&lt;/NUMBER>
+         *     &lt;TEACHERS>
+         *         &lt;TEACHER NAME="张三">高级教师&lt;/TEACHER>
+         *         &lt;TEACHER NAME="李四">中级教师&lt;/TEACHER>
+         *         &lt;TEACHER NAME="王五">初级教师&lt;/TEACHER>
+         *     &lt;/TEACHERS>
+         * &lt;/SCHOOL>
+         */</span>
+
+        String xml <span class="token operator">=</span> <span class="token string">"&lt;SCHOOL>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"    &lt;ADDRESS>Nanjing&lt;/ADDRESS>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"    &lt;NUMBER>1000&lt;/NUMBER>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"    &lt;TEACHERS>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"        &lt;TEACHER NAME=\"张三\">高级教师&lt;/TEACHER>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"        &lt;TEACHER NAME=\"李四\">中级教师&lt;/TEACHER>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"        &lt;TEACHER NAME=\"王五\">初级教师&lt;/TEACHER>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"    &lt;/TEACHERS>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"&lt;/SCHOOL>"</span><span class="token punctuation">;</span>
+        School school1 <span class="token operator">=</span> <span class="token function">xmlToBean</span><span class="token punctuation">(</span>xml<span class="token punctuation">,</span> School<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>school<span class="token punctuation">.</span><span class="token function">getAddr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>school<span class="token punctuation">.</span><span class="token function">getCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>school<span class="token punctuation">.</span><span class="token function">getTeachers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">/**
+         * 输出
+         * Nanjing
+         * 1000
+         * Teachers(teachers=[Teacher(name=张三, desc=高级教师), Teacher(name=李四, desc=中级教师), Teacher(name=王五, desc=初级教师)])
+         */</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-shi-yong-xin-ban-nfs-client/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -656,119 +912,6 @@ innodb_flush_log_at_trx_commit=2
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-ji-cheng-kafka/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-ji-cheng-kafka/" class="post-title-link" itemprop="url">springboot集成kafka</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-03-02 15:11:06" itemprop="dateCreated datePublished" datetime="2023-03-02T15:11:06+08:00">2023-03-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="引入依赖"><a href="#引入依赖" class="headerlink" title="引入依赖"></a>引入依赖</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.kafka<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-kafka<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spring</span><span class="token punctuation">:</span>
-  <span class="token key atrule">kafka</span><span class="token punctuation">:</span>
-    <span class="token key atrule">bootstrap-servers</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span>KAFKA_SERVERS<span class="token punctuation">:</span>localhost<span class="token punctuation">:</span><span class="token number">9092</span><span class="token punctuation">}</span>
-    <span class="token key atrule">producer</span><span class="token punctuation">:</span>
-      <span class="token key atrule">retries</span><span class="token punctuation">:</span> <span class="token number">0</span>
-      <span class="token key atrule">acks</span><span class="token punctuation">:</span> <span class="token number">1</span>
-      <span class="token key atrule">batch-size</span><span class="token punctuation">:</span> <span class="token number">100000</span>
-      <span class="token key atrule">buffer-memory</span><span class="token punctuation">:</span> <span class="token number">33554432</span>
-      <span class="token key atrule">key-serializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringSerializer
-      <span class="token key atrule">value-serializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringSerializer
-    <span class="token key atrule">consumer</span><span class="token punctuation">:</span>
-    <span class="token comment" spellcheck="true"># 默认的group名称</span>
-      <span class="token key atrule">group-id</span><span class="token punctuation">:</span> service<span class="token punctuation">-</span>group
-    <span class="token comment" spellcheck="true">#   关闭自动提交</span>
-      <span class="token key atrule">enable-auto-commit</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-      <span class="token key atrule">auto-commit-interval</span><span class="token punctuation">:</span> <span class="token number">1000</span>
-      <span class="token key atrule">auto-offset-reset</span><span class="token punctuation">:</span> latest
-      <span class="token key atrule">max-poll-records</span><span class="token punctuation">:</span> <span class="token number">1000</span>
-      <span class="token key atrule">key-deserializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringDeserializer
-      <span class="token key atrule">value-deserializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringDeserializer
-    <span class="token key atrule">listener</span><span class="token punctuation">:</span>
-      <span class="token key atrule">ack-mode</span><span class="token punctuation">:</span> manual_immediate
-      <span class="token key atrule">missing-topics-fatal</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-      <span class="token key atrule">type</span><span class="token punctuation">:</span> batch
-<span class="token comment" spellcheck="true"># 自定义配置监听的topic</span>
-<span class="token key atrule">log</span><span class="token punctuation">:</span>
-  <span class="token key atrule">topics</span><span class="token punctuation">:</span> topic1<span class="token punctuation">,</span>topic2<span class="token punctuation">,</span>topic3
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="java"><a href="#java" class="headerlink" title="java"></a>java</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@KafkaListener</span><span class="token punctuation">(</span>topics <span class="token operator">=</span><span class="token string">"#{'${log.topics}'.split(',')}"</span><span class="token punctuation">)</span>
-<span class="token comment" spellcheck="true">// public void processMessage(List&lt;String> records, Acknowledgment ack) {</span>
-<span class="token comment" spellcheck="true">// public void processMessage(ConsumerRecord&lt;?, ?> records, Acknowledgment ack) {</span>
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">processMessage</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>ConsumerRecord<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token punctuation">,</span> <span class="token operator">?</span><span class="token operator">>></span> records<span class="token punctuation">,</span> Acknowledgment ack<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token keyword">try</span> <span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>records<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>records<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 手动提交</span>
-        ack<span class="token punctuation">.</span><span class="token function">acknowledge</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -840,7 +983,7 @@ innodb_flush_log_at_trx_commit=2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">349</span>
+          <span class="site-state-item-count">350</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -853,7 +996,7 @@ innodb_flush_log_at_trx_commit=2
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">216</span>
+        <span class="site-state-item-count">217</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
