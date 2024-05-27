@@ -196,6 +196,131 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/influxdb-shi-yong/" class="post-title-link" itemprop="url">influxdb使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-25 16:27:49" itemprop="dateCreated datePublished" datetime="2020-02-25T16:27:49+08:00">2020-02-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="CLI连接"><a href="#CLI连接" class="headerlink" title="CLI连接"></a>CLI连接</h3><p><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/introduction/getting-started">参考链接</a></p>
+<pre><code>influx -precision rfc3339
+</code></pre>
+<ul>
+<li><code>influx</code>默认使用本地<code>8086</code>端口和<code>localhost</code>连接，更多参考<code>influx --help</code></li>
+<li><code>-precision</code>格式化时间，<code>rfc3339</code>使用<code>RFC3339</code> format (<code>YYYY-MM-DDTHH:MM:SS.nnnnnnnnnZ</code>).</li>
+</ul>
+<h3 id="管理连接"><a href="#管理连接" class="headerlink" title="管理连接"></a>管理连接</h3><p><code>exit</code></p>
+<h3 id="创建数据库"><a href="#创建数据库" class="headerlink" title="创建数据库"></a>创建数据库</h3><pre><code>CREATE DATABASE &lt;db-name&gt;
+</code></pre>
+<p>例如<code>CREATE DATABASE mydb</code>.<code>default</code>是默认关键字，不能用于数据库名.</p>
+<h3 id="查看数据库"><a href="#查看数据库" class="headerlink" title="查看数据库"></a>查看数据库</h3><p>创建完数据库可以用<code>SHOW DATABASES</code>查看所有数据库.</p>
+<pre><code>&gt; SHOW DATABASES
+name: databases
+name
+----
+_internal
+mydb
+</code></pre>
+<h3 id="使用数据库"><a href="#使用数据库" class="headerlink" title="使用数据库"></a>使用数据库</h3><pre><code>USE &lt;db-name&gt;
+
+&gt; USE mydb
+Using database mydb
+</code></pre>
+<h3 id="存储策略"><a href="#存储策略" class="headerlink" title="存储策略"></a>存储策略</h3><p>查看当前数据库Retention Policies</p>
+<pre><code>show retention policies on "db_name"
+</code></pre>
+<p>创建新的Retention Policies</p>
+<pre><code>create retention policy "rp_name" on "db_name" duration 3w replication 1 default
+</code></pre>
+<h3 id="数据格式"><a href="#数据格式" class="headerlink" title="数据格式"></a>数据格式</h3><pre><code>&lt;measurement&gt;[,&lt;tag-key&gt;=&lt;tag-value&gt;...] &lt;field-key&gt;=&lt;field-value&gt;[,&lt;field2-key&gt;=&lt;field2-value&gt;...] [unix-nano-timestamp]
+</code></pre>
+<blockquote>
+<ul>
+<li><code>measurement</code>相当于表名.  </li>
+<li><code>tag</code>是数据的标签，可以有多个  </li>
+<li><code>field</code>是数据的值，可以有多个，例如 “value=0.64”, or “temperature=21.2”  </li>
+<li><code>timestamp</code>是数据的时间戳</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>每一条数据称之为<code>points</code>.</p>
+</blockquote>
+<h3 id="插入一条数据"><a href="#插入一条数据" class="headerlink" title="插入一条数据"></a>插入一条数据</h3><pre><code>INSERT cpu,host=serverA,region=us_west value=0.64
+</code></pre>
+<pre><code>INSERT temperature,machine=unit42,type=assembly external=25,internal=37
+</code></pre>
+<h3 id="查询数据"><a href="#查询数据" class="headerlink" title="查询数据"></a>查询数据</h3><pre><code>SELECT "host", "region", "value" FROM "cpu"
+</code></pre>
+<pre><code>SELECT * FROM "temperature"
+</code></pre>
+<pre><code>&gt; SELECT * FROM /.*/ LIMIT 1
+--
+&gt; SELECT * FROM "cpu_load_short"
+--
+&gt; SELECT * FROM "cpu_load_short" WHERE "value" &gt; 0.9
+</code></pre>
+<pre><code>SELECT * FROM cpu where time = '2020-02-20T06:43:42.9206681Z'
+</code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-an-zhuang/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -750,144 +875,6 @@ unzip kapacitor-1.5.4_windows_amd64.zip
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-la-ji-shou-ji/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-la-ji-shou-ji/" class="post-title-link" itemprop="url">docker垃圾收集</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-01-08 10:54:25" itemprop="dateCreated datePublished" datetime="2020-01-08T10:54:25+08:00">2020-01-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="查看tag为none的镜像"><a href="#查看tag为none的镜像" class="headerlink" title="查看tag为none的镜像"></a>查看tag为none的镜像</h3><pre class="line-numbers language-bash"><code class="language-bash">docker images -f <span class="token string">"dangling=true"</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="删除tag为none的镜像"><a href="#删除tag为none的镜像" class="headerlink" title="删除tag为none的镜像"></a>删除tag为none的镜像</h3><pre class="line-numbers language-bash"><code class="language-bash">docker rmi <span class="token punctuation">$(</span>docker images -f <span class="token string">"dangling=true"</span> -q<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="查看docker占用的磁盘空间"><a href="#查看docker占用的磁盘空间" class="headerlink" title="查看docker占用的磁盘空间"></a>查看docker占用的磁盘空间</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker system df</span>
-TYPE                TOTAL               ACTIVE              SIZE                RECLAIMABLE
-Images              35                  3                   5.039GB             4.603GB <span class="token punctuation">(</span>91%<span class="token punctuation">)</span>
-Containers          3                   2                   19.69kB             19.5kB <span class="token punctuation">(</span>99%<span class="token punctuation">)</span>
-Local Volumes       28                  0                   3.782MB             3.782MB <span class="token punctuation">(</span>100%<span class="token punctuation">)</span>
-Build Cache         0                   0                   0B                  0B
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="查找所有无用的volume"><a href="#查找所有无用的volume" class="headerlink" title="查找所有无用的volume"></a>查找所有无用的volume</h3><pre class="line-numbers language-bash"><code class="language-bash">docker volume <span class="token function">ls</span> -qf dangling<span class="token operator">=</span>true
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="删除所有无用的volume"><a href="#删除所有无用的volume" class="headerlink" title="删除所有无用的volume"></a>删除所有无用的volume</h3><pre class="line-numbers language-bash"><code class="language-bash">docker volume <span class="token function">rm</span> <span class="token variable"><span class="token variable">$(</span>docker volume <span class="token function">ls</span> -qf dangling<span class="token operator">=</span>true<span class="token variable">)</span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="查看所有docker文件夹"><a href="#查看所有docker文件夹" class="headerlink" title="查看所有docker文件夹"></a>查看所有docker文件夹</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">find</span> / -name docker
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<blockquote>
-<p>可以使用<code>df</code>或者<code>du</code>命令查看文件夹具体使用情况，参考<a target="_blank" rel="noopener" href="https://haolin.club/2020/01/08/linux-xi-tong-ci-pan-shi-yong-qing-kuang-xiang-guan-ming-ling/">Linux系统磁盘使用情况相关命令</a>.<br>如:  </p>
-<pre><code>du -hs /var/lib/docker/
-</code></pre>
-</blockquote>
-<h3 id="查找所有未运行的容器"><a href="#查找所有未运行的容器" class="headerlink" title="查找所有未运行的容器"></a>查找所有未运行的容器</h3><pre class="line-numbers language-bash"><code class="language-bash">docker <span class="token function">ps</span> -a<span class="token operator">|</span><span class="token function">grep</span> Exited
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash">docker <span class="token function">ps</span> -qf status<span class="token operator">=</span>exited
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="删除所有未运行的容器"><a href="#删除所有未运行的容器" class="headerlink" title="删除所有未运行的容器"></a>删除所有未运行的容器</h3><pre class="line-numbers language-bash"><code class="language-bash">docker <span class="token function">rm</span> <span class="token punctuation">$(</span>docker <span class="token function">ps</span> -a<span class="token operator">|</span><span class="token function">grep</span> Exited <span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'{print <span class="token variable">$1</span>}'</span><span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="prune命令"><a href="#prune命令" class="headerlink" title="prune命令"></a><font color="red"><strong>prune命令</strong></font></h3><ul>
-<li>删除所有无用的容器</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">docker container prune
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ul>
-<li>删除所有无用的镜像</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">docker image prune
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ul>
-<li>删除所有无用的volume</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">docker volume prune
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ul>
-<li>删除所有无用的network</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">docker network prune
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ul>
-<li>删除docker系统中所有无用的，包括容器、镜像、volume、网络等</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">docker system prune
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<blockquote>
-<p><strong>注意</strong><code>docker system prune</code>和<code>docker system prune -a</code>两者的区别：  </p>
-<hr>
-<p>[root@node1 ~]# <code>docker system prune</code><br>WARNING! This will remove:</p>
-<ul>
-<li>all stopped containers</li>
-<li>all networks not used by at least one container</li>
-<li>all dangling images</li>
-<li>all dangling build cache<br>Are you sure you want to continue? [y/N]</li>
-</ul>
-<hr>
-<p>[root@node1 ~]# <code>docker system prune -a</code><br>WARNING! This will remove:</p>
-<ul>
-<li>all stopped containers</li>
-<li>all networks not used by at least one container</li>
-<li>all images without at least one container associated to them</li>
-<li>all build cache<br>Are you sure you want to continue? [y/N]</li>
-</ul>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -959,7 +946,7 @@ Build Cache         0                   0                   0B                  
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">350</span>
+          <span class="site-state-item-count">351</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -972,7 +959,7 @@ Build Cache         0                   0                   0B                  
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-count">218</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -196,6 +196,489 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-jian-kong-zhi-biao-cai-ji-mysqld-exporter/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-jian-kong-zhi-biao-cai-ji-mysqld-exporter/" class="post-title-link" itemprop="url">mysql【监控指标采集mysqld-exporter】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-04 17:11:52" itemprop="dateCreated datePublished" datetime="2020-08-04T17:11:52+08:00">2020-08-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>prometheus</code>监控插件<code>mysqld_exporter</code>可以采集<code>mysql</code>指标并告警展示.</p>
+<h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><p>本文使用<code>docker</code>部署的方式</p>
+<ol>
+<li>创建用户并授权</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">USER</span> <span class="token string">'exporter'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED BY '</span>exporter<span class="token comment" spellcheck="true">#2020';</span>
+<span class="token keyword">GRANT</span> PROCESS<span class="token punctuation">,</span> <span class="token keyword">REPLICATION</span> CLIENT <span class="token keyword">ON</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">TO</span> <span class="token string">'exporter'</span>@'<span class="token operator">%</span><span class="token string">';
+GRANT SELECT ON performance_schema.* TO '</span>exporter<span class="token string">'@'</span><span class="token operator">%</span>'<span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- GRANT ALL ON *.* TO 'exporter'@'%';</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>运行<code>mysqld_exporter</code></li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d \
+  --name mysql_exporter \
+  --restart always \
+  -p 9104:9104 \
+  -e DATA_SOURCE_NAME<span class="token operator">=</span><span class="token string">"exporter:123456@(192.168.41.141:3306)/"</span> \
+  prom/mysqld-exporter
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>查看指标</li>
+</ol>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://192.168.41.141:9104/metrics">http://192.168.41.141:9104/metrics</a></li>
+</ul>
+<p>如果没有问题，可以将指标采集到<code>prometheus</code></p>
+<ol start="4">
+<li>修改<code>prometheus</code>配置文件，<code>scrape_configs</code>下面添加<br>ssh no<br>如果需要,部署<code>prometheus</code></li>
+</ol>
+<pre class="line-numbers language-yml"><code class="language-yml"># prometheus.yml
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      # - alertmanager:9093
+rule_files:
+  # - "rules.yml"
+  # - "second_rules.yml"
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: ['192.168.41.128:9090']
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['192.168.41.141:9104']
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动</span>
+docker run --name<span class="token operator">=</span>prometheus -d -p 9090:9090  -v /root/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml hub.deri.org.cn/k8s_monitor/prometheus:latest
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># vim /usr/local/prometheus/prometheus.yml</span>
+<span class="token key atrule">scrape_configs</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">job_name</span><span class="token punctuation">:</span> <span class="token string">'mysql'</span>
+    <span class="token key atrule">static_configs</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">targets</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'192.168.41.141:9104'</span><span class="token punctuation">]</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：如果是采用<code>prometheus-operator</code>方式安装<code>prometheus</code>,新增<code>target</code>示例：<br>新增<code>mysql-exporter-endpoints.yaml</code>,引入外部<code>服务</code></p>
+</blockquote>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Endpoints
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> mysql<span class="token punctuation">-</span>exporter
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> monitoring
+<span class="token key atrule">subsets</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token key atrule">addresses</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.1.47
+    <span class="token key atrule">targetRef</span><span class="token punctuation">:</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> huawei<span class="token punctuation">-</span>mysql
+      <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> metrics
+        <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9104</span>
+        <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>新增<code>mysql-exporter-service.yaml</code></p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+    <span class="token key atrule">prometheus.io/scrape</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>mysql<span class="token punctuation">-</span>exporter
+    <span class="token key atrule">chart</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>mysql<span class="token punctuation">-</span>exporter
+    <span class="token key atrule">heritage</span><span class="token punctuation">:</span> Tiller
+    <span class="token key atrule">jobLabel</span><span class="token punctuation">:</span> mysql<span class="token punctuation">-</span>exporter
+    <span class="token key atrule">release</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>operator
+  <span class="token comment" spellcheck="true"># name与endpoints name保持一致</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> mysql<span class="token punctuation">-</span>exporter
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> monitoring
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> metrics
+    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9104</span>
+    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">9104</span>
+    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>新增<code>mysql-exporter-ServiceMonitor.yaml</code></p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> monitoring.coreos.com/v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> ServiceMonitor
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token comment" spellcheck="true"># 注意标签 当前版本prometheus-operator是通过release: prometheus-operator标签来发现ServiceMonitor的</span>
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>operator<span class="token punctuation">-</span>mysql<span class="token punctuation">-</span>exporter
+    <span class="token key atrule">chart</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>operator<span class="token punctuation">-</span>8.2.4
+    <span class="token key atrule">heritage</span><span class="token punctuation">:</span> Tiller
+    <span class="token key atrule">release</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>operator
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>operator<span class="token punctuation">-</span>mysql<span class="token punctuation">-</span>exporter
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> monitoring
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">endpoints</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> metrics
+  <span class="token key atrule">jobLabel</span><span class="token punctuation">:</span> jobLabel
+  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+    <span class="token comment" spellcheck="true"># 通过标签发现service</span>
+    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">app</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>mysql<span class="token punctuation">-</span>exporter
+      <span class="token key atrule">release</span><span class="token punctuation">:</span> prometheus<span class="token punctuation">-</span>operator
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f <span class="token keyword">.</span>
+<span class="token comment" spellcheck="true"># 新增上面三个服务之后,prometheus页面就可以发现新增的mysql-exporter.</span>
+<span class="token comment" spellcheck="true"># prometheus数据库中也能查询到mysql指标数据</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>设置报警规则</li>
+</ol>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/prometheus/mysqld_exporter/blob/master/example.rules">参考示例</a></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">groups</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> GaleraAlerts
+  <span class="token key atrule">rules</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLGaleraNotReady
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> mysql_global_status_wsrep_ready <span class="token tag">!=</span> 1
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 5m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> warning
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'{{$labels.job}} on {{$labels.instance}} is not ready.'</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> Galera cluster node not ready
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLGaleraOutOfSync
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> (mysql_global_status_wsrep_local_state <span class="token tag">!=</span> 4 and mysql_global_variables_wsrep_desync
+      == 0)
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 5m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> warning
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'{{$labels.job}} on {{$labels.instance}} is not in sync ({{$value}}
+        != 4).'</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> Galera cluster node out of sync
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLGaleraDonorFallingBehind
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> (mysql_global_status_wsrep_local_state == 2 and mysql_global_status_wsrep_local_recv_queue
+      <span class="token punctuation">></span> 100)
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 5m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> warning
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'{{$labels.job}} on {{$labels.instance}} is a donor (hotbackup)
+        and is falling behind (queue size {{$value}}).'</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> xtradb cluster donor node falling behind
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLReplicationNotRunning
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> mysql_slave_status_slave_io_running == 0 or mysql_slave_status_slave_sql_running
+      == 0
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 2m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> critical
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> Slave replication (IO or SQL) has been down for more than 2 minutes.
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> Slave replication is not running
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLReplicationLag
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> (mysql_slave_lag_seconds <span class="token punctuation">></span> 30) and on(instance) (predict_linear(mysql_slave_lag_seconds<span class="token punctuation">[</span>5m<span class="token punctuation">]</span><span class="token punctuation">,</span>
+      60 * 2) <span class="token punctuation">></span> 0)
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 1m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> critical
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> The mysql slave replication has fallen behind and is not recovering
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> MySQL slave replication is lagging
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLReplicationLag
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> (mysql_heartbeat_lag_seconds <span class="token punctuation">></span> 30) and on(instance) (predict_linear(mysql_heartbeat_lag_seconds<span class="token punctuation">[</span>5m<span class="token punctuation">]</span><span class="token punctuation">,</span>
+      60 * 2) <span class="token punctuation">></span> 0)
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 1m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> critical
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> The mysql slave replication has fallen behind and is not recovering
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> MySQL slave replication is lagging
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLInnoDBLogWaits
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> rate(mysql_global_status_innodb_log_waits<span class="token punctuation">[</span>15m<span class="token punctuation">]</span>) <span class="token punctuation">></span> 10
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> warning
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> The innodb logs are waiting for disk at a rate of <span class="token punctuation">{</span><span class="token punctuation">{</span>$value<span class="token punctuation">}</span><span class="token punctuation">}</span> /
+        second
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> MySQL innodb log writes stalling
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-yml"><code class="language-yml"># 告警规则示例
+groups:
+- name: MySQLStatsAlert
+  rules:
+  - alert: MySQL is down
+    expr: mysql_up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} MySQL is down"
+      description: "MySQL database is down. This requires immediate action!"
+  - alert: open files high
+    expr: mysql_global_status_innodb_num_open_files > (mysql_global_variables_open_files_limit) * 0.75
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} open files high"
+      description: "Open files is high. Please consider increasing open_files_limit."
+  - alert: Read buffer size is bigger than max. allowed packet size
+    expr: mysql_global_variables_read_buffer_size > mysql_global_variables_slave_max_allowed_packet 
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} Read buffer size is bigger than max. allowed packet size"
+      description: "Read buffer size (read_buffer_size) is bigger than max. allowed packet size (max_allowed_packet).This can break your replication."
+  - alert: Sort buffer possibly missconfigured
+    expr: mysql_global_variables_innodb_sort_buffer_size <256*1024 or mysql_global_variables_read_buffer_size > 4*1024*1024 
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} Sort buffer possibly missconfigured"
+      description: "Sort buffer size is either too big or too small. A good value for sort_buffer_size is between 256k and 4M."
+  - alert: Thread stack size is too small
+    expr: mysql_global_variables_thread_stack <196608
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} Thread stack size is too small"
+      description: "Thread stack size is too small. This can cause problems when you use Stored Language constructs for example. A typical is 256k for thread_stack_size."
+  - alert: Used more than 80% of max connections limited 
+    expr: mysql_global_status_max_used_connections > mysql_global_variables_max_connections * 0.8
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} Used more than 80% of max connections limited"
+      description: "Used more than 80% of max connections limited"
+  - alert: InnoDB Force Recovery is enabled
+    expr: mysql_global_variables_innodb_force_recovery != 0 
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} InnoDB Force Recovery is enabled"
+      description: "InnoDB Force Recovery is enabled. This mode should be used for data recovery purposes only. It prohibits writing to the data."
+  - alert: InnoDB Log File size is too small
+    expr: mysql_global_variables_innodb_log_file_size < 16777216 
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} InnoDB Log File size is too small"
+      description: "The InnoDB Log File size is possibly too small. Choosing a small InnoDB Log File size can have significant performance impacts."
+  - alert: InnoDB Flush Log at Transaction Commit
+    expr: mysql_global_variables_innodb_flush_log_at_trx_commit != 1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} InnoDB Flush Log at Transaction Commit"
+      description: "InnoDB Flush Log at Transaction Commit is set to a values != 1. This can lead to a loss of commited transactions in case of a power failure."
+  - alert: Table definition cache too small
+    expr: mysql_global_status_open_table_definitions > mysql_global_variables_table_definition_cache
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} Table definition cache too small"
+      description: "Your Table Definition Cache is possibly too small. If it is much too small this can have significant performance impacts!"
+  - alert: Table open cache too small
+    expr: mysql_global_status_open_tables >mysql_global_variables_table_open_cache * 99/100
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} Table open cache too small"
+      description: "Your Table Open Cache is possibly too small (old name Table Cache). If it is much too small this can have significant performance impacts!"
+  - alert: Thread stack size is possibly too small
+    expr: mysql_global_variables_thread_stack < 262144
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} Thread stack size is possibly too small"
+      description: "Thread stack size is possibly too small. This can cause problems when you use Stored Language constructs for example. A typical is 256k for thread_stack_size."
+  - alert: InnoDB Buffer Pool Instances is too small
+    expr: mysql_global_variables_innodb_buffer_pool_instances == 1
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} InnoDB Buffer Pool Instances is too small"
+      description: "If you are using MySQL 5.5 and higher you should use several InnoDB Buffer Pool Instances for performance reasons. Some rules are: InnoDB Buffer Pool Instance should be at least 1 Gbyte in size. InnoDB Buffer Pool Instances you can set equal to the number of cores of your machine."
+  - alert: InnoDB Plugin is enabled
+    expr: mysql_global_variables_ignore_builtin_innodb == 1
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} InnoDB Plugin is enabled"
+      description: "InnoDB Plugin is enabled"
+  - alert: Binary Log is disabled
+    expr: mysql_global_variables_log_bin != 1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} Binary Log is disabled"
+      description: "Binary Log is disabled. This prohibits you to do Point in Time Recovery (PiTR)."
+  - alert: Binlog Cache size too small
+    expr: mysql_global_variables_binlog_cache_size < 1048576
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} Binlog Cache size too small"
+      description: "Binlog Cache size is possibly to small. A value of 1 Mbyte or higher is OK."
+  - alert: Binlog Statement Cache size too small
+    expr: mysql_global_variables_binlog_stmt_cache_size <1048576 and mysql_global_variables_binlog_stmt_cache_size > 0
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} Binlog Statement Cache size too small"
+      description: "Binlog Statement Cache size is possibly to small. A value of 1 Mbyte or higher is typically OK."
+  - alert: Binlog Transaction Cache size too small
+    expr: mysql_global_variables_binlog_cache_size  <1048576
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} Binlog Transaction Cache size too small"
+      description: "Binlog Transaction Cache size is possibly to small. A value of 1 Mbyte or higher is typically OK."
+  - alert: Sync Binlog is enabled
+    expr: mysql_global_variables_sync_binlog == 1
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} Sync Binlog is enabled"
+      description: "Sync Binlog is enabled. This leads to higher data security but on the cost of write performance."
+  - alert: IO thread stopped
+    expr: mysql_slave_status_slave_io_running != 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} IO thread stopped"
+      description: "IO thread has stopped. This is usually because it cannot connect to the Master any more."
+  - alert: SQL thread stopped 
+    expr: mysql_slave_status_slave_sql_running == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} SQL thread stopped"
+      description: "SQL thread has stopped. This is usually because it cannot apply a SQL statement received from the master."
+  - alert: SQL thread stopped
+    expr: mysql_slave_status_slave_sql_running != 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} Sync Binlog is enabled"
+      description: "SQL thread has stopped. This is usually because it cannot apply a SQL statement received from the master."
+  - alert: Slave lagging behind Master
+    expr: rate(mysql_slave_status_seconds_behind_master[1m]) >30 
+    for: 1m
+    labels:
+      severity: warning 
+    annotations:
+      summary: "Instance {{ $labels.instance }} Slave lagging behind Master"
+      description: "Slave is lagging behind Master. Please check if Slave threads are running and if there are some performance issues!"
+  - alert: Slave is NOT read only(Please ignore this warning indicator.)
+    expr: mysql_global_variables_read_only != 0
+    for: 1m
+    labels:
+      severity: page
+    annotations:
+      summary: "Instance {{ $labels.instance }} Slave is NOT read only"
+      description: "Slave is NOT set to read only. You can accidentally manipulate data on the slave and get inconsistencies..."
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>监控展示</li>
+</ol>
+<p>如果需要,部署<code>grafana</code></p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d -p 3000:3000 --name grafana hub.deri.org.cn/k8s_monitor/grafana:6.4.2
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p><code>Grafana dashboard</code>一些可用的<code>ID</code>,可直接通过ID导入<code>dashboard</code>.</p>
+<ul>
+<li><code>6239</code></li>
+<li><code>7362</code></li>
+<li><code>11329</code></li>
+<li><code>10654</code></li>
+<li><code>11323</code></li>
+</ul>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://hub.docker.com/r/prom/mysqld-exporter/">https://hub.docker.com/r/prom/mysqld-exporter/</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/xiaobaozi-95/p/11453734.html">https://www.cnblogs.com/xiaobaozi-95/p/11453734.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.kancloud.cn/willseecloud/prometheus_practice/1256759">https://www.kancloud.cn/willseecloud/prometheus_practice/1256759</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-docker-bu-shu-zhi-zhu-cong-fu-zhi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -920,139 +1403,6 @@ FLUSH TABLES WITH READ LOCK<span class="token punctuation">;</span>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-fu-zhi-chu-xian-wen-ti-gtid-mo-shi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-fu-zhi-chu-xian-wen-ti-gtid-mo-shi/" class="post-title-link" itemprop="url">mysql复制出现问题【GTID模式】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-29 14:08:48" itemprop="dateCreated datePublished" datetime="2020-07-29T14:08:48+08:00">2020-07-29</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="非GTID模式下"><a href="#非GTID模式下" class="headerlink" title="非GTID模式下"></a>非GTID模式下</h3><p>当<code>BIN-LOG</code>里面出现错误导致主从不能同步的时候,</p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 错误状态的部分截图</span>
-mysql<span class="token operator">></span> <span class="token keyword">show</span> slave <span class="token keyword">status</span>\G
-<span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span> <span class="token number">1</span><span class="token punctuation">.</span> <span class="token keyword">row</span> <span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span>
-               Slave_IO_State: Waiting <span class="token keyword">for</span> master <span class="token keyword">to</span> send event
-                  Master_Host: <span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">41.141</span>
-             Slave_IO_Running: Yes
-            Slave_SQL_Running: <span class="token keyword">No</span>
-              Replicate_Do_DB:  
-                   Last_Errno: <span class="token number">1032</span>
-                   Last_Error: Could <span class="token operator">not</span> <span class="token keyword">execute</span> Update_rows event <span class="token keyword">on</span> <span class="token keyword">table</span> test<span class="token punctuation">.</span>testttt<span class="token punctuation">;</span> Can<span class="token string">'t find record in '</span>testttt<span class="token string">', Error_code: 1032; handler error HA_ERR_END_OF_FILE; the event'</span>s master log mysql<span class="token operator">-</span>bin<span class="token number">.000004</span><span class="token punctuation">,</span> end_log_pos <span class="token number">404</span>
-                 Skip_Counter: <span class="token number">0</span>
-               Last_SQL_Errno: <span class="token number">1032</span>
-               Last_SQL_Error: Could <span class="token operator">not</span> <span class="token keyword">execute</span> Update_rows event <span class="token keyword">on</span> <span class="token keyword">table</span> test<span class="token punctuation">.</span>testttt<span class="token punctuation">;</span> Can<span class="token string">'t find record in '</span>testttt<span class="token string">', Error_code: 1032; handler error HA_ERR_END_OF_FILE; the event'</span>s master log mysql<span class="token operator">-</span>bin<span class="token number">.000004</span><span class="token punctuation">,</span> end_log_pos <span class="token number">404</span>
-  Replicate_Ignore_Server_Ids: 
-           Retrieved_Gtid_Set: <span class="token number">69a5d660</span><span class="token operator">-</span><span class="token number">cfd9</span><span class="token operator">-</span><span class="token number">11ea</span><span class="token operator">-</span><span class="token number">8174</span><span class="token operator">-</span><span class="token number">00505626c27e</span>:<span class="token number">1</span><span class="token operator">-</span><span class="token number">5</span>
-            Executed_Gtid_Set: <span class="token number">69a5d660</span><span class="token operator">-</span><span class="token number">cfd9</span><span class="token operator">-</span><span class="token number">11ea</span><span class="token operator">-</span><span class="token number">8174</span><span class="token operator">-</span><span class="token number">00505626c27e</span>:<span class="token number">4</span><span class="token punctuation">,</span>
-<span class="token number">b3802ae3</span><span class="token operator">-</span><span class="token number">cfd8</span><span class="token operator">-</span><span class="token number">11ea</span><span class="token operator">-</span><span class="token number">85e8</span><span class="token operator">-</span><span class="token number">00505630c9f5</span>:<span class="token number">1</span><span class="token operator">-</span><span class="token number">2</span>
-<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>可以用下面方法掠过该错误语句行,继续同步:</p>
-<pre class="line-numbers language-sql"><code class="language-sql">stop slave<span class="token punctuation">;</span>
-<span class="token keyword">set</span> <span class="token keyword">global</span> sql_slave_skip_counter<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
-<span class="token keyword">start</span> slave<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>当<code>set global sql_slave_skip_counter=1;</code>是可能会出现一下错误:不支持<code>GTID_MODE</code>模式运行的数据库</p>
-<pre class="line-numbers language-log"><code class="language-log">ERROR 1858 (HY000): sql_slave_skip_counter can not be set when the server is running with GTID_MODE = ON. Instead, for each transaction that you want to skip, generate an empty transaction with the same GTID as the transaction
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="GTID模式下"><a href="#GTID模式下" class="headerlink" title="GTID模式下"></a>GTID模式下</h3><ol>
-<li>找到错误点</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">show</span> slave <span class="token keyword">status</span>\G
-<span class="token comment" spellcheck="true">-- 找到这一行</span>
-Executed_Gtid_Set: <span class="token number">69a5d660</span><span class="token operator">-</span><span class="token number">cfd9</span><span class="token operator">-</span><span class="token number">11ea</span><span class="token operator">-</span><span class="token number">8174</span><span class="token operator">-</span><span class="token number">00505626c27e</span>:<span class="token number">1</span><span class="token operator">-</span><span class="token number">5</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>重置master和slave</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql">reset master<span class="token punctuation">;</span>
-stop slave<span class="token punctuation">;</span>
-reset slave<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<ol start="3">
-<li>设置跳过错误点</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 1-5 可能出错,ID加1,1-6</span>
-<span class="token keyword">set</span> <span class="token keyword">global</span> gtid_purged<span class="token operator">=</span><span class="token string">'69a5d660-cfd9-11ea-8174-00505626c27e:1-6'</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<blockquote>
-<p><code>set global gtid_purged='xxxxx';</code>要求<code>GTID_EXECUTED</code>为空,所以需要第二部重置操作.</p>
-</blockquote>
-<ol start="4">
-<li>重启复制</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql">change master <span class="token keyword">to</span> master_host<span class="token operator">=</span><span class="token string">'192.168.41.141'</span><span class="token punctuation">,</span>master_port<span class="token operator">=</span><span class="token number">3306</span><span class="token punctuation">,</span>master_user<span class="token operator">=</span><span class="token string">'slave'</span><span class="token punctuation">,</span>master_password<span class="token operator">=</span><span class="token string">'123456'</span><span class="token punctuation">,</span>master_auto_position<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
-<span class="token keyword">start</span> slave<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>查看</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 确认Slave_IO_Running,Slave_SQL_Running,Last_Error,Last_SQL_Error等是否有错</span>
-<span class="token comment" spellcheck="true">-- 如果还有错但和上面的错误ID不一样,需要重复1~4</span>
-<span class="token keyword">show</span> slave <span class="token keyword">status</span>\G
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p><code>双主</code>模式更麻烦,需要两边都要做<code>1~4</code>操作,确认没有错误.</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1124,7 +1474,7 @@ reset slave<span class="token punctuation">;</span>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">350</span>
+          <span class="site-state-item-count">351</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1137,7 +1487,7 @@ reset slave<span class="token punctuation">;</span>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-count">218</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -32492,8 +32492,8 @@ vrrp_instance VI_1 {
       </tags>
   </entry>
   <entry>
-    <title>go module使用之拉取私有镜像仓库</title>
-    <url>/gomodule-shi-yong-zhi-la-qu-si-you-jing-xiang-cang-ku/</url>
+    <title>go module使用之拉取私有包仓库</title>
+    <url>/gomodule-shi-yong-zhi-la-qu-si-you-bao-cang-ku/</url>
     <content><![CDATA[<h3 id="拉取非公共module"><a href="#拉取非公共module" class="headerlink" title="拉取非公共module"></a>拉取非公共module</h3><p>通过 Go 命令拉取项目依赖的公共 Go Module，只需要在每个开发机上设置环境变量 GOPROXY，配置一个高效且可靠的公共 GOPROXY 服务，如 <code>set GOPROXY=https://goproxy.cn,direct</code>。但是如果同时需要拉取私有的包怎么办呢？如企业自己开发的module依赖。这时我们需要配置<code>set GOPRIVATE=*gitee.com</code>，表示 <code>gitee.com</code>的包不使用代理而是直接拉取。通过<code>go env</code>命令可以看出：</p>
 <pre class="line-numbers language-shell"><code class="language-shell">set GONOPROXY=*gitee.com
 set GONOSUMDB=*gitee.com
@@ -32531,6 +32531,7 @@ f4c3585328e0a686ad35537e390473917c4b202b        refs/tags/v1.0.0-test
 <ul>
 <li>版本号可以配置成commitId，执行<code>go mod tidy</code>后，会根据<code>commitId</code>自动生成伪版本号，如<code>gitee.com/happywzy/go-module-test v0.0.0-20240524023550-1e40db9baf18</code>，这个版本号不要手敲，防止出错。</li>
 <li>版本号可以配置成tag，如<code>v1.0.0</code>、<code>v1.0.0-test</code>，但是配置成<code>v2</code>这种好像无法识别。</li>
+<li>可以通过<code>go get </code>命令去安装module，如 <code>go get gitee.com/happywzy/go-module-test@master</code>，<code>@</code>后面可以是分支名、tag名、commit ID，非常方便。</li>
 </ul>
 <h3 id="如何使用本地的Module"><a href="#如何使用本地的Module" class="headerlink" title="如何使用本地的Module"></a>如何使用本地的Module</h3><p>前面介绍的方式需要Module推送到远程仓库后才能使用，这在开发阶段非常不适用，如何直接使用本地的Module呢？有两种方式。</p>
 <ol>
@@ -32564,6 +32565,85 @@ f4c3585328e0a686ad35537e390473917c4b202b        refs/tags/v1.0.0-test
       </categories>
       <tags>
         <tag>go module</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>go语言包(package)的基本概念</title>
+    <url>/go-yu-yan-bao-de-ji-ben-gai-nian/</url>
+    <content><![CDATA[<h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><ul>
+<li>源码文件的第一行有效代码必须是 <code>package pacakgeName</code> 语句，通过该语句声明自己所在的包</li>
+<li>一般包的名称就是其源文件<code>所在目录的名称</code>，虽然Go语言没有强制要求包名必须和其所在的目录名同名，但还是建议包名和所在目录同名，这样结构更清晰</li>
+<li>包可以定义在很深的目录中，包名的定义是不包括目录路径的，但是包在引用时一般使用全路径引用。比如在<code>GOPATH/src/a/b/</code> 下定义一个包 <code>c</code>。在包 <code>c</code> 的源码中只需声明为<code>package c</code>，而不是声明为<code>package a/b/c</code>，但是在导入 <code>c</code> 包时，需要带上路径，例如<code>import "a/b/c"</code></li>
+<li>包名一般是小写的，使用一个简短且有意义的名称</li>
+<li>包名一般要和所在的目录同名，也可以不同，包名中不能包含 <code>-</code> 等特殊符号</li>
+<li>包一般使用域名作为目录名称，这样能保证包名的唯一性，比如 GitHub 项目的包一般会放到 <code>GOPATH/src/github.com/userName/projectName</code> 目录下</li>
+<li>包名为 <code>main</code> 的包为应用程序的入口包，编译不包含 <code>main</code> 包的源码文件时不会得到可执行文件</li>
+<li>一个文件夹下的所有源码文件只能属于同一个包，同样属于同一个包的源码文件不能放在多个文件夹下</li>
+</ul>
+<h3 id="包的导入"><a href="#包的导入" class="headerlink" title="包的导入"></a>包的导入</h3><ul>
+<li>import 导入语句通常放在源码文件开头包声明语句的下面</li>
+<li>导入的包名需要使用双引号包裹起来</li>
+<li>包名是从 <code>GOPATH/src/</code> 后开始计算的，使用 <code>/</code> 进行路径分隔</li>
+<li>包的引用路径有两种写法，分别是全路径导入和相对路径导入，相对路径只能用于导入 <code>GOPATH</code> 下的包，标准包的导入只能使用全路径导入</li>
+</ul>
+<h3 id="包的引用格式"><a href="#包的引用格式" class="headerlink" title="包的引用格式"></a>包的引用格式</h3><ol>
+<li>标准引用格式</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+<span class="token keyword">import</span> <span class="token string">"fmt"</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>自定义别名引用格式</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+<span class="token keyword">import</span> F <span class="token string">"fmt"</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 使用F.来代替标准引用格式的fmt.</span>
+    F<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>省略引用格式</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+<span class="token keyword">import</span> <span class="token punctuation">.</span> <span class="token string">"fmt"</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 不用加前缀fmt.</span>
+    <span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>匿名引用格式</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token comment" spellcheck="true">// 在引用某个包时，如果只是希望执行包初始化的 init 函数，而不使用包内部的数据时，可以使用匿名引用格式</span>
+    <span class="token comment" spellcheck="true">// 一个包可以有多个 init 函数，包加载时会执行全部的 init 函数，但并不能保证执行顺序</span>
+    <span class="token boolean">_</span> <span class="token string">"database/sql"</span>
+    <span class="token string">"fmt"</span>
+<span class="token punctuation">)</span>
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="包加载"><a href="#包加载" class="headerlink" title="包加载"></a>包加载</h3><p><img data-src="/./images/gopackage.png" alt="包加载"></p>
+<ul>
+<li>包初始化程序从 main 函数引用的包开始，逐级查找包的引用，直到找到没有引用其他包的包，最终生成一个包引用的有向无环图</li>
+<li>Go 编译器会将有向无环图转换为一棵树，然后从树的叶子节点开始逐层向上对包进行初始化</li>
+<li>单个包的初始化过程如上图所示，先初始化常量，然后是全局变量，最后执行包的 init 函数</li>
+</ul>
+]]></content>
+      <categories>
+        <category>go</category>
+      </categories>
+      <tags>
+        <tag>go</tag>
       </tags>
   </entry>
 </search>
