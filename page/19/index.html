@@ -196,6 +196,180 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-master-jie-dian-notready/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-master-jie-dian-notready/" class="post-title-link" itemprop="url">k8s-master节点NotReady</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-11 11:42:45" itemprop="dateCreated datePublished" datetime="2021-08-11T11:42:45+08:00">2021-08-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题现象"><a href="#问题现象" class="headerlink" title="问题现象"></a>问题现象</h3><p>master节点显示NotReady,不可调度,原本在master节点上运行的<code>corecdn</code>,各类<code>DeamonSet</code>服务都显示异常,查看kubelet服务发现启动报错.   </p>
+<p>通过命令<code>journalctl -u kubelet -f</code>查看kubelet启动报错的详细日志,发现主要原因是找不到文件<code>/etc/kubernetes/bootstrap-kubelet.conf</code>.   </p>
+<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><ol>
+<li>从别的节点拷入<code>/etc/kubernetes/bootstrap-kubelet.conf</code>到master节点.</li>
+<li>此时kubelet可以启动但是 任然报错</li>
+</ol>
+<pre class="line-numbers language-log"><code class="language-log">Aug 11 11:18:06 master kubelet[1757]: E0811 11:18:06.553681    1757 reflector.go:125] k8s.io/client-go/informers/factory.go:133: Failed to list *v1beta1.RuntimeClass: runtimeclasses.node.k8s.io is forbidden: User "system:anonymous" cannot list resource "runtimeclasses" in API group "node.k8s.io" at the cluster scope
+Aug 11 11:18:06 master kubelet[1757]: E0811 11:18:06.631490    1757 kubelet.go:2248] node "master" not found
+Aug 11 11:18:06 master kubelet[1757]: E0811 11:18:06.731614    1757 kubelet.go:2248] node "master" not found
+Aug 11 11:18:06 master kubelet[1757]: E0811 11:18:06.753619    1757 reflector.go:125] k8s.io/kubernetes/pkg/kubelet/kubelet.go:444: Failed to list *v1.Service: services is forbidden: User "system:anonymous" cannot list resource "services" in API group "" at the cluster scope
+Aug 11 11:18:06 master kubelet[1757]: E0811 11:18:06.831748    1757 kubelet.go:2248] node "master" not found
+Aug 11 11:18:06 master kubelet[1757]: E0811 11:18:06.931869    1757 kubelet.go:2248] node "master" not found
+Aug 11 11:18:06 master kubelet[1757]: E0811 11:18:06.954503    1757 reflector.go:125] k8s.io/kubernetes/pkg/kubelet/config/apiserver.go:47: Failed to list *v1.Pod: pods is forbidden: User "system:anonymous" cannot list resource "pods" in API group "" at the cluster scope
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>给匿名用户赋予权限</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">kubectl create clusterrolebinding test:anonymous --clusterrole<span class="token operator">=</span>cluster-admin --user<span class="token operator">=</span>system:anonymous
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-suo-yin-chang-du/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-suo-yin-chang-du/" class="post-title-link" itemprop="url">mysql建立索引选择合适的长度</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-14 17:17:01" itemprop="dateCreated datePublished" datetime="2021-07-14T17:17:01+08:00">2021-07-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>在varchar字段上建立索引时，没必要对全字段建立索引，根据实际文本区分度决定索引长度。</p>
+</blockquote>
+<h3 id="区分度"><a href="#区分度" class="headerlink" title="区分度"></a>区分度</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 长度20</span>
+mysql<span class="token operator">></span> <span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token keyword">distinct</span> <span class="token keyword">left</span><span class="token punctuation">(</span><span class="token punctuation">`</span>column_name<span class="token punctuation">`</span><span class="token punctuation">,</span><span class="token number">20</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">/</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">from</span> table_name<span class="token punctuation">;</span>
+
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------------------------+</span>
+
+<span class="token operator">|</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token keyword">distinct</span> <span class="token keyword">left</span><span class="token punctuation">(</span><span class="token punctuation">`</span>column_name<span class="token punctuation">`</span><span class="token punctuation">,</span><span class="token number">20</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">/</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token operator">|</span>
+
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------------------------+</span>
+
+<span class="token operator">|</span>                                          <span class="token number">0.8288</span> <span class="token operator">|</span> <span class="token comment" spellcheck="true">-- 区分度</span>
+
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------------------------+</span>
+
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>长度越长,区分度越大,选择最合适的长度,一般90%左右即可.</p>
+</blockquote>
+<h3 id="创建索引"><a href="#创建索引" class="headerlink" title="创建索引"></a>创建索引</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">alter</span> <span class="token keyword">table</span> table_name <span class="token keyword">add</span> <span class="token keyword">index</span> index_column<span class="token punctuation">(</span><span class="token punctuation">`</span>column_name<span class="token punctuation">`</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-kai-fa-grpc-jie-kou/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1208,334 +1382,6 @@ kubectl apply -f https://raw.githubusercontent.com/stakater/Reloader/master/depl
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ntp-fu-wu-qi-da-jian-yu-ke-hu-duan-tong-bu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ntp-fu-wu-qi-da-jian-yu-ke-hu-duan-tong-bu/" class="post-title-link" itemprop="url">NTP服务器搭建与客户端同步</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-07-01 17:43:17" itemprop="dateCreated datePublished" datetime="2021-07-01T17:43:17+08:00">2021-07-01</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="NTP安装"><a href="#NTP安装" class="headerlink" title="NTP安装"></a>NTP安装</h3><blockquote>
-<p>服务端和客户端都需要安装,需关闭防火墙或开通端口</p>
-</blockquote>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装</span>
-yum <span class="token function">install</span> ntp ntpdate -y
-
-<span class="token comment" spellcheck="true"># 设置开机自启动</span>
-systemctl <span class="token function">enable</span> ntpd
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="NTP服务端"><a href="#NTP服务端" class="headerlink" title="NTP服务端"></a>NTP服务端</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改配置</span>
-vim /etc/ntp.conf
-
-<span class="token comment" spellcheck="true"># 注释默认的,改成本地IP</span>
-<span class="token comment" spellcheck="true">#server 0.centos.pool.ntp.org iburst</span>
-<span class="token comment" spellcheck="true">#server 1.centos.pool.ntp.org iburst</span>
-<span class="token comment" spellcheck="true">#server 2.centos.pool.ntp.org iburst</span>
-<span class="token comment" spellcheck="true">#server 3.centos.pool.ntp.org iburst</span>
-server 127.0.0.1 iburst
-
-<span class="token comment" spellcheck="true"># 重启服务</span>
-systemctl restart ntpd
-systemctl status ntpd
-<span class="token comment" spellcheck="true"># 查看同步情况</span>
-ntpq -p
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="NTP客户端"><a href="#NTP客户端" class="headerlink" title="NTP客户端"></a>NTP客户端</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改配置</span>
-vim /etc/ntp.conf
-
-<span class="token comment" spellcheck="true"># 注释掉默认的</span>
-<span class="token comment" spellcheck="true">#server 0.centos.pool.ntp.org iburst</span>
-<span class="token comment" spellcheck="true">#server 1.centos.pool.ntp.org iburst</span>
-<span class="token comment" spellcheck="true">#server 2.centos.pool.ntp.org iburst</span>
-<span class="token comment" spellcheck="true">#server 3.centos.pool.ntp.org iburst</span>
-<span class="token comment" spellcheck="true">#修改为本地的ntpd Server服务器</span>
-server 192.168.3.13 iburst
-<span class="token comment" spellcheck="true">#配置允许上游时间服务器主动修改本机的时间</span>
-restrict 192.168.3.13 nomodify notrap noquery
-
-<span class="token comment" spellcheck="true"># 重启服务</span>
-systemctl restart ntpd
-systemctl status ntpd
-<span class="token comment" spellcheck="true"># 查看同步情况</span>
-ntpq -p
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="timedatectl"><a href="#timedatectl" class="headerlink" title="timedatectl"></a>timedatectl</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># timedatectl显示synchronized一直处于no状态</span>
-<span class="token punctuation">[</span>root@node2 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># timedatectl </span>
-      Local time: Mon 2021-07-12 10:27:02 CST
-  Universal time: Mon 2021-07-12 02:27:02 UTC
-        RTC time: Mon 2021-07-12 02:27:02
-       Time zone: Asia/Shanghai <span class="token punctuation">(</span>CST, +0800<span class="token punctuation">)</span>
-     NTP enabled: <span class="token function">yes</span>
-NTP synchronized: no
- RTC <span class="token keyword">in</span> local TZ: no
-      DST active: n/a
-
-<span class="token comment" spellcheck="true"># 解决办法,等一会儿就好了</span>
-systemctl stop ntpd
-ntpd -gq
-systemctl start ntpd
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/centos-ci-pan-fen-qu-yu-gua-zai/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/centos-ci-pan-fen-qu-yu-gua-zai/" class="post-title-link" itemprop="url">centos磁盘分区与挂载</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-06-29 13:38:12" itemprop="dateCreated datePublished" datetime="2021-06-29T13:38:12+08:00">2021-06-29</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="新增一块存储设备"><a href="#新增一块存储设备" class="headerlink" title="新增一块存储设备"></a>新增一块存储设备</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 新增完之后可以用以下命令确认</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># fdisk -l</span>
-
-磁盘 /dev/sda：53.7 GB, 53687091200 字节，104857600 个扇区
-Units <span class="token operator">=</span> 扇区 of 1 * 512 <span class="token operator">=</span> 512 bytes
-扇区大小<span class="token punctuation">(</span>逻辑/物理<span class="token punctuation">)</span>：512 字节 / 512 字节
-I/O 大小<span class="token punctuation">(</span>最小/最佳<span class="token punctuation">)</span>：512 字节 / 512 字节
-磁盘标签类型：dos
-磁盘标识符：0x0009f53f
-
-   设备 Boot      Start         End      Blocks   Id  System
-/dev/sda1   *        2048     2099199     1048576   83  Linux
-/dev/sda2         2099200   104857599    51379200   8e  Linux LVM
-
-<span class="token comment" spellcheck="true"># /dev/sdb 磁盘下无分区</span>
-磁盘 /dev/sdb：16.1 GB, 16106127360 字节，31457280 个扇区
-Units <span class="token operator">=</span> 扇区 of 1 * 512 <span class="token operator">=</span> 512 bytes
-扇区大小<span class="token punctuation">(</span>逻辑/物理<span class="token punctuation">)</span>：512 字节 / 512 字节
-I/O 大小<span class="token punctuation">(</span>最小/最佳<span class="token punctuation">)</span>：512 字节 / 512 字节
-磁盘标签类型：dos
-磁盘标识符：0xefe51d7a
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 使用下面的命令 一样可以确认, sdb设备FSTYPE等信息为空</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># lsblk -f</span>
-NAME            FSTYPE      LABEL           UUID                                   MOUNTPOINT
-sda                                                                                
-├─sda1          xfs                         caa5e7a7-d9b3-4bcb-adc2-409153a686ad   /boot
-└─sda2          LVM2_member                 VHdTmP-vi9x-LVfT-Tp2s-SAnp-CPlq-4ChakQ 
-  ├─centos-root xfs                         e5b9a4e0-95a1-40f1-b7aa-1ce69e51c1d4   /
-  └─centos-swap swap                        5d1b3899-2c21-4886-a187-31a644ef32a7   <span class="token punctuation">[</span>SWAP<span class="token punctuation">]</span>
-sdb                                                                                
-sr0             iso9660     CentOS 7 x86_64 2018-11-25-23-54-16-00  
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="为磁盘设置分区"><a href="#为磁盘设置分区" class="headerlink" title="为磁盘设置分区"></a>为磁盘设置分区</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 进入分区设置</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># fdisk /dev/sdb</span>
-欢迎使用 <span class="token function">fdisk</span> <span class="token punctuation">(</span>util-linux 2.23.2<span class="token punctuation">)</span>。
-
-更改将停留在内存中，直到您决定将更改写入磁盘。
-使用写入命令前请三思。
-
-
-命令<span class="token punctuation">(</span>输入 m 获取帮助<span class="token punctuation">)</span>：
-
-<span class="token comment" spellcheck="true"># 2. 输入n创建一个新的分区</span>
-命令<span class="token punctuation">(</span>输入 m 获取帮助<span class="token punctuation">)</span>：n
-Partition type:
-   p   primary <span class="token punctuation">(</span>0 primary, 0 extended, 4 free<span class="token punctuation">)</span>
-   e   extended
-Select <span class="token punctuation">(</span>default p<span class="token punctuation">)</span>: 
-
-<span class="token comment" spellcheck="true"># 3. 输入p创建一个主分区, 注：硬盘主分区最多为4个，分区号从1到4，逻辑分区从5开始</span>
-分区号 <span class="token punctuation">(</span>1-4，默认 1<span class="token punctuation">)</span>：
-
-<span class="token comment" spellcheck="true"># 4. 输入分区起始扇区, 默认开始位置</span>
-起始 扇区 <span class="token punctuation">(</span>2048-31457279，默认为 2048<span class="token punctuation">)</span>：
-
-<span class="token comment" spellcheck="true"># 5. 输入分区结束扇区,默认结束位置, 可以指定大小, 如 +3G</span>
-Last 扇区, +扇区 or +size<span class="token punctuation">{</span>K,M,G<span class="token punctuation">}</span> <span class="token punctuation">(</span>2048-31457279，默认为 31457279<span class="token punctuation">)</span>：
-
-<span class="token comment" spellcheck="true"># 6. 输入p确认分区</span>
-命令<span class="token punctuation">(</span>输入 m 获取帮助<span class="token punctuation">)</span>：p
-
-磁盘 /dev/sdb：16.1 GB, 16106127360 字节，31457280 个扇区
-Units <span class="token operator">=</span> 扇区 of 1 * 512 <span class="token operator">=</span> 512 bytes
-扇区大小<span class="token punctuation">(</span>逻辑/物理<span class="token punctuation">)</span>：512 字节 / 512 字节
-I/O 大小<span class="token punctuation">(</span>最小/最佳<span class="token punctuation">)</span>：512 字节 / 512 字节
-磁盘标签类型：dos
-磁盘标识符：0xefe51d7a
-
-   设备 Boot      Start         End      Blocks   Id  System
-/dev/sdb1            2048    31457279    15727616   83  Linux
-
-<span class="token comment" spellcheck="true"># 7. 输入w保存退出</span>
-命令<span class="token punctuation">(</span>输入 m 获取帮助<span class="token punctuation">)</span>：w
-The partition table has been altered<span class="token operator">!</span>
-
-Calling ioctl<span class="token punctuation">(</span><span class="token punctuation">)</span> to re-read partition table.
-正在同步磁盘。
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>删除分区</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 进入分区设置</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># fdisk /dev/sdb</span>
-欢迎使用 <span class="token function">fdisk</span> <span class="token punctuation">(</span>util-linux 2.23.2<span class="token punctuation">)</span>。
-
-更改将停留在内存中，直到您决定将更改写入磁盘。
-使用写入命令前请三思。
-
-
-命令<span class="token punctuation">(</span>输入 m 获取帮助<span class="token punctuation">)</span>：
-
-<span class="token comment" spellcheck="true"># 2. 输入d,选择分区号删除分区</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>取消挂载</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 取消挂载点</span>
-<span class="token function">umount</span> /dev/sdb1
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="格式化分区"><a href="#格式化分区" class="headerlink" title="格式化分区"></a>格式化分区</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 格式化：centos7.0开始默认文件系统是xfs, centos6是ext4，centos5是ext3</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mkfs -t xfs /dev/sdb1</span>
-mkfs.xfs: /dev/sdb1 appears to contain an existing filesystem <span class="token punctuation">(</span>xfs<span class="token punctuation">)</span>.
-mkfs.xfs: Use the -f option to force overwrite.
-<span class="token comment" spellcheck="true"># 2. 确认格式化结果</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># lsblk -f</span>
-NAME            FSTYPE      LABEL           UUID                                   MOUNTPOINT
-sda                                                                                
-├─sda1          xfs                         caa5e7a7-d9b3-4bcb-adc2-409153a686ad   /boot
-└─sda2          LVM2_member                 VHdTmP-vi9x-LVfT-Tp2s-SAnp-CPlq-4ChakQ 
-  ├─centos-root xfs                         e5b9a4e0-95a1-40f1-b7aa-1ce69e51c1d4   /
-  └─centos-swap swap                        5d1b3899-2c21-4886-a187-31a644ef32a7   <span class="token punctuation">[</span>SWAP<span class="token punctuation">]</span>
-sdb                                                                                
-└─sdb1          xfs                         9a382567-246a-4c52-9451-fe819a9ee297   
-sr0             iso9660     CentOS 7 x86_64 2018-11-25-23-54-16-00                 
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="挂载分区"><a href="#挂载分区" class="headerlink" title="挂载分区"></a>挂载分区</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 创建目录</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># mkdir /newdisk</span>
-
-<span class="token comment" spellcheck="true"># 2. 临时挂载分区,重启后失效</span>
-<span class="token function">mount</span> /dev/sdb1 /newdisk
-
-<span class="token comment" spellcheck="true"># 3. 永久挂载</span>
-vim /etc/fstab
-
-<span class="token comment" spellcheck="true"># 4. /etc/fstab增加下面一行内容</span>
-/dev/sdb1 /newdisk xfs defaults 0 0
-
-<span class="token comment" spellcheck="true"># 5. 生效</span>
-<span class="token function">mount</span> -a
-
-<span class="token comment" spellcheck="true"># 6. 确认</span>
-<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># df -h</span>
-文件系统                 容量  已用  可用 已用% 挂载点
-/dev/sdb1                 15G   33M   15G    1% /newdisk
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1607,7 +1453,7 @@ vim /etc/fstab
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">351</span>
+          <span class="site-state-item-count">353</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1620,7 +1466,7 @@ vim /etc/fstab
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">218</span>
+        <span class="site-state-item-count">220</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -196,6 +196,431 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-crds/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-shi-yong-crds/" class="post-title-link" itemprop="url">istio使用【CRDs】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-03 10:54:22" itemprop="dateCreated datePublished" datetime="2020-01-03T10:54:22+08:00">2020-01-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p><strong>本文使用istio版本号：<font size="4" color="#D2691E">1.4.2</font></strong></p>
+</blockquote>
+<blockquote>
+<p> Istio安装时，第一步就是创建了各种自定义资源类型（CRD），参考<a href="">istio部署【在kubernetes上部署】</a>，其中最重要的几个CRD包括：<strong>Gateway</strong>、<strong>VirtualService</strong>、<strong>DestinationRule</strong>、<strong>ServiceEntry</strong>。主要架构如下图：<br><img data-src="/images/istio_CRDs.jpg" alt="CRDs"></p>
+</blockquote>
+<h2 id="DestinationRule"><a href="#DestinationRule" class="headerlink" title="DestinationRule"></a>DestinationRule</h2><p>DestinationRule用于定义目标服务的访问策略，如在subset定义版本，定义负载均衡策略，熔断，一级TLS等。</p>
+<h3 id="基本示例"><a href="#基本示例" class="headerlink" title="基本示例"></a>基本示例</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> DestinationRule
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+  <span class="token key atrule">subsets</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> v1
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">version</span><span class="token punctuation">:</span> v1
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> v2
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">version</span><span class="token punctuation">:</span> v2
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="定义负载均衡策略"><a href="#定义负载均衡策略" class="headerlink" title="定义负载均衡策略"></a>定义负载均衡策略</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> DestinationRule
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+  <span class="token key atrule">trafficPolicy</span><span class="token punctuation">:</span>
+    <span class="token key atrule">loadBalancer</span><span class="token punctuation">:</span>
+      <span class="token key atrule">simple</span><span class="token punctuation">:</span> RANDOM
+  <span class="token key atrule">subsets</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> v1
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">version</span><span class="token punctuation">:</span> v1
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> v2
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">version</span><span class="token punctuation">:</span> v2
+    <span class="token key atrule">trafficPolicy</span><span class="token punctuation">:</span>
+      <span class="token key atrule">loadBalancer</span><span class="token punctuation">:</span>
+        <span class="token key atrule">simple</span><span class="token punctuation">:</span> ROUND_ROBIN
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="定义熔断器"><a href="#定义熔断器" class="headerlink" title="定义熔断器"></a>定义熔断器</h3><p>参考<a target="_blank" rel="noopener" href="https://istio.io/docs/tasks/traffic-management/circuit-breaking/">官网</a></p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> DestinationRule
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+  <span class="token key atrule">subsets</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> v1
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">version</span><span class="token punctuation">:</span> v1
+    <span class="token key atrule">trafficPolicy</span><span class="token punctuation">:</span>
+      <span class="token key atrule">connectionPool</span><span class="token punctuation">:</span>
+        <span class="token key atrule">tcp</span><span class="token punctuation">:</span>
+          <span class="token key atrule">maxConnections</span><span class="token punctuation">:</span> <span class="token number">100</span>
+      <span class="token key atrule">http</span><span class="token punctuation">:</span>
+        <span class="token key atrule">http1MaxPendingRequests</span><span class="token punctuation">:</span> <span class="token number">100</span>
+        <span class="token key atrule">maxRequestsPerConnection</span><span class="token punctuation">:</span> <span class="token number">100</span>
+    <span class="token key atrule">outlierDetection</span><span class="token punctuation">:</span>
+      <span class="token key atrule">consecutiveErrors</span><span class="token punctuation">:</span> <span class="token number">1</span>
+      <span class="token key atrule">interval</span><span class="token punctuation">:</span> 1s
+      <span class="token key atrule">baseEjectionTime</span><span class="token punctuation">:</span> 3m
+      <span class="token key atrule">maxEjectionPercent</span><span class="token punctuation">:</span> <span class="token number">100</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="VirtualService"><a href="#VirtualService" class="headerlink" title="VirtualService"></a>VirtualService</h2><p>VirtualService是最重要的配置接口，定义服务的所有路由规则，包括条件判断、权重、路径重写等。</p>
+<h3 id="定义权重示例"><a href="#定义权重示例" class="headerlink" title="定义权重示例"></a>定义权重示例</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> reviews
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v1
+      <span class="token key atrule">weight</span><span class="token punctuation">:</span> <span class="token number">90</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v2
+      <span class="token key atrule">weight</span><span class="token punctuation">:</span> <span class="token number">10</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="定义超时和重试策略"><a href="#定义超时和重试策略" class="headerlink" title="定义超时和重试策略"></a>定义超时和重试策略</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> ratings
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> ratings
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> ratings
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v1
+    <span class="token key atrule">timeout</span><span class="token punctuation">:</span> 10s
+    <span class="token key atrule">retries</span><span class="token punctuation">:</span>
+      <span class="token key atrule">attempts</span><span class="token punctuation">:</span> <span class="token number">3</span>
+      <span class="token key atrule">perTryTimeout</span><span class="token punctuation">:</span> 2s
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="故障注入：模拟失败的场景"><a href="#故障注入：模拟失败的场景" class="headerlink" title="故障注入：模拟失败的场景"></a>故障注入：模拟失败的场景</h3><p>参考<a target="_blank" rel="noopener" href="https://istio.io/docs/tasks/traffic-management/fault-injection/">Fault Injection</a></p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> ratings
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> ratings
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">fault</span><span class="token punctuation">:</span>
+      <span class="token comment" spellcheck="true">#定义10%请求+5秒延迟， 也可以是percent: 10</span>
+      <span class="token key atrule">delay</span><span class="token punctuation">:</span>
+        <span class="token key atrule">percentage</span><span class="token punctuation">:</span>
+          <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token number">10</span>
+        <span class="token key atrule">fixedDelay</span><span class="token punctuation">:</span> 5s
+ 
+      <span class="token comment" spellcheck="true">#定义10%请求返回400错误， 也可以是percent: 10</span>
+      <span class="token key atrule">abort</span><span class="token punctuation">:</span>
+        <span class="token key atrule">percentage</span><span class="token punctuation">:</span>
+          <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token number">10</span>
+        <span class="token key atrule">httpStatus</span><span class="token punctuation">:</span> <span class="token number">400</span>
+    <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> ratings
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v1
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="条件判断——标签"><a href="#条件判断——标签" class="headerlink" title="条件判断——标签"></a>条件判断——标签</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> ratings
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> ratings
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">sourceLabels</span><span class="token punctuation">:</span>
+        <span class="token key atrule">app</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">version</span><span class="token punctuation">:</span> v2
+    <span class="token punctuation">...</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="条件判断——Header"><a href="#条件判断——Header" class="headerlink" title="条件判断——Header"></a>条件判断——Header</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> reviews
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">headers</span><span class="token punctuation">:</span>
+        <span class="token key atrule">end-user</span><span class="token punctuation">:</span>
+          <span class="token key atrule">exact</span><span class="token punctuation">:</span> jason
+    <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v2
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="条件判断——URI路径"><a href="#条件判断——URI路径" class="headerlink" title="条件判断——URI路径"></a>条件判断——URI路径</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> productpage
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> productpage
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> /api/v1
+    <span class="token punctuation">...</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="多条件判断"><a href="#多条件判断" class="headerlink" title="多条件判断"></a>多条件判断</h3><p>如果是嵌套在一个匹配语句中，为<font color="red"><strong>AND</strong></font>关系。</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> ratings
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> ratings
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">sourceLabels</span><span class="token punctuation">:</span>
+        <span class="token key atrule">app</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">version</span><span class="token punctuation">:</span> v2
+      <span class="token key atrule">headers</span><span class="token punctuation">:</span>
+        <span class="token key atrule">end-user</span><span class="token punctuation">:</span>
+          <span class="token key atrule">exact</span><span class="token punctuation">:</span> jason
+    <span class="token punctuation">...</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果是单独的匹配语句，为<font color="red"><strong>OR</strong></font>关系。</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> ratings
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> ratings
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">sourceLabels</span><span class="token punctuation">:</span>
+        <span class="token key atrule">app</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">version</span><span class="token punctuation">:</span> v2
+    <span class="token punctuation">-</span> <span class="token key atrule">headers</span><span class="token punctuation">:</span>
+        <span class="token key atrule">end-user</span><span class="token punctuation">:</span>
+          <span class="token key atrule">exact</span><span class="token punctuation">:</span> jason
+    <span class="token punctuation">...</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="ServiceEntry"><a href="#ServiceEntry" class="headerlink" title="ServiceEntry"></a>ServiceEntry</h2><p>将外部服务接入到服务注册表中，让Istio中自动发现的服务能够访问和路由到这些手工加入的服务。与<code>VirtualService</code>或<code>DestinationRule</code>配合使用。</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> ServiceEntry
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> foo<span class="token punctuation">-</span>ext<span class="token punctuation">-</span>svc
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> *.foo.com
+  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">80</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> http
+    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> HTTP
+  <span class="token punctuation">-</span> <span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">443</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> https
+    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> HTTPS
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> bar<span class="token punctuation">-</span>foo<span class="token punctuation">-</span>ext<span class="token punctuation">-</span>svc
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> bar.foo.com
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> bar.foo.com
+    <span class="token key atrule">timeout</span><span class="token punctuation">:</span> 10s
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="Gateway"><a href="#Gateway" class="headerlink" title="Gateway"></a>Gateway</h2><p>提供外部服务访问接入，可发布任意内部端口的服务，供外部访问。配合<code>VirtualService</code>使用。</p>
+<p>Bookinfo示例:</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Gateway
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> bookinfo<span class="token punctuation">-</span>gateway
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">istio</span><span class="token punctuation">:</span> ingressgateway <span class="token comment" spellcheck="true"># use istio default controller</span>
+  <span class="token key atrule">servers</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span>
+      <span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">80</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> http
+      <span class="token key atrule">protocol</span><span class="token punctuation">:</span> HTTP
+    <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token string">"*"</span>
+<span class="token punctuation">---</span>
+<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> bookinfo
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token string">"*"</span>
+  <span class="token key atrule">gateways</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> bookinfo<span class="token punctuation">-</span>gateway
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /productpage
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> /static
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /login
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /logout
+    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> /api/v1/products
+    <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> productpage
+        <span class="token key atrule">port</span><span class="token punctuation">:</span>
+          <span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">9080</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-jing-xiang-dao-ru-dao-chu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-jing-xiang-dao-ru-dao-chu/" class="post-title-link" itemprop="url">docker镜像导入导出</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-31 16:30:22" itemprop="dateCreated datePublished" datetime="2019-12-31T16:30:22+08:00">2019-12-31</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>docker镜像导入导出有两种方式</p>
+<ul>
+<li>export/import</li>
+<li>load/save</li>
+</ul>
+<h3 id="export-x2F-import"><a href="#export-x2F-import" class="headerlink" title="export/import"></a>export/import</h3><pre><code>docker export -o "导出的镜像文件名.tar" CONTATINER
+
+docker import "导出的镜像文件名.tar" "镜像名:版本号"
+</code></pre>
+<h3 id="load-x2F-save"><a href="#load-x2F-save" class="headerlink" title="load/save"></a>load/save</h3><pre><code>docker load --input "导出的镜像文件名.tar"
+
+docker save -o "导出的镜像文件名.tar" "要导出的镜像名"
+</code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-xiu-gai-pod-nei-he-can-shu-sysctl/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -653,320 +1078,6 @@ List<span class="token operator">&lt;</span>UserEntity<span class="token operato
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-bookinfo-shi-li-zhi-jian-dan-lu-you-guan-li/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/istio-shi-yong-bookinfo-shi-li-zhi-jian-dan-lu-you-guan-li/" class="post-title-link" itemprop="url">Istio使用【Bookinfo示例之简单路由管理】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-30 14:47:41" itemprop="dateCreated datePublished" datetime="2019-12-30T14:47:41+08:00">2019-12-30</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p><strong>本文使用的istio版本：<code>1.4.2</code></strong></p>
-</blockquote>
-<blockquote>
-<p>上章内容只是简单运行了<code>Bookinfo</code>示例（<a href="">Istio使用【Bookinfo示例】</a>），访问页面，<code>Reviews</code>虽然有三个版本，但是刷新浏览器，三个版本是随机返回。本章内容仍然使用官方样例配置，定义一些自定义路由规则。在这之前最好了解下<a target="_blank" rel="noopener" href="https://haolin.club/2020/01/03/istio-shi-yong-crds/">Istio使用【CRDs】</a>。</p>
-</blockquote>
-<h3 id="创建所有服务的DestinationRule"><a href="#创建所有服务的DestinationRule" class="headerlink" title="创建所有服务的DestinationRule"></a>创建所有服务的<code>DestinationRule</code></h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="定义V1和V2版本8-2比重，V3不返回"><a href="#定义V1和V2版本8-2比重，V3不返回" class="headerlink" title="定义V1和V2版本8:2比重，V3不返回"></a>定义<code>V1</code>和<code>V2</code>版本<code>8:2</code>比重，<code>V3</code>不返回</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> reviews
-  <span class="token key atrule">http</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">route</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
-        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
-        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v1
-      <span class="token key atrule">weight</span><span class="token punctuation">:</span> <span class="token number">80</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
-        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
-        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v2
-      <span class="token key atrule">weight</span><span class="token punctuation">:</span> <span class="token number">20</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="定义如果Header中包含jason用户返回V2版本，否则返回V3版本"><a href="#定义如果Header中包含jason用户返回V2版本，否则返回V3版本" class="headerlink" title="定义如果Header中包含jason用户返回V2版本，否则返回V3版本"></a>定义如果<code>Header</code>中包含<code>jason</code>用户返回<code>V2</code>版本，否则返回<code>V3</code>版本</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> reviews
-  <span class="token key atrule">http</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">headers</span><span class="token punctuation">:</span>
-        <span class="token key atrule">end-user</span><span class="token punctuation">:</span>
-          <span class="token key atrule">exact</span><span class="token punctuation">:</span> jason
-    <span class="token key atrule">route</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
-        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
-        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v2
-  <span class="token punctuation">-</span> <span class="token key atrule">route</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
-        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
-        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v3
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>其它可以参考<code>samples/bookinfo/networking/</code>目录下配置。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-bookinfo-shi-li/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/istio-shi-yong-bookinfo-shi-li/" class="post-title-link" itemprop="url">Istio使用【Bookinfo示例】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-26 17:12:20" itemprop="dateCreated datePublished" datetime="2019-12-26T17:12:20+08:00">2019-12-26</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="Bookinfo示例简介"><a href="#Bookinfo示例简介" class="headerlink" title="Bookinfo示例简介"></a>Bookinfo示例简介</h3><p><code>Bookinfo</code>是<code>istio</code>官网示例，应用程序分为四个单独的微服务：</p>
-<ul>
-<li><code>productpage</code>。该<code>productpage</code>微服务调用<code>details</code>和<code>reviews</code>微服务来填充页面。</li>
-<li><code>details</code>。该<code>details</code>微服务包含图书信息。</li>
-<li><code>reviews</code>。该<code>reviews</code>微服务包含了书评。它们调用<code>ratings</code>微服务。</li>
-<li><code>ratings</code>。该<code>ratings</code>微服务包含预定伴随书评排名信息。</li>
-</ul>
-<p><code>reviews</code>微服务有3个版本：</p>
-<ul>
-<li>版本<code>v1</code>不会调用该<code>ratings</code>服务。</li>
-<li>版本<code>v2</code>调用该<code>ratings</code>服务，并将每个等级显示为1到5个黑星<font color="black">★</font>。</li>
-<li>版本<code>v3</code>调用该<code>ratings</code>服务，并将每个等级显示为1到5个红色星号<font color="red">★</font>。</li>
-</ul>
-<p><img data-src="/images/bookinfo1.jpg" alt="Bookinfo架构图"></p>
-<h3 id="Bookinfo在Istio中架构"><a href="#Bookinfo在Istio中架构" class="headerlink" title="Bookinfo在Istio中架构"></a><code>Bookinfo</code>在<code>Istio</code>中架构</h3><p>如果想要在<code>Istio</code>中运行<code>Bookinfo</code>，<code>Bookinfo</code>本身不需要任何改动，只需要为<code>Bookinfo</code>的微服务注入<code>Istio</code>的<code>Sidecar</code>。最终架构图如下：</p>
-<p><img data-src="/images/bookinfo2.jpg" alt="Bookinfo架构图"></p>
-<p>所有的微服务都与<code>Envoy</code>边车打包在一起，该<code>Envoy</code>边车拦截对服务的出/入请求，并与<code>Istio</code>控制面交互，提供路由、采集、实施各种策略等。</p>
-<h3 id="启动Bookinfo服务，参考官网"><a href="#启动Bookinfo服务，参考官网" class="headerlink" title="启动Bookinfo服务，参考官网"></a>启动<code>Bookinfo</code>服务，参考<a target="_blank" rel="noopener" href="https://istio.io/docs/examples/bookinfo/">官网</a></h3><h4 id="进入istio目录"><a href="#进入istio目录" class="headerlink" title="进入istio目录"></a>进入istio目录</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># pwd</span>
-/root/istio/istio-1.4.2
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h4 id="设置namespace自动注入sidecar"><a href="#设置namespace自动注入sidecar" class="headerlink" title="设置namespace自动注入sidecar"></a>设置namespace自动注入sidecar</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl label namespace default istio-injection<span class="token operator">=</span>enabled
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h4 id="部署bookinfo服务"><a href="#部署bookinfo服务" class="headerlink" title="部署bookinfo服务"></a>部署bookinfo服务</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>你也可以手动为这个yaml注入sidecar再部署，参考<a href="">Istio使用【sidecar注入】</a></p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f <span class="token operator">&lt;</span><span class="token punctuation">(</span>istioctl kube-inject -f samples/bookinfo/platform/kube/bookinfo.yaml<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h4 id="确定启动完成"><a href="#确定启动完成" class="headerlink" title="确定启动完成"></a>确定启动完成</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod</span>
-NAME                                                       READY   STATUS    RESTARTS   AGE
-details-v1-74f858558f-7gx6r                                2/2     Running   0          31h
-productpage-v1-8554d58bff-fwcj4                            2/2     Running   0          31h
-ratings-v1-7855f5bcb9-r7z5l                                2/2     Running   0          31h
-reviews-v1-59fd8b965b-jppqr                                2/2     Running   0          31h
-reviews-v2-d6cfdb7d6-rx648                                 2/2     Running   0          31h
-reviews-v3-75699b5cfb-qpdjm                                2/2     Running   0          31h
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc</span>
-NAME          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>     AGE
-details       ClusterIP   10.102.10.128    <span class="token operator">&lt;</span>none<span class="token operator">></span>        9080/TCP    31h
-productpage   ClusterIP   10.110.251.239   <span class="token operator">&lt;</span>none<span class="token operator">></span>        9080/TCP    31h
-ratings       ClusterIP   10.99.146.247    <span class="token operator">&lt;</span>none<span class="token operator">></span>        9080/TCP    31h
-reviews       ClusterIP   10.102.77.22     <span class="token operator">&lt;</span>none<span class="token operator">></span>        9080/TCP    31h
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="确定程序运行正常"><a href="#确定程序运行正常" class="headerlink" title="确定程序运行正常"></a>确定程序运行正常</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">exec</span> -it <span class="token punctuation">$(</span>kubectl get pod -l app<span class="token operator">=</span>ratings -o jsonpath<span class="token operator">=</span><span class="token string">'{.items[0].metadata.name}'</span><span class="token punctuation">)</span> -c ratings -- curl productpage:9080/productpage <span class="token operator">|</span> <span class="token function">grep</span> -o <span class="token string">"&lt;title>.*&lt;/title>"</span>
-<span class="token operator">&lt;</span>title<span class="token operator">></span>Simple Bookstore App<span class="token operator">&lt;</span>/title<span class="token operator">></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h4 id="定义应用的入口网关"><a href="#定义应用的入口网关" class="headerlink" title="定义应用的入口网关"></a>定义应用的入口网关</h4><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h4 id="确认网关已创建"><a href="#确认网关已创建" class="headerlink" title="确认网关已创建"></a>确认网关已创建</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get gateway</span>
-NAME               AGE
-bookinfo-gateway   30h
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>下面可以通过<code>Isito</code>的入口网关来访问了，在访问前，需要确定<code>Isito网关IP和端口</code>。</p>
-<h3 id="获取Istio入口网关IP和端口：参考官网"><a href="#获取Istio入口网关IP和端口：参考官网" class="headerlink" title="获取Istio入口网关IP和端口：参考官网"></a>获取Istio入口网关IP和端口：参考<a target="_blank" rel="noopener" href="https://istio.io/docs/tasks/traffic-management/ingress/ingress-control/#determining-the-ingress-ip-and-ports">官网</a></h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl get svc istio-ingressgateway -n istio-system
-NAME                   TYPE           CLUSTER-IP      EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>                                                                                                                                      AGE
-istio-ingressgateway   LoadBalancer   10.110.94.234   <span class="token operator">&lt;</span>pending<span class="token operator">></span>     15020:32344/TCP,80:31380/TCP,443:31390/TCP,31400:31400/TCP,15029:31933/TCP,15030:30470/TCP,15031:31361/TCP,15032:31151/TCP,15443:31081/TCP   2d2h
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>如果<code>EXTERNAL-IP</code>设置了该值，则您的环境具有可用于入口网关的外部负载平衡器。如果<code>EXTERNAL-IP</code>值是<code>&lt;none&gt;</code>（或永久<code>&lt;pending&gt;</code>），则您的环境不为入口网关提供外部负载平衡器。在这种情况下，您可以使用服务的节点端口来访问网关。</p>
-<h4 id="确定端口"><a href="#确定端口" class="headerlink" title="确定端口"></a>确定端口</h4><ul>
-<li><p>这里<code>80</code>对应的端口是<code>Http</code>服务的端口，映射的主机端口<code>31380</code>；</p>
-</li>
-<li><p>这里<code>443</code>对应的端口是<code>Https</code>服务的端口，映射的主机端口<code>31390</code>；</p>
-</li>
-</ul>
-<h4 id="确定IP"><a href="#确定IP" class="headerlink" title="确定IP"></a>确定IP</h4><p>可以通过下面命令找个<code>hostIP</code></p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get po -l istio=ingressgateway -n istio-system -o yaml | grep hostIP: -C3</span>
----
-      state:
-        running:
-          startedAt: <span class="token string">"2019-12-24T06:46:29Z"</span>
-    hostIP: 192.168.1.212
-    phase: Running
-    podIP: 10.244.3.136
-    qosClass: Burstable
----
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>也可以通过下面的命令找到Ingress部署的节点。</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s-master istio-1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get po -l istio=ingressgateway -n istio-system -o wide</span>
-NAME                                    READY   STATUS    RESTARTS   AGE    IP             NODE     NOMINATED NODE   READINESS GATES
-istio-ingressgateway-6b7bfd7459-wljhh   1/1     Running   0          2d2h   10.244.3.136   k8s-02   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="访问Bookinfo应用"><a href="#访问Bookinfo应用" class="headerlink" title="访问Bookinfo应用"></a>访问Bookinfo应用</h3><p>浏览器访问刚刚或者的<code>IP</code>+<code>端口</code>+<code>/productpage</code>，例如我的是<a href="">http://192.168.1.212:31380/productpage</a></p>
-<p><img data-src="/images/bookinfo3.jpg" alt="Reviewer-v1"><br><img data-src="/images/bookinfo4.jpg" alt="Reviewer-v2"><br><img data-src="/images/bookinfo5.jpg" alt="Reviewer-v3"></p>
-<p>不停的刷新页面，可以看到返回的<code>Reviewer</code>是不同的版本。</p>
-<h3 id="简单分析下"><a href="#简单分析下" class="headerlink" title="简单分析下"></a>简单分析下</h3><p>针对<code>samples/bookinfo/networking/bookinfo-gateway.yaml</code>，我们可以看看默认配置做了啥。</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token punctuation">[</span>root@k8s<span class="token punctuation">-</span>master istio<span class="token punctuation">-</span>1.4.2<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># cat samples/bookinfo/networking/bookinfo-gateway.yaml</span>
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Gateway
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> bookinfo<span class="token punctuation">-</span>gateway
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">istio</span><span class="token punctuation">:</span> ingressgateway <span class="token comment" spellcheck="true"># use istio default controller</span>
-  <span class="token key atrule">servers</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span>
-      <span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">80</span>
-      <span class="token key atrule">name</span><span class="token punctuation">:</span> http
-      <span class="token key atrule">protocol</span><span class="token punctuation">:</span> HTTP
-    <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"*"</span>
-<span class="token punctuation">---</span>
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> bookinfo
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token string">"*"</span>
-  <span class="token key atrule">gateways</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> bookinfo<span class="token punctuation">-</span>gateway
-  <span class="token key atrule">http</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
-        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /productpage
-    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
-        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> /static
-    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
-        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /login
-    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
-        <span class="token key atrule">exact</span><span class="token punctuation">:</span> /logout
-    <span class="token punctuation">-</span> <span class="token key atrule">uri</span><span class="token punctuation">:</span>
-        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> /api/v1/products
-    <span class="token key atrule">route</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
-        <span class="token key atrule">host</span><span class="token punctuation">:</span> productpage
-        <span class="token key atrule">port</span><span class="token punctuation">:</span>
-          <span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">9080</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><p>首先创建一个<code>Gateway</code>，这是<code>Istio</code>的一个自定义资源类型(<code>CRD</code>)，它创建了这个<code>bookinfo</code>应用的网关<code>bookinfo-gateway</code>，使用了<code>istio</code>默认的<code>controller——ingressgateway</code>，如上文，<code>istio</code>的<code>ingress</code>网关定义了很多类型端口，这里<code>bookinfo-gateway</code>使用了<code>80</code>端口，域名使用的通配符 <code>*</code> 。</p>
-</li>
-<li><p>定义<code>VirtualService</code>，这里需要绑定刚刚创建的<code>bookinfo-gateway</code>，定义了匹配的<code>URI</code>和后台服务。</p>
-</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1038,7 +1149,7 @@ istio-ingressgateway-6b7bfd7459-wljhh   1/1     Running   0          2d2h   10.2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">351</span>
+          <span class="site-state-item-count">353</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1051,7 +1162,7 @@ istio-ingressgateway-6b7bfd7459-wljhh   1/1     Running   0          2d2h   10.2
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">218</span>
+        <span class="site-state-item-count">220</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
