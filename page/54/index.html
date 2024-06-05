@@ -196,6 +196,865 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-chuang-jian-xin-de-alertmanager/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/prometheus-operator-shi-yong-chuang-jian-xin-de-alertmanager/" class="post-title-link" itemprop="url">prometheus-operator使用【创建新的Alertmanager】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-29 11:05:27" itemprop="dateCreated datePublished" datetime="2019-11-29T11:05:27+08:00">2019-11-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p><code>Alertmanager</code>是安装<code>prometheus-operator</code>时默认新增的自定义资源类型（<code>CRD</code>），我们可以直接在K8s中创建这样的资源。</p>
+</blockquote>
+<h3 id="创建alert-test-yaml"><a href="#创建alert-test-yaml" class="headerlink" title="创建alert-test.yaml"></a>创建alert-test.yaml</h3><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: monitoring.coreos.com/v1
+kind: Alertmanager
+metadata:
+  generation: 1
+  labels:
+    app: prometheus-operator-alertmanager
+    chart: prometheus-operator-8.2.4
+    heritage: Tiller
+    release: prometheus-operator
+  name: prometheus-operator-alertmanager-test
+  namespace: monitoring
+spec:
+  baseImage: quay.io/prometheus/alertmanager
+  version: v0.19.0
+  portName: web
+  replicas: 1
+  retention: 120h
+  routePrefix: /
+  serviceAccountName: prometheus-operator-alertmanager
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+            app: alertmanager
+            alertmanager: prometheus-operator-alertmanager-test
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app: alertmanager
+              alertmanager: prometheus-operator-alertmanager-test
+  storage:
+    volumeClaimTemplate:
+      selector: {}
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: nfs-client
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="针对以上配置文件简要说明："><a href="#针对以上配置文件简要说明：" class="headerlink" title="针对以上配置文件简要说明："></a>针对以上配置文件简要说明：</h4><ul>
+<li>所有配置项可以从<code>stable/prometheus-operator/templates/alertmanager/alertmanager.yaml</code>获取，参考前文，<code>prometheus-operator</code>环境是使用<code>helm</code>安装的，可以通过命令<code>helm fetch stable/prometheus-operator</code>将所有配置下载到本地，然后参考。helm安装会默认安装一个<code>Alertmanager</code>服务，也是通过<code>alertmanager.yaml</code>安装的。</li>
+<li><code>kind</code>类型写Alertmanager，无需多言。</li>
+<li><code>metadata.name</code>指定你这个Alertmanager名称，可以通过命令查询</li>
+</ul>
+<pre><code>kubectl get alertmanager -n monitoring
+</code></pre>
+<ul>
+<li><code>spec.baseImage/version</code>需要指定，不然默认使用的镜像版本可能跟helm安装时使用的版本不一致，导致你需要重新下载，部署就非常慢。</li>
+<li><code>spec.storage</code>指定你新部署的Alertmanager存储，建议指定。</li>
+<li><code>spec.affinity</code>需要指定一些label，Alertmanager对象本质还是一个StatefulSet对象，后面你为Alertmanager对象创建Service时需要通过Label选择。</li>
+<li><code>spec.portName</code>指定你端口的名称，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
+<li><code>metadata.namespace</code>指定命名空间，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
+<li><code>spec.routePrefix</code>指定路径前缀，这个后面配置和Prometheus关联的时候需要。建议保持默认。</li>
+</ul>
+<h3 id="过命令或者dashborad创建Alertmanager"><a href="#过命令或者dashborad创建Alertmanager" class="headerlink" title="过命令或者dashborad创建Alertmanager"></a>过命令或者dashborad创建Alertmanager</h3><pre><code>kubectl create -f alert-test.yaml
+</code></pre>
+<h4 id="注意："><a href="#注意：" class="headerlink" title="注意："></a>注意：</h4><p>现在创建这个，肯定会报错，类似<code>MountVolume.SetUp failed for volume "config-volume" : secrets "alertmanager-XXXX-xX" not found</code></p>
+<p>原因：（参考：<code>https://yunlzheng.gitbook.io/prometheus-book/part-iii-prometheus-shi-zhan/operator/use-operator-manage-monitor</code>）</p>
+<p>这是由于<code>Prometheus Operator</code>通过<code>Statefulset</code>的方式创建的<code>Alertmanager</code>实例，在默认情况下，会通过<code>alertmanager-{ALERTMANAGER_NAME}</code>的命名规则去查找<code>Secret</code>配置并以文件挂载的方式，将<code>Secret</code>的内容作为配置文件挂载到<code>Alertmanager</code>实例当中。因此，需要提前为<code>Alertmanager</code>创建相应的配置内容。</p>
+<h3 id="参考前文Alertmanager配置"><a href="#参考前文Alertmanager配置" class="headerlink" title="参考前文Alertmanager配置"></a>参考前文Alertmanager配置</h3><p>我们创建<code>alertmanager.yaml</code>，<code>template_1.tmpl</code></p>
+<p>然后用命令创建<code>secret</code>，<code>secret</code>名称格式：<code>alertmanager-{ALERTMANAGER_NAME}</code>,例如我们前文指定的<code>Alertmanager</code>名称为<code>prometheus-operator-alertmanager-test</code>，那么这里<code>secret</code>名称为<code>alertmanager-prometheus-operator-alertmanager-test</code>。</p>
+<pre><code>kubectl create secret generic alertmanager-prometheus-operator-alertmanager-test -n monitoring --from-file=alertmanager.yaml --from-file=template_1.tmpl
+</code></pre>
+<h3 id="最后创建Alertmanager"><a href="#最后创建Alertmanager" class="headerlink" title="最后创建Alertmanager"></a>最后创建Alertmanager</h3><h3 id="创建Alertmanager的service"><a href="#创建Alertmanager的service" class="headerlink" title="创建Alertmanager的service"></a>创建Alertmanager的service</h3><blockquote>
+<p>这里直接指定Service类型是NodePort，便于我们访问，实际应通过Ingress来做。</p>
+</blockquote>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: prometheus-operator-alertmanager
+    chart: prometheus-operator-8.2.4
+    heritage: Tiller
+    release: prometheus-operator
+  name: prometheus-operator-alertmanager-test
+  namespace: monitoring
+spec:
+  ports:
+  - name: web
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  selector:
+    alertmanager: prometheus-operator-alertmanager-test
+    app: alertmanager
+  sessionAffinity: None
+  type: NodePort
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：这里通过<code>selector</code>来选择，和创建<code>Alertmanager</code>配置中保持一致。</p>
+</blockquote>
+<h3 id="通过命令查询Service的映射端口"><a href="#通过命令查询Service的映射端口" class="headerlink" title="通过命令查询Service的映射端口"></a>通过命令查询Service的映射端口</h3><pre><code>kubectl get svc -n monitoring
+</code></pre>
+<p>通过命令查询Service的映射端口，即可访问我们刚刚创建的Alertmanager.</p>
+<p>现在Alertmanager上应该还没有任何通知，原因是还没有将我们创建的Alertmanager和Prometheus关联。</p>
+<h3 id="关联Prometheus"><a href="#关联Prometheus" class="headerlink" title="关联Prometheus"></a>关联Prometheus</h3><p>如何关联Prometheus呢？首先查看下prometheus-operator创建的Prometheus的配置，prometheus-operator也是通过自定义资源类型（CRD）prometheus来创建prometheus server的，直接通过命令查看。</p>
+<pre class="line-numbers language-yml"><code class="language-yml">kubectl get Prometheus prometheus-operator-prometheus  -n monitoring -o yaml
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  creationTimestamp: "2019-11-28T02:42:48Z"
+  generation: 1
+  labels:
+    app: prometheus-operator-prometheus
+    chart: prometheus-operator-8.2.4
+    heritage: Tiller
+    release: prometheus-operator
+  name: prometheus-operator-prometheus
+  namespace: monitoring
+  resourceVersion: "6316434"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/monitoring/prometheuses/prometheus-operator-prometheus
+  uid: de60d68f-6818-484d-ba30-4f381e7cb016
+spec:
+  alerting:
+    alertmanagers:
+    - name: prometheus-operator-alertmanager
+      namespace: monitoring
+      pathPrefix: /
+      port: web
+  baseImage: quay.io/prometheus/prometheus
+  enableAdminAPI: false
+  externalUrl: http://prom.deri.com/
+  listenLocal: false
+  logFormat: logfmt
+  logLevel: info
+  paused: false
+  podMonitorNamespaceSelector: {}
+  podMonitorSelector:
+    matchLabels:
+      release: prometheus-operator
+  portName: web
+  replicas: 1
+  retention: 10d
+  routePrefix: /
+  ruleNamespaceSelector: {}
+  ruleSelector:
+    matchLabels:
+      app: prometheus-operator
+      release: prometheus-operator
+  securityContext:
+    fsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+  serviceAccountName: prometheus-operator-prometheus
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector:
+    matchLabels:
+      release: prometheus-operator
+  storage:
+    volumeClaimTemplate:
+      selector: {}
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: nfs-client
+  version: v2.13.1
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="Prometheus配置"><a href="#Prometheus配置" class="headerlink" title="Prometheus配置"></a>Prometheus配置</h4><ul>
+<li><code>spec.alerting.alertmanagers</code>就是指定Prometheus将告警发给哪些alertmanagers。</li>
+<li><code>spec.ruleSelector.matchLabels</code>通过标签关联用户创建的自定义PrometheusRule。</li>
+<li><code>spec.serviceMonitorSelector.matchLabels</code>通过标签关联用户创建的自定义ServiceMonitor</li>
+</ul>
+<p>使用命令编辑已有的Prometheus服务配置</p>
+<pre><code>kubectl edit Prometheus prometheus-operator-prometheus  -n monitoring
+</code></pre>
+<p>增加一个<code>Alertmanager</code>的<code>Endpoint</code>，其中<code>name</code>、<code>namespace</code>、<code>pathPrefix</code>、<code>port</code>和创建<code>Alertmanager</code>配置保持一致。</p>
+<pre class="line-numbers language-yml"><code class="language-yml">spec:
+  alerting:
+    alertmanagers:
+    - name: prometheus-operator-alertmanager
+      namespace: monitoring
+      pathPrefix: /
+      port: web
+    - name: prometheus-operator-alertmanager-test
+      namespace: monitoring
+      pathPrefix: /
+      port: web
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-liao-jie-alertmanager-tong-zhi-ji-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/prometheus-operator-shi-yong-liao-jie-alertmanager-tong-zhi-ji-zhi/" class="post-title-link" itemprop="url">prometheus-operator使用【了解Alertmanager通知机制】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-28 17:14:46" itemprop="dateCreated datePublished" datetime="2019-11-28T17:14:46+08:00">2019-11-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Alertmanager简介及机制"><a href="#Alertmanager简介及机制" class="headerlink" title="Alertmanager简介及机制"></a>Alertmanager简介及机制</h2><p>Alertmanager处理由例如Prometheus服务器等客户端发来的警报。它负责删除重复数据、分组，并将警报通过路由发送到正确的接收器，比如电子邮件、Slack等。Alertmanager还支持groups,silencing和警报抑制的机制。</p>
+<h3 id="分组"><a href="#分组" class="headerlink" title="分组"></a>分组</h3><p>分组是指将同一类型的警报分类为单个通知。当许多系统同时宕机时，很有可能成百上千的警报会同时生成，这种机制特别有用。</p>
+<h3 id="抑制-Inhibition"><a href="#抑制-Inhibition" class="headerlink" title="抑制(Inhibition)"></a>抑制(Inhibition)</h3><p>抑制是指当警报发出后，停止重复发送由此警报引发其他错误的警报的机制。(比如网络不可达，导致其他服务连接相关警报)</p>
+<h3 id="沉默-Silences"><a href="#沉默-Silences" class="headerlink" title="沉默(Silences)"></a>沉默(Silences)</h3><p>Silences是一种简单的特定时间不告警的机制。</p>
+<h3 id="默认配置"><a href="#默认配置" class="headerlink" title="默认配置"></a>默认配置</h3><p>打开Alertmanager的页面，选择status页面，可以查看到当前的Config。这是使用Helm安装prometheus-operator时默认的配置，如何修改呢？</p>
+<pre class="line-numbers language-yml"><code class="language-yml">global:
+  resolve_timeout: 4m
+  http_config: {}
+  smtp_hello: localhost
+  smtp_require_tls: true
+  pagerduty_url: https://events.pagerduty.com/v2/enqueue
+  hipchat_api_url: https://api.hipchat.com/
+  opsgenie_api_url: https://api.opsgenie.com/
+  wechat_api_url: https://qyapi.weixin.qq.com/cgi-bin/
+  victorops_api_url: https://alert.victorops.com/integrations/generic/20131114/alert/
+route:
+  receiver: "null"
+  group_by:
+  - job
+  routes:
+  - receiver: "null"
+    match:
+      severity: info
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+receivers:
+- name: "null"
+templates: []
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="Alertmanager配置说明"><a href="#Alertmanager配置说明" class="headerlink" title="Alertmanager配置说明"></a>Alertmanager配置说明</h2><p>参考<code>https://www.jianshu.com/p/239b145e2acc</code></p>
+<h2 id="修改默认配置"><a href="#修改默认配置" class="headerlink" title="修改默认配置"></a>修改默认配置</h2><p>默认配置由同命名空间下<code>Secret</code>挂载到<code>POD</code>中，所以只要修改了这个<code>Secret</code>就可以修改默认配置了。</p>
+<p><code>alertmanager-prometheus-operator-alertmanager</code>内容主要是<code>alertmanager.yaml</code> 经过<code>Base64加密</code>的。可以通过命令查看</p>
+<pre><code>kubectl edit  secret alertmanager-prometheus-operator-alertmanager -n monitoring
+</code></pre>
+<p>复制其中的<code>alertmanager.yaml</code>后面的字符串，然后使用命令查看原始值。</p>
+<pre class="line-numbers language-log"><code class="language-log">echo "Imdsb2JhbCI6IAogICJyZXNvbHZlX3RpbWVvdXQiOiAiNW0iCiJyZWNlaXZlcnMiOiAKLSAibmFtZSI6ICJudWxsIgoicm91dGUiOiAKICAiZ3JvdXBfYnkiOiAKICAtICJqb2IiCiAgImdyb3VwX2ludGVydmFsIjogIjVtIgogICJncm91cF93YWl0IjogIjMwcyIKICAicmVjZWl2ZXIiOiAibnVsbCIKICAicmVwZWF0X2ludGVydmFsIjogIjEyaCIKICAicm91dGVzIjogCiAgLSAibWF0Y2giOiAKICAgICAgImFsZXJ0bmFtZSI6ICJEZWFkTWFuc1N3aXRjaCIKICAgICJyZWNlaXZlciI6ICJudWxsIg==" | base64 -d
+"global":
+  "resolve_timeout": "5m"
+"receivers":
+- "name": "null"
+"route":
+  "group_by":
+  - "job"
+  "group_interval": "5m"
+  "group_wait": "30s"
+  "receiver": "null"
+  "repeat_interval": "12h"
+  "routes":
+  - "match":
+      "alertname": "DeadMansSwitch"
+    "receiver": "null"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>创建一个新的<code>alertmanager.yaml</code>文件，内容</p>
+<pre class="line-numbers language-yml"><code class="language-yml">global:
+  resolve_timeout: 4m
+receivers:
+- name: webhook_alert
+  webhook_configs:
+  - send_resolved: true
+    url: http://dingtalkservice:8060/dingtalk/webhook1/send 
+route:
+  group_by:
+  - job
+  - alertname
+  - cluster
+  - service
+  group_interval: 5m
+  group_wait: 30s
+  receiver: webhook_alert
+  repeat_interval: 12h
+  routes:
+  - match:
+      severity: info
+    receiver: webhook_alert
+  - match:
+      severity: warning
+    receiver: webhook_alert
+templates:
+- '*.tmpl'
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中我们增加了<code>webhook</code>方式报警，配置最后增加了模板，所以我们还需要创建一个模板，如<code>template_1.tmpl</code></p>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token punctuation">{</span><span class="token punctuation">{</span> define <span class="token string">"cluster"</span> <span class="token punctuation">}</span><span class="token punctuation">}</span>
+    <span class="token punctuation">[</span>错误订阅信息<span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token punctuation">{</span> <span class="token builtin">len</span> <span class="token punctuation">.</span>Alerts <span class="token punctuation">}</span><span class="token punctuation">}</span>条 <span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token punctuation">.</span>GroupLabels<span class="token punctuation">.</span>appid<span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token operator">-</span><span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token punctuation">.</span>GroupLabels<span class="token punctuation">.</span>service<span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">)</span> 时间
+    <span class="token punctuation">{</span><span class="token punctuation">{</span> <span class="token keyword">range</span> $i<span class="token punctuation">,</span> $alert <span class="token operator">:=</span> <span class="token punctuation">.</span>Alerts <span class="token punctuation">}</span><span class="token punctuation">}</span>
+        <span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token keyword">if</span> eq $i <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">}</span> 
+            <span class="token punctuation">{</span><span class="token punctuation">{</span> $alert<span class="token punctuation">.</span>StartsAt <span class="token punctuation">}</span><span class="token punctuation">}</span>
+        <span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
+    <span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
+<span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
+ 
+<span class="token punctuation">{</span><span class="token punctuation">{</span> define <span class="token string">"alertemp.html"</span> <span class="token punctuation">}</span><span class="token punctuation">}</span>
+    <span class="token punctuation">{</span><span class="token punctuation">{</span> <span class="token keyword">range</span> $i<span class="token punctuation">,</span> $alert <span class="token operator">:=</span> <span class="token punctuation">.</span>Alerts <span class="token punctuation">}</span><span class="token punctuation">}</span>
+        <span class="token operator">*</span>报警名称<span class="token punctuation">:</span><span class="token operator">*</span> <span class="token punctuation">{</span><span class="token punctuation">{</span> $alert<span class="token punctuation">.</span>Labels<span class="token punctuation">.</span>alertname <span class="token punctuation">}</span><span class="token punctuation">}</span>
+        <span class="token operator">*</span>开始时间<span class="token punctuation">:</span><span class="token operator">*</span> <span class="token punctuation">{</span><span class="token punctuation">{</span> $alert<span class="token punctuation">.</span>StartsAt <span class="token punctuation">}</span><span class="token punctuation">}</span>
+        <span class="token operator">*</span>错误信息<span class="token punctuation">:</span><span class="token operator">*</span> <span class="token punctuation">{</span><span class="token punctuation">{</span> $alert<span class="token punctuation">.</span>Annotations<span class="token punctuation">.</span>errormessage <span class="token punctuation">}</span><span class="token punctuation">}</span>
+    <span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
+<span class="token punctuation">{</span><span class="token punctuation">{</span> end <span class="token punctuation">}</span><span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上述模板参考：<code>http://blog.microservice4.net/2018/12/05/alertmanager/</code></p>
+<p>先删除原来的Secret</p>
+<pre><code>kubectl delete secret alertmanager-prometheus-operator-alertmanager -n monitoring
+</code></pre>
+<p>从刚刚文件创建新的Secret</p>
+<pre><code>kubectl create secret generic alertmanager-prometheus-operator-alertmanager -n monitoring --from-file=alertmanager.yaml --from-file=template_1.tmpl
+</code></pre>
+<p>创建完之后可以通过log命令查看后台有没有报错。</p>
+<pre><code>kubectl log alertmanager-prometheus-operator-alertmanager-0 alertmanager -n monitoring
+</code></pre>
+<p>也可以在Dashboard中查看日志。还可以在Alertmanager容器中查看<br><img data-src="/images/k8s6.png" alt="altermanager"></p>
+<p>最后在Alertmanager页面中查看Config是否更新。<br><img data-src="/images/k8s7.png" alt="altermanager"></p>
+<p>到此，已经完成Alertmanager默认配置的更新。</p>
+<p>以上参考<code>https://www.qikqiak.com/post/prometheus-operator-custom-alert/</code>.</p>
+<h2 id="上述配置Webhook使用的钉钉来做通知"><a href="#上述配置Webhook使用的钉钉来做通知" class="headerlink" title="上述配置Webhook使用的钉钉来做通知"></a>上述配置Webhook使用的钉钉来做通知</h2><h3 id="webhook通知机制"><a href="#webhook通知机制" class="headerlink" title="webhook通知机制"></a>webhook通知机制</h3><p>在Alertmanager中可以使用如下配置定义基于webhook的告警接收器receiver。一个receiver可以对应一组webhook配置。</p>
+<pre class="line-numbers language-yml"><code class="language-yml">name: <string>
+webhook_configs:
+  [ - <webhook_config>, ... ]
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>每一项webhook_config的具体配置格式如下：</p>
+<pre class="line-numbers language-yml"><code class="language-yml"># Whether or not to notify about resolved alerts.
+[ send_resolved: <boolean> | default = true ]
+ 
+# The endpoint to send HTTP POST requests to.
+url: <string>
+ 
+# The HTTP client's configuration.
+[ http_config: <http_config> | default = global.http_config ]
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>send_resolved用于指定是否在告警消除时发送回执消息。url则是用于接收webhook请求的地址。http_configs则是在需要对请求进行SSL配置时使用。</p>
+<p>当用户定义webhook用于接收告警信息后，当告警被触发时，Alertmanager会按照以下格式向这些url地址发送HTTP Post请求，请求内容如下：</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"4"</span><span class="token punctuation">,</span>
+  <span class="token property">"groupKey"</span><span class="token operator">:</span> &lt;string><span class="token punctuation">,</span>    // key identifying the group of alerts (e.g. to deduplicate<span class="token punctuation">)</span>
+  <span class="token property">"status"</span><span class="token operator">:</span> "&lt;resolved|firing>"<span class="token punctuation">,</span>
+  <span class="token property">"receiver"</span><span class="token operator">:</span> &lt;string><span class="token punctuation">,</span>
+  <span class="token property">"groupLabels"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
+  <span class="token property">"commonLabels"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
+  <span class="token property">"commonAnnotations"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
+  <span class="token property">"externalURL"</span><span class="token operator">:</span> &lt;string><span class="token punctuation">,</span>  // backlink to the Alertmanager.
+  <span class="token property">"alerts"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"labels"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
+      <span class="token property">"annotations"</span><span class="token operator">:</span> &lt;object><span class="token punctuation">,</span>
+      <span class="token property">"startsAt"</span><span class="token operator">:</span> <span class="token string">"&lt;rfc3339>"</span><span class="token punctuation">,</span>
+      <span class="token property">"endsAt"</span><span class="token operator">:</span> <span class="token string">"&lt;rfc3339>"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="钉钉机器人"><a href="#钉钉机器人" class="headerlink" title="钉钉机器人"></a>钉钉机器人</h3><p>webhook机器人创建成功后，用户就可以使用任何方式向该地址发起HTTP POST请求，即可实现向该群主发送消息。目前自定义机器人支持文本(text)，连接(link)，markdown三种消息类型。</p>
+<p>例如，可以向webhook地址以POST形式发送以下</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+     <span class="token property">"msgtype"</span><span class="token operator">:</span> <span class="token string">"markdown"</span><span class="token punctuation">,</span>
+     <span class="token property">"markdown"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+         <span class="token property">"title"</span><span class="token operator">:</span><span class="token string">"Prometheus告警信息"</span><span class="token punctuation">,</span>
+         <span class="token property">"text"</span><span class="token operator">:</span> <span class="token string">"#### 监控指标\n"</span> +
+                 <span class="token string">"> 监控描述信息\n\n"</span> +
+                 <span class="token string">"> ###### 告警时间 \n"</span>
+     <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token property">"at"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"atMobiles"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+            <span class="token string">"156xxxx8827"</span><span class="token punctuation">,</span>
+            <span class="token string">"189xxxx8325"</span>
+        <span class="token punctuation">]</span><span class="token punctuation">,</span> 
+        <span class="token property">"isAtAll"</span><span class="token operator">:</span> <span class="token boolean">false</span>
+    <span class="token punctuation">}</span>
+ <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以使用curl验证钉钉webhook是否能够成功调用：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">$ curl -l -H "Content-type: application/json" -X POST -d '{"msgtype": "markdown","markdown": {"title":"Prometheus告警信息","text": "#### 监控指标\n> 监控描述信息\n\n> ###### 告警时间 \n"},"at": {"isAtAll": false}}' https://oapi.dingtalk.com/robot/send?access_token=xxxx
+{"errcode":0,"errmsg":"ok"}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<blockquote>
+<p>如果想把Alertmanager信息转到钉钉上去，需要做一个转换器。<br>转化器部署：可以在k8s中部署一个Deployment，然后创建一个Service给Alert manager使用。</p>
+</blockquote>
+<h2 id="整个报警链路"><a href="#整个报警链路" class="headerlink" title="整个报警链路"></a>整个报警链路</h2><ol>
+<li>首先是Prometheus根据告警规则告警，如果增删改规则参考PrometheusRule</li>
+<li>Prometheus的告警经过Alertmanager静默、抑制、分组等配置到达Alertmanager</li>
+<li>AlterManager通过配置webhook，地址填钉钉转换器的地址。</li>
+<li>钉钉转换器中webhook地址填写钉钉机器人webhook的地址。</li>
+</ol>
+<h2 id="Prometheus-Alert-告警状态"><a href="#Prometheus-Alert-告警状态" class="headerlink" title="Prometheus Alert 告警状态"></a>Prometheus Alert 告警状态</h2><p>这里说明一下 Prometheus Alert 告警状态有三种状态：<code>Inactive</code>、<code>Pending</code>、<code>Firing</code>。</p>
+<ul>
+<li><strong>Inactive</strong>：非活动状态，表示正在监控，但是还未有任何警报触发。</li>
+<li><strong>Pending</strong>：表示这个警报必须被触发。由于警报可以被分组、压抑/抑制或静默/静音，所以等待验证，一旦所有的验证都通过，则将转到 Firing 状态。</li>
+<li><strong>Firing</strong>：将警报发送到 AlertManager，它将按照配置将警报的发送给所有接收者。一旦警报解除，则将状态转到 Inactive，如此循环。</li>
+</ul>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://yunlzheng.gitbook.io/prometheus-book/parti-prometheus-ji-chu/alert/alert-manager-use-receiver/alert-manager-extension-with-webhook#shi-yong-golang-chuang-jian-webhook-fu-wu">Alert manager集成钉钉</a></li>
+<li><a target="_blank" rel="noopener" href="https://developer.aliyun.com/article/705415">创建一个转化器镜像</a></li>
+<li><a target="_blank" rel="noopener" href="https://theo.im/blog/2017/10/16/release-prometheus-alertmanager-webhook-for-dingtalk/">转化器如何使用</a></li>
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/2yKB3aqeYgna2GupM6SiGA">Alertmanager何时报警</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-operator-shi-yong-zi-ding-yi-prometheusrule/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/prometheus-operator-shi-yong-zi-ding-yi-prometheusrule/" class="post-title-link" itemprop="url">prometheus-operator使用【自定义PrometheusRule】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-28 11:39:33" itemprop="dateCreated datePublished" datetime="2019-11-28T11:39:33+08:00">2019-11-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="PrometheusRule介绍"><a href="#PrometheusRule介绍" class="headerlink" title="PrometheusRule介绍"></a>PrometheusRule介绍</h3><blockquote>
+<p><code>PrometheusRule</code>是安装<code>prometheus-operator</code>时默认安装的自定义资源对象（<code>CRD</code>），用来管理<code>Prometheus</code>上的<code>告警规则</code>，后面增删改查规则都可以通过这个资源对象查询。</p>
+</blockquote>
+<p>例如查询默认加入的规则，通过下面的命令可以查询。</p>
+<pre class="line-numbers language-sh"><code class="language-sh">[root@k8s-master prometheus-operator]# kubectl get PrometheusRule -n monitoring
+NAME                                                       AGE
+prometheus-operator-alertmanager.rules                     28m
+prometheus-operator-etcd                                   28m
+prometheus-operator-general.rules                          28m
+prometheus-operator-k8s.rules                              28m
+prometheus-operator-kube-apiserver.rules                   28m
+prometheus-operator-kube-prometheus-node-recording.rules   28m
+prometheus-operator-kube-scheduler.rules                   28m
+prometheus-operator-kubernetes-absent                      28m
+prometheus-operator-kubernetes-apps                        28m
+prometheus-operator-kubernetes-resources                   28m
+prometheus-operator-kubernetes-storage                     28m
+prometheus-operator-kubernetes-system                      28m
+prometheus-operator-kubernetes-system-apiserver            28m
+prometheus-operator-kubernetes-system-controller-manager   28m
+prometheus-operator-kubernetes-system-kubelet              28m
+prometheus-operator-kubernetes-system-scheduler            28m
+prometheus-operator-node-exporter                          28m
+prometheus-operator-node-exporter.rules                    28m
+prometheus-operator-node-network                           28m
+prometheus-operator-node-time                              28m
+prometheus-operator-node.rules                             28m
+prometheus-operator-prometheus                             28m
+prometheus-operator-prometheus-operator                    28m
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也可以在<code>Prometheus -&gt; Dashboard -&gt; Status -&gt; Rules</code>中查看<br><img data-src="/images/k8s4.png" alt="prometheusRules"></p>
+<h3 id="Prometheus怎么识别这个资源对象"><a href="#Prometheus怎么识别这个资源对象" class="headerlink" title="Prometheus怎么识别这个资源对象"></a>Prometheus怎么识别这个资源对象</h3><p>简单来说，类似标签选择器，定义的<code>PrometheusRule</code>资源对象，需要带有一些<code>Labels</code>，具体哪些可以参考默认生成的<code>PrometheusRule</code>，然后新建的也给加上。</p>
+<p><img data-src="/images/k8s5.png" alt="prometheusRules"></p>
+<p>参考链接：<code>https://www.qikqiak.com/post/prometheus-operator-custom-alert/</code>。</p>
+<p>所有的Rules都有对应的文件，默认生成在<code>prometheus容器内</code>的</p>
+<pre><code>/etc/prometheus/rules/prometheus-prometheus-operator-prometheus-rulefiles-0/
+</code></pre>
+<p>目录下，新增一个<code>PrometheusRule资源</code>，也会在该目录下自动生成一个<code>YAML文件</code>。</p>
+<p>因此我们可以不用管理配置文件，只需要管理<code>PrometheusRule</code>，<code>prometheus-operator</code>使得<code>prometheus</code>监控更加<code>K8s</code>.</p>
+<h3 id="创建新的PrometheusRule资源"><a href="#创建新的PrometheusRule资源" class="headerlink" title="创建新的PrometheusRule资源"></a>创建新的PrometheusRule资源</h3><p><code>myrule.yaml</code></p>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: myrule
+  labels:
+    app: prometheus-operator
+    chart: prometheus-operator-8.2.4
+    heritage: Tiller
+    release: prometheus-operator
+spec:
+  groups:
+  - name: my-node-time
+    rules:
+    - alert: myClockSkewDetected
+      annotations:
+        message: myClock skew detected on node-exporter {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}}. Ensure NTP is configured correctly on this host.
+      expr: abs(node_timex_offset_seconds{job="node-exporter"}) > 0.03
+      for: 2m
+      labels:
+        severity: warning
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：上面配置中具体的规则只是拷贝了一个默认规则中的内容。</p>
+</blockquote>
+<h3 id="使用命令或者在dashboard中贴上以上YAML，即可创建。"><a href="#使用命令或者在dashboard中贴上以上YAML，即可创建。" class="headerlink" title="使用命令或者在dashboard中贴上以上YAML，即可创建。"></a>使用命令或者在dashboard中贴上以上YAML，即可创建。</h3><pre><code>kubectl create -f myrule.yaml
+</code></pre>
+<p>创建完之后，可以通过命令查看</p>
+<pre><code>kubectl get PrometheusRule -n monitoring
+</code></pre>
+<p>也可以在<code>Prometheus</code> -&gt; <code>Dashboard</code>中查看，最后在<code>Prometheus</code>容器<code>Rule</code>目录下确认是否新生成一个<code>myrule.yaml</code>的配置文件。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-ji-qun-jian-kong-shi-yong-helm-yi-jian-an-zhuang-prometheusoperator/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-ji-qun-jian-kong-shi-yong-helm-yi-jian-an-zhuang-prometheusoperator/" class="post-title-link" itemprop="url">k8s集群监控【使用Helm一键安装Prometheus Operator】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-22 11:03:54" itemprop="dateCreated datePublished" datetime="2019-11-22T11:03:54+08:00">2019-11-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>首先我们先来了解下 <code>Prometheus-Operator</code>的架构图：<br><img data-src="/images/k8s3.jpg" alt="Prometheus-Operator"></p>
+<p>上图是<code>Prometheus-Operator</code>官方提供的架构图，其中<code>Operator</code>是最核心的部分，作为一个控制器，他会去创建<code>Prometheus</code>、<code>ServiceMonitor</code>、<code>AlertManager</code>以及<code>PrometheusRule</code>4个<code>CRD</code>资源对象，然后会一直监控并维持这4个资源对象的状态。</p>
+<p>其中创建的<code>prometheus</code>这种资源对象就是作为<code>Prometheus Server</code>存在，而<code>ServiceMonitor</code>就是<code>exporter</code>的各种抽象，<code>exporter</code>前面我们已经学习了，是用来提供专门提供<code>metrics</code>数据接口的工具，<code>Prometheus</code>就是通过<code>ServiceMonitor</code>提供的<code>metrics</code>数据接口去 <code>pull</code> 数据的，当然<code>alertmanager</code>这种资源对象就是对应的<code>AlertManager</code>的抽象，而<code>PrometheusRule</code>是用来被<code>Prometheus</code>实例使用的报警规则文件。</p>
+<p>这样我们要在集群中监控什么数据，就变成了直接去操作 <code>Kubernetes</code> 集群的资源对象了，是不是方便很多了。上图中的 <code>Service </code>和 <code>ServiceMonitor</code> 都是 <code>Kubernetes</code> 的资源，一个 <code>ServiceMonitor </code>可以通过 <code>labelSelector</code> 的方式去匹配一类<code> Service</code>，<code>Prometheus</code> 也可以通过 <code>labelSelector</code> 去匹配多个<code>ServiceMonitor</code>。</p>
+<h3 id="查看stable-x2F-prometheus-operator的默认值"><a href="#查看stable-x2F-prometheus-operator的默认值" class="headerlink" title="查看stable/prometheus-operator的默认值"></a>查看stable/prometheus-operator的默认值</h3><pre><code>helm inspect values stable/prometheus-operator
+</code></pre>
+<h3 id="将默认配置导出，备用"><a href="#将默认配置导出，备用" class="headerlink" title="将默认配置导出，备用"></a>将默认配置导出，备用</h3><pre><code>helm inspect values stable/prometheus-operator &gt; prometheus-operator.yaml
+</code></pre>
+<h3 id="提前将配置中涉及到的镜像下载好"><a href="#提前将配置中涉及到的镜像下载好" class="headerlink" title="提前将配置中涉及到的镜像下载好"></a>提前将配置中涉及到的镜像下载好</h3><pre class="line-numbers language-sh"><code class="language-sh">#!/bin/sh
+docker pull hub.deri.org.cn/k8s_monitor/alertmanager:v0.19.0
+docker tag hub.deri.org.cn/k8s_monitor/alertmanager:v0.19.0 quay.io/prometheus/alertmanager:v0.19.0
+docker rmi hub.deri.org.cn/k8s_monitor/alertmanager:v0.19.0
+ 
+docker pull hub.deri.org.cn/k8s_monitor/ghostunnel:v1.4.1 
+docker tag hub.deri.org.cn/k8s_monitor/ghostunnel:v1.4.1 squareup/ghostunnel:v1.4.1
+docker rmi hub.deri.org.cn/k8s_monitor/ghostunnel:v1.4.1 
+ 
+docker pull hub.deri.org.cn/k8s_monitor/kube-webhook-certgen:v1.0.0 
+docker tag hub.deri.org.cn/k8s_monitor/kube-webhook-certgen:v1.0.0  jettech/kube-webhook-certgen:v1.0.0
+docker rmi hub.deri.org.cn/k8s_monitor/kube-webhook-certgen:v1.0.0 
+ 
+docker pull hub.deri.org.cn/k8s_monitor/prometheus-operator:v0.34.0
+docker tag hub.deri.org.cn/k8s_monitor/prometheus-operator:v0.34.0 quay.io/coreos/prometheus-operator:v0.34.0
+docker rmi hub.deri.org.cn/k8s_monitor/prometheus-operator:v0.34.0
+ 
+docker pull hub.deri.org.cn/k8s_monitor/configmap-reload:v0.0.1
+docker tag hub.deri.org.cn/k8s_monitor/configmap-reload:v0.0.1 quay.io/coreos/configmap-reload:v0.0.1
+docker rmi pull hub.deri.org.cn/k8s_monitor/configmap-reload:v0.0.1
+ 
+docker pull hub.deri.org.cn/k8s_monitor/prometheus-config-reloader:v0.34.0
+docker tag hub.deri.org.cn/k8s_monitor/prometheus-config-reloader:v0.34.0 quay.io/coreos/prometheus-config-reloader:v0.34.0
+docker rmi hub.deri.org.cn/k8s_monitor/prometheus-config-reloader:v0.34.0
+ 
+docker pull hub.deri.org.cn/k8s_monitor/hyperkube:v1.12.1
+docker tag hub.deri.org.cn/k8s_monitor/hyperkube:v1.12.1 k8s.gcr.io/hyperkube:v1.12.1
+docker rmi  hub.deri.org.cn/k8s_monitor/hyperkube:v1.12.1
+ 
+docker pull hub.deri.org.cn/k8s_monitor/prometheus:v2.13.1
+docker tag hub.deri.org.cn/k8s_monitor/prometheus:v2.13.1 quay.io/prometheus/prometheus:v2.13.1
+docker rmi hub.deri.org.cn/k8s_monitor/prometheus:v2.13.1
+ 
+docker pull hub.deri.org.cn/k8s_monitor/kube-state-metrics:v1.8.0
+docker tag hub.deri.org.cn/k8s_monitor/kube-state-metrics:v1.8.0 quay.io/coreos/kube-state-metrics:v1.8.0
+docker rmi hub.deri.org.cn/k8s_monitor/kube-state-metrics:v1.8.0
+ 
+docker pull hub.deri.org.cn/k8s_monitor/node-exporter:v0.18.1
+docker tag hub.deri.org.cn/k8s_monitor/node-exporter:v0.18.1 quay.io/prometheus/node-exporter:v0.18.1
+docker rmi hub.deri.org.cn/k8s_monitor/node-exporter:v0.18.1
+ 
+docker pull hub.deri.org.cn/k8s_monitor/k8s-sidecar:0.1.20
+docker tag hub.deri.org.cn/k8s_monitor/k8s-sidecar:0.1.20 kiwigrid/k8s-sidecar:0.1.20
+docker rmi hub.deri.org.cn/k8s_monitor/k8s-sidecar:0.1.20
+ 
+docker pull hub.deri.org.cn/k8s_monitor/grafana:6.4.2
+docker tag hub.deri.org.cn/k8s_monitor/grafana:6.4.2 grafana/grafana:6.4.2
+docker rmi hub.deri.org.cn/k8s_monitor/grafana:6.4.2
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="用默认配置安装，指定了name、namespace等信息"><a href="#用默认配置安装，指定了name、namespace等信息" class="headerlink" title="用默认配置安装，指定了name、namespace等信息"></a>用默认配置安装，指定了name、namespace等信息</h3><pre><code>helm install stable/prometheus-operator  --name prometheus-operator --namespace monitoring -f prometheus-operator.yaml --set grafana.adminPassword=admin
+</code></pre>
+<h3 id="查看pod运行情况"><a href="#查看pod运行情况" class="headerlink" title="查看pod运行情况"></a>查看pod运行情况</h3><pre><code>kubectl get pod -n monitoring
+</code></pre>
+<h3 id="修改Grafana的service类型为NodePort，便于访问测试"><a href="#修改Grafana的service类型为NodePort，便于访问测试" class="headerlink" title="修改Grafana的service类型为NodePort，便于访问测试"></a>修改Grafana的service类型为NodePort，便于访问测试</h3><pre><code>kubectl edit svc prometheus-operator-grafana -n monitoring
+</code></pre>
+<p>通过下面命令，查看绑定宿主机的端口 ，访问测试密码安装时指定了<code>admin/admin</code></p>
+<pre><code>kubectl get svc -n monitoring
+</code></pre>
+<h3 id="卸载"><a href="#卸载" class="headerlink" title="卸载"></a>卸载</h3><pre><code>helm delete prometheus-operator
+</code></pre>
+<pre><code>helm delete --purge prometheus-operator
+</code></pre>
+<p><code>Prometheus-Operator</code>安装时会去创建<code>Prometheus</code>、<code>ServiceMonitor</code>、<code>AlertManager</code>以及<code>PrometheusRule</code>4个<code>CRD</code>资源对象，卸载时一并删掉</p>
+<pre><code>kubectl delete crd prometheuses.monitoring.coreos.com
+kubectl delete crd prometheusrules.monitoring.coreos.com
+kubectl delete crd servicemonitors.monitoring.coreos.com
+kubectl delete crd podmonitors.monitoring.coreos.com
+kubectl delete crd alertmanagers.monitoring.coreos.com
+</code></pre>
+<h3 id="修改prometheus-operator-yaml，配置ingress"><a href="#修改prometheus-operator-yaml，配置ingress" class="headerlink" title="修改prometheus-operator.yaml，配置ingress"></a>修改prometheus-operator.yaml，配置ingress</h3><pre class="line-numbers language-yml"><code class="language-yml"># 例如AlterManager配置，默认情况enabled: false修改成true，hosts: []填入alterManager的域名
+alertmanager:
+  ingress:
+    enabled: true
+    hosts: ["alert.deri.com"]
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="修改prometheus-operator-yaml，配置数据持久化"><a href="#修改prometheus-operator-yaml，配置数据持久化" class="headerlink" title="修改prometheus-operator.yaml，配置数据持久化"></a>修改prometheus-operator.yaml，配置数据持久化</h3><pre class="line-numbers language-yml"><code class="language-yml"># 例如AlterManager，默认如下，是被注释掉的，取消注释，并填入你的storageClassName
+    storage: {}
+    # volumeClaimTemplate:
+    #   spec:
+    #     storageClassName: gluster
+    #     accessModes: ["ReadWriteOnce"]
+    #     resources:
+    #       requests:
+    #         storage: 50Gi
+    #   selector: {}
+ 
+alertmanager:
+  alertmanagerSpec:
+    storage: 
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-client
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+        selector: {}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其它配置可以在默认配置<code>prometheus-operator.yaml</code>中查看并修改。</p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><h4 id="问题一"><a href="#问题一" class="headerlink" title="问题一:"></a>问题一:</h4><p>【摘自<code>https://github.com/helm/charts/tree/master/stable/prometheus-operator</code>】</p>
+<p>KubeProxy【改完重启kubelet、docker服务】</p>
+<pre class="line-numbers language-log"><code class="language-log">The metrics bind address of kube-proxy is default to&nbsp;127.0.0.1:10249&nbsp;that prometheus instances&nbsp;cannot&nbsp;access to. You should expose metrics by changing&nbsp;metricsBindAddress&nbsp;field value to&nbsp;0.0.0.0:10249&nbsp;if you want to collect them.
+
+Depending on the cluster, the relevant part&nbsp;config.conf&nbsp;will be in ConfigMap&nbsp;kube-system/kube-proxy&nbsp;or&nbsp;kube-system/kube-proxy-config. For example:
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<pre><code>kubectl -n kube-system edit cm kube-proxy
+</code></pre>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
+data:
+  config.conf: |-
+    apiVersion: kubeproxy.config.k8s.io/v1alpha1
+    kind: KubeProxyConfiguration
+    # ...
+    # metricsBindAddress: 127.0.0.1:10249
+    metricsBindAddress: 0.0.0.0:10249
+    # ...
+  kubeconfig.conf: |-
+    # ...
+kind: ConfigMap
+metadata:
+  labels:
+    app: kube-proxy
+  name: kube-proxy
+  namespace: kube-system
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="问题二："><a href="#问题二：" class="headerlink" title="问题二："></a>问题二：</h4><p>在不同环境安装时发现结果不一样，所有配置都一样，可能原因：</p>
+<p>由于上述是通过<code>helm</code>安装的，首先通过命令<code>helm repo list</code>检查源是否一致；</p>
+<p>通过<code>helm search | grep prometheus</code>查看<code> CHART VERSION&nbsp;&nbsp; &nbsp;APP VERSION&nbsp;</code>是否一致；</p>
+<p>如果不一致通过<code>helm repo update</code>更新一下就可以了。</p>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/helm/charts/tree/master/stable/prometheus-operator">https://github.com/helm/charts/tree/master/stable/prometheus-operator</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-zi-dai-ren-zheng-gong-neng/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -453,534 +1312,10 @@ spec:
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-dong-tai-fen-pei-cun-chu-helm-an-zhuang-nfs-client/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-dong-tai-fen-pei-cun-chu-helm-an-zhuang-nfs-client/" class="post-title-link" itemprop="url">k8s动态分配存储【helm安装nfs-client】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-18 15:41:52" itemprop="dateCreated datePublished" datetime="2019-11-18T15:41:52+08:00">2019-11-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>前文：在所有节点安装nfs-utils并启动相关服务。</p>
-</blockquote>
-<h3 id="NFS服务端新建一个挂载目录"><a href="#NFS服务端新建一个挂载目录" class="headerlink" title="NFS服务端新建一个挂载目录"></a>NFS服务端新建一个挂载目录</h3><pre><code>echo "/home/nfs *(rw,async,no_root_squash)" &gt;&gt; /etc/exports
-exportfs -r
-showmount -e localhost
-</code></pre>
-<h3 id="安装nfs-client"><a href="#安装nfs-client" class="headerlink" title="安装nfs-client"></a>安装nfs-client</h3><pre><code>helm install stable/nfs-client-provisioner --name test-storageclass --set nfs.server=192.168.1.210 --set nfs.path=/home/nfs
-</code></pre>
-<h3 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h3><p>可以先用命令<code>helm inspect values stable/nfs-client-provisioner</code>查看所有配置项，并提前下载好镜像。</p>
-<pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
-strategyType: Recreate
- 
-image:
-  repository: quay.io/external_storage/nfs-client-provisioner
-  tag: v3.1.0-k8s1.11
-  pullPolicy: IfNotPresent
- 
-nfs:
-  server:
-  path: /ifs/kubernetes
-  mountOptions:
- 
-# For creating the StorageClass automatically:
-storageClass:
-  create: true
- 
-  # Set a provisioner name. If unset, a name will be generated.
-  # provisionerName:
- 
-  # Set StorageClass as the default StorageClass
-  # Ignored if storageClass.create is false
-  defaultClass: false
- 
-  # Set a StorageClass name
-  # Ignored if storageClass.create is false
-  name: nfs-client
- 
-  # Allow volume to be expanded dynamically
-  allowVolumeExpansion: true
- 
-  # Method used to reclaim an obsoleted volume
-  reclaimPolicy: Delete
- 
-  # When set to false your PVs will not be archived by the provisioner upon deletion of the PVC.
-  archiveOnDelete: true
- 
-## For RBAC support:
-rbac:
-  # Specifies whether RBAC resources should be created
-  create: true
- 
-# If true, create & use Pod Security Policy resources
-# https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-podSecurityPolicy:
-  enabled: false
- 
-## Set pod priorityClassName
-# priorityClassName: ""
- 
-serviceAccount:
-  # Specifies whether a ServiceAccount should be created
-  create: true
- 
-  # The name of the ServiceAccount to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name:
- 
-resources: {}
-  # limits:
-  #  cpu: 100m
-  #  memory: 128Mi
-  # requests:
-  #  cpu: 100m
-  #  memory: 128Mi
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>也可以修改下上面的yaml，直接通过<code>nfs-client.yaml</code>创建：</p>
-<pre class="line-numbers language-yml"><code class="language-yml">replicaCount: 1
-strategyType: Recreate
- 
-image:
-  repository: quay.io/external_storage/nfs-client-provisioner
-  tag: v3.1.0-k8s1.11
-  pullPolicy: IfNotPresent
- 
-nfs:
-  server: 192.168.1.210
-  path: /home/nfs
-  mountOptions:
- 
-storageClass:
-  create: true
-  defaultClass: false
-  name: nfs-client
-  allowVolumeExpansion: true
-  reclaimPolicy: Delete
-  archiveOnDelete: true
- 
-rbac:
-  create: true
- 
-podSecurityPolicy:
-  enabled: false
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>执行安装命令：</p>
-<pre><code>helm install stable/nfs-client-provisioner -n test-storageclass -f nfs-client.yaml
-</code></pre>
-<h3 id="创建PVC测试"><a href="#创建PVC测试" class="headerlink" title="创建PVC测试"></a>创建PVC测试</h3><p>创建<code>test-pvc.yaml</code></p>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: testclaim
-spec:
-  storageClassName: "nfs-client"
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 10Mi
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre><code>kubectl apply -f test-pvc.yaml
-</code></pre>
-<h3 id="查看结果"><a href="#查看结果" class="headerlink" title="查看结果"></a>查看结果</h3><pre class="line-numbers language-log"><code class="language-log">[root@k8s-master home]# kubectl get sc
-NAME         PROVISIONER                                              AGE
-nfs-client   cluster.local/test-storageclass-nfs-client-provisioner   36m
-[root@k8s-master home]# kubectl get pv,pvc
-NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS        CLAIM                 STORAGECLASS    REASON   AGE
-persistentvolume/pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            Delete           Bound         default/testclaim     nfs-client               33m
- 
-NAME                              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/testclaim   Bound    pvc-d9bdfa45-6417-4ad9-bbf0-02301f928342   10Mi       RWX            nfs-client     34m
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-cha-xun/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-cha-xun/" class="post-title-link" itemprop="url">mysql查询</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-17 12:01:30" itemprop="dateCreated datePublished" datetime="2019-11-17T12:01:30+08:00">2019-11-17</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="多条件模糊查询"><a href="#多条件模糊查询" class="headerlink" title="多条件模糊查询"></a>多条件模糊查询</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_log <span class="token keyword">where</span> <span class="token punctuation">(</span>LOCATE<span class="token punctuation">(</span><span class="token string">'wu'</span><span class="token punctuation">,</span> user_name<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">or</span>  LOCATE<span class="token punctuation">(</span><span class="token string">'wu'</span><span class="token punctuation">,</span> params <span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token operator">and</span>  <span class="token punctuation">(</span>method<span class="token operator">=</span><span class="token string">'POST'</span> <span class="token operator">or</span> method<span class="token operator">=</span><span class="token string">'GET'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="查询id在列表中的所有结果"><a href="#查询id在列表中的所有结果" class="headerlink" title="查询id在列表中的所有结果"></a>查询id在列表中的所有结果</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">where</span> tenant_id <span class="token operator">in</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-chi-jiu-hua-cun-chu-shi-yong-nfs/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-chi-jiu-hua-cun-chu-shi-yong-nfs/" class="post-title-link" itemprop="url">K8s持久化存储【使用NFS】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-15 16:24:05" itemprop="dateCreated datePublished" datetime="2019-11-15T16:24:05+08:00">2019-11-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="k8s所有节点安装NFS"><a href="#k8s所有节点安装NFS" class="headerlink" title="k8s所有节点安装NFS"></a>k8s所有节点安装NFS</h3><pre><code>yum install nfs-utils
- 
-#所有节点，不论NFS服务端还是客户端
-systemctl enable rpcbind
-systemctl start rpcbind
- 
-#NFS服务端
-systemctl enable nfs
-systemctl start nfs
-</code></pre>
-<h3 id="在NFS服务端配置挂载磁盘"><a href="#在NFS服务端配置挂载磁盘" class="headerlink" title="在NFS服务端配置挂载磁盘"></a>在NFS服务端配置挂载磁盘</h3><ul>
-<li>创建目录：<code>mkdir /data</code></li>
-<li>修改权限：<code>chmod 755 /data</code></li>
-<li>编辑NFS配置：<code>vi /etc/exports</code></li>
-<li>添加：<code>/data/ 192.168.0.0/24(rw,sync,no_root_squash,no_all_squash)</code></li>
-<li>重启：<code>systemctl restart nfs</code></li>
-<li>或者执行<code>exportfs -r</code>生效</li>
-<li>检查：<code>showmount -e localhost</code></li>
-</ul>
-<h3 id="K8s中创建PersistentVolume"><a href="#K8s中创建PersistentVolume" class="headerlink" title="K8s中创建PersistentVolume"></a>K8s中创建PersistentVolume</h3><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv0003
-spec:
-  capacity: #容量
-     storage:5Gi
-  volumeMode: Filesystem #存储卷模式
-  accessModes: #访问模式
-  - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Recycle #持久化卷回收策略
-  storageClassName: slow #存储类
-  mountOptions: #挂接选项
-   - hard
-   - nfsvers=4.1
-  nfs:
-     path: /data
-     server: 172.17.0.2
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="访问模式（Access-Modes）"><a href="#访问模式（Access-Modes）" class="headerlink" title="访问模式（Access Modes）"></a>访问模式（Access Modes）</h4><p>只要资源提供者支持，持久卷能够通过任何方式加载到主机上。每种存储都会有不同的能力，每个PV的访问模式也会被设置成为该卷所支持的特定模式。例如NFS能够支持多个读写客户端，但某个NFS PV可能会在服务器上以只读方式使用。每个PV都有自己的一系列的访问模式，这些访问模式取决于PV的能力。</p>
-<p>访问模式的可选范围如下：</p>
-<ul>
-<li>ReadWriteOnce：该卷能够以读写模式被加载到一个节点上。</li>
-<li>ReadOnlyMany：该卷能够以只读模式加载到多个节点上。</li>
-<li>ReadWriteMany：该卷能够以读写模式被多个节点同时加载。</li>
-</ul>
-<h4 id="类（Class）"><a href="#类（Class）" class="headerlink" title="类（Class）"></a>类（Class）</h4><p>在PV中可以指定存储类，通过设置<code>storageClassName</code>字段进行设置。如果设置了存储类，则此PV只能被绑定到也指定了此存储类的PVC。</p>
-<h4 id="回收策略"><a href="#回收策略" class="headerlink" title="回收策略"></a>回收策略</h4><p>当前的回收策略可选值包括：</p>
-<ul>
-<li>Retain-持久化卷被释放后，需要手工进行回收操作。</li>
-<li>Recycle-基础擦除（<code>rm-rf /thevolume/*</code>）</li>
-<li>Delete-相关的存储资产，例如AWSEBS或GCE PD卷一并删除。<br>目前，只有<code>NFS</code>和<code>HostPath</code>支持<code>Recycle</code>策略，AWSEBS、GCE PD支持Delete策略。</li>
-</ul>
-<h3 id="K8s中创建PersistentVolumeClaim"><a href="#K8s中创建PersistentVolumeClaim" class="headerlink" title="K8s中创建PersistentVolumeClaim"></a>K8s中创建PersistentVolumeClaim</h3><pre class="line-numbers language-yml"><code class="language-yml">kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: myclaim
-spec:
-  accessModes: #访问模式
-    - ReadWriteOnce
-  volumeMode: Filesystem #存储卷模式
-  resources: #资源
-    requests:
-      storage: 8Gi
-  storageClassName: slow #存储类
-  selector: #选择器
-    matchLabels:
-      release: "stable"
-    matchExpressions: #匹配表达式
-      - {key: environment, operator: In, values: [dev]}
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="选择器"><a href="#选择器" class="headerlink" title="选择器"></a>选择器</h4><p>在PVC中，可以通过标签选择器来进一步的过滤PV。仅仅与选择器匹配的PV才会被绑定到PVC中。选择器的组成如下：</p>
-<ul>
-<li><code>matchLabels</code>： 只有存在与此处的标签一样的PV才会被PVC选中；</li>
-<li><code>matchExpressions</code> ：匹配表达式由键、值和操作符组成，操作符包括<code>In</code>, <code>NotIn</code>, <code>Exists</code>和<code>DoesNotExist</code>，只有符合表达式的PV才能被选择。<br>如果同时设置了<code>matchLabels</code>和<code>matchExpressions</code>，则会进行求与，即只有同时满足上述匹配要求的PV才会被选择。</li>
-</ul>
-<h4 id="存储类"><a href="#存储类" class="headerlink" title="存储类"></a>存储类</h4><p>如果PVC使用storageClassName字段指定一个存储类，那么只有指定了同样的存储类的PV才能被绑定到PVC上。对于PVC来说，存储类并不是必须的。依赖于安装方法，可以在安装过程中使用add-on管理器将默认的StorageClass部署至Kubernetes集群中。当PVC指定了选择器，并且指定了StorageClass，则在匹配PV时，取两者之间的与：即仅仅同时满足存储类和带有要求标签值的PV才能被匹配上。</p>
-<h3 id="Pod使用刚刚创建的持久化存储"><a href="#Pod使用刚刚创建的持久化存储" class="headerlink" title="Pod使用刚刚创建的持久化存储"></a>Pod使用刚刚创建的持久化存储</h3><pre class="line-numbers language-yml"><code class="language-yml">kind: Pod
-apiVersion: v1
-metadata:
-  name: mypod
-spec:
-  containers:
-  - name: myfrontend
-    image: dockerfile/nginx
-     volumeMounts: #挂接存储卷
-     - mountPath: "/var/www/html" #POD内挂接的路径
-       name: mypd #所要挂接的存储卷的名称
- volumes: #定义存储卷
- - name: mypd
-   persistentVolumeClaim: #所使用的持久化存储卷声明
-     claimName: myclaim
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/an-zhuang-shi-yong-nfs/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/an-zhuang-shi-yong-nfs/" class="post-title-link" itemprop="url">CentOS 7 安装使用NFS</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-15 15:43:29" itemprop="dateCreated datePublished" datetime="2019-11-15T15:43:29+08:00">2019-11-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="yum-安装"><a href="#yum-安装" class="headerlink" title="yum 安装"></a>yum 安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum <span class="token function">install</span> nfs-utils
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="设置-NFS-服务开机启动"><a href="#设置-NFS-服务开机启动" class="headerlink" title="设置 NFS 服务开机启动"></a>设置 NFS 服务开机启动</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl <span class="token function">enable</span> rpcbind
-<span class="token function">sudo</span> systemctl <span class="token function">enable</span> nfs
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="启动-NFS-服务"><a href="#启动-NFS-服务" class="headerlink" title="启动 NFS 服务"></a>启动 NFS 服务</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl start rpcbind
-<span class="token function">sudo</span> systemctl start nfs
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="服务启动之后，我们在服务端配置一个共享目录"><a href="#服务启动之后，我们在服务端配置一个共享目录" class="headerlink" title="服务启动之后，我们在服务端配置一个共享目录"></a>服务启动之后，我们在服务端配置一个共享目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">mkdir</span> /data
-<span class="token function">sudo</span> <span class="token function">chmod</span> 755 /data
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="根据这个目录，相应配置导出目录"><a href="#根据这个目录，相应配置导出目录" class="headerlink" title="根据这个目录，相应配置导出目录"></a>根据这个目录，相应配置导出目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">vi</span> /etc/exports
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="添加如下配置"><a href="#添加如下配置" class="headerlink" title="添加如下配置"></a>添加如下配置</h3><pre><code>/data/     192.168.0.0/24(rw,sync,no_root_squash,no_all_squash)
-</code></pre>
-<blockquote>
-<ol>
-<li><code>/data</code>: 共享目录位置。</li>
-<li><code>192.168.0.0/24</code>: 客户端 <code>IP</code> 范围，<code>*</code> 代表所有，即没有限制。</li>
-<li><code>rw</code>: 权限设置，可读可写。</li>
-<li><code>sync</code>: 同步共享目录。</li>
-<li><code>no_root_squash</code>: 可以使用 <code>root</code> 授权。</li>
-<li><code>no_all_squash</code>: 可以使用普通用户授权。</li>
-</ol>
-</blockquote>
-<h3 id="wq-保存设置之后，重启-NFS-服务"><a href="#wq-保存设置之后，重启-NFS-服务" class="headerlink" title=":wq 保存设置之后，重启 NFS 服务"></a><code>:wq </code>保存设置之后，重启 <code>NFS</code> 服务</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl restart nfs
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="可以检查一下本地的共享目录"><a href="#可以检查一下本地的共享目录" class="headerlink" title="可以检查一下本地的共享目录"></a>可以检查一下本地的共享目录</h3><pre class="line-numbers language-bash"><code class="language-bash">showmount -e localhost
-Export list <span class="token keyword">for</span> localhost:
-/data 192.168.0.0/24
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a target="_blank" rel="noopener" href="https://qizhanming.com/blog/2018/08/08/how-to-install-nfs-on-centos-7">参考</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/53/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/53/">53</a><span class="page-number current">54</span><a class="page-number" href="/page/55/">55</a><span class="space">&hellip;</span><a class="page-number" href="/page/59/">59</a><a class="extend next" rel="next" href="/page/55/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/53/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/53/">53</a><span class="page-number current">54</span><a class="page-number" href="/page/55/">55</a><span class="space">&hellip;</span><a class="page-number" href="/page/60/">60</a><a class="extend next" rel="next" href="/page/55/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1048,7 +1383,7 @@ Export list <span class="token keyword">for</span> localhost:
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">353</span>
+          <span class="site-state-item-count">357</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

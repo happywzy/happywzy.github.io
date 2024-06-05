@@ -196,6 +196,561 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gitee-he-github-de-api-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/gitee-he-github-de-api-shi-yong/" class="post-title-link" itemprop="url">gitee和github的API使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-29 15:16:51" itemprop="dateCreated datePublished" datetime="2021-03-29T15:16:51+08:00">2021-03-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>gitee</code>和<code>github</code>都提供了丰富的<code>restful API</code>，用于开发人员操作仓库.</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://gitee.com/api/v5/swagger">gitee Open API</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.github.com/en/rest">github restful API</a></li>
+</ul>
+<h3 id="token获取"><a href="#token获取" class="headerlink" title="token获取"></a>token获取</h3><p><code>gitee</code>和<code>github</code>私有仓库或者部分接口都需要用户权限认证,本文均使用<code>token</code>方式验证.</p>
+<ul>
+<li><p><code>gitee token</code> 获取<br>选择<code>【用户】</code> - <code>【设置】</code> - <code>【私人令牌】</code> - <code>【生成新令牌】</code>. 使用私人令牌，可以通过<a target="_blank" rel="noopener" href="https://gitee.com/api/v5/swagger">Gitee Open API</a>访问你授权的数据.</p>
+</li>
+<li><p><code>github token</code> 获取<br>选择<code>【用户】</code> - <code>【Settings】</code> - <code>【Developer settings】</code> - <code>【Personal access tokens】</code> - <code>【Generate new token】</code>. Tokens you have generated that can be used to access the <a target="_blank" rel="noopener" href="https://docs.github.com/">GitHub API</a>.</p>
+</li>
+</ul>
+<h3 id="gitee-接口测试"><a href="#gitee-接口测试" class="headerlink" title="gitee 接口测试"></a>gitee 接口测试</h3><ul>
+<li>示例: 添加新的<code>issue</code></li>
+</ul>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://gitee.com/api/v5/swagger#/postV5ReposOwnerIssues">接口在线测试地址</a></p>
+</blockquote>
+<pre class="line-numbers language-sh"><code class="language-sh">curl -X POST --header 'Content-Type: application/json;charset=UTF-8' 'https://gitee.com/api/v5/repos/happywzy/issues' -d '{"access_token":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","repo":"test","title":"测试ISSUE","body":"测试内容","labels":"bug"}'
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="github-接口测试"><a href="#github-接口测试" class="headerlink" title="github 接口测试"></a>github 接口测试</h3><blockquote>
+<p>接口格式：<a target="_blank" rel="noopener" href="https://api.github.com/repos/%7B%E7%94%A8%E6%88%B7%E5%90%8D%7D/%7B%E4%BB%93%E5%BA%93%7D/xxx">https://api.github.com/repos/{用户名}/{仓库}/xxx</a></p>
+</blockquote>
+<ul>
+<li>获取公开仓库的<code>issue</code>列表</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh"># 添加Accept头,指定返回内容类型
+curl \
+  -H "Accept: application/vnd.github.v3+json" \
+  https://api.github.com/repos/octocat/hello-world/issues
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>获取私有仓库的<code>issue</code>列表<blockquote>
+<p>github API传入<code>token</code>的几种方式，<a target="_blank" rel="noopener" href="https://docs.github.com/en/rest/overview/other-authentication-methods">官方文档</a>.</p>
+</blockquote>
+</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh"># header添加Authorization字段,注意字段的值是[token xxxxxx]格式
+curl -v -H "Authorization: token xxxxxxxxxxxxxx" https://api.github.com/repos/xxx/admin/issues
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh"># 请求URL后面增加access_token
+https://api.github.com/repos/alfalfaw/vue-shop-admin?access_token=xxxxxxx
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/chi-xian-huan-jing-an-zhuang-docker-he-docker-compose/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/chi-xian-huan-jing-an-zhuang-docker-he-docker-compose/" class="post-title-link" itemprop="url">离线环境安装docker和docker-compose</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-29 09:54:55" itemprop="dateCreated datePublished" datetime="2021-03-29T09:54:55+08:00">2021-03-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="下载软件包"><a href="#下载软件包" class="headerlink" title="下载软件包"></a>下载软件包</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://download.docker.com/linux/static/stable/x86_64/">docker软件包下载地址</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/docker/compose/releases">docker-compose软件包下载地址</a><blockquote>
+<p>本次安装下载的软件包版本:</p>
+<ul>
+<li><code>docker-19.03.9.tgz</code></li>
+<li><code>docker-compose 1.24.1</code></li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h3 id="关闭防火墙"><a href="#关闭防火墙" class="headerlink" title="关闭防火墙"></a>关闭防火墙</h3><blockquote>
+<p>本次安装使用<code>centos7.5</code>操作系统.</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 关闭防火墙</span>
+systemctl stop firewalld
+systemctl disable firewalld
+<span class="token comment" spellcheck="true"># 查看防火墙状态</span>
+systemctl status firewalld
+
+<span class="token comment" spellcheck="true"># 关闭selinux</span>
+setenforce 0
+vim /etc/selinux/config
+<span class="token comment" spellcheck="true"># 查看selinux状态</span>
+/usr/sbin/sestatus -v
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装docker"><a href="#安装docker" class="headerlink" title="安装docker"></a>安装docker</h3><ul>
+<li>准备<code>docker.service</code>，<code>docker</code>服务化配置文件</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>Unit<span class="token punctuation">]</span>
+Description<span class="token operator">=</span>Docker Application Container Engine
+Documentation<span class="token operator">=</span>https://docs.docker.com
+After<span class="token operator">=</span>network-online.target firewalld.service
+Wants<span class="token operator">=</span>network-online.target
+
+<span class="token punctuation">[</span>Service<span class="token punctuation">]</span>
+Type<span class="token operator">=</span>notify
+<span class="token comment" spellcheck="true"># the default is not to use systemd for cgroups because the delegate issues still</span>
+<span class="token comment" spellcheck="true"># exists and systemd currently does not support the cgroup feature set required</span>
+<span class="token comment" spellcheck="true"># for containers run by docker</span>
+ExecStart<span class="token operator">=</span>/usr/bin/dockerd
+ExecReload<span class="token operator">=</span>/bin/kill -s HUP <span class="token variable">$MAINPID</span>
+<span class="token comment" spellcheck="true"># Having non-zero Limit*s causes performance problems due to accounting overhead</span>
+<span class="token comment" spellcheck="true"># in the kernel. We recommend using cgroups to do container-local accounting.</span>
+LimitNOFILE<span class="token operator">=</span>infinity
+LimitNPROC<span class="token operator">=</span>infinity
+LimitCORE<span class="token operator">=</span>infinity
+<span class="token comment" spellcheck="true"># Uncomment TasksMax if your systemd version supports it.</span>
+<span class="token comment" spellcheck="true"># Only systemd 226 and above support this version.</span>
+<span class="token comment" spellcheck="true">#TasksMax=infinity</span>
+TimeoutStartSec<span class="token operator">=</span>0
+<span class="token comment" spellcheck="true"># set delegate yes so that systemd does not reset the cgroups of docker containers</span>
+Delegate<span class="token operator">=</span>yes
+<span class="token comment" spellcheck="true"># kill only the docker process, not all processes in the cgroup</span>
+KillMode<span class="token operator">=</span>process
+<span class="token comment" spellcheck="true"># restart the docker process if it exits prematurely</span>
+Restart<span class="token operator">=</span>on-failure
+StartLimitBurst<span class="token operator">=</span>3
+StartLimitInterval<span class="token operator">=</span>60s
+
+<span class="token punctuation">[</span>Install<span class="token punctuation">]</span>
+WantedBy<span class="token operator">=</span>multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>依次执行命令安装</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 解压tar包</span>
+<span class="token function">tar</span> -xvf docker-19.03.9.tgz
+<span class="token comment" spellcheck="true"># 将docker目录移到/usr/bin目录下</span>
+<span class="token function">cp</span> docker/* /usr/bin/
+<span class="token comment" spellcheck="true"># 将docker.service 移到/etc/systemd/system/ 目录</span>
+<span class="token function">cp</span> docker.service /etc/systemd/system/
+<span class="token comment" spellcheck="true"># 添加文件权限</span>
+<span class="token function">chmod</span> +x /etc/systemd/system/docker.service
+<span class="token comment" spellcheck="true"># 重新加载配置文件</span>
+systemctl daemon-reload
+<span class="token comment" spellcheck="true"># 启动docker</span>
+systemctl start docker
+<span class="token comment" spellcheck="true"># 设置开机自启</span>
+systemctl <span class="token function">enable</span> docker.service
+<span class="token comment" spellcheck="true"># 验证docker安装是否成功</span>
+docker -v
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装docker-compose"><a href="#安装docker-compose" class="headerlink" title="安装docker-compose"></a>安装docker-compose</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 添加文件权限</span>
+<span class="token function">chmod</span> +x /xxx/docker-compose
+<span class="token comment" spellcheck="true"># 创建软链接</span>
+<span class="token function">ln</span> -s /xxx/docker-compose /usr/bin/docker-compose
+<span class="token comment" spellcheck="true"># 验证安装是否成功</span>
+docker-compose --version
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置普通用户可以使用docker命令"><a href="#配置普通用户可以使用docker命令" class="headerlink" title="配置普通用户可以使用docker命令"></a>配置普通用户可以使用docker命令</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建用户组,默认安装docker可能已经创建了</span>
+<span class="token function">sudo</span> <span class="token function">groupadd</span> docker
+<span class="token comment" spellcheck="true"># 示例</span>
+<span class="token function">sudo</span> <span class="token function">usermod</span> -aG docker testuser
+<span class="token comment" spellcheck="true"># 重新服务再登录即可使用docker命令</span>
+<span class="token function">sudo</span> systemctl restart docker
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/jia-mi-shu-ju-ru-he-jin-xing-mo-hu-cha-xun/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/jia-mi-shu-ju-ru-he-jin-xing-mo-hu-cha-xun/" class="post-title-link" itemprop="url">加密数据如何进行模糊查询</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-04 17:34:31" itemprop="dateCreated datePublished" datetime="2021-03-04T17:34:31+08:00">2021-03-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>数据加密之后，如何进行模糊查询？</p>
+<h2 id="解决办法-——-分词"><a href="#解决办法-——-分词" class="headerlink" title="解决办法 —— 分词"></a>解决办法 —— 分词</h2><p>如<code>abcdefghijklmn</code>按4个字符一组分词，则可分为</p>
+<ul>
+<li><code>abcd</code></li>
+<li><code>bcde</code></li>
+<li><code>cdef</code></li>
+<li><code>defg</code></li>
+<li><code>efgh</code></li>
+<li><code>fghi</code></li>
+<li>…</li>
+</ul>
+<p>分词后分别加密存储,模糊查询时就可以直接使用了.</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/traefik-pei-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/traefik-pei-zhi/" class="post-title-link" itemprop="url">traefik配置</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-02-07 09:35:09" itemprop="dateCreated datePublished" datetime="2021-02-07T09:35:09+08:00">2021-02-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/traefik/" itemprop="url" rel="index"><span itemprop="name">traefik</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><ul>
+<li><code>Entrypoints</code> -&gt; 入口</li>
+<li><code>HTTP Router</code> -&gt; 路由规则</li>
+<li><code>Service</code> -&gt; 可以理解为部署在<code>docker</code>中的容器、这里也可以是在配置文件中自定义的<code>service</code></li>
+<li><code>TLS</code> -&gt; <code>https</code></li>
+</ul>
+<h3 id="toml配置文件"><a href="#toml配置文件" class="headerlink" title="toml配置文件"></a>toml配置文件</h3><p><code>traefik</code>支持通过<code>toml</code>配置文件手动配置<code>https</code>、自定义<code>Router</code>、<code>Service</code>;</p>
+<ul>
+<li><code>traefik.toml</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf"># 全局配置
+[global]
+  checkNewVersion = false
+  sendAnonymousUsage = false
+# 入口
+[entryPoints]
+  # http 
+  [entryPoints.web]
+    address = ":80"
+  # https "websecure"这个名字是自己定义的  
+  [entryPoints.websecure]
+    address = ":443"
+  #  traefik web ui 
+  [entryPoints.traefik]
+    address = ":8080" 
+# 免费Let's Encrypt 证书（注意：必须域名解析到的主机中才有效，traefik会把秘钥写入acme.json中）
+[certificatesResolvers.bxtlschallenge.acme]
+  # 自己的邮箱地址
+  email = "xxxx@xx.com"
+  # 秘钥写入地址，根据自己文件映射来配置
+  storage = "/letsencrypt/acme.json"
+  [certificatesResolvers.bxtlschallenge.acme.httpChallenge]
+  entryPoint = "web"
+
+# 自定义Router、Services（貌似必须定义在外部文件里面，坑了好久）
+[providers.file]
+  directory = "/etc/traefik/conf"
+# traefik 需要开启的功能
+[api]
+  insecure = true
+  dashboard = true
+[ping]
+[providers.docker]
+  endpoint = "unix:///var/run/docker.sock"
+  exposedByDefault = true
+# 传输配置
+[serversTransport]
+  # 如果后端需要代理https自定义证书，可以使用这种方式就可以跳过验证，不然会报x509证书错误
+  insecureSkipVerify = true
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>file.toml</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">[http]
+  # 自定义 routers
+  [http.routers]
+    # http 方式
+    [http.routers.routers-cnblogs]
+      entryPoints = ["web"]
+      rule = "Host(`cnblogs.fanxp.com`)"
+      service = "cnblogs"
+    # https 方式
+    [http.routers.routers-cnblogs1]
+      entryPoints = ["websecure"]
+      rule = "Host(`cnblogs.fanxp.com`)"
+      service = "cnblogs"
+      [http.routers.routers-cnblogs1.tls]
+        certResolver = "bxtlschallenge"
+  # 自定义 services
+  [http.services]
+    [http.services.cnblogs]
+      # 可以设置多个url traefik 根据算法做负载均衡
+      [http.services.cnblogs.loadBalancer]
+        [[http.services.cnblogs.loadBalancer.servers]]
+          url = "https://www.cnblogs.com/fanxp/"
+        [[http.services.cnblogs.loadBalancer.servers]]
+          url = "https://github.com/fanxiaoping/grpc-test"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>测试<code>traefik-compose.yml</code></li>
+</ul>
+<pre class="line-numbers language-yml"><code class="language-yml">version: '3'
+
+services:
+    traefik:
+        image: traefik:v2.1
+        container_name: traefik
+        ports:
+            # HTTP 端口
+            - "80:80"
+            # HTTPS 端口
+            - "443:443"
+            # Web UI 端口
+            - "8080:8080"
+        volumes:
+            # 这样Traefik可以监听Docker事件
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            # 启动配置文件
+            - ./traefik.toml:/etc/traefik/traefik.toml
+            # 自定义routers、services
+            - ./conf:/etc/traefik/conf
+            # 存储证书秘钥
+            - ./letsencrypt:/letsencrypt
+
+    whoami:
+        # 公开API以显示其IP地址的容器
+        image: containous/whoami
+        container_name: whoami
+        labels:
+            # 地址：whoami.fanxp.com
+            - "traefik.http.routers.whoami.rule=Host(`whoami.fanxp.com`)"
+            # 入口方式，这里采用https
+            - "traefik.http.routers.whoami.entrypoints=websecure"
+            # 指定证书
+            - "traefik.http.routers.whoami.tls.certresolver=bxtlschallenge"
+
+    whoami2:
+        # 公开API以显示其IP地址的容器
+        image: containous/whoami
+        container_name: whoami2
+        labels:
+            # 地址：whoami.fanxp.com/v2
+            - "traefik.http.routers.whoami2.rule=Host(`whoami.fanxp.com`) && PathPrefix(`/v2`)"
+            # 默认代理使用http://172.0.0.4 配置方式用https://172.0.0.4
+            # - "traefik.http.services.bx_resource_library.loadbalancer.server.scheme=https"
+            # 定义中间件 规则
+            - "traefik.http.routers.whoami2.middlewares=whoami2-stripprefix"
+            # 代理：172.0.0.4/v2访问，这肯定不是我们想要的 写上规则后 代理：172.0.0.4
+            - "traefik.http.middlewares.whoami2-stripprefix.stripprefix.prefixes=/v2"
+            # 如果容器有多个端口 可以指定当前service暴露哪一个端口，默认第一个
+            - "traefik.http.services.whoami2.loadbalancer.server.port=80"
+            # 入口方式，这里采用https
+            - "traefik.http.routers.whoami2.entrypoints=websecure"
+            # 指定证书
+            - "traefik.http.routers.whoami2.tls.certresolver=bxtlschallenge"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/fanxp/p/12146045.html">原文链接</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/traefik-ru-men-shi-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -392,521 +947,10 @@ IP: 172.18.0.3
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-compose-chang-yong-pei-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-compose-chang-yong-pei-zhi/" class="post-title-link" itemprop="url">docker-compose常用配置</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-01-13 17:01:14" itemprop="dateCreated datePublished" datetime="2021-01-13T17:01:14+08:00">2021-01-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">'3'</span>
-<span class="token key atrule">services</span><span class="token punctuation">:</span>
-  <span class="token key atrule">nginx-route</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> hub.deri.org.cn/library/nginx
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>route
-    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"8080:80"</span>
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-    <span class="token punctuation">-</span> <span class="token string">"/wuzhiyong/nginx.conf:/etc/nginx/nginx.conf"</span>
-  <span class="token key atrule">authservice</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/authservice
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> authservice
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-  <span class="token key atrule">dbcompare</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/dbcompare
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> dbcompare
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-  <span class="token key atrule">graphcompare</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/graphcompare
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> graphcompare
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-    <span class="token punctuation">-</span> <span class="token string">"/wuzhiyong/svg:/root/svg"</span>
-  <span class="token key atrule">hbasecompare</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/hbasecompare
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> hbasecompare
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-    <span class="token key atrule">extra_hosts</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"hadoop1:172.16.0.7"</span>
-    <span class="token punctuation">-</span> <span class="token string">"hadoop2:172.16.0.8"</span>
-    <span class="token punctuation">-</span> <span class="token string">"hadoop3:172.16.0.9"</span>
-  <span class="token key atrule">taskservice</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> wuzhiyong/taskservice
-    <span class="token key atrule">container_name</span><span class="token punctuation">:</span> taskservice
-    <span class="token key atrule">restart</span><span class="token punctuation">:</span> always
-    <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token string">"/etc/localtime:/etc/localtime"</span>
-<span class="token key atrule">networks</span><span class="token punctuation">:</span>
-  <span class="token key atrule">nwzb</span><span class="token punctuation">:</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-text"><code class="language-text">user  nginx;
-worker_processes  1;
-
-error_log  /var/log/nginx/error.log warn;
-pid        /var/run/nginx.pid;
-
-
-events {
-    worker_connections  1024;
-}
-
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-
-    keepalive_timeout  65;
-
-    #gzip  on;
-
-    include /etc/nginx/conf.d/*.conf;
-
-    upstream taskservice{
-        server taskservice:28080;
-    }
-
-    upstream authservice{
-        server authservice:25050;
-    }
-
-    upstream dbcompare{
-        server dbcompare:28082;
-    }
-
-    upstream hbasecompare{
-        server hbasecompare:26060;
-    }
-
-    upstream graphcompare{
-        server graphcompare:29090;
-    }
-
-    server {
-        listen    80 default_server;
-        server_name _;
-    location /ts {
-        proxy_pass    http://taskservice;
-    }
-        location /auth {
-            proxy_pass  http://authservice;
-        }
-        location /dbc {
-            proxy_pass  http://dbcompare;
-        }
-        location /hbc {
-            proxy_pass  http://hbasecompare;
-        }
-        location /graph {
-            proxy_pass  http://graphcompare;
-        }
-    }
-}
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/java-rong-qi-zhong-shi-qu-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/java-rong-qi-zhong-shi-qu-wen-ti/" class="post-title-link" itemprop="url">java容器中时区问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-12-31 15:38:37" itemprop="dateCreated datePublished" datetime="2020-12-31T15:38:37+08:00">2020-12-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>容器时间与主机差8个小时,如果里面运行的是java程序，那么程序时间还是有8个小时时差.</p>
-<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><ul>
-<li>容器内时间与宿主机时间不一样</li>
-</ul>
-<pre class="line-numbers language-sh"><code class="language-sh">#启动容器时增加
--v /etc/localtime:/etc/localtime
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ul>
-<li>java时区主要从<code>/etc/timezone</code>获取</li>
-</ul>
-<pre class="line-numbers language-sh"><code class="language-sh">#dockerfile增加
-RUN echo "Asia/shanghai" > /etc/timezone
-
-#也也可以从宿主机映射，宿主机可能没有该文件，则需要先新增
--v /etc/timezone:/etc/timezone
-
-#或者jvm参数传递
--Duser.timezone=GMT+08
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-shi-yong-upstream-shi-xian-fu-zai-jun-heng/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/nginx-shi-yong-upstream-shi-xian-fu-zai-jun-heng/" class="post-title-link" itemprop="url">nginx使用upstream实现负载均衡</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-12-22 11:11:53" itemprop="dateCreated datePublished" datetime="2020-12-22T11:11:53+08:00">2020-12-22</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="轮询（默认）"><a href="#轮询（默认）" class="headerlink" title="轮询（默认）"></a>轮询（默认）</h3><pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="权重"><a href="#权重" class="headerlink" title="权重"></a>权重</h3><blockquote>
-<p><code>weight</code> 默认为<code>1</code>,<code>weight</code>越大,负载的权重就越大</p>
-</blockquote>
-<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span> weight<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span> weight<span class="token operator">=</span><span class="token number">10</span><span class="token punctuation">;</span> 
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="IP哈希"><a href="#IP哈希" class="headerlink" title="IP哈希"></a>IP哈希</h3><blockquote>
-<p>请求按访问ip的hash结果分配</p>
-</blockquote>
-<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    ip_hash<span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="响应时间"><a href="#响应时间" class="headerlink" title="响应时间"></a>响应时间</h3><blockquote>
-<p>按后端服务器的响应时间来分配请求,响应时间短的优先分配</p>
-</blockquote>
-<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    fair<span class="token punctuation">;</span>
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="其它哈希"><a href="#其它哈希" class="headerlink" title="其它哈希"></a>其它哈希</h3><blockquote>
-<p>如：根据请求路径哈希,<code>hash_method</code>是使用的<code>hash</code>算法</p>
-</blockquote>
-<pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    fair<span class="token punctuation">;</span>
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span>
-    hash $request_uri<span class="token punctuation">;</span> 
-    hash_method crc32<span class="token punctuation">;</span> 
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="down-x2F-backup"><a href="#down-x2F-backup" class="headerlink" title="down/backup"></a>down/backup</h3><pre class="line-numbers language-js"><code class="language-js">upstream servername <span class="token punctuation">{</span> 
-    <span class="token comment" spellcheck="true">// down 表示单前的server暂时不参与负载.</span>
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span> down<span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.2</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.3</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token punctuation">;</span> 
-    <span class="token comment" spellcheck="true">// 其它所有的非backup机器down或者忙的时候请求backup机器.</span>
-    server <span class="token number">10.0</span><span class="token punctuation">.</span><span class="token number">0.4</span><span class="token punctuation">:</span><span class="token number">8080</span> backup<span class="token punctuation">;</span> 
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/muhy/p/10528449.html">https://www.cnblogs.com/muhy/p/10528449.html</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/linux-she-zhi-swap/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/linux-she-zhi-swap/" class="post-title-link" itemprop="url">linux设置swap</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-12-04 16:52:39" itemprop="dateCreated datePublished" datetime="2020-12-04T16:52:39+08:00">2020-12-04</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="查看swap状态"><a href="#查看swap状态" class="headerlink" title="查看swap状态"></a>查看swap状态</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@ecs ~]# free -m
-              total        used        free      shared  buff/cache   available
-Mem:           7820        4825         133         896        2862        1818
-Swap:             0           0           0
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-sh"><code class="language-sh"># 无返回
-swapon -s
-# 空
-cat /proc/swaps
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="通过文件设置swap"><a href="#通过文件设置swap" class="headerlink" title="通过文件设置swap"></a>通过文件设置swap</h3><ol>
-<li>新建swap交换文件</li>
-</ol>
-<pre class="line-numbers language-sh"><code class="language-sh"># count设置文件大小,4G
-dd if=/dev/zero of=/home/swap bs=1024 count=4096000
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>制作为swap格式文件</li>
-</ol>
-<pre class="line-numbers language-sh"><code class="language-sh">mkswap /home/swap
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="3">
-<li>挂载swap分区</li>
-</ol>
-<pre class="line-numbers language-sh"><code class="language-sh">swapon /home/swap
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>此时通过<code>free</code>命令已经可以看到<code>swap</code>分区了,但是重启失效.</p>
-<ol start="4">
-<li>设置持久生效</li>
-</ol>
-<pre class="line-numbers language-sh"><code class="language-sh">vi /etc/fstab
-# 在文件最后一行加上
-/home/swap swap swap default 0 0
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="删除文件swap分区"><a href="#删除文件swap分区" class="headerlink" title="删除文件swap分区"></a>删除文件swap分区</h3><ol>
-<li>先停止swap分区</li>
-</ol>
-<pre class="line-numbers language-sh"><code class="language-sh">swapoff /home/swap
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="2">
-<li>删除swap分区文件</li>
-</ol>
-<pre class="line-numbers language-sh"><code class="language-sh">rm -rf /home/swap
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="3">
-<li>删除自动装载配置</li>
-</ol>
-<pre class="line-numbers language-sh"><code class="language-sh">vi /etc/fstab
-# 删除刚刚 增加的配置
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="通过分区配置swap"><a href="#通过分区配置swap" class="headerlink" title="通过分区配置swap"></a>通过分区配置swap</h3><h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43228740/article/details/83620958">参考链接</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/21/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/21/">21</a><span class="page-number current">22</span><a class="page-number" href="/page/23/">23</a><span class="space">&hellip;</span><a class="page-number" href="/page/59/">59</a><a class="extend next" rel="next" href="/page/23/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/21/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/21/">21</a><span class="page-number current">22</span><a class="page-number" href="/page/23/">23</a><span class="space">&hellip;</span><a class="page-number" href="/page/60/">60</a><a class="extend next" rel="next" href="/page/23/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -974,7 +1018,7 @@ dd if=/dev/zero of=/home/swap bs=1024 count=4096000
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">353</span>
+          <span class="site-state-item-count">357</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

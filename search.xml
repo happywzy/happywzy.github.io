@@ -32830,4 +32830,213 @@ fmt<span class="token punctuation">.</span><span class="token function">Printf</
         <tag>sync</tag>
       </tags>
   </entry>
+  <entry>
+    <title>golang语言gRPC开发环境准备</title>
+    <url>/grpc-kai-fa-huan-jing-zhun-bei/</url>
+    <content><![CDATA[<h3 id="三个工具"><a href="#三个工具" class="headerlink" title="三个工具"></a>三个工具</h3><ul>
+<li>protoc</li>
+<li>protoc-gen-go</li>
+<li>protoc-gen-go-grpc</li>
+</ul>
+<h3 id="protoc"><a href="#protoc" class="headerlink" title="protoc"></a>protoc</h3><p>到<a href="https://github.com/protocolbuffers/protobuf/releases">Gitehub下载页</a>下载最新的 <code>protoc</code> ，window 环境下载 <code>protoc-27.0-win64.zip</code>，解压后将 <code>bin/protoc.exe</code> 移动到 <code>$GOPATH/bin</code> 目录下。</p>
+<blockquote>
+<p>注意：<code>$GOPATH/bin</code> 需要配置在系统环境变量 <code>PATH</code> 中.</p>
+</blockquote>
+<h3 id="protoc-gen-go"><a href="#protoc-gen-go" class="headerlink" title="protoc-gen-go"></a>protoc-gen-go</h3><pre class="line-numbers language-shell"><code class="language-shell">go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="protoc-gen-go-grpc"><a href="#protoc-gen-go-grpc" class="headerlink" title="protoc-gen-go-grpc"></a>protoc-gen-go-grpc</h3><pre class="line-numbers language-shell"><code class="language-shell">go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>三个工具安装好后，在  <code>$GOPATH/bin</code> 下有：<code>protoc.exe</code> 、<code>protoc-gen-go.exe</code> 、 <code>protoc-gen-go-grpc.exe</code> 就算安装好了。</p>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>准备一个 <code>hello.proto</code> :</p>
+<pre class="line-numbers language-conf"><code class="language-conf">syntax = "proto3";
+
+option go_package = "./;proto";
+
+package proto;
+
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloResponse) {}
+  rpc SayHi (HelloRequest) returns (HelloResponse) {}
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloResponse {
+  string message = 1;
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>生成 <code>hello.pb.go</code> 和 <code>hello_grpc.pb.go</code></p>
+<pre class="line-numbers language-shell"><code class="language-shell">protoc --go_out=. --go-grpc_out=. hello.proto
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>go</category>
+      </categories>
+      <tags>
+        <tag>grpc</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mysql8双主配置</title>
+    <url>/mysql8-shuang-zhu-pei-zhi/</url>
+    <content><![CDATA[<h3 id="MySQL-8-4-版本"><a href="#MySQL-8-4-版本" class="headerlink" title="MySQL 8.4 版本"></a>MySQL 8.4 版本</h3><blockquote>
+<p>不同版本配置不同！</p>
+</blockquote>
+<ul>
+<li>server 1</li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">server-id=1
+log-bin=mysql-bin
+binlog-format=ROW
+max_binlog_size=1024M
+slow_query_log=1
+binlog_expire_logs_seconds =864000
+# 异步落盘
+sync-binlog=0
+replica_skip_errors=all
+# 自增ID偏移量设置
+auto-increment-increment=2
+auto-increment-offset=1
+# 半同步复制
+rpl_semi_sync_source_enabled=1
+rpl_semi_sync_replica_enabled=1
+# 开启GTID
+gtid_mode=ON
+enforce-gtid-consistency=ON
+
+mysql_native_password=ON
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>server 2</li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">server-id=2
+log-bin=mysql-bin
+binlog-format=ROW
+max_binlog_size=1024M
+slow_query_log=1
+binlog_expire_logs_seconds =864000
+# 异步落盘
+sync-binlog=0
+replica_skip_errors=all
+# 自增ID偏移量设置
+auto-increment-increment=2
+auto-increment-offset=2
+# 半同步复制
+rpl_semi_sync_source_enabled=1
+rpl_semi_sync_replica_enabled=1
+# 开启GTID
+gtid_mode=ON
+enforce-gtid-consistency=ON
+
+mysql_native_password=ON
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动半同步复制"><a href="#启动半同步复制" class="headerlink" title="启动半同步复制"></a>启动半同步复制</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 要求 MySQL 服务器支持动态加载</span>
+<span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%have_dynamic_loading%'</span><span class="token punctuation">;</span>
+
+INSTALL PLUGIN rpl_semi_sync_source <span class="token keyword">SONAME</span> <span class="token string">'semisync_source.so'</span><span class="token punctuation">;</span>
+INSTALL PLUGIN rpl_semi_sync_replica <span class="token keyword">SONAME</span> <span class="token string">'semisync_replica.so'</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- 确认安装是否成功：</span>
+<span class="token keyword">SELECT</span> PLUGIN_NAME<span class="token punctuation">,</span> PLUGIN_STATUS <span class="token keyword">FROM</span> INFORMATION_SCHEMA<span class="token punctuation">.</span>PLUGINS <span class="token keyword">WHERE</span> PLUGIN_NAME <span class="token operator">LIKE</span> <span class="token string">'%semi%'</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- 查看半同步监控 </span>
+<span class="token keyword">SHOW</span> <span class="token keyword">STATUS</span> <span class="token operator">LIKE</span> <span class="token string">'Rpl_semi_sync%'</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建复制用户"><a href="#创建复制用户" class="headerlink" title="创建复制用户"></a>创建复制用户</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">USER</span> <span class="token string">'repl'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED BY '</span>password<span class="token string">';
+GRANT REPLICATION SLAVE ON *.* TO '</span>repl<span class="token string">'@'</span><span class="token operator">%</span>'<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.4/en/replication-howto-repuser.html">https://dev.mysql.com/doc/refman/8.4/en/replication-howto-repuser.html</a></li>
+</ul>
+<blockquote>
+<p>这个用户直接配置复制会报错。<code>Message: Authentication plugin 'caching_sha2_password' reported error: Authentication requires secure connection.</code> 原因是用户默认密码加密方式是 <code>caching_sha2_password</code>， 需要改成 <code>mysql_native_password</code>.</p>
+</blockquote>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">ALTER</span> <span class="token keyword">USER</span> <span class="token string">'repl'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED WITH mysql_native_password BY '</span>password'<span class="token punctuation">;</span>
+FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="通过GTID启动复制-2台MySQL分别执行"><a href="#通过GTID启动复制-2台MySQL分别执行" class="headerlink" title="通过GTID启动复制(2台MySQL分别执行)"></a>通过GTID启动复制(2台MySQL分别执行)</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 注意修改IP、端口等信息</span>
+CHANGE <span class="token keyword">REPLICATION</span> SOURCE <span class="token keyword">TO</span> SOURCE_HOST <span class="token operator">=</span> <span class="token string">'172.16.20.153'</span><span class="token punctuation">,</span>SOURCE_PORT <span class="token operator">=</span> <span class="token number">3306</span><span class="token punctuation">,</span>SOURCE_USER <span class="token operator">=</span> <span class="token string">'repl'</span><span class="token punctuation">,</span>SOURCE_PASSWORD <span class="token operator">=</span> <span class="token string">'password'</span><span class="token punctuation">,</span>SOURCE_AUTO_POSITION <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>启动</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">START</span> REPLICA<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>查看复制状态</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SHOW</span> REPLICA <span class="token keyword">STATUS</span>\G
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.4/en/replication.html">https://dev.mysql.com/doc/refman/8.4/en/replication.html</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>mysql</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>yum安装mysql8</title>
+    <url>/yum-an-zhuang-mysql8/</url>
+    <content><![CDATA[<h3 id="1-打开官网MySQL安装文档"><a href="#1-打开官网MySQL安装文档" class="headerlink" title="1. 打开官网MySQL安装文档"></a>1. 打开官网MySQL安装文档</h3><ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.4/en/linux-installation-yum-repo.html">https://dev.mysql.com/doc/refman/8.4/en/linux-installation-yum-repo.html</a></li>
+</ul>
+<h3 id="2-根据Linux版本下载yum源"><a href="#2-根据Linux版本下载yum源" class="headerlink" title="2. 根据Linux版本下载yum源"></a>2. 根据Linux版本下载yum源</h3><pre class="line-numbers language-shell"><code class="language-shell">cat /etc/os-release
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li><a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a></li>
+</ul>
+<h3 id="3-查看可安装的MySQL包"><a href="#3-查看可安装的MySQL包" class="headerlink" title="3. 查看可安装的MySQL包"></a>3. 查看可安装的MySQL包</h3><pre class="line-numbers language-shell"><code class="language-shell">yum repolist enabled | grep mysql.*-community
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="4-安装MySQL"><a href="#4-安装MySQL" class="headerlink" title="4. 安装MySQL"></a>4. 安装MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell">yum install mysql-community-server
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="5-启动MySQL"><a href="#5-启动MySQL" class="headerlink" title="5. 启动MySQL"></a>5. 启动MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell">systemctl start mysqld
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="6-登录MySQL"><a href="#6-登录MySQL" class="headerlink" title="6. 登录MySQL"></a>6. 登录MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell"># 查看生成的随机密码
+cat /var/log/mysqld.log |grep password
+
+mysql -uroot -p
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="7-初始化操作"><a href="#7-初始化操作" class="headerlink" title="7. 初始化操作"></a>7. 初始化操作</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 重置root密码</span>
+<span class="token keyword">ALTER</span> <span class="token keyword">USER</span> <span class="token string">'root'</span>@'localhost<span class="token string">' IDENTIFIED BY '</span>Test<span class="token variable">@123</span>'<span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 设置root可以远程登录</span>
+<span class="token keyword">update</span> mysql<span class="token punctuation">.</span><span class="token keyword">user</span> <span class="token keyword">set</span>  host<span class="token operator">=</span><span class="token string">'%'</span> <span class="token keyword">WHERE</span> <span class="token keyword">user</span><span class="token operator">=</span><span class="token string">'root'</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 刷新权限</span>
+FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="问题：-Error-13-Permission-denied"><a href="#问题：-Error-13-Permission-denied" class="headerlink" title="问题： Error: 13 (Permission denied)"></a>问题： Error: 13 (Permission denied)</h3><pre class="line-numbers language-shell"><code class="language-shell">vim /etc/selinux/config 
+# 关闭后重启系统
+SELINUX=disabled
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>mysql</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mysql8设置数据库默认隔离级别</title>
+    <url>/mysql8-she-zhi-shu-ju-ku-mo-ren-ge-chi-ji-bie/</url>
+    <content><![CDATA[<h3 id="事务隔离级别"><a href="#事务隔离级别" class="headerlink" title="事务隔离级别"></a>事务隔离级别</h3><p>MySQL 8.4支持的事务隔离级别包括 READ UNCOMMITTED、READ COMMITTED、REPEATABLE READ 和 SERIALIZABLE。</p>
+<h3 id="临时修改"><a href="#临时修改" class="headerlink" title="临时修改"></a>临时修改</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看当前隔离级别的命令</span>
+<span class="token keyword">select</span> @<span class="token variable">@global.transaction_isolation</span><span class="token punctuation">,</span>@<span class="token variable">@transaction_isolation</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 修改全局隔离级别为读提交</span>
+<span class="token keyword">SET</span> <span class="token keyword">GLOBAL</span> <span class="token keyword">TRANSACTION</span> <span class="token keyword">ISOLATION LEVEL</span> <span class="token keyword">READ</span> <span class="token keyword">COMMITTED</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 修改会话隔离级别</span>
+<span class="token keyword">SET</span> <span class="token keyword">SESSION</span> <span class="token keyword">TRANSACTION</span> <span class="token keyword">ISOLATION LEVEL</span> <span class="token keyword">READ</span> <span class="token keyword">COMMITTED</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="永久生效"><a href="#永久生效" class="headerlink" title="永久生效"></a>永久生效</h3><pre class="line-numbers language-conf"><code class="language-conf"># my.cnf
+transaction-isolation = READ-COMMITTED
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>mysql</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
 </search>
