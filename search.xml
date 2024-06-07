@@ -32987,6 +32987,8 @@ CHANGE <span class="token keyword">REPLICATION</span> SOURCE <span class="token 
 <ul>
 <li><a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a></li>
 </ul>
+<pre class="line-numbers language-shell"><code class="language-shell">yum localinstall mysql84-community-release-el7-1.noarch.rpm
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <h3 id="3-查看可安装的MySQL包"><a href="#3-查看可安装的MySQL包" class="headerlink" title="3. 查看可安装的MySQL包"></a>3. 查看可安装的MySQL包</h3><pre class="line-numbers language-shell"><code class="language-shell">yum repolist enabled | grep mysql.*-community
 <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <h3 id="4-安装MySQL"><a href="#4-安装MySQL" class="headerlink" title="4. 安装MySQL"></a>4. 安装MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell">yum install mysql-community-server
@@ -33037,6 +33039,142 @@ transaction-isolation = READ-COMMITTED
       </categories>
       <tags>
         <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>gin修改请求体或返回body</title>
+    <url>/gin-xiu-gai-qing-qiu-ti-huo-fan-hui-body/</url>
+    <content><![CDATA[<h3 id="比如有一个请求-需要先解密-返回的内容需要先加密"><a href="#比如有一个请求-需要先解密-返回的内容需要先加密" class="headerlink" title="比如有一个请求,需要先解密,返回的内容需要先加密"></a>比如有一个请求,需要先解密,返回的内容需要先加密</h3><p>可以用<code>gin.HandlerFunc</code>统一处理</p>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token comment" spellcheck="true">// Data是加密的,需要统一解密传给后端业务处理</span>
+<span class="token keyword">type</span> Request <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    AggEntityID <span class="token builtin">string</span> <span class="token string">`json:"AggEntityId"`</span>
+    Data        <span class="token builtin">string</span> <span class="token string">`json:"Data"`</span>
+    TimeStamp   <span class="token builtin">string</span> <span class="token string">`json:"TimeStamp"`</span> <span class="token comment" spellcheck="true">//yyyyMMddHHmmss</span>
+    Seq         <span class="token builtin">string</span> <span class="token string">`json:"Seq"`</span>       <span class="token comment" spellcheck="true">//0001</span>
+    Sig         <span class="token builtin">string</span> <span class="token string">`json:"Sig"`</span>       <span class="token comment" spellcheck="true">// 参数签名</span>
+<span class="token punctuation">}</span>
+<span class="token comment" spellcheck="true">// Data是明文的，需要统一加密返回给请求端</span>
+<span class="token keyword">type</span> Response <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    Ret  <span class="token builtin">int32</span>  <span class="token string">`json:"Ret"`</span>
+    Msg  <span class="token builtin">string</span> <span class="token string">`json:"Msg"`</span>
+    Data <span class="token builtin">string</span> <span class="token string">`json:"Data"`</span>
+    Sig  <span class="token builtin">string</span> <span class="token string">`json:"Sig"`</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="统一处理"><a href="#统一处理" class="headerlink" title="统一处理"></a>统一处理</h3><pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"bytes"</span>
+    <span class="token string">"encoding/json"</span>
+    <span class="token string">"gitee.com/njderi/public-plat/internal/vpp/front-gateway/model"</span>
+    <span class="token string">"github.com/gin-gonic/gin"</span>
+    <span class="token string">"net/http"</span>
+<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">// EncryptResponse 返回Response时先加密Data字段</span>
+<span class="token keyword">func</span> <span class="token function">EncryptResponse</span><span class="token punctuation">(</span><span class="token punctuation">)</span> gin<span class="token punctuation">.</span>HandlerFunc <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">func</span><span class="token punctuation">(</span>c <span class="token operator">*</span>gin<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 创建一个缓冲区来捕获响应</span>
+        w <span class="token operator">:=</span> <span class="token operator">&amp;</span>responseWriter<span class="token punctuation">{</span>body<span class="token punctuation">:</span> <span class="token operator">&amp;</span>bytes<span class="token punctuation">.</span>Buffer<span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> ResponseWriter<span class="token punctuation">:</span> c<span class="token punctuation">.</span>Writer<span class="token punctuation">}</span>
+        c<span class="token punctuation">.</span>Writer <span class="token operator">=</span> w
+
+        c<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token keyword">if</span> c<span class="token punctuation">.</span>Writer<span class="token punctuation">.</span><span class="token function">Status</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> http<span class="token punctuation">.</span>StatusOK <span class="token punctuation">{</span>
+            <span class="token keyword">return</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment" spellcheck="true">// 获取response</span>
+        <span class="token keyword">var</span> res model<span class="token punctuation">.</span>Response
+        <span class="token keyword">if</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">Unmarshal</span><span class="token punctuation">(</span>w<span class="token punctuation">.</span>body<span class="token punctuation">.</span><span class="token function">Bytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>res<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+            c<span class="token punctuation">.</span><span class="token function">JSON</span><span class="token punctuation">(</span>http<span class="token punctuation">.</span>StatusInternalServerError<span class="token punctuation">,</span> gin<span class="token punctuation">.</span>H<span class="token punctuation">{</span><span class="token string">"error"</span><span class="token punctuation">:</span> <span class="token string">"Failed to read response body"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment" spellcheck="true">// 修改response</span>
+        res<span class="token punctuation">.</span>Ret <span class="token operator">=</span> <span class="token number">1</span>
+        res<span class="token punctuation">.</span>Msg <span class="token operator">=</span> <span class="token string">"Encrypted Response"</span>
+        encryptedBody<span class="token punctuation">,</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">Marshal</span><span class="token punctuation">(</span>res<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+            c<span class="token punctuation">.</span><span class="token function">JSON</span><span class="token punctuation">(</span>http<span class="token punctuation">.</span>StatusInternalServerError<span class="token punctuation">,</span> gin<span class="token punctuation">.</span>H<span class="token punctuation">{</span><span class="token string">"error"</span><span class="token punctuation">:</span> <span class="token string">"Failed to marshal encrypted response"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment" spellcheck="true">// 修改response body</span>
+        c<span class="token punctuation">.</span>Writer <span class="token operator">=</span> w<span class="token punctuation">.</span>ResponseWriter
+        c<span class="token punctuation">.</span>Writer<span class="token punctuation">.</span><span class="token function">Header</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span><span class="token string">"Content-Type"</span><span class="token punctuation">,</span> <span class="token string">"application/json"</span><span class="token punctuation">)</span>
+        c<span class="token punctuation">.</span>Writer<span class="token punctuation">.</span><span class="token function">WriteHeader</span><span class="token punctuation">(</span>http<span class="token punctuation">.</span>StatusOK<span class="token punctuation">)</span>
+        c<span class="token punctuation">.</span>Writer<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>encryptedBody<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">type</span> responseWriter <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    gin<span class="token punctuation">.</span>ResponseWriter
+    body <span class="token operator">*</span>bytes<span class="token punctuation">.</span>Buffer
+<span class="token punctuation">}</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>w <span class="token operator">*</span>responseWriter<span class="token punctuation">)</span> <span class="token function">Write</span><span class="token punctuation">(</span>b <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> w<span class="token punctuation">.</span>body<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"bytes"</span>
+    <span class="token string">"encoding/json"</span>
+    <span class="token string">"gitee.com/njderi/public-plat/internal/vpp/front-gateway/model"</span>
+    <span class="token string">"github.com/gin-gonic/gin"</span>
+    <span class="token string">"io"</span>
+    <span class="token string">"io/ioutil"</span>
+    <span class="token string">"net/http"</span>
+<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">// DecryptRequest 接收到Request后解密Data字段</span>
+<span class="token keyword">func</span> <span class="token function">DecryptRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span> gin<span class="token punctuation">.</span>HandlerFunc <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">func</span><span class="token punctuation">(</span>c <span class="token operator">*</span>gin<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> c<span class="token punctuation">.</span>Request<span class="token punctuation">.</span>Method <span class="token operator">==</span> http<span class="token punctuation">.</span>MethodPost <span class="token operator">||</span> c<span class="token punctuation">.</span>Request<span class="token punctuation">.</span>Method <span class="token operator">==</span> http<span class="token punctuation">.</span>MethodPut <span class="token punctuation">{</span>
+            body<span class="token punctuation">,</span> err <span class="token operator">:=</span> io<span class="token punctuation">.</span><span class="token function">ReadAll</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span>Request<span class="token punctuation">.</span>Body<span class="token punctuation">)</span>
+            <span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+                c<span class="token punctuation">.</span><span class="token function">JSON</span><span class="token punctuation">(</span>http<span class="token punctuation">.</span>StatusBadRequest<span class="token punctuation">,</span> gin<span class="token punctuation">.</span>H<span class="token punctuation">{</span><span class="token string">"error"</span><span class="token punctuation">:</span> <span class="token string">"Invalid request body"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+                c<span class="token punctuation">.</span><span class="token function">Abort</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span>
+            <span class="token punctuation">}</span>
+
+            <span class="token keyword">var</span> req model<span class="token punctuation">.</span>Request
+            <span class="token keyword">if</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">Unmarshal</span><span class="token punctuation">(</span>body<span class="token punctuation">,</span> <span class="token operator">&amp;</span>req<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+                c<span class="token punctuation">.</span><span class="token function">JSON</span><span class="token punctuation">(</span>http<span class="token punctuation">.</span>StatusBadRequest<span class="token punctuation">,</span> gin<span class="token punctuation">.</span>H<span class="token punctuation">{</span><span class="token string">"error"</span><span class="token punctuation">:</span> <span class="token string">"Invalid request format"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+                c<span class="token punctuation">.</span><span class="token function">Abort</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span>
+            <span class="token punctuation">}</span>
+
+            req<span class="token punctuation">.</span>Data <span class="token operator">=</span> <span class="token string">"decrypt(req.Data, key)"</span>
+
+            decryptedBody<span class="token punctuation">,</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">Marshal</span><span class="token punctuation">(</span>req<span class="token punctuation">)</span>
+            <span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+                c<span class="token punctuation">.</span><span class="token function">JSON</span><span class="token punctuation">(</span>http<span class="token punctuation">.</span>StatusInternalServerError<span class="token punctuation">,</span> gin<span class="token punctuation">.</span>H<span class="token punctuation">{</span><span class="token string">"error"</span><span class="token punctuation">:</span> <span class="token string">"Failed to marshal decrypted request"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+                c<span class="token punctuation">.</span><span class="token function">Abort</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span>
+            <span class="token punctuation">}</span>
+
+            c<span class="token punctuation">.</span>Request<span class="token punctuation">.</span>Body <span class="token operator">=</span> ioutil<span class="token punctuation">.</span><span class="token function">NopCloser</span><span class="token punctuation">(</span>bytes<span class="token punctuation">.</span><span class="token function">NewBuffer</span><span class="token punctuation">(</span>decryptedBody<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+        c<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"github.com/gin-gonic/gin"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">SetupAuthGroup</span><span class="token punctuation">(</span>c <span class="token operator">*</span>gin<span class="token punctuation">.</span>Engine<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    authGroup <span class="token operator">:=</span> c<span class="token punctuation">.</span><span class="token function">Group</span><span class="token punctuation">(</span><span class="token string">"/vpp/fg/v1"</span><span class="token punctuation">)</span>
+    <span class="token comment" spellcheck="true">// 这个group下所有的接口都会先解密,返回先加密</span>
+    authGroup<span class="token punctuation">.</span><span class="token function">Use</span><span class="token punctuation">(</span>controller<span class="token punctuation">.</span><span class="token function">DecryptRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    authGroup<span class="token punctuation">.</span><span class="token function">Use</span><span class="token punctuation">(</span>controller<span class="token punctuation">.</span><span class="token function">EncryptResponse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        authGroup<span class="token punctuation">.</span><span class="token function">POST</span><span class="token punctuation">(</span><span class="token string">"/query_token"</span><span class="token punctuation">,</span> controller<span class="token punctuation">.</span>GetToken<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>go</category>
+      </categories>
+      <tags>
+        <tag>gin</tag>
       </tags>
   </entry>
 </search>

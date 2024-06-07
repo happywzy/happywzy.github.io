@@ -196,6 +196,100 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gson-zi-ding-yi-lei-xing-gua-pei-qi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/gson-zi-ding-yi-lei-xing-gua-pei-qi/" class="post-title-link" itemprop="url">gson自定义类型适配器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-11-15 14:09:11" itemprop="dateCreated datePublished" datetime="2022-11-15T14:09:11+08:00">2022-11-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>gson</code> 实现 <code>yyyyMMddHHmmss</code> 格式的时间与 <code>LocalDateTime</code> 类型相互转换.</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 自定义序列化</span>
+JsonSerializer<span class="token operator">&lt;</span>LocalDateTime<span class="token operator">></span> serializer <span class="token operator">=</span>
+                <span class="token punctuation">(</span>localDateTime<span class="token punctuation">,</span> type<span class="token punctuation">,</span> jsonSerializationContext<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token keyword">new</span> <span class="token class-name">JsonPrimitive</span><span class="token punctuation">(</span>localDateTime<span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span>DateTimeFormatter<span class="token punctuation">.</span><span class="token function">ofPattern</span><span class="token punctuation">(</span><span class="token string">"yyyyMMddHHmmss"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">// 自定义反序列化</span>
+JsonDeserializer<span class="token operator">&lt;</span>LocalDateTime<span class="token operator">></span> deserializer <span class="token operator">=</span>
+        <span class="token punctuation">(</span>jsonElement<span class="token punctuation">,</span> type<span class="token punctuation">,</span> jsonDeserializationContext<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> LocalDateTime<span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>jsonElement<span class="token punctuation">.</span><span class="token function">getAsJsonPrimitive</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getAsString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> DateTimeFormatter<span class="token punctuation">.</span><span class="token function">ofPattern</span><span class="token punctuation">(</span><span class="token string">"yyyyMMddHHmmss"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Gson gson <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">GsonBuilder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">registerTypeAdapter</span><span class="token punctuation">(</span>LocalDateTime<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> serializer<span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">registerTypeAdapter</span><span class="token punctuation">(</span>LocalDateTime<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> deserializer<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">// 测试 object to json</span>
+TestObject object <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">TestObject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+object<span class="token punctuation">.</span><span class="token function">setDate</span><span class="token punctuation">(</span>LocalDateTime<span class="token punctuation">.</span><span class="token function">now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>gson<span class="token punctuation">.</span><span class="token function">toJson</span><span class="token punctuation">(</span>object<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// {"date":"20221115141202"}</span>
+<span class="token comment" spellcheck="true">// 测试 json to object</span>
+String json <span class="token operator">=</span> <span class="token string">"{\"date\":\"20221115140534\"}"</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>gson<span class="token punctuation">.</span><span class="token function">fromJson</span><span class="token punctuation">(</span>json<span class="token punctuation">,</span> TestObject<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// TestObject(date=2022-11-15T14:05:34)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>TestObject.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@ToString</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestObject</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> LocalDateTime date<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-ingress-zheng-shu-shuang-xiang-ren-zheng/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -775,124 +869,6 @@ docker <span class="token function">ps</span> <span class="token operator">|</sp
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/java8-fang-fa-yin-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/java8-fang-fa-yin-yong/" class="post-title-link" itemprop="url">java8方法引用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-09-21 09:11:17" itemprop="dateCreated datePublished" datetime="2022-09-21T09:11:17+08:00">2022-09-21</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java8/" itemprop="url" rel="index"><span itemprop="name">java8</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>双冒号（ <code>::</code> ）运算符在 <code>Java 8</code> 中被用作方法引用（<code>method reference</code>），方法引用是与 <code>lambda</code> 表达式相关的一个重要特性。</p>
-<h3 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h3><table>
-<thead>
-<tr>
-<th>Kind</th>
-<th>Example</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>对静态方法的引用</td>
-<td><code>ContainingClass::staticMethodName</code></td>
-</tr>
-<tr>
-<td>对一个特定对象的实例方法的引用</td>
-<td><code>containingObject::instanceMethodName</code></td>
-</tr>
-<tr>
-<td>对一个任意对象特定类型的实例方法的引用</td>
-<td><code>ContainingType::methodName</code></td>
-</tr>
-<tr>
-<td>对构造函数的引用</td>
-<td><code>ClassName::new</code></td>
-</tr>
-</tbody></table>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MethodReferencesTest</span> <span class="token punctuation">{</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>String<span class="token operator">></span> list <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token string">"java"</span><span class="token punctuation">,</span> <span class="token string">"python"</span><span class="token punctuation">,</span> <span class="token string">"go"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 静态方法引用</span>
-        list<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>MethodReferencesTest<span class="token operator">:</span><span class="token operator">:</span>staticMethod<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        <span class="token comment" spellcheck="true">// 对象方法引用</span>
-        list<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MethodReferencesTest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span><span class="token operator">:</span>method<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        List<span class="token operator">&lt;</span>String<span class="token operator">></span> list1 <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token string">"2"</span><span class="token punctuation">,</span> <span class="token string">"3"</span><span class="token punctuation">,</span> <span class="token string">"4"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>Integer<span class="token operator">:</span><span class="token operator">:</span>valueOf<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>MethodReferencesTest<span class="token operator">:</span><span class="token operator">:</span>staticMethod<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">method</span><span class="token punctuation">(</span>String a<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">staticMethod</span><span class="token punctuation">(</span>String a<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">staticMethod</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"int "</span> <span class="token operator">+</span> a<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -964,7 +940,7 @@ docker <span class="token function">ps</span> <span class="token operator">|</sp
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">357</span>
+          <span class="site-state-item-count">358</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -977,7 +953,7 @@ docker <span class="token function">ps</span> <span class="token operator">|</sp
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">220</span>
+        <span class="site-state-item-count">221</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
