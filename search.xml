@@ -32486,6 +32486,28 @@ vrrp_instance VI_1 {
     }
 }
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="非抢占式及通知服务"><a href="#非抢占式及通知服务" class="headerlink" title="非抢占式及通知服务"></a>非抢占式及通知服务</h3><pre class="line-numbers language-conf"><code class="language-conf">vrrp_instance VI_1 {
+    state BACKUP // 主备都用BACKUP
+    interface ens192
+    virtual_router_id 51
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    virtual_ipaddress {
+        192.168.20.99
+    }
+    nopreempt // 非抢占式
+    notify_master /etc/keepalived/notify_master.sh
+    notify_backup /etc/keepalived/notify_backup.sh
+    notify_fault /etc/keepalived/notify_fault.sh
+    notify_stop /etc/keepalived/notify_stop.sh
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 ]]></content>
       <tags>
         <tag>keepalived</tag>
@@ -33175,6 +33197,107 @@ transaction-isolation = READ-COMMITTED
       </categories>
       <tags>
         <tag>gin</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>etcd集群部署</title>
+    <url>/etcd-ji-qun-bu-shu/</url>
+    <content><![CDATA[<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>在三台机器上搭建一个集群</p>
+<table>
+<thead>
+<tr>
+<th>服务器</th>
+<th>IP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>node152</code></td>
+<td><code>172.16.20.152</code></td>
+</tr>
+<tr>
+<td><code>node153</code></td>
+<td><code>172.16.20.153</code></td>
+</tr>
+<tr>
+<td><code>node154</code></td>
+<td><code>172.16.20.154</code></td>
+</tr>
+</tbody></table>
+<h3 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h3><ul>
+<li>安装etcd</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum -y <span class="token function">install</span> etcd
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>修改默认配置: <code>/etc/etcd/etcd.conf</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">ETCD_DATA_DIR="/home/etcd/node152.etcd"
+ETCD_LISTEN_CLIENT_URLS="http://172.16.20.152:2379,http://localhost:2379"
+ETCD_NAME="node152"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://172.16.20.152:2380"
+ETCD_ADVERTISE_CLIENT_URLS="http://172.16.20.152:2379"
+ETCD_INITIAL_CLUSTER="node152=http://172.16.20.152:2380,node153=http://172.16.20.153:2380,node154=http://172.16.20.154:2380"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_INITIAL_CLUSTER_STATE="new"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：数据目录etcd用户有权限创建,或者提前创建好并分配权限;<br>其他节点根据IP修改.</p>
+</blockquote>
+<ul>
+<li>修改服务配置: <code>/usr/lib/systemd/system/etcd.service</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
+Description=Etcd Server
+After=network.target
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+WorkingDirectory=/var/lib/etcd/
+EnvironmentFile=-/etc/etcd/etcd.conf
+User=etcd
+# set GOMAXPROCS to number of processors
+ExecStart=/bin/bash -c "GOMAXPROCS=$(nproc) /usr/bin/etcd --name=\"${ETCD_NAME}\" --data-dir=\"${ETCD_DATA_DIR}\" --listen-client-urls=\"${ETCD_LISTEN_CLIENT_URLS}\" \
+--listen-peer-urls=\"${ETCD_LISTEN_PEER_URLS}\" \
+--initial-advertise-peer-urls=\"${ETCD_INITIAL_ADVERTISE_PEER_URLS}\" \
+--advertise-client-urls=\"${ETCD_ADVERTISE_CLIENT_URLS}\" \
+--initial-cluster=\"${ETCD_INITIAL_CLUSTER}\"  \
+--initial-cluster-token=\"${ETCD_INITIAL_CLUSTER_TOKEN}\" \
+--initial-cluster-state=\"${ETCD_INITIAL_CLUSTER_STATE}\""
+
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>启动并设置开机启动</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl start etcd
+systemctl <span class="token function">enable</span> etcd
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>检查集群状态</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data7 home<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># etcdctl cluster-health</span>
+member 1031e29bb8572c51 is healthy: got healthy result from http://172.16.20.152:2379
+member 6937e3968a3fec18 is healthy: got healthy result from http://172.16.20.154:2379
+member 8b79f77c6775414b is healthy: got healthy result from http://172.16.20.153:2379
+cluster is healthy
+
+<span class="token punctuation">[</span>root@data7 home<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># etcdctl member list</span>
+1031e29bb8572c51: name<span class="token operator">=</span>node152 peerURLs<span class="token operator">=</span>http://172.16.20.152:2380 clientURLs<span class="token operator">=</span>http://172.16.20.152:2379 isLeader<span class="token operator">=</span>true
+6937e3968a3fec18: name<span class="token operator">=</span>node154 peerURLs<span class="token operator">=</span>http://172.16.20.154:2380 clientURLs<span class="token operator">=</span>http://172.16.20.154:2379 isLeader<span class="token operator">=</span>false
+8b79f77c6775414b: name<span class="token operator">=</span>node153 peerURLs<span class="token operator">=</span>http://172.16.20.153:2380 clientURLs<span class="token operator">=</span>http://172.16.20.153:2379 isLeader<span class="token operator">=</span>false
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>etcd</category>
+      </categories>
+      <tags>
+        <tag>etcd</tag>
       </tags>
   </entry>
 </search>

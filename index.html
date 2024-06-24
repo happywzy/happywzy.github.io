@@ -196,6 +196,162 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/etcd-ji-qun-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/etcd-ji-qun-bu-shu/" class="post-title-link" itemprop="url">etcd集群部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-06-24 16:57:39" itemprop="dateCreated datePublished" datetime="2024-06-24T16:57:39+08:00">2024-06-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/etcd/" itemprop="url" rel="index"><span itemprop="name">etcd</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>在三台机器上搭建一个集群</p>
+<table>
+<thead>
+<tr>
+<th>服务器</th>
+<th>IP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>node152</code></td>
+<td><code>172.16.20.152</code></td>
+</tr>
+<tr>
+<td><code>node153</code></td>
+<td><code>172.16.20.153</code></td>
+</tr>
+<tr>
+<td><code>node154</code></td>
+<td><code>172.16.20.154</code></td>
+</tr>
+</tbody></table>
+<h3 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h3><ul>
+<li>安装etcd</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum -y <span class="token function">install</span> etcd
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>修改默认配置: <code>/etc/etcd/etcd.conf</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">ETCD_DATA_DIR="/home/etcd/node152.etcd"
+ETCD_LISTEN_CLIENT_URLS="http://172.16.20.152:2379,http://localhost:2379"
+ETCD_NAME="node152"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://172.16.20.152:2380"
+ETCD_ADVERTISE_CLIENT_URLS="http://172.16.20.152:2379"
+ETCD_INITIAL_CLUSTER="node152=http://172.16.20.152:2380,node153=http://172.16.20.153:2380,node154=http://172.16.20.154:2380"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_INITIAL_CLUSTER_STATE="new"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：数据目录etcd用户有权限创建,或者提前创建好并分配权限;<br>其他节点根据IP修改.</p>
+</blockquote>
+<ul>
+<li>修改服务配置: <code>/usr/lib/systemd/system/etcd.service</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
+Description=Etcd Server
+After=network.target
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+WorkingDirectory=/var/lib/etcd/
+EnvironmentFile=-/etc/etcd/etcd.conf
+User=etcd
+# set GOMAXPROCS to number of processors
+ExecStart=/bin/bash -c "GOMAXPROCS=$(nproc) /usr/bin/etcd --name=\"${ETCD_NAME}\" --data-dir=\"${ETCD_DATA_DIR}\" --listen-client-urls=\"${ETCD_LISTEN_CLIENT_URLS}\" \
+--listen-peer-urls=\"${ETCD_LISTEN_PEER_URLS}\" \
+--initial-advertise-peer-urls=\"${ETCD_INITIAL_ADVERTISE_PEER_URLS}\" \
+--advertise-client-urls=\"${ETCD_ADVERTISE_CLIENT_URLS}\" \
+--initial-cluster=\"${ETCD_INITIAL_CLUSTER}\"  \
+--initial-cluster-token=\"${ETCD_INITIAL_CLUSTER_TOKEN}\" \
+--initial-cluster-state=\"${ETCD_INITIAL_CLUSTER_STATE}\""
+
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>启动并设置开机启动</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl start etcd
+systemctl <span class="token function">enable</span> etcd
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>检查集群状态</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data7 home<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># etcdctl cluster-health</span>
+member 1031e29bb8572c51 is healthy: got healthy result from http://172.16.20.152:2379
+member 6937e3968a3fec18 is healthy: got healthy result from http://172.16.20.154:2379
+member 8b79f77c6775414b is healthy: got healthy result from http://172.16.20.153:2379
+cluster is healthy
+
+<span class="token punctuation">[</span>root@data7 home<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># etcdctl member list</span>
+1031e29bb8572c51: name<span class="token operator">=</span>node152 peerURLs<span class="token operator">=</span>http://172.16.20.152:2380 clientURLs<span class="token operator">=</span>http://172.16.20.152:2379 isLeader<span class="token operator">=</span>true
+6937e3968a3fec18: name<span class="token operator">=</span>node154 peerURLs<span class="token operator">=</span>http://172.16.20.154:2380 clientURLs<span class="token operator">=</span>http://172.16.20.154:2379 isLeader<span class="token operator">=</span>false
+8b79f77c6775414b: name<span class="token operator">=</span>node153 peerURLs<span class="token operator">=</span>http://172.16.20.153:2380 clientURLs<span class="token operator">=</span>http://172.16.20.153:2379 isLeader<span class="token operator">=</span>false
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/gin-xiu-gai-qing-qiu-ti-huo-fan-hui-body/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -814,96 +970,6 @@ SELINUX=disabled
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gorm-zhong-raw-he-exec-de-qu-bie/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/gorm-zhong-raw-he-exec-de-qu-bie/" class="post-title-link" itemprop="url">gorm中Raw和Exec的区别</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-05-28 15:58:59" itemprop="dateCreated datePublished" datetime="2024-05-28T15:58:59+08:00">2024-05-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="Raw和Exec"><a href="#Raw和Exec" class="headerlink" title="Raw和Exec"></a>Raw和Exec</h3><p>在 <code>GORM</code> 中，<code>db.Raw</code> 和 <code>db.Exec</code> 是执行 <code>原生 SQL</code> 查询的两种不同方法，它们有不同的用途和返回值。</p>
-<ul>
-<li><code>db.Raw</code> 用于执行原生 SQL 查询并返回记录。通常用于执行 <code>SELECT</code> 查询，需要使用 <code>Scan</code> 方法将结果扫描到指定的结构体或变量中</li>
-<li><code>db.Exec</code> 用于执行不需要返回记录的原生 SQL 查询，通常用于 <code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code> 语句，或者执行 <code>DDL</code>（数据定义语言）语句，如创建表或修改表结构, 不需要 <code>Scan</code>，可以直接检查 <code>result.RowsAffected</code> 和 <code>result.Error</code>.</li>
-</ul>
-<h3 id="Raw"><a href="#Raw" class="headerlink" title="Raw"></a>Raw</h3><pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">var</span> users <span class="token punctuation">[</span><span class="token punctuation">]</span>User
-result <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Raw</span><span class="token punctuation">(</span><span class="token string">"SELECT id, name, email FROM users"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Scan</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>users<span class="token punctuation">)</span>
-<span class="token keyword">if</span> result<span class="token punctuation">.</span>Error <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
-    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Error<span class="token punctuation">)</span>
-    <span class="token keyword">return</span>
-<span class="token punctuation">}</span>
-
-<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> user <span class="token operator">:=</span> <span class="token keyword">range</span> users <span class="token punctuation">{</span>
-    fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"ID: %d, Name: %s, Email: %s\n"</span><span class="token punctuation">,</span> user<span class="token punctuation">.</span>ID<span class="token punctuation">,</span> user<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> user<span class="token punctuation">.</span>Email<span class="token punctuation">)</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="Exec"><a href="#Exec" class="headerlink" title="Exec"></a>Exec</h3><pre class="line-numbers language-go"><code class="language-go">result <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Exec</span><span class="token punctuation">(</span><span class="token string">"INSERT INTO users (name, email) VALUES (?, ?)"</span><span class="token punctuation">,</span> <span class="token string">"John Doe"</span><span class="token punctuation">,</span> <span class="token string">"john@example.com"</span><span class="token punctuation">)</span>
-<span class="token keyword">if</span> result<span class="token punctuation">.</span>Error <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
-    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Error<span class="token punctuation">)</span>
-    <span class="token keyword">return</span>
-<span class="token punctuation">}</span>
-
-fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"Rows affected: %d\n"</span><span class="token punctuation">,</span> result<span class="token punctuation">.</span>RowsAffected<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -975,7 +1041,7 @@ fmt<span class="token punctuation">.</span><span class="token function">Printf</
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">358</span>
+          <span class="site-state-item-count">359</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -988,7 +1054,7 @@ fmt<span class="token punctuation">.</span><span class="token function">Printf</
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">221</span>
+        <span class="site-state-item-count">222</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

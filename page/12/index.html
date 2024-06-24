@@ -196,6 +196,225 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-suo-yin-you-hua-can-kao/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/elasticsearch-suo-yin-you-hua-can-kao/" class="post-title-link" itemprop="url">elasticsearch索引优化参考</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-04-22 09:35:12" itemprop="dateCreated datePublished" datetime="2022-04-22T09:35:12+08:00">2022-04-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="节点离开延迟分配"><a href="#节点离开延迟分配" class="headerlink" title="节点离开延迟分配"></a>节点离开延迟分配</h3><p><code>index.unassigned.node_left.delayed_timeout</code>默认为<code>1m</code>. 当一个节点出于某种原因离开集群时，无论是有意的还是其他的，主节点的反应是：</p>
+<ul>
+<li>将副本分片提升为主分片以替换节点上的任何主分片。</li>
+<li>分配副本分片以替换丢失的副本（假设有足够的节点）。</li>
+<li>在剩余节点上均匀地重新平衡分片。</li>
+</ul>
+<p>如果一个节点被删除永远不会返回，希望 Elasticsearch 立即分配丢失的分片，只需将超时更新为<code>0</code></p>
+<pre class="line-numbers language-yaml"><code class="language-yaml">PUT _all/_settings
+<span class="token punctuation">{</span>
+  <span class="token key atrule">"settings"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    <span class="token key atrule">"index.unassigned.node_left.delayed_timeout"</span><span class="token punctuation">:</span> <span class="token string">"0"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="索引恢复优先级"><a href="#索引恢复优先级" class="headerlink" title="索引恢复优先级"></a>索引恢复优先级</h3><p>尽可能按优先级顺序恢复未分配的分片。指数按优先级排序如下：</p>
+<ul>
+<li>可选<code>index.priority</code>设置（先高后低）</li>
+<li>索引创建日期（先高后低）</li>
+<li>索引名称（先高后低）</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml">PUT index_4/_settings
+<span class="token punctuation">{</span>
+  <span class="token key atrule">"index.priority"</span><span class="token punctuation">:</span> <span class="token number">1</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="节点分片总数限制"><a href="#节点分片总数限制" class="headerlink" title="节点分片总数限制"></a>节点分片总数限制</h3><ul>
+<li>为单个索引设置限制<code>index.routing.allocation.total_shards_per_node</code>默认为无限制;</li>
+<li>为集群统一设置<code>cluster.routing.allocation.total_shards_per_node</code>默认为<code>-1</code>无限制.</li>
+</ul>
+<h3 id="数据冷热节点角色"><a href="#数据冷热节点角色" class="headerlink" title="数据冷热节点角色"></a>数据冷热节点角色</h3><ul>
+<li>data_content</li>
+<li>data_hot</li>
+<li>data_warm</li>
+<li>data_cold</li>
+<li>data_frozen</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># es 7.13之前用下面的语法,7.13之后过时</span>
+<span class="token key atrule">index.routing.allocation.include._tier</span><span class="token punctuation">:</span> data_warm
+<span class="token key atrule">index.routing.allocation.require._tier</span><span class="token punctuation">:</span> data_warm
+<span class="token key atrule">index.routing.allocation.exclude._tier</span><span class="token punctuation">:</span> data_warm
+<span class="token comment" spellcheck="true"># es 7.13版本之后使用</span>
+<span class="token key atrule">index.routing.allocation.include._tier_preference</span><span class="token punctuation">:</span> data_warm<span class="token punctuation">,</span>data_hot
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="索引块"><a href="#索引块" class="headerlink" title="索引块"></a>索引块</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># 设置索引和索引元数据只读</span>
+<span class="token key atrule">index.blocks.read_only</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token comment" spellcheck="true"># 设置只读,不能删除索引内doc,但是允许删除索引</span>
+<span class="token key atrule">index.blocks.read_only_allow_delete</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token comment" spellcheck="true"># </span>
+<span class="token key atrule">index.blocks.read</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token key atrule">index.blocks.write</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token key atrule">index.blocks.metadata</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>操作</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># &lt;block>可以是metadata,read,read_only,write</span>
+PUT /my-index-000001/_block/<span class="token operator">&lt;</span>block<span class="token operator">></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="慢日志"><a href="#慢日志" class="headerlink" title="慢日志"></a>慢日志</h3><ul>
+<li>系统级别</li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json">// 可以动态设置<span class="token punctuation">,</span>threshold默认disabled<span class="token punctuation">,</span>为-<span class="token number">1</span>
+PUT /my-index<span class="token number">-000001</span>/_settings
+<span class="token punctuation">{</span>
+  <span class="token property">"index.search.slowlog.threshold.query.warn"</span><span class="token operator">:</span> <span class="token string">"10s"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.search.slowlog.threshold.query.info"</span><span class="token operator">:</span> <span class="token string">"5s"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.search.slowlog.threshold.query.debug"</span><span class="token operator">:</span> <span class="token string">"2s"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.search.slowlog.threshold.query.trace"</span><span class="token operator">:</span> <span class="token string">"500ms"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.search.slowlog.threshold.fetch.warn"</span><span class="token operator">:</span> <span class="token string">"1s"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.search.slowlog.threshold.fetch.info"</span><span class="token operator">:</span> <span class="token string">"800ms"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.search.slowlog.threshold.fetch.debug"</span><span class="token operator">:</span> <span class="token string">"500ms"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.search.slowlog.threshold.fetch.trace"</span><span class="token operator">:</span> <span class="token string">"200ms"</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>索引级别,文件名以<code>_index_indexing_slowlog.log</code>结尾</li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json">PUT /my-index<span class="token number">-000001</span>/_settings
+<span class="token punctuation">{</span>
+  <span class="token property">"index.indexing.slowlog.threshold.index.warn"</span><span class="token operator">:</span> <span class="token string">"10s"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.indexing.slowlog.threshold.index.info"</span><span class="token operator">:</span> <span class="token string">"5s"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.indexing.slowlog.threshold.index.debug"</span><span class="token operator">:</span> <span class="token string">"2s"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.indexing.slowlog.threshold.index.trace"</span><span class="token operator">:</span> <span class="token string">"500ms"</span><span class="token punctuation">,</span>
+  <span class="token property">"index.indexing.slowlog.source"</span><span class="token operator">:</span> <span class="token string">"1000"</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="存储"><a href="#存储" class="headerlink" title="存储"></a>存储</h3><p><code>store</code>模块允许控制索引数据在磁盘上的存储和访问方式，建议采用默认值.</p>
+<ul>
+<li>系统级别设置,<code>elasticsearch.yml</code></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">index.store.type</span><span class="token punctuation">:</span> hybridfs
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>索引级别</li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json">PUT /my-index<span class="token number">-000001</span>
+<span class="token punctuation">{</span>
+  <span class="token property">"settings"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"index.store.type"</span><span class="token operator">:</span> <span class="token string">"hybridfs"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>可选的值：<code>fs</code>,<code>simplefs</code>,<code>niofs</code>,<code>mmapfs</code>,<code>hybridfs</code>.</p>
+</blockquote>
+<h3 id="事务日志"><a href="#事务日志" class="headerlink" title="事务日志"></a>事务日志</h3><p>ES提交到Lucene的索引、删除、分片拷贝、写等操作在未确认之前都会写入<code>translog</code>.</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># 默认request意味所有操作(index, delete, update, bulk)只有同步到所有分片和副本后才会返回success</span>
+<span class="token key atrule">index.translog.durability</span><span class="token punctuation">:</span> request
+<span class="token comment" spellcheck="true"># 可以设置异步提交到磁盘</span>
+<span class="token key atrule">index.translog.durability</span><span class="token punctuation">:</span> async
+<span class="token comment" spellcheck="true"># 异步同步到磁盘的时间,最少100ms</span>
+<span class="token key atrule">index.translog.sync_interval</span><span class="token punctuation">:</span> 5s
+<span class="token comment" spellcheck="true"># 达到这个大小立即刷新磁盘</span>
+<span class="token key atrule">index.translog.flush_threshold_size</span><span class="token punctuation">:</span> 512mb
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="历史保留-软删除"><a href="#历史保留-软删除" class="headerlink" title="历史保留-软删除"></a>历史保留-软删除</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># Elasticsearch 6.5.0 之后可用,默认为true</span>
+<span class="token key atrule">index.soft_deletes.enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token comment" spellcheck="true"># 保留时间,默认12h</span>
+<span class="token key atrule">index.soft_deletes.retention_lease.period</span><span class="token punctuation">:</span> 12h
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="索引排序"><a href="#索引排序" class="headerlink" title="索引排序"></a>索引排序</h3><p>默认不排序.</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># 支持boolean, numeric, date and keyword</span>
+<span class="token key atrule">index.sort.field</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"username"</span><span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true"># 支持asc,desc</span>
+<span class="token key atrule">index.sort.order</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"asc"</span><span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true"># 支持min,max</span>
+<span class="token key atrule">index.sort.mode</span><span class="token punctuation">:</span> min
+<span class="token comment" spellcheck="true"># 支持_last,_first</span>
+<span class="token key atrule">index.sort.missing</span><span class="token punctuation">:</span> _last
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>示例</p>
+<pre class="line-numbers language-json"><code class="language-json">PUT my-index<span class="token number">-000001</span>
+<span class="token punctuation">{</span>
+  <span class="token property">"settings"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"index"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"sort.field"</span><span class="token operator">:</span> <span class="token punctuation">[</span> <span class="token string">"username"</span><span class="token punctuation">,</span> <span class="token string">"date"</span> <span class="token punctuation">]</span><span class="token punctuation">,</span> 
+      <span class="token property">"sort.order"</span><span class="token operator">:</span> <span class="token punctuation">[</span> <span class="token string">"asc"</span><span class="token punctuation">,</span> <span class="token string">"desc"</span> <span class="token punctuation">]</span>       
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"mappings"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"properties"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"username"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"keyword"</span><span class="token punctuation">,</span>
+        <span class="token property">"doc_values"</span><span class="token operator">:</span> <span class="token boolean">true</span>
+      <span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token property">"date"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"date"</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="indexing-pressure"><a href="#indexing-pressure" class="headerlink" title="indexing pressure"></a>indexing pressure</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># Defaults to 10% of the heap.</span>
+<span class="token key atrule">indexing_pressure.memory.limit</span><span class="token punctuation">:</span> 10%
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-fen-pian-guo-lu/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1172,115 +1391,6 @@ $ <span class="token function">git</span> reset --hard b9bb17a
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/logrotate-pei-zhi-yu-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/logrotate-pei-zhi-yu-shi-yong/" class="post-title-link" itemprop="url">logrotate配置与使用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-03-24 15:02:44" itemprop="dateCreated datePublished" datetime="2022-03-24T15:02:44+08:00">2022-03-24</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/log/" itemprop="url" rel="index"><span itemprop="name">log</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="logrotate"><a href="#logrotate" class="headerlink" title="logrotate"></a>logrotate</h3><p><code>logrotate</code>是linux自带的一个日志轮转工具,可以自动对日志进行截断（或轮循）、压缩以及删除旧的日志文件。如：配置<code>/var/log/nginx.log</code>每周轮询并删除3周前的日志.</p>
-<h3 id="logrotate配置"><a href="#logrotate配置" class="headerlink" title="logrotate配置"></a>logrotate配置</h3><blockquote>
-<p><code>logrotate</code>默认配置文件：<code>/etc/logrotate.conf</code></p>
-</blockquote>
-<h3 id="需求：配置对docker容器日志轮询"><a href="#需求：配置对docker容器日志轮询" class="headerlink" title="需求：配置对docker容器日志轮询"></a>需求：配置对docker容器日志轮询</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 进入到/etc/logrotate.d/目录下,该目录下有logrotate默认配置的一些规则</span>
-<span class="token comment" spellcheck="true"># 创建一个新的文件container</span>
-<span class="token comment" spellcheck="true"># 配置规则,更多规则可以自行搜索</span>
-/var/lib/docker/containers/*/*-json.log
-<span class="token punctuation">{</span>
-    create 644 root root
-    missingok
-    weekly
-    copytruncate
-    rotate 3
-    size<span class="token operator">=</span>100M
-    notifempty
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>限制docker容器日志大小的方式不仅仅只有logrotate方式,此处仅以容器日志为例.</p>
-</blockquote>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># debug模式测试配置文件</span>
-logrotate -d /etc/logrotate.d/xxxxx
-<span class="token comment" spellcheck="true"># 手动运行</span>
-logrotate -f /etc/logrotate.d/xxxxx
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="限制docker容器日志"><a href="#限制docker容器日志" class="headerlink" title="限制docker容器日志"></a>限制docker容器日志</h3><ol>
-<li>统一限制</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改docker配置：vim /etc/docker/daemon.json</span>
-<span class="token punctuation">{</span>
-  <span class="token string">"log-driver"</span><span class="token keyword">:</span><span class="token string">"json-file"</span>,
-  <span class="token string">"log-opts"</span><span class="token keyword">:</span> <span class="token punctuation">{</span><span class="token string">"max-size"</span><span class="token keyword">:</span><span class="token string">"500m"</span>, <span class="token string">"max-file"</span><span class="token keyword">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span class="token comment" spellcheck="true"># 重启</span>
-systemctl daemon-reload
-systemctl restart docker
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>单独限制</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">docker run --name <span class="token function">test</span> --log-opt max-size<span class="token operator">=</span>100m --log-opt max-file<span class="token operator">=</span>2 -d nginx
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1352,7 +1462,7 @@ systemctl restart docker
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">358</span>
+          <span class="site-state-item-count">359</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1365,7 +1475,7 @@ systemctl restart docker
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">221</span>
+        <span class="site-state-item-count">222</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
