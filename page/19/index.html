@@ -77,9 +77,9 @@
 
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
-<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
+</head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
@@ -192,6 +192,513 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-ji-qun-da-jian/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/hbase-ji-qun-da-jian/" class="post-title-link" itemprop="url">hbase集群搭建</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-26 16:34:52" itemprop="dateCreated datePublished" datetime="2021-08-26T16:34:52+08:00">2021-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hbase/" itemprop="url" rel="index"><span itemprop="name">hbase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="前提"><a href="#前提" class="headerlink" title="前提"></a>前提</h3><ul>
+<li>已经配置好java环境</li>
+<li>已经搭建zookeeper集群</li>
+<li>已经搭建Hadoop集群</li>
+<li>准备3台机器</li>
+</ul>
+<h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><ol>
+<li>拷贝hadoop的<code>hdfs-site.xml</code>和<code>core-site.xml</code> 放到<code>hbase/conf</code>下.</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">cp</span> hdfs-site.xml /root/hbase/hbase-1.2.0/conf/
+<span class="token function">cp</span> core-site.xml  /root/hbase/hbase-1.2.0/conf/
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>配置hbase-env.sh</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">export</span> JAVA_HOME<span class="token operator">=</span>/usr/local/java/jdk1.8.0_171
+<span class="token comment" spellcheck="true"># 告诉hbase使用外部的zk</span>
+<span class="token function">export</span> HBASE_MANAGES_ZK<span class="token operator">=</span>false
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>配置hbase-site.xml</li>
+</ol>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>fs.defaultFS<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+        <span class="token comment" spellcheck="true">&lt;!-- hdfs://data1:9000注意和core-site里保持一致 --></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>hdfs://data1:9000/hbase<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>hbase.cluster.distributed<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>hbase.zookeeper.quorum<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>data1:2181,data2:2181,data3:2181<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>配置regionservers</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data1 conf<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># cat regionservers </span>
+data2
+data3
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>配置backup-masters</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token keyword">echo</span> data2 <span class="token operator">></span> backup-masters
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="6">
+<li>将hbase程序及配置拷贝到其它机器</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">scp</span> -r hbase-1.2.0 root@data2:/root/hbase/
+<span class="token function">scp</span> -r hbase-1.2.0 root@data3:/root/hbase/
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="7">
+<li>启动hbase</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 在master节点启动即可</span>
+bin/start-hbase.sh
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="8">
+<li>配置环境变量</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/profile
+<span class="token function">export</span> HBASE_HOME<span class="token operator">=</span>/root/hbase/hbase-1.2.0
+<span class="token function">export</span> PATH<span class="token operator">=</span><span class="token variable">$PATH</span><span class="token keyword">:</span><span class="token variable">$HBASE_HOME</span>/bin
+<span class="token function">source</span> /etc/profile
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="9">
+<li>进入hbase</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">hbase shell
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><ol>
+<li>UI</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="http://master:16010/master-status">http://master:16010/master-status</a></p>
+<ol start="2">
+<li>测试</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">hbase<span class="token punctuation">(</span>main<span class="token punctuation">)</span>:001:0<span class="token operator">></span> create <span class="token string">'test'</span>,<span class="token string">'cf'</span>
+0 row<span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token keyword">in</span> 1.3920 seconds
+<span class="token comment" spellcheck="true">#</span>
+<span class="token operator">=</span><span class="token operator">></span> Hbase::Table - <span class="token function">test</span>
+hbase<span class="token punctuation">(</span>main<span class="token punctuation">)</span>:002:0<span class="token operator">></span> list
+TABLE                                                                                                                               
+<span class="token function">test</span>                                                                                                                                
+1 row<span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token keyword">in</span> 0.0170 seconds
+<span class="token comment" spellcheck="true">#</span>
+<span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span><span class="token string">"test"</span><span class="token punctuation">]</span>
+hbase<span class="token punctuation">(</span>main<span class="token punctuation">)</span>:003:0<span class="token operator">></span> put <span class="token string">'test'</span>, <span class="token string">'row1'</span>, <span class="token string">'cf:a'</span>, <span class="token string">'value1'</span>
+0 row<span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token keyword">in</span> 0.1200 seconds
+<span class="token comment" spellcheck="true">#</span>
+hbase<span class="token punctuation">(</span>main<span class="token punctuation">)</span>:004:0<span class="token operator">></span> scan <span class="token string">'test'</span>
+ROW                                COLUMN+CELL                                                                                      
+ row1                              column<span class="token operator">=</span>cf:a, timestamp<span class="token operator">=</span>1629967515721, value<span class="token operator">=</span>value1                                               
+1 row<span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token keyword">in</span> 0.0210 seconds
+<span class="token comment" spellcheck="true">#</span>
+hbase<span class="token punctuation">(</span>main<span class="token punctuation">)</span>:005:0<span class="token operator">></span> 
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hadoop-wei-fen-bu-shi-da-jian/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/hadoop-wei-fen-bu-shi-da-jian/" class="post-title-link" itemprop="url">hadoop伪分布式搭建</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-26 15:29:22" itemprop="dateCreated datePublished" datetime="2021-08-26T15:29:22+08:00">2021-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>一个master，2个slave，只有一个nameNode.</p>
+<blockquote>
+<p>注意：3台机器的安装目录及配置要求完全一致.可以先配置一台再拷贝到其它机器上.</p>
+</blockquote>
+<h3 id="主备3台机器"><a href="#主备3台机器" class="headerlink" title="主备3台机器"></a>主备3台机器</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装java环境</span>
+yum <span class="token function">install</span> -y java-1.8.0-openjdk java-1.8.0-openjdk-devel
+
+vim /etc/profile
+
+<span class="token function">export</span> JAVA_HOME<span class="token operator">=</span>/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64
+<span class="token comment" spellcheck="true"># hadoop 解压目录</span>
+<span class="token function">export</span> HADOOP_HOME<span class="token operator">=</span>/root/hbase/hadoop-2.6.0
+<span class="token function">export</span> CLASSPATH<span class="token operator">=</span>.:<span class="token variable">$JAVA_HOME</span>/jre/lib/rt.jar:<span class="token variable">$JAVA_HOME</span>/lib/dt.jar:<span class="token variable">$JAVA_HOME</span>/lib/tools.jar
+<span class="token function">export</span> PATH<span class="token operator">=</span><span class="token variable">$PATH</span><span class="token keyword">:</span><span class="token variable">$JAVA_HOME</span>/bin:<span class="token variable">$HADOOP_HOME</span>/bin:<span class="token variable">$HADOOP_HOME</span>/sbin
+<span class="token comment" spellcheck="true"># 生效</span>
+<span class="token function">source</span> /etc/profile
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="下载二进制包"><a href="#下载二进制包" class="headerlink" title="下载二进制包"></a>下载二进制包</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># zookeeper集群安装省略.参考用docker安装</span>
+<span class="token function">wget</span> http://archive.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz
+ 
+<span class="token function">wget</span> http://archive.apache.org/dist/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz
+ 
+<span class="token function">wget</span> http://archive.apache.org/dist/hbase/1.2.0/hbase-1.2.0-bin.tar.gz
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="添加hadoop用户"><a href="#添加hadoop用户" class="headerlink" title="添加hadoop用户"></a>添加hadoop用户</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">usermod</span> -a -G hadoop hadoop
+<span class="token function">passwd</span> hadoop
+
+vim /etc/sudoers
+
+root	ALL<span class="token operator">=</span><span class="token punctuation">(</span>ALL<span class="token punctuation">)</span> 	ALL
+hadoop	ALL<span class="token operator">=</span><span class="token punctuation">(</span>ALL<span class="token punctuation">)</span> 	ALL
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>配置免密省略.</p>
+</blockquote>
+<h3 id="创建name-data-tmp目录"><a href="#创建name-data-tmp目录" class="headerlink" title="创建name,data,tmp目录"></a>创建name,data,tmp目录</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">mkdir</span> -p dfs/name
+<span class="token function">mkdir</span> -p dfs/data
+<span class="token function">mkdir</span> tmp
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="关键配置"><a href="#关键配置" class="headerlink" title="关键配置"></a>关键配置</h3><p>所有配置文件在hadoop-2.6.0/etc/hadoop/下:</p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token comment" spellcheck="true">&lt;!-- hadoop-env.sh   yarn-env.sh 配置JAVA_HOME --></span>
+
+<span class="token comment" spellcheck="true">&lt;!-- core-site.xml  --></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>fs.defaultFS<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>hdfs://data1:9000<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>hadoop.tmp.dir<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>/root/hbase/tmp<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+
+<span class="token comment" spellcheck="true">&lt;!-- hdfs-site.xml --></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>dfs.replication<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>dfs.namenode.name.dir<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>/root/hbase/dfs/name<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>dfs.datanode.data.dir<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>/root/hbase/dfs/data<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+
+<span class="token comment" spellcheck="true">&lt;!-- mapred-site.xml --></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>mapred.job.tracker<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>data1:9001<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+
+<span class="token comment" spellcheck="true">&lt;!-- yarn-site.xml --></span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>yarn.nodemanager.aux-services<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>mapreduce_shuffle<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>yarn.resourcemanager.address<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>data1:8032<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>yarn.resourcemanager.scheduler.address<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>data1:8030<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>yarn.resourcemanager.resource-tracker.address<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>data1:8031<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>yarn.resourcemanager.admin.address<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>data1:8033<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>yarn.resourcemanager.webapp.address<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>data1:8088<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+
+<span class="token comment" spellcheck="true">&lt;!-- slaves, 删除localhost --></span>
+[root@data1 hadoop]# cat slaves 
+data2
+data3
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># master节点进行格式化</span>
+hadoop namenode -format
+<span class="token comment" spellcheck="true"># 启动</span>
+<span class="token punctuation">[</span>root@data1 hbase<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># start-all.sh </span>
+This script is Deprecated. Instead use start-dfs.sh and start-yarn.sh
+Starting namenodes on <span class="token punctuation">[</span>data1<span class="token punctuation">]</span>
+data1: starting namenode, logging to /root/hbase/hadoop-2.6.0/logs/hadoop-root-namenode-data1.out
+data3: starting datanode, logging to /root/hbase/hadoop-2.6.0/logs/hadoop-root-datanode-data3.out
+data2: starting datanode, logging to /root/hbase/hadoop-2.6.0/logs/hadoop-root-datanode-data2.out
+Starting secondary namenodes <span class="token punctuation">[</span>0.0.0.0<span class="token punctuation">]</span>
+0.0.0.0: starting secondarynamenode, logging to /root/hbase/hadoop-2.6.0/logs/hadoop-root-secondarynamenode-data1.out
+starting yarn daemons
+starting resourcemanager, logging to /root/hbase/hadoop-2.6.0/logs/yarn-root-resourcemanager-data1.out
+data3: starting nodemanager, logging to /root/hbase/hadoop-2.6.0/logs/yarn-root-nodemanager-data3.out
+data2: starting nodemanager, logging to /root/hbase/hadoop-2.6.0/logs/yarn-root-nodemanager-data2.out
+
+<span class="token comment" spellcheck="true"># 检查各个节点的状态</span>
+<span class="token punctuation">[</span>root@data1 hbase<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># jps</span>
+24048 ResourceManager
+24307 Jps
+23893 SecondaryNameNode
+23711 NameNode
+
+<span class="token punctuation">[</span>root@data2 tmp<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># jps</span>
+12341 DataNode
+12442 NodeManager
+12570 Jps
+
+<span class="token punctuation">[</span>root@data3 tmp<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># jps</span>
+5187 DataNode
+5288 NodeManager
+5416 Jps
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="错误1"><a href="#错误1" class="headerlink" title="错误1"></a>错误1</h3><p>启动的时候报了以下错误,主要原因是<code>底层文件version的配置信息clusterID不一样</code>.删除name，data，tmp文件，重新格式化.</p>
+<pre class="line-numbers language-log"><code class="language-log">Starting secondary namenodes [0.0.0.0]
+The authenticity of host '0.0.0.0 (0.0.0.0)' can't be established.
+ECDSA key fingerprint is SHA256:/bqliO4L8XYMMr/5wVDufH9IjldwXwLWEol3eAEjuzc.
+ECDSA key fingerprint is MD5:92:8e:24:a9:a1:e8:a9:55:8d:20:0f:4e:3d:34:dd:f0.
+Are you sure you want to continue connecting (yes/no)? yes
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-bash"><code class="language-bash">hadoop fs -mkdir -p /test
+hadoop fs -ls /test
+hadoop fs -put test.txt /test/
+hadoop fs -cat /test/test.txt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kafka-ji-qun-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/kafka-ji-qun-bu-shu/" class="post-title-link" itemprop="url">kafka集群部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-26 13:56:52" itemprop="dateCreated datePublished" datetime="2021-08-26T13:56:52+08:00">2021-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># node1</span>
+docker run -d --name kafka --net host --restart always \
+  -e KAFKA_CFG_ZOOKEEPER_CONNECT<span class="token operator">=</span>192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 \
+  -e KAFKA_BROKER_ID<span class="token operator">=</span>1 \
+  -e KAFKA_CFG_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.17:9092 \
+  -e KAFKA_CFG_ADVERTISED_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.17:9092 \
+  -e ALLOW_PLAINTEXT_LISTENER<span class="token operator">=</span>yes \
+  -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE<span class="token operator">=</span>true \
+  -v /root/kafka:/bitnami/kafka \
+  bitnami/kafka:2.8.0
+
+<span class="token comment" spellcheck="true"># node2</span>
+docker run -d --name kafka --net host --restart always \
+  -e KAFKA_CFG_ZOOKEEPER_CONNECT<span class="token operator">=</span>192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 \
+  -e KAFKA_BROKER_ID<span class="token operator">=</span>2 \
+  -e KAFKA_CFG_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.19:9092 \
+  -e KAFKA_CFG_ADVERTISED_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.19:9092 \
+  -e ALLOW_PLAINTEXT_LISTENER<span class="token operator">=</span>yes \
+  -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE<span class="token operator">=</span>true \
+  -v /root/kafka:/bitnami/kafka \
+  bitnami/kafka:2.8.0
+
+<span class="token comment" spellcheck="true"># node3</span>
+docker run -d --name kafka --net host --restart always \
+  -e KAFKA_CFG_ZOOKEEPER_CONNECT<span class="token operator">=</span>192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 \
+  -e KAFKA_BROKER_ID<span class="token operator">=</span>3 \
+  -e KAFKA_CFG_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.20:9092 \
+  -e KAFKA_CFG_ADVERTISED_LISTENERS<span class="token operator">=</span>PLAINTEXT://192.168.3.20:9092 \
+  -e ALLOW_PLAINTEXT_LISTENER<span class="token operator">=</span>yes \
+  -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE<span class="token operator">=</span>true \
+  -v /root/kafka:/bitnami/kafka \
+  bitnami/kafka:2.8.0
+
+<span class="token comment" spellcheck="true"># 2种ui</span>
+docker run -d -p 18080:8889 --name ui freakchicken/kafka-ui-lite
+docker run -d -p 9000:9000 --name ui -e ZK_HOSTS<span class="token operator">=</span>192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 solsson/kafka-manager
+
+<span class="token comment" spellcheck="true"># 测试命令</span>
+./kafka-topics.sh --create --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --replication-factor 1 --partitions 1 --topic first_kafka
+
+./kafka-console-producer.sh --broker-list 192.168.3.17:9092,192.168.3.19:9092,192.168.3.20:9092 --topic first_kafka
+
+./kafka-console-consumer.sh --bootstrap-server 192.168.3.17:9092,192.168.3.19:9092,192.168.3.20:9092 --topic first_kafka --from-beginning
+
+./kafka-topics.sh --describe --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --topic first_kafka
+
+./kafka-topics.sh --list --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181
+
+./kafka-topics.sh --delete --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --topic first_kafka
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -418,365 +925,10 @@ flush <span class="token keyword">privileges</span><span class="token punctuatio
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-shao-bing-mo-shi-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/redis-shao-bing-mo-shi-bu-shu/" class="post-title-link" itemprop="url">redis哨兵模式部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-19 17:03:53" itemprop="dateCreated datePublished" datetime="2021-08-19T17:03:53+08:00">2021-08-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="配置文件sentinel-conf"><a href="#配置文件sentinel-conf" class="headerlink" title="配置文件sentinel.conf"></a>配置文件sentinel.conf</h3><pre class="line-numbers language-bash"><code class="language-bash">port 26379
-sentinel monitor mymaster 192.168.41.128 6379 2
-sentinel down-after-milliseconds mymaster 30000
-sentinel parallel-syncs mymaster 1
-sentinel failover-timeout mymaster 10000
-sentinel deny-scripts-reconfig <span class="token function">yes</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="启动1主2从"><a href="#启动1主2从" class="headerlink" title="启动1主2从"></a>启动1主2从</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动主节点</span>
-docker run -d --net host --name redis-server redis:6.2.5 redis-server --port 6379
-<span class="token comment" spellcheck="true"># 启动从节点</span>
-docker run -d --net host --name redis-slave1 redis:6.2.5 redis-server --slaveof 192.168.41.128 6379  --port 6378
-docker run -d --net host --name redis-slave2 redis:6.2.5 redis-server --slaveof 192.168.41.128 6379  --port 6377
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="启动哨兵"><a href="#启动哨兵" class="headerlink" title="启动哨兵"></a>启动哨兵</h3><pre class="line-numbers language-bash"><code class="language-bash">docker run -d -p 26379:26379 --name redis-sentinel1 -v <span class="token variable">$PWD</span>/sentinel1.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
-docker run -d -p 26378:26379 --name redis-sentinel2 -v <span class="token variable">$PWD</span>/sentinel2.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
-docker run -d -p 26377:26379 --name redis-sentinel3 -v <span class="token variable">$PWD</span>/sentinel2.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="查看状态"><a href="#查看状态" class="headerlink" title="查看状态"></a>查看状态</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node1 redis<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker exec -it redis-sentinel1 bash</span>
-root@be853924137f:/data<span class="token comment" spellcheck="true"># redis-cli -p 26379</span>
-127.0.0.1:26379<span class="token operator">></span> info sentinel
-<span class="token comment" spellcheck="true"># Sentinel</span>
-sentinel_masters:1
-sentinel_tilt:0
-sentinel_running_scripts:0
-sentinel_scripts_queue_length:0
-sentinel_simulate_failure_flags:0
-master0:name<span class="token operator">=</span>mymaster,status<span class="token operator">=</span>sdown,address<span class="token operator">=</span>192.168.41.128:6379,slaves<span class="token operator">=</span>1,sentinels<span class="token operator">=</span>3
-
-<span class="token comment" spellcheck="true"># 查看masters</span>
-127.0.0.1:26379<span class="token operator">></span> SENTINEL masters
-
-<span class="token comment" spellcheck="true"># 查看slaves</span>
-127.0.0.1:26379<span class="token operator">></span> SENTINEL slaves mymaster
-
-<span class="token comment" spellcheck="true"># 关闭redis-server</span>
-docker stop redis-server
-<span class="token comment" spellcheck="true"># 刷新查看master节点是否更换</span>
-docker <span class="token function">exec</span> -it  redis-sentinel1 redis-cli -p 26379 sentinel masters
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-zhu-cong-mo-shi-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/redis-zhu-cong-mo-shi-bu-shu/" class="post-title-link" itemprop="url">redis主从模式部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-19 16:49:41" itemprop="dateCreated datePublished" datetime="2021-08-19T16:49:41+08:00">2021-08-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="启动参数"><a href="#启动参数" class="headerlink" title="启动参数"></a>启动参数</h3><ul>
-<li><code>--requirepass 123456</code>:设置客户端连接redis的认证信息</li>
-<li><code>--masterauth 123456</code>:设置从节点连接redis的认证信息</li>
-</ul>
-<h3 id="一主一从"><a href="#一主一从" class="headerlink" title="一主一从"></a>一主一从</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动主节点</span>
-docker run -d -p 6379:6379 --name redis-server redis:6.2.5 redis-server
-
-<span class="token comment" spellcheck="true"># 启动从节点,可以启动多个</span>
-docker run -d -p 6378:6379 --name redis-slave redis:6.2.5 redis-server --slaveof 192.168.41.128 6379
-
-<span class="token comment" spellcheck="true"># 查看主从状态</span>
-docker <span class="token function">exec</span> -it redis-server <span class="token function">bash</span>
-root@2057712d5b24:/data<span class="token comment" spellcheck="true"># redis-cli </span>
-127.0.0.1:6379<span class="token operator">></span> info replication
-<span class="token comment" spellcheck="true"># Replication</span>
-role:master
-connected_slaves:1
-slave0:ip<span class="token operator">=</span>172.17.0.1,port<span class="token operator">=</span>6379,state<span class="token operator">=</span>online,offset<span class="token operator">=</span>844,lag<span class="token operator">=</span>0
-master_failover_state:no-failover
-master_replid:a7c3448b15070b13848c48139b99016a67cb5b9e
-master_replid2:0000000000000000000000000000000000000000
-master_repl_offset:844
-second_repl_offset:-1
-repl_backlog_active:1
-repl_backlog_size:1048576
-repl_backlog_first_byte_offset:1
-repl_backlog_histlen:844
-
-
-<span class="token comment" spellcheck="true"># 测试</span>
-<span class="token comment" spellcheck="true"># 主节点set,从节点可以get</span>
-<span class="token comment" spellcheck="true"># 从节点只支持读操作,不支持写</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-ji-qun-mo-shi-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/redis-ji-qun-mo-shi-bu-shu/" class="post-title-link" itemprop="url">redis集群模式部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-19 15:36:55" itemprop="dateCreated datePublished" datetime="2021-08-19T15:36:55+08:00">2021-08-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="一些重要参数"><a href="#一些重要参数" class="headerlink" title="一些重要参数"></a>一些重要参数</h3><ul>
-<li><code>--cluster-enabled</code>：是否启动集群，选值：yes 、no</li>
-<li><code>--cluster-config-file</code> 配置文件.conf ：指定节点信息，自动生成</li>
-<li><code>--cluster-node-timeout</code> 毫秒值： 配置节点连接超时时间</li>
-<li><code>--appendonly</code>：是否开启持久化，选值：yes、no</li>
-</ul>
-<h3 id="最简单3主模式"><a href="#最简单3主模式" class="headerlink" title="最简单3主模式"></a>最简单3主模式</h3><p>方便测试，使用<code>host</code>网络模式启动docker,且并没有将持久化映射出来.</p>
-<blockquote>
-<p>持久化启动参数<code>-v /data/redis-data/node1:/data</code>.</p>
-</blockquote>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 节点1</span>
-docker run -d --name redis-node1 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-1.conf --port 6379
-<span class="token comment" spellcheck="true"># 节点2</span>
-docker run -d --name redis-node2 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-2.conf --port 6380
-<span class="token comment" spellcheck="true"># 节点3</span>
-docker run -d --name redis-node3 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-3.conf --port 6381
-
-<span class="token comment" spellcheck="true"># 进入一个容器执行创建集群的命令</span>
-docker <span class="token function">exec</span> -it redis-node1 /bin/bash
-<span class="token comment" spellcheck="true"># 创建集群,只有三个节点,所有指定副本数为0</span>
-redis-cli --cluster create 192.168.41.128:6379  192.168.41.128:6380  192.168.41.128:6381 --cluster-replicas 0
-<span class="token operator">>></span><span class="token operator">></span> Performing <span class="token function">hash</span> slots allocation on 3 nodes<span class="token punctuation">..</span>.
-Master<span class="token punctuation">[</span>0<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 0 - 5460
-Master<span class="token punctuation">[</span>1<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 5461 - 10922
-Master<span class="token punctuation">[</span>2<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 10923 - 16383
-M: 699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379
-   slots:<span class="token punctuation">[</span>0-5460<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
-M: ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380
-   slots:<span class="token punctuation">[</span>5461-10922<span class="token punctuation">]</span> <span class="token punctuation">(</span>5462 slots<span class="token punctuation">)</span> master
-M: 043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381
-   slots:<span class="token punctuation">[</span>10923-16383<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
-Can I <span class="token keyword">set</span> the above configuration? <span class="token punctuation">(</span>type <span class="token string">'yes'</span> to accept<span class="token punctuation">)</span>: <span class="token function">yes</span>
-<span class="token operator">>></span><span class="token operator">></span> Nodes configuration updated
-<span class="token operator">>></span><span class="token operator">></span> Assign a different config epoch to each node
-<span class="token operator">>></span><span class="token operator">></span> Sending CLUSTER MEET messages to <span class="token function">join</span> the cluster
-Waiting <span class="token keyword">for</span> the cluster to <span class="token function">join</span>
-<span class="token keyword">.</span>
-<span class="token operator">>></span><span class="token operator">></span> Performing Cluster Check <span class="token punctuation">(</span>using node 192.168.41.128:6379<span class="token punctuation">)</span>
-M: 699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379
-   slots:<span class="token punctuation">[</span>0-5460<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
-M: ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380
-   slots:<span class="token punctuation">[</span>5461-10922<span class="token punctuation">]</span> <span class="token punctuation">(</span>5462 slots<span class="token punctuation">)</span> master
-M: 043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381
-   slots:<span class="token punctuation">[</span>10923-16383<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
-<span class="token punctuation">[</span>OK<span class="token punctuation">]</span> All nodes agree about slots configuration.
-<span class="token operator">>></span><span class="token operator">></span> Check <span class="token keyword">for</span> <span class="token function">open</span> slots<span class="token punctuation">..</span>.
-<span class="token operator">>></span><span class="token operator">></span> Check slots coverage<span class="token punctuation">..</span>.
-<span class="token punctuation">[</span>OK<span class="token punctuation">]</span> All 16384 slots covered.
-
-<span class="token comment" spellcheck="true"># 查看集群状态</span>
-root@node1:/data<span class="token comment" spellcheck="true"># redis-cli </span>
-127.0.0.1:6379<span class="token operator">></span> cluster nodes
-ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380@16380 master - 0 1629358092049 2 connected 5461-10922
-043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381@16381 master - 0 1629358091025 3 connected 10923-16383
-699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379@16379 myself,master - 0 1629358091000 1 connected 0-5460
-
-<span class="token comment" spellcheck="true"># 测试,连接集群,set数据,别的节点可以get到数据</span>
-root@node1:/data<span class="token comment" spellcheck="true"># redis-cli -c</span>
-127.0.0.1:6379<span class="token operator">></span> <span class="token keyword">set</span> hello world
-OK
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="3主3从模式"><a href="#3主3从模式" class="headerlink" title="3主3从模式"></a>3主3从模式</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 主备6个redis节点</span>
-docker run -d --name redis-node1 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-1.conf --port 6379
-docker run -d --name redis-node2 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-2.conf --port 6380
-docker run -d --name redis-node3 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-3.conf --port 6381
-docker run -d --name redis-node4 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-4.conf --port 6382
-docker run -d --name redis-node5 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-5.conf --port 6383
-docker run -d --name redis-node6 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-6.conf --port 6384
-
-<span class="token comment" spellcheck="true"># 进入任一节点</span>
-docker <span class="token function">exec</span> -it redis-node1 /bin/bash
-
-<span class="token comment" spellcheck="true"># 创建集群</span>
-redis-cli --cluster create 192.168.41.128:6379 192.168.41.128:6380 192.168.41.128:6381 192.168.41.128:6382 192.168.41.128:6383 192.168.41.128:6384 --cluster-replicas 1
-
-<span class="token comment" spellcheck="true"># 查看集群状态</span>
-root@node1:/data<span class="token comment" spellcheck="true"># redis-cli </span>
-127.0.0.1:6379<span class="token operator">></span> cluster nodes
-95b197193ee57fb0f331ee03df671b0e50d293c2 192.168.41.128:6380@16380 master - 0 1629359633234 2 connected 5461-10922
-10678b7ed61dbcd923472a272b6d365222fdad95 192.168.41.128:6384@16384 slave 345dd13e0bbf74a09ebe0011302f0ba8a011c726 0 1629359633000 3 connected
-34e4d85bbdebc619ed4e9a183a0939db0ad82d9a 192.168.41.128:6382@16382 slave 75325c54ff09715263c514bde71d6582fde2b8a8 0 1629359632000 1 connected
-345dd13e0bbf74a09ebe0011302f0ba8a011c726 192.168.41.128:6381@16381 master - 0 1629359635272 3 connected 10923-16383
-75325c54ff09715263c514bde71d6582fde2b8a8 192.168.41.128:6379@16379 myself,master - 0 1629359634000 1 connected 0-5460
-98b18508d3248973c3d28930b7a571d4564c8e2a 192.168.41.128:6383@16383 slave 95b197193ee57fb0f331ee03df671b0e50d293c2 0 1629359635000 2 connected
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/18/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/">18</a><span class="page-number current">19</span><a class="page-number" href="/page/20/">20</a><span class="space">&hellip;</span><a class="page-number" href="/page/60/">60</a><a class="extend next" rel="next" href="/page/20/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/18/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/">18</a><span class="page-number current">19</span><a class="page-number" href="/page/20/">20</a><span class="space">&hellip;</span><a class="page-number" href="/page/61/">61</a><a class="extend next" rel="next" href="/page/20/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -844,20 +996,20 @@ root@node1:/data<span class="token comment" spellcheck="true"># redis-cli </span
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">359</span>
+          <span class="site-state-item-count">362</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">222</span>
+        <span class="site-state-item-count">224</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

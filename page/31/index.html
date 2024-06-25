@@ -77,9 +77,9 @@
 
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
-<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
+</head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
@@ -192,6 +192,367 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-docker-bu-shu-zhi-zhu-cong-fu-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-docker-bu-shu-zhi-zhu-cong-fu-zhi/" class="post-title-link" itemprop="url">mysql【docker部署之主从复制】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-04 11:49:38" itemprop="dateCreated datePublished" datetime="2020-08-04T11:49:38+08:00">2020-08-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><ul>
+<li>使用的<code>docker</code>镜像<code>mysql:5.7.18</code>;</li>
+<li>容器中<code>mysql</code>配置文件目录<code>/etc/mysql/</code>;</li>
+</ul>
+<h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><ol>
+<li>启动镜像，将镜像中配置目录拷贝到宿主机</li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">#启动,并设置root密码
+docker run -d --name mysql  -e MYSQL_ROOT_PASSWORD=123456 hub.deri.org.cn/library/mysql:5.7
+
+#复制
+docker cp mysql:/etc/mysql /root
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh">#配置文件目录结构
+[root@mysql01 mysql]# tree
+.
+├── conf.d
+│&nbsp;&nbsp; ├── docker.cnf
+│&nbsp;&nbsp; └── mysql.cnf
+├── my.cnf -> /etc/alternatives/my.cnf
+├── my.cnf.fallback
+├── mysql.cnf
+└── mysql.conf.d
+    └── mysqld.cnf
+
+2 directories, 6 files
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>查看<code>mysql data</code>目录,便于将<code>docker</code>中数据持久化到宿主机</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 登录</span>
+docker <span class="token keyword">exec</span> <span class="token operator">-</span>it mysql bash
+mysql <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456
+<span class="token comment" spellcheck="true">-- 查询</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%datadir%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-----------------+</span>
+<span class="token operator">|</span> Variable_name <span class="token operator">|</span> <span class="token keyword">Value</span>           <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-----------------+</span>
+<span class="token operator">|</span> datadir       <span class="token operator">|</span> <span class="token operator">/</span>var<span class="token operator">/</span>lib<span class="token operator">/</span>mysql<span class="token operator">/</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-----------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol>
+<li>修改<code>mysql.cnf</code></li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">#参考mysql主从配置
+[mysqld]
+server-id=1 # 主从设置不一样
+log-bin=mysql-bin #备无需开启
+auto-increment-increment=2
+auto-increment-offset=2 # 主从设置不一样：1,2
+log-slave-updates=true
+#replicate-ignore-db=information_schema
+max_binlog_size=1024M
+binlog-format=ROW
+#binlog_rows_query_log_events=on # 在row 模式的binlog中包含SQL EVENTS（即SQL语句也会保留）
+#master-info-repository=TABLE
+#relay-log-info-repository=TABLE
+#slave-skip-errors=all # 忽略复制产生的错误
+#slave-skip-errors=1062,1032,1060 # 跳过已知错误,主键冲突、表已存在等错误代码如1062,1032,1060等
+#relay-log-purge = 1    #是否自动清空不再需要中继日志时。默认值为1(启用)
+#expire_logs_days = 30  #超过 30 天的 binlog 删除
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>启动mysql</li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">#映射端口、配置文件和data
+docker run -d --name mysql -v /root/mysql:/etc/mysql -v /var/lib/mysql/:/var/lib/mysql/ -e MYSQL_ROOT_PASSWORD=123456 -p 3306:3306  hub.deri.org.cn/library/mysql:5.7
+
+#也可以按需只映射一个配置文件mysql.cnf
+docker run -d --name mysql -v /root/mysql/mysql.cnf:/etc/mysql/mysql.cnf -v /var/lib/mysql/:/var/lib/mysql/ -e MYSQL_ROOT_PASSWORD=123456 -p 3307:3306  hub.deri.org.cn/library/mysql:5.7
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>其它主从配置,参考非<code>docker</code>安装配置</li>
+</ol>
+<ul>
+<li>添加主从帐号</li>
+<li>配置主从信息</li>
+<li>开启半同步复制</li>
+<li>开启从节点只读模式</li>
+<li>…</li>
+</ul>
+<ol start="6">
+<li>使用<code>keepalive</code>工具</li>
+</ol>
+<p>写一个脚本<code>/etc/docker_mysql.sh</code>判断<code>docker</code>中<code>mysql</code>是否存活</p>
+<pre class="line-numbers language-sh"><code class="language-sh">#! /bin/bash
+count=$(docker ps |grep hub.deri.org.cn/library/mysql:5.7 | grep Up| wc -l)
+if [ $count == "1" ];then
+    exit 0
+else
+    exit 1
+fi
+
+
+#测试这个脚本
+[root@mysql01 ~]# docker stop mysql
+mysql
+[root@mysql01 ~]# ./docker_mysql.sh 
+[root@mysql01 ~]# ./docker_mysql.sh ;echo $?
+1
+[root@mysql01 ~]# docker start mysql 
+mysql
+[root@mysql01 ~]# ./docker_mysql.sh ;echo $?
+0
+
+#配置keepalived
+vrrp_script chk_mysql {
+    script "/etc/docker_mysql.sh"
+    interval 2
+    timeout 2
+    fall 3
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-hosts-xin-zeng-ji-lu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-hosts-xin-zeng-ji-lu/" class="post-title-link" itemprop="url">docker【hosts新增记录】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-03 15:59:23" itemprop="dateCreated datePublished" datetime="2020-08-03T15:59:23+08:00">2020-08-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id=""><a href="#" class="headerlink" title=""></a></h3><p>使用<code>docker run</code>运行一个新的容器的时候，通过参数 <code>--add-host</code>来添加域名和<code>IP</code>信息到容器的<code>/etc/hosts</code>文件中。例如：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run -d --name <span class="token function">test</span> --add-host<span class="token operator">=</span>addr.com:10.10.18.11 redis:latest 
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-shu-ju-ku-you-hua/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-shu-ju-ku-you-hua/" class="post-title-link" itemprop="url">mysql【数据库优化】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-03 13:56:18" itemprop="dateCreated datePublished" datetime="2020-08-03T13:56:18+08:00">2020-08-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="mysql慢查询"><a href="#mysql慢查询" class="headerlink" title="mysql慢查询"></a>mysql慢查询</h3><p>查看<code>mysql</code>慢查询日志</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 慢查询日志</span>
+<span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%slow_query%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+--------------------------------------+</span>
+<span class="token operator">|</span> Variable_name       <span class="token operator">|</span> <span class="token keyword">Value</span>                                <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+--------------------------------------+</span>
+<span class="token operator">|</span> slow_query_log      <span class="token operator">|</span> <span class="token keyword">OFF</span>                                  <span class="token operator">|</span>
+<span class="token operator">|</span> slow_query_log_file <span class="token operator">|</span> <span class="token operator">/</span>var<span class="token operator">/</span>lib<span class="token operator">/</span>mysql<span class="token operator">/</span><span class="token number">7b32a384231d</span><span class="token operator">-</span>slow<span class="token punctuation">.</span>log <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------+--------------------------------------+</span>
+<span class="token number">2</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+
+<span class="token comment" spellcheck="true">-- 不使用索引查询日志</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%log_que%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token operator">|</span> Variable_name                 <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token operator">|</span> log_queries_not_using_indexes <span class="token operator">|</span> <span class="token keyword">OFF</span>   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+
+<span class="token comment" spellcheck="true">-- 查询时间设置,查询超过多少秒才记录</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%long_que%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token operator">|</span> Variable_name   <span class="token operator">|</span> <span class="token keyword">Value</span>     <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token operator">|</span> long_query_time <span class="token operator">|</span> <span class="token number">10.000000</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------+-----------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>开启慢查询日志</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 方法一</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span>  slow_query_log<span class="token operator">=</span><span class="token keyword">ON</span><span class="token punctuation">;</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span>  log_queries_not_using_indexes<span class="token operator">=</span><span class="token keyword">ON</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- 方法二，修改配置文件my.cnf</span>
+slow_query_log <span class="token operator">=</span> <span class="token keyword">ON</span>
+slow_query_log_file <span class="token operator">=</span> <span class="token operator">/</span>usr<span class="token operator">/</span><span class="token keyword">local</span><span class="token operator">/</span>mysql<span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span>slow<span class="token punctuation">.</span>log
+long_query_time <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token comment" spellcheck="true">-- 方法二需要重启</span>
+service mysqld restart
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>慢查询分析工具</p>
+<pre class="line-numbers language-bash"><code class="language-bash">mysqldumpslow
+
+pt-query-digest
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -692,609 +1053,10 @@ reset slave<span class="token punctuation">;</span>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-shuang-zhu-mo-shi-haproxy-keepalived-gao-ke-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-shuang-zhu-mo-shi-haproxy-keepalived-gao-ke-yong/" class="post-title-link" itemprop="url">mysql【双主模式+haproxy+keepalived高可用】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-28 15:15:56" itemprop="dateCreated datePublished" datetime="2020-07-28T15:15:56+08:00">2020-07-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>前文仅仅通过<code>mysql双主 + keepalived</code>实现高可用，这种方式在一台出现问题的时候可以切换，但是正常情况下只有一台服务使用，无法实现负载均衡，本文引入<code>haproxy</code>实现正常情况下也能有负载均衡的效果.</p>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ol>
-<li>安装<code>haproxy</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> haproxy
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="2">
-<li>修改<code>haproxy</code>配置文件<br>默认目录：<code>/etc/haproxy/haproxy.cfg</code></li>
-</ol>
-<pre class="line-numbers language-cfg"><code class="language-cfg">#---------------------------------------------------------------------
-# Example configuration for a possible web application.  See the
-# full configuration options online.
-#
-#   http://haproxy.1wt.eu/download/1.4/doc/configuration.txt
-#
-#---------------------------------------------------------------------
-
-#---------------------------------------------------------------------
-# Global settings
-#---------------------------------------------------------------------
-global
-    # to have these messages end up in /var/log/haproxy.log you will
-    # need to:
-    #
-    # 1) configure syslog to accept network log events.  This is done
-    #    by adding the '-r' option to the SYSLOGD_OPTIONS in
-    #    /etc/sysconfig/syslog
-    #
-    # 2) configure local2 events to go to the /var/log/haproxy.log
-    #   file. A line like the following can be added to
-    #   /etc/sysconfig/syslog
-    #
-    #    local2.*                       /var/log/haproxy.log
-    #
-    log         127.0.0.1 local2
-
-    chroot      /var/lib/haproxy
-    pidfile     /var/run/haproxy.pid
-    maxconn     4000
-    user        haproxy
-    group       haproxy
-    daemon
-
-    # turn on stats unix socket
-    stats socket /var/lib/haproxy/stats
-
-#---------------------------------------------------------------------
-# common defaults that all the 'listen' and 'backend' sections will
-# use if not designated in their block
-#---------------------------------------------------------------------
-defaults
-    mode                    http
-    log                     global
-    option                  httplog
-    option                  dontlognull
-    option http-server-close
-    option forwardfor       except 127.0.0.0/8
-    option                  redispatch
-    retries                 3
-    timeout http-request    10s
-    timeout queue           1m
-    timeout connect         10s
-    timeout client          1m
-    timeout server          1m
-    timeout http-keep-alive 10s
-    timeout check           10s
-    maxconn                 3000
-
-
-######## 监控界面配置 #################
-listen admin_status
-        bind 0.0.0.0:8888
-        mode http
-        stats refresh 30s
-        stats uri /
-        stats realm welcome login\ Haproxy
-        stats auth admin:123456
-        stats hide-version
-        stats admin if TRUE
-        ########frontend配置##############
-
-######## mysql负载均衡配置 ###############
-listen mysql
-        bind 0.0.0.0:13306
-        mode tcp
-        balance roundrobin                  # 负载均衡策略
-        #option tcplog                      # tcp日志
-        option mysql-check user haproxy     # 在mysql中创建无任何权限用户haproxy，且无密码
-        server mysql_1 192.168.41.141:3306 check weight 1 maxconn 2000
-        server mysql_2 192.168.41.142:3306 check weight 1 maxconn 2000
-        option tcpka                        # 缺少这个配置,可能无法查看到数据库
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p><code>option mysql-check user haproxy</code>这里是配置健康检查的，需要在mysql中创建无任何权限用户<code>haproxy</code>，且无密码.    </p>
-<ul>
-<li><code>CREATE USER 'haproxy'@'%' IDENTIFIED BY ''; </code></li>
-</ul>
-</blockquote>
-<ol start="3">
-<li>修改ulimit配置<br><code>haproxy</code>要求<code>ulimit</code>大于<code>（maxconn*2 + 15 ）</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true">#临时修改</span>
-<span class="token function">ulimit</span> -n 65536
-
-<span class="token comment" spellcheck="true">#永久修改，需要修改/etc/security/limits.conf配置文件，文末增加以下内容，然后重新登录就可以生效</span>
-* soft nofile 65536
-* hard nofile 65536
-* soft nproc 65565
-* hard nproc 65565
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="4">
-<li>启动服务并配置自启动</li>
-</ol>
-<p>启动后访问<code>8888</code>端口，使用<code>admin/123456</code>登录就可以看到<code>UI界面</code>了。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">systemctl start haproxy
-systemctl <span class="token function">enable</span> haproxy
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>修改<code>keepalived</code>配置<br>前文配置的<code>keepalived</code>监控的是<code>mysqld</code>进程，需要修改成监控<code>haproxy</code>进程.这样不管哪台机器的<code>mysql</code>或者<code>haproxy</code>或者<code>keepalived</code>出现问题，都不影响使用.</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改的配置如下</span>
-vrrp_script chk_mysql <span class="token punctuation">{</span>
-    script <span class="token string">"killall -0 haproxy"</span>
-    interval 2
-    <span class="token function">timeout</span> 2
-    fall 3
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="6">
-<li>测试<br>通过<code>VIP</code>连接数据库，增删改查测试.</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-shuang-zhu-mo-shi-keepalived-gao-ke-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-shuang-zhu-mo-shi-keepalived-gao-ke-yong/" class="post-title-link" itemprop="url">mysql【双主模式+keepalived高可用】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-28 14:23:18" itemprop="dateCreated datePublished" datetime="2020-07-28T14:23:18+08:00">2020-07-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><code>mysql</code>双主模式下，在任意一台<code>mysql</code>上写数据都会同步到另一台上，本章通过<code>keepalived VIP</code>实现如果一台服务挂了会自动切换到另一台<code>mysql</code>上.</p>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装keepalived,centos默认安装了</span>
-yum <span class="token function">install</span> keepalived -y
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>修改双主机<code>/etc/keepalived/keepalived.conf</code>配置.</p>
-<pre class="line-numbers language-json"><code class="language-json">global_defs <span class="token punctuation">{</span>
-   router_id mysql
-<span class="token punctuation">}</span>
-
-vrrp_script chk_mysql <span class="token punctuation">{</span>
-    script <span class="token string">"killall -0 mysqld"</span>      // 检测mysql进程是否存活
-    interval <span class="token number">2</span>
-    timeout <span class="token number">2</span>
-    fall <span class="token number">3</span>
-<span class="token punctuation">}</span>
-
-vrrp_instance mysql <span class="token punctuation">{</span>
-    state MASTER
-    interface ens33
-    virtual_router_id <span class="token number">51</span>
-    priority <span class="token number">100</span>                // 另一台权重可以设置<span class="token number">90</span>，防止争抢VIP
-    advert_int <span class="token number">1</span>
-    authentication <span class="token punctuation">{</span>
-        auth_type PASS
-        auth_pass <span class="token number">1111</span>
-    <span class="token punctuation">}</span>
-    virtual_ipaddress <span class="token punctuation">{</span>
-        <span class="token number">192.168</span>.<span class="token number">41.140</span>          // 设置虚拟ip
-    <span class="token punctuation">}</span>
-    track_script <span class="token punctuation">{</span>
-        chk_mysql
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 通过命令可以看到VIP已经在一台机器上了，也可以通过虚拟IP连接上mysql</span>
-<span class="token punctuation">[</span>root@mysql01 mysql<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># ip addr sh ens33</span>
-2: ens33: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
-    link/ether 00:50:56:26:c2:7e brd ff:ff:ff:ff:ff:ff
-    inet 192.168.41.141/24 brd 192.168.41.255 scope global ens33
-       valid_lft forever preferred_lft forever
-    inet 192.168.41.140/32 scope global ens33
-       valid_lft forever preferred_lft forever
-    inet6 fe80::250:56ff:fe26:c27e/64 scope <span class="token function">link</span> 
-       valid_lft forever preferred_lft forever
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 关掉mysql服务,命令可能根据你安装方式有区别</span>
-<span class="token function">service</span> mysql stop
-
-<span class="token comment" spellcheck="true"># 再次在两台机器上执行命令，可以看到VIP转移了,可以继续通过VIP连接mysql</span>
-ip addr sh ens33
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-shuang-zhu-mo-shi-pei-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-shuang-zhu-mo-shi-pei-zhi/" class="post-title-link" itemprop="url">mysql【双主模式配置】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-28 11:13:48" itemprop="dateCreated datePublished" datetime="2020-07-28T11:13:48+08:00">2020-07-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="前提准备"><a href="#前提准备" class="headerlink" title="前提准备"></a>前提准备</h3><table>
-<thead>
-<tr>
-<th>主机</th>
-<th>系统</th>
-<th>IP</th>
-<th>mysql</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>mysql01</code></td>
-<td><code>centos7</code></td>
-<td><code>192.168.41.141</code></td>
-<td>已部署<code>5.7.31</code></td>
-</tr>
-<tr>
-<td><code>mysql02</code></td>
-<td><code>centod7</code></td>
-<td><code>192.168.41.142</code></td>
-<td>已部署<code>5.7.31</code></td>
-</tr>
-</tbody></table>
-<h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><p><code>MySQL</code>中有一种日志叫做 <code>bin日志</code>（二进制日志），这个日志会记录下所有修改了数据库的SQL语句。主从复制的原理其实就是<code>从服务器</code>向<code>主服务器</code>请求这个日志文件，<code>主服务器</code>会把这个 <code>bin日志</code>复制到<code>从服务器</code>上执行一遍，这样<code>从服务器</code>上的数据就和<code>主服务器</code>上的数据相同了。</p>
-<p><img data-src="/images/mysql.png" alt="原理图"></p>
-<ol>
-<li>主服务器必须启用二进制日志（log-bin），记录任何修改了数据库数据的事件；</li>
-<li>从服务器开启一个线程（I/O Thread)把自己扮演成 MySQL 的客户端，通过 MySQL 协议，请求主服务器的二进制日志文件中的事件；</li>
-<li>主服务器启动一个线程（Dump Thread），检查自己二进制日志中的事件，跟对方请求的位置对比，如果不带请求位置参数，则主服务器就会从第一个日志文件中的第一个事件一个一个发送给从服务器；</li>
-<li>从服务器接收到主服务器发送过来的数据把它放置到中继日志（relay log）文件中。并记录该次请求到主服务器的具体哪一个二进制日志文件内部的哪一个位置（主服务器中的二进制文件会有多个，其名结尾以6位数递增）；</li>
-<li>从服务器启动另外一个线程（SQL Thread），把 relay log 中的事件读取出来，并在本地再执行一次。</li>
-</ol>
-<h3 id="双主架构思路"><a href="#双主架构思路" class="headerlink" title="双主架构思路"></a>双主架构思路</h3><ul>
-<li>两台<code>mysql</code>都可读写，互为主备</li>
-<li>两台主库之间做高可用,可以采用<code>haproxy</code>、<code>keepalived</code>等方案</li>
-</ul>
-<h3 id="双主配置"><a href="#双主配置" class="headerlink" title="双主配置"></a>双主配置</h3><blockquote>
-<p>主要配置文件<code>/etc/my.cnf</code></p>
-</blockquote>
-<ol>
-<li>修改配置</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/my.cnf
-
-<span class="token comment" spellcheck="true"># 添加以下配置</span>
-<span class="token comment" spellcheck="true"># id 保证唯一</span>
-server-id<span class="token operator">=</span>1
-<span class="token comment" spellcheck="true"># 开启binlog 日志</span>
-log-bin<span class="token operator">=</span>mysql-bin
-<span class="token comment" spellcheck="true"># 自增ID保证不冲突, 一主1,3,5 另一主2,4,6</span>
-auto-increment-increment<span class="token operator">=</span>2
-auto-increment-offset<span class="token operator">=</span>1
-<span class="token comment" spellcheck="true"># 将复制事件写入binlog,一台服务器既做主库又做从库此选项必须要开启</span>
-log-slave-updates<span class="token operator">=</span>true
-<span class="token comment" spellcheck="true"># 忽略同步的数据库</span>
-replicate-ignore-db<span class="token operator">=</span>information_schema
-replicate-ignore-db<span class="token operator">=</span>performance_schema
-replicate-ignore-db<span class="token operator">=</span>mysql
-replicate-ignore-db<span class="token operator">=</span>sys
-<span class="token comment" spellcheck="true"># binlog文件大小限制</span>
-max_binlog_size<span class="token operator">=</span>1024M
-<span class="token comment" spellcheck="true"># binlog格式</span>
-binlog-format<span class="token operator">=</span>ROW
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>另一台配置</p>
-<pre class="line-numbers language-bash"><code class="language-bash">server-id<span class="token operator">=</span>2
-log-bin<span class="token operator">=</span>mysql-bin
-auto-increment-increment<span class="token operator">=</span>2
-auto-increment-offset<span class="token operator">=</span>2
-log-slave-updates<span class="token operator">=</span>true
-replicate-ignore-db<span class="token operator">=</span>information_schema
-replicate-ignore-db<span class="token operator">=</span>performance_schema
-replicate-ignore-db<span class="token operator">=</span>mysql
-replicate-ignore-db<span class="token operator">=</span>sys
-max_binlog_size<span class="token operator">=</span>1024M
-binlog-format<span class="token operator">=</span>ROW
-<span class="token comment" spellcheck="true">#binlog_rows_query_log_events=on # 在row 模式的binlog中包含SQL EVENTS（即SQL语句也会保留）</span>
-<span class="token comment" spellcheck="true">#master-info-repository=TABLE</span>
-<span class="token comment" spellcheck="true">#relay-log-info-repository=TABLE</span>
-<span class="token comment" spellcheck="true">#slave-skip-errors=all # 忽略复制产生的错误</span>
-<span class="token comment" spellcheck="true">#slave-skip-errors=1062,1032,1060 # 跳过已知错误,主键冲突、表已存在等错误代码如1062,1032,1060等</span>
-<span class="token comment" spellcheck="true">#relay-log-purge = 1    #是否自动清空不再需要中继日志时。默认值为1(启用)</span>
-<span class="token comment" spellcheck="true">#expire_logs_days = 30  #超过 30 天的 binlog 删除</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p><code>slave_skip_errors</code>参数说明:</p>
-<pre><code>slave_skip_errors选项有四个可用值，分别为：off，all，ErorCode，ddl_exist_errors, 默认情况下该参数值是off.
-mysql5.6及MySQL Cluster NDB 7.3以及后续版本增加了参数ddl_exist_errors，该参数包含一系列error code（1007,1008,1050,1051,1054,1060,1061,1068,1094,1146）
-一些error code代表的错误如下：
-    1007：数据库已存在，创建数据库失败
-    1008：数据库不存在，删除数据库失败
-    1050：数据表已存在，创建数据表失败
-    1051：数据表不存在，删除数据表失败
-    1054：字段不存在，或程序文件跟数据库有冲突
-    1060：字段重复，导致无法插入
-    1061：重复键名
-    1068：定义了多个主键
-    1094：位置线程ID
-    1146：数据表缺失，请恢复数据库
-    1053：复制过程中主服务器宕机
-    1062：主键冲突 Duplicate entry '%s' for key %d
-</code></pre>
-<ol start="2">
-<li>重启<code>mysql</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 根据安装方式选择</span>
-<span class="token function">service</span> mysql restart
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="3">
-<li>添加主从同步账户</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- mysql01</span>
-<span class="token keyword">grant</span> <span class="token keyword">replication</span> slave <span class="token keyword">on</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">to</span> <span class="token string">'slave'</span>@'<span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">41.142</span><span class="token string">' identified by '</span><span class="token number">123456</span>'<span class="token punctuation">;</span>
-flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">-- mysql02</span>
-<span class="token keyword">grant</span> <span class="token keyword">replication</span> slave <span class="token keyword">on</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">to</span> <span class="token string">'slave'</span>@'<span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">41.141</span><span class="token string">' identified by '</span><span class="token number">123456</span>'<span class="token punctuation">;</span>
-flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="4">
-<li>查看主库状态</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 分别在mysql01,mysql02查看, 这里由于都是新安装的，status完全一样，实际可能不一样</span>
-<span class="token comment" spellcheck="true">-- 记住file的名字和position的值，因为主从同步，从数据库是通过读取主数据库的日志文件来完成同步的，所以需要文件名字和日志的当前位置</span>
-mysql<span class="token operator">></span> <span class="token keyword">show</span> master <span class="token keyword">status</span><span class="token punctuation">;</span>
-<span class="token operator">+</span><span class="token comment" spellcheck="true">------------------+----------+--------------+------------------+-------------------+</span>
-<span class="token operator">|</span> <span class="token keyword">File</span>             <span class="token operator">|</span> Position <span class="token operator">|</span> Binlog_Do_DB <span class="token operator">|</span> Binlog_Ignore_DB <span class="token operator">|</span> Executed_Gtid_Set <span class="token operator">|</span>
-<span class="token operator">+</span><span class="token comment" spellcheck="true">------------------+----------+--------------+------------------+-------------------+</span>
-<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000001</span> <span class="token operator">|</span>      <span class="token number">604</span> <span class="token operator">|</span>              <span class="token operator">|</span>                  <span class="token operator">|</span>                   <span class="token operator">|</span>
-<span class="token operator">+</span><span class="token comment" spellcheck="true">------------------+----------+--------------+------------------+-------------------+</span>
-<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>配置同步信息</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- mysql01</span>
-change master <span class="token keyword">to</span> master_host<span class="token operator">=</span><span class="token string">'192.168.41.142'</span><span class="token punctuation">,</span>master_port<span class="token operator">=</span><span class="token number">3306</span><span class="token punctuation">,</span>master_user<span class="token operator">=</span><span class="token string">'slave'</span><span class="token punctuation">,</span>master_password<span class="token operator">=</span><span class="token string">'123456'</span><span class="token punctuation">,</span>master_log_file<span class="token operator">=</span><span class="token string">'mysql-bin.000001'</span><span class="token punctuation">,</span>master_log_pos<span class="token operator">=</span><span class="token number">604</span><span class="token punctuation">;</span>
-
-<span class="token keyword">start</span> slave<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">-- mysql02</span>
-change master <span class="token keyword">to</span> master_host<span class="token operator">=</span><span class="token string">'192.168.41.141'</span><span class="token punctuation">,</span>master_port<span class="token operator">=</span><span class="token number">3306</span><span class="token punctuation">,</span>master_user<span class="token operator">=</span><span class="token string">'slave'</span><span class="token punctuation">,</span>master_password<span class="token operator">=</span><span class="token string">'123456'</span><span class="token punctuation">,</span>master_log_file<span class="token operator">=</span><span class="token string">'mysql-bin.000001'</span><span class="token punctuation">,</span>master_log_pos<span class="token operator">=</span><span class="token number">604</span><span class="token punctuation">;</span>
-
-<span class="token keyword">start</span> slave<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="6">
-<li>查看同步状态</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 分别在mysql01,mysql02查看同步状态</span>
-mysql<span class="token operator">></span> <span class="token keyword">show</span> slave <span class="token keyword">status</span>\G
-<span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span> <span class="token number">1</span><span class="token punctuation">.</span> <span class="token keyword">row</span> <span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span><span class="token operator">*</span>
-               Slave_IO_State: Waiting <span class="token keyword">for</span> master <span class="token keyword">to</span> send event
-                  Master_Host: <span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">41.141</span>
-                  Master_User: slave
-                  Master_Port: <span class="token number">3306</span>
-                Connect_Retry: <span class="token number">60</span>
-              Master_Log_File: mysql<span class="token operator">-</span>bin<span class="token number">.000001</span>
-          Read_Master_Log_Pos: <span class="token number">604</span>
-               Relay_Log_File: mysql02<span class="token operator">-</span>relay<span class="token operator">-</span>bin<span class="token number">.000002</span>
-                Relay_Log_Pos: <span class="token number">320</span>
-        Relay_Master_Log_File: mysql<span class="token operator">-</span>bin<span class="token number">.000001</span>
-             Slave_IO_Running: Yes      <span class="token comment" spellcheck="true">-- 状态正常</span>
-            Slave_SQL_Running: Yes      <span class="token comment" spellcheck="true">-- 状态正常</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="7">
-<li>测试</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 随便在 mysql01 或 mysql02 上创建库、表或者数据都能同步到另一台机器上</span>
-<span class="token keyword">create</span> <span class="token keyword">database</span> test<span class="token punctuation">;</span>
-
-<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t_type<span class="token punctuation">`</span> <span class="token punctuation">(</span>
-                            <span class="token punctuation">`</span>type_id<span class="token punctuation">`</span> <span class="token keyword">INT</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">AUTO_INCREMENT</span> <span class="token keyword">COMMENT</span> <span class="token string">'资源类型id'</span><span class="token punctuation">,</span>
-                            <span class="token punctuation">`</span>type_name<span class="token punctuation">`</span> <span class="token keyword">VARCHAR</span><span class="token punctuation">(</span><span class="token number">32</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'资源类型名称'</span><span class="token punctuation">,</span>
-                            <span class="token punctuation">`</span>type_remark<span class="token punctuation">`</span> <span class="token keyword">VARCHAR</span><span class="token punctuation">(</span><span class="token number">255</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'备注'</span><span class="token punctuation">,</span>
-                            <span class="token punctuation">`</span>create_time<span class="token punctuation">`</span> <span class="token keyword">DATETIME</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CURRENT_TIMESTAMP</span> <span class="token keyword">COMMENT</span> <span class="token string">'创建时间'</span><span class="token punctuation">,</span>
-                            <span class="token punctuation">`</span>update_time<span class="token punctuation">`</span> <span class="token keyword">DATETIME</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CURRENT_TIMESTAMP</span> <span class="token keyword">ON</span> <span class="token keyword">UPDATE</span> <span class="token keyword">CURRENT_TIMESTAMP</span> <span class="token keyword">COMMENT</span> <span class="token string">'更新时间'</span><span class="token punctuation">,</span>
-                            <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>type_id<span class="token punctuation">`</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-                            <span class="token keyword">UNIQUE</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span>type_name<span class="token punctuation">)</span>
-<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">INNODB</span> <span class="token keyword">AUTO_INCREMENT</span><span class="token operator">=</span><span class="token number">1</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8<span class="token punctuation">;</span>
-
-<span class="token keyword">insert</span> <span class="token keyword">into</span> t_type<span class="token punctuation">(</span>type_name<span class="token punctuation">,</span> type_remark<span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span><span class="token string">'菜单资源'</span><span class="token punctuation">,</span><span class="token string">'用于确定页面菜单资源，分多级菜单'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">insert</span> <span class="token keyword">into</span> t_type<span class="token punctuation">(</span>type_name<span class="token punctuation">,</span> type_remark<span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span><span class="token string">'按钮资源'</span><span class="token punctuation">,</span><span class="token string">'用于确定页面按钮资源'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">insert</span> <span class="token keyword">into</span> t_type<span class="token punctuation">(</span>type_name<span class="token punctuation">,</span> type_remark<span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span><span class="token string">'路由资源'</span><span class="token punctuation">,</span><span class="token string">'用于确定网关路由资源'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="8">
-<li>开启<code>MySQL5.6</code>之后引入的<code>GTID</code>复制功能</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/my.cnf
-<span class="token comment" spellcheck="true"># 增加以下配置,开启gtid</span>
-gtid-mode<span class="token operator">=</span>on
-enforce-gtid-consistency<span class="token operator">=</span>on
-<span class="token comment" spellcheck="true"># 修改完my.cnf需要重启mysql才能生效</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- mysql01,mysql02分别执行以下命令</span>
-mysql<span class="token operator">></span> stop slave<span class="token punctuation">;</span>
-Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
-
-mysql<span class="token operator">></span> change master <span class="token keyword">to</span> MASTER_AUTO_POSITION<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
-Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
-
-mysql<span class="token operator">></span> <span class="token keyword">start</span> slave<span class="token punctuation">;</span>
-Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p><code>GTID</code>又叫<code>全局事务ID</code>（<code>Global Transaction ID</code>），是一个已提交事务的编号，并且是一个全局唯一的编号。<code>MySQL5.6</code>版本之后在主从复制类型上新增了<code>GTID复制</code>。</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://blog.51cto.com/sumongodb/2090307">GTID！MySQL复制中的核武器</a></li>
-</ul>
-</blockquote>
-<h3 id="双主配置之前数据备份"><a href="#双主配置之前数据备份" class="headerlink" title="双主配置之前数据备份"></a>双主配置之前数据备份</h3><blockquote>
-<p>使用<code>mysqldump</code>命令,<a target="_blank" rel="noopener" href="https://www.cnblogs.com/liuriqi/p/4207310.html">MySQL操作mysqldump命令详解</a></p>
-</blockquote>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 导出主数据库的数据</span>
-mysqldump <span class="token operator">-</span>uroot <span class="token operator">-</span>p <span class="token comment" spellcheck="true">--opt --all-databases >/all_databases.sql</span>
-
-<span class="token comment" spellcheck="true">-- 导入数据</span>
-mysql <span class="token operator">-</span>u root <span class="token operator">-</span>p  <span class="token operator">&lt;</span> <span class="token operator">/</span>all_databases<span class="token punctuation">.</span>sql
-
-<span class="token comment" spellcheck="true">-- 或者使用source导入</span>
-<span class="token comment" spellcheck="true">-- mysql> source /all_databases.sql;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/30/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/30/">30</a><span class="page-number current">31</span><a class="page-number" href="/page/32/">32</a><span class="space">&hellip;</span><a class="page-number" href="/page/60/">60</a><a class="extend next" rel="next" href="/page/32/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/30/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/30/">30</a><span class="page-number current">31</span><a class="page-number" href="/page/32/">32</a><span class="space">&hellip;</span><a class="page-number" href="/page/61/">61</a><a class="extend next" rel="next" href="/page/32/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1362,20 +1124,20 @@ mysql <span class="token operator">-</span>u root <span class="token operator">-
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">359</span>
+          <span class="site-state-item-count">362</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">222</span>
+        <span class="site-state-item-count">224</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

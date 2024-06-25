@@ -77,9 +77,9 @@
 
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
-<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
+</head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
@@ -192,6 +192,326 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-duo-shu-ju-liu-zhuan-huan-cao-zuo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flink-duo-shu-ju-liu-zhuan-huan-cao-zuo/" class="post-title-link" itemprop="url">flink多数据流转换操作：join、union、connect</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-18 14:23:13" itemprop="dateCreated datePublished" datetime="2020-03-18T14:23:13+08:00">2020-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="操作概览"><a href="#操作概览" class="headerlink" title="操作概览"></a>操作概览</h3><p><img data-src="/images/flink13.png" alt="操作概览"></p>
+<p>本文主要讲flink中多条数据流转换操作：join、union、connect</p>
+<h3 id="join"><a href="#join" class="headerlink" title="join"></a>join</h3><p>批处理经常要解决的问题是将两个数据源做关联Join操作。比如，很多手机APP都有一个用户数据源User，同时APP会记录用户的行为，我们称之为Behavior，两个表按照userId来进行Join。在流处理场景下，Flink也支持了Join，只不过Flink是在一个时间窗口上来进行两个表的Join。<br><img data-src="/images/flink14.png" alt="操作概览"><br>目前，Flink支持了两种Join：<code>Window Join</code>（窗口连接）和<code>Interval Join</code>（时间间隔连接）。</p>
+<h4 id="Window-Join"><a href="#Window-Join" class="headerlink" title="Window Join"></a>Window Join</h4><p>从名字中能猜到，Window Join主要在Flink的窗口上进行操作，它将两个流中落在相同窗口的元素按照某个Key进行Join。一个Window Join的大致骨架结构为：</p>
+<pre class="line-numbers language-java"><code class="language-java">input1<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span>input2<span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">where</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>KeySelector<span class="token operator">></span><span class="token punctuation">)</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> input1使用哪个字段作为Key
+    <span class="token punctuation">.</span><span class="token function">equalTo</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>KeySelector<span class="token operator">></span><span class="token punctuation">)</span>    <span class="token operator">&lt;</span><span class="token operator">-</span> input2使用哪个字段作为Key
+    <span class="token punctuation">.</span><span class="token function">window</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>WindowAssigner<span class="token operator">></span><span class="token punctuation">)</span>  <span class="token operator">&lt;</span><span class="token operator">-</span> 指定WindowAssigner
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token function">trigger</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>Trigger<span class="token operator">></span><span class="token punctuation">)</span><span class="token punctuation">]</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> 指定Trigger（可选）
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token function">evictor</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>Evictor<span class="token operator">></span><span class="token punctuation">)</span><span class="token punctuation">]</span>      <span class="token operator">&lt;</span><span class="token operator">-</span> 指定Evictor（可选）
+    <span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>JoinFunction<span class="token operator">></span><span class="token punctuation">)</span>     <span class="token operator">&lt;</span><span class="token operator">-</span> 指定JoinFunction
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>下图展示了Join的大致过程。两个输入数据流先分别按Key进行分组，然后将元素划分到窗口中。窗口的划分需要使用WindowAssigner来定义，这里可以使用Flink提供的滚动窗口、滑动窗口或会话窗口等默认的WindowAssigner。随后两个数据流中的元素会被分配到各个窗口上，也就是说一个窗口会包含来自两个数据流的元素。相同窗口内的数据会以INNER JOIN的语义来相互关联，形成一个数据对。当窗口的时间结束，Flink会调用JoinFunction来对窗口内的数据对进行处理。当然，我们也可以使用Trigger或Evictor做一些自定义优化，他们的使用方法和普通窗口的使用方法一样。<br><img data-src="/images/flink15.png" alt="join"></p>
+<p>接下来我们重点分析一下两个数据流是如何INNER JOIN的：<br><img data-src="/images/flink16.png" alt="join"><br>一般滴，INNER JOIN只对两个数据源都出现的元素做Join，形成一个数据对，即数据源input1中的某个元素与数据源input2中的所有元素逐个配对。当数据源某个窗口内没数据时，比如图中的第三个窗口，Join的结果也是空的。</p>
+<p>如果INNER JOIN不能满足我们的需求，CoGroupFunction提供了更多可自定义的功能。需要注意的是，在调用时，要写成<code>input1.coGroup(input2).where(&lt;KeySelector&gt;).equalTo(&lt;KeySelecotr&gt;)</code>。</p>
+<h4 id="Interval-Join"><a href="#Interval-Join" class="headerlink" title="Interval Join"></a>Interval Join</h4><p>与Window Join不同，Interval Join不依赖Flink的WindowAssigner，而是根据一个时间间隔（Interval）界定时间。Interval需要一个时间下界（<code>lower bound</code>）和上界（<code>upper bound</code>），如果我们将input1和input2进行Interval Join，input1中的某个元素为<code>input1.element1</code>，时间戳为<code>input1.element1.ts</code>，那么一个Interval就是<code>[input1.element1.ts + lower bound, input1.element1.ts + upper bound]</code>，input2中落在这个时间段内的元素将会和<code>input1.element1</code>组成一个数据对。</p>
+<p>用数学公式表达为，凡是符合下面公式<code>input1.element1.ts + lower bound &lt;= input2.elementx.ts &lt;=input1.element1.ts + upper bound</code>的元素使用INNER JOIN语义，两两组合在一起。上下界可以是正数也可以是负数。</p>
+<p>注意，目前Flink（1.9）的Interval Join只支持<code>Event Time</code>语义。</p>
+<p><img data-src="/images/flink17.png" alt="join"></p>
+<p>默认的时间间隔是包含上下界的，我们可以使用<code>.lowerBoundExclusive()</code> 和<code>.upperBoundExclusive</code>来确定是否需要包含上下界。</p>
+<pre class="line-numbers language-java"><code class="language-java">val intervalJoinResult <span class="token operator">=</span> input1<span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span>_<span class="token punctuation">.</span>_1<span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">intervalJoin</span><span class="token punctuation">(</span>input2<span class="token punctuation">.</span><span class="token function">keyBy</span><span class="token punctuation">(</span>_<span class="token punctuation">.</span>_1<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">between</span><span class="token punctuation">(</span>Time<span class="token punctuation">.</span><span class="token function">milliseconds</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Time<span class="token punctuation">.</span><span class="token function">milliseconds</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">upperBoundExclusive</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">lowerBoundExclusive</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">process</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MyProcessFunction</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Interval Join内部是用缓存来存储所有数据的，因此需要注意缓存数据不能太大，以免对内存造成绝大压力。</p>
+<h3 id="union"><a href="#union" class="headerlink" title="union"></a>union</h3><p>在<code>DataStream</code>上使用union算子可以合并多个同类型的数据流，并生成同类型的数据流，即可以将多个<code>DataStream[T]</code>合并为一个新的<code>DataStream[T]</code>。数据将按照先进先出（<code>First In First Out</code>）的模式合并，且<strong>不去重</strong>。下图<code>union</code>对白色和深色两个数据流进行合并，生成一个数据流。</p>
+<p><img data-src="/images/flink18.png" alt="union"></p>
+<h3 id="connect"><a href="#connect" class="headerlink" title="connect"></a>connect</h3><p><code>union</code>虽然可以合并多个数据流，但有一个限制，即多个数据流的数据类型必须相同。<code>connect</code>提供了和<code>union</code>类似的功能，用来连接两个数据流，它与<code>union</code>的区别在于：</p>
+<ul>
+<li><code>connect</code>只能连接<strong>两个数据流</strong>，<code>union</code>可以连接<strong>多个数据流</strong>。</li>
+<li><code>connect</code>所连接的两个数据流的<strong>数据类型可以不一致</strong>，<code>union</code>所连接的两个数据流的<strong>数据类型必须一致</strong>。</li>
+<li>两个<code>DataStream</code>经过<code>connect</code>之后被转化为<code>ConnectedStreams</code>，<code>ConnectedStreams</code>会对两个流的数据应用不同的处理方法，且双流之间可以<strong>共享状态</strong>。</li>
+</ul>
+<p><code>connect</code>经常被应用在对一个数据流使用另外一个流进行控制处理的场景上，如下图所示。控制流可以是阈值、规则、机器学习模型或其他参数。<br><img data-src="/images/flink19.png" alt="connect"></p>
+<ul>
+<li>对于ConnectedStreams，我们需要重写CoMapFunction或CoFlatMapFunction。这两个接口都提供了三个泛型，这三个泛型分别对应第一个输入流的数据类型、第二个输入流的数据类型和输出流的数据类型。</li>
+<li>在重写函数时，对于CoMapFunction，map1处理第一个流的数据，map2处理第二个流的数据；对于CoFlatMapFunction，flatMap1处理第一个流的数据，flatMap2处理第二个流的数据。</li>
+<li>Flink并不能保证两个函数调用顺序，两个函数的调用依赖于两个数据流数据的流入先后顺序，即第一个数据流有数据到达时，map1或flatMap1会被调用，第二个数据流有数据到达时，map2或flatMap2会被调用。</li>
+<li>Flink允许我们将connect和keyBy或broadcast结合起来使用。</li>
+</ul>
+<h3 id="原文链接"><a href="#原文链接" class="headerlink" title="原文链接"></a>原文链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/103342602">Flink时间系列：如何在两个DataStream上进行Join操作</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/99425612">Flink算子使用方法及实例演示：union和connect</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-shu-ju-lei-xing-zhuan-huan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flink-shu-ju-lei-xing-zhuan-huan/" class="post-title-link" itemprop="url">flink数据类型转换</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-18 10:22:42" itemprop="dateCreated datePublished" datetime="2020-03-18T10:22:42+08:00">2020-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="转换关系总图"><a href="#转换关系总图" class="headerlink" title="转换关系总图"></a>转换关系总图</h3><p><img data-src="/images/flink8.png" alt="转换关系"></p>
+<h3 id="DataStream"><a href="#DataStream" class="headerlink" title="DataStream"></a>DataStream</h3><p>DataStream 是 Flink 流处理 API 中最核心的数据结构。它代表了一个运行在多个分区上的并行流。一个 DataStream 可以从 StreamExecutionEnvironment 通过env.addSource(SourceFunction) 获得。</p>
+<p>DataStream 上的转换操作都是逐条的，比如 map()，flatMap()，filter()。DataStream 也可以执行 rebalance（再平衡，用来减轻数据倾斜）和 broadcaseted（广播）等分区转换。</p>
+<h3 id="KeyedStream"><a href="#KeyedStream" class="headerlink" title="KeyedStream"></a>KeyedStream</h3><p>KeyedStream用来表示根据指定的key进行分组的数据流。一个KeyedStream可以通过调用DataStream.keyBy()来获得。而在KeyedStream上进行任何transformation都将转变回DataStream。在实现中，KeyedStream是把key的信息写入到了transformation中。每条记录只能访问所属key的状态，其上的聚合函数可以方便地操作和保存对应key的状态。</p>
+<h3 id="WindowedStream-amp-AllWindowedStream"><a href="#WindowedStream-amp-AllWindowedStream" class="headerlink" title="WindowedStream &amp; AllWindowedStream"></a>WindowedStream &amp; AllWindowedStream</h3><p>WindowedStream代表了根据key分组，并且基于WindowAssigner切分窗口的数据流。所以WindowedStream都是从KeyedStream衍生而来的。而在WindowedStream上进行任何transformation也都将转变回DataStream。</p>
+<p>在key分组的流上进行窗口切分是比较常用的场景，也能够很好地并行化（不同的key上的窗口聚合可以分配到不同的task去处理）。不过有时候我们也需要在普通流上进行窗口的操作，这就是 AllWindowedStream。AllWindowedStream是直接在DataStream上进行windowAll(…)操作。</p>
+<p>Flink 的窗口实现中会将到达的数据缓存在对应的窗口buffer中（一个数据可能会对应多个窗口）。当到达窗口发送的条件时（由Trigger控制），Flink 会对整个窗口中的数据进行处理。Flink 在聚合类窗口有一定的优化，即不会保存窗口中的所有值，而是每到一个元素执行一次聚合函数，最终只保存一份数据即可。</p>
+<p><img data-src="/images/flink9.png" alt="window"></p>
+<h3 id="JoinedStreams-amp-CoGroupedStreams"><a href="#JoinedStreams-amp-CoGroupedStreams" class="headerlink" title="JoinedStreams &amp; CoGroupedStreams"></a>JoinedStreams &amp; CoGroupedStreams</h3><h3 id="ConnectedStreams"><a href="#ConnectedStreams" class="headerlink" title="ConnectedStreams"></a>ConnectedStreams</h3><h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><p><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/20/flink-internals-streams-and-operations-on-streams/">http://wuchong.me/</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/java8-liu-stream-yong-fa/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/java8-liu-stream-yong-fa/" class="post-title-link" itemprop="url">java8流-Stream用法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-16 15:10:17" itemprop="dateCreated datePublished" datetime="2020-03-16T15:10:17+08:00">2020-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="用法"><a href="#用法" class="headerlink" title="::用法"></a><code>::</code>用法</h3><p>jdk8中使用了<code>::</code>的用法。就是把方法当做参数传到stream内部，使stream的每个元素都传入到该方法里面执行一下，双冒号运算就是Java中的<code>[方法引用]</code>,<code>[方法引用]</code>的格式是：</p>
+<pre><code>类名：：方法名
+</code></pre>
+<p><strong>例如：</strong></p>
+<p>表达式：</p>
+<pre class="line-numbers language-java"><code class="language-java">person <span class="token operator">-</span><span class="token operator">></span> person<span class="token punctuation">.</span><span class="token function">getAge</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>使用双冒号：</p>
+<pre class="line-numbers language-java"><code class="language-java">Person <span class="token operator">:</span><span class="token operator">:</span> getAge
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="stream和parallelStream"><a href="#stream和parallelStream" class="headerlink" title="stream和parallelStream"></a>stream和parallelStream</h3><p>用于生成数据流</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>String<span class="token operator">></span> strings <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token string">"abc"</span><span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"bc"</span><span class="token punctuation">,</span> <span class="token string">"efg"</span><span class="token punctuation">,</span> <span class="token string">"abcd"</span><span class="token punctuation">,</span><span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"jkl"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">//生成顺序流</span>
+strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true">//生成并行流</span>
+strings<span class="token punctuation">.</span><span class="token function">parallelStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="forEach"><a href="#forEach" class="headerlink" title="forEach"></a>forEach</h3><p>用于迭代数据流中每个数据</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>String<span class="token operator">></span> strings <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token string">"abc"</span><span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"bc"</span><span class="token punctuation">,</span> <span class="token string">"efg"</span><span class="token punctuation">,</span> <span class="token string">"abcd"</span><span class="token punctuation">,</span><span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"jkl"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>System<span class="token punctuation">.</span>out<span class="token operator">:</span><span class="token operator">:</span>println<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="map"><a href="#map" class="headerlink" title="map"></a>map</h3><p>对数据流中每个数据执行方法</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> strings <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">// 每个数据加1操作</span>
+strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>x <span class="token operator">-</span><span class="token operator">></span> x <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>System<span class="token punctuation">.</span>out<span class="token operator">:</span><span class="token operator">:</span>println<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="distinct"><a href="#distinct" class="headerlink" title="distinct"></a>distinct</h3><p>去重</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> strings <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">// 去除重复的4,5,5</span>
+strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">distinct</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>System<span class="token punctuation">.</span>out<span class="token operator">:</span><span class="token operator">:</span>println<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="filter"><a href="#filter" class="headerlink" title="filter"></a>filter</h3><p>过滤</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>String<span class="token operator">></span>strings <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token string">"abc"</span><span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"bc"</span><span class="token punctuation">,</span> <span class="token string">"efg"</span><span class="token punctuation">,</span> <span class="token string">"abcd"</span><span class="token punctuation">,</span><span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"jkl"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">// 获取空字符串的数量</span>
+<span class="token keyword">long</span> count <span class="token operator">=</span> strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>string <span class="token operator">-</span><span class="token operator">></span> string<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">//获取非空数量</span>
+<span class="token keyword">long</span> count <span class="token operator">=</span> strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>string <span class="token operator">-</span><span class="token operator">></span> <span class="token operator">!</span>string<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="limit"><a href="#limit" class="headerlink" title="limit"></a>limit</h3><p>限制流的大小</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> strings <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">// 只会打印前4个</span>
+strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">limit</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>System<span class="token punctuation">.</span>out<span class="token operator">:</span><span class="token operator">:</span>println<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="sorted"><a href="#sorted" class="headerlink" title="sorted"></a>sorted</h3><p>排序</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> strings <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">11</span><span class="token punctuation">,</span><span class="token number">12</span><span class="token punctuation">,</span><span class="token number">13</span><span class="token punctuation">,</span><span class="token number">14</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">15</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">// 排序打印</span>
+strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sorted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>System<span class="token punctuation">.</span>out<span class="token operator">:</span><span class="token operator">:</span>println<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="Collectors"><a href="#Collectors" class="headerlink" title="Collectors"></a>Collectors</h3><p>归约操作</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>String<span class="token operator">></span>strings <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token string">"abc"</span><span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"bc"</span><span class="token punctuation">,</span> <span class="token string">"efg"</span><span class="token punctuation">,</span> <span class="token string">"abcd"</span><span class="token punctuation">,</span><span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"jkl"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+List<span class="token operator">&lt;</span>String<span class="token operator">></span> filtered <span class="token operator">=</span> strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>string <span class="token operator">-</span><span class="token operator">></span> <span class="token operator">!</span>string<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ 
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"筛选列表: "</span> <span class="token operator">+</span> filtered<span class="token punctuation">)</span><span class="token punctuation">;</span>
+String mergedString <span class="token operator">=</span> strings<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>string <span class="token operator">-</span><span class="token operator">></span> <span class="token operator">!</span>string<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">joining</span><span class="token punctuation">(</span><span class="token string">", "</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"合并字符串: "</span> <span class="token operator">+</span> mergedString<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="summaryStatistics"><a href="#summaryStatistics" class="headerlink" title="summaryStatistics"></a>summaryStatistics</h3><p>统计</p>
+<pre class="line-numbers language-java"><code class="language-java">List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> numbers <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+IntSummaryStatistics stats <span class="token operator">=</span> numbers<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">mapToInt</span><span class="token punctuation">(</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> x<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">summaryStatistics</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ 
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"列表中最大的数 : "</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getMax</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"列表中最小的数 : "</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getMin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"所有数之和 : "</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getSum</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"平均数 : "</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getAverage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><p><a target="_blank" rel="noopener" href="https://www.runoob.com/java/java8-streams.html">参考1</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -529,296 +849,10 @@ KeyedStream<span class="token operator">&lt;</span>Tuple3<span class="token oper
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kafka-dan-ji-ban-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/kafka-dan-ji-ban-bu-shu/" class="post-title-link" itemprop="url">kafka单机版部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-03 15:11:36" itemprop="dateCreated datePublished" datetime="2020-03-03T15:11:36+08:00">2020-03-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="下载kafka"><a href="#下载kafka" class="headerlink" title="下载kafka"></a>下载kafka</h1><p>在官网<a target="_blank" rel="noopener" href="https://kafka.apache.org/downloads">下载</a>kafka最新版本。</p>
-<p>如：当前最新<code>2.4.0</code>，针对Scala不同版本有不同的编译包，下载<code>Scala 2.12</code>的测试。</p>
-<pre><code>wget http://mirrors.tuna.tsinghua.edu.cn/apache/kafka/2.4.0/kafka_2.12-2.4.0.tgz
-</code></pre>
-<pre class="line-numbers language-sh"><code class="language-sh"># 解压
-tar -xzf kafka_2.12-2.4.0.tgz
-
-#进入目录
-cd kafka_2.12-2.4.0
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h1 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h1><h2 id="启动zookeeper"><a href="#启动zookeeper" class="headerlink" title="启动zookeeper"></a>启动zookeeper</h2><pre><code>bin/zookeeper-server-start.sh config/zookeeper.properties
-</code></pre>
-<h2 id="启动kafka"><a href="#启动kafka" class="headerlink" title="启动kafka"></a>启动kafka</h2><pre><code>bin/kafka-server-start.sh config/server.properties
-</code></pre>
-<blockquote>
-<p>如果需要放到后台运行，可以加上<code>&amp;</code>或者 <code>nohup</code>命令.<br><code>nohup bin/zookeeper-server-start.sh config/zookeeper.properties &amp;</code></p>
-</blockquote>
-<h1 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h1><h2 id="创建主题"><a href="#创建主题" class="headerlink" title="创建主题"></a>创建主题</h2><pre><code>bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic test
-</code></pre>
-<h2 id="查看主题列表"><a href="#查看主题列表" class="headerlink" title="查看主题列表"></a>查看主题列表</h2><pre><code>bin/kafka-topics.sh --list --bootstrap-server localhost:9092
-</code></pre>
-<h2 id="向主题发送消息"><a href="#向主题发送消息" class="headerlink" title="向主题发送消息"></a>向主题发送消息</h2><pre><code>bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
-</code></pre>
-<h2 id="从主题消费消息"><a href="#从主题消费消息" class="headerlink" title="从主题消费消息"></a>从主题消费消息</h2><pre><code>bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
-</code></pre>
-<h1 id="搭建kafka集群"><a href="#搭建kafka集群" class="headerlink" title="搭建kafka集群"></a>搭建kafka集群</h1><p>参考<a target="_blank" rel="noopener" href="https://kafka.apache.org/quickstart">官网</a></p>
-<h2 id=""><a href="#" class="headerlink" title=""></a></h2><pre class="line-numbers language-bash"><code class="language-bash">./kafka-topics.sh --create --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --replication-factor 1 --partitions 1 --topic first_kafka
-
-./kafka-console-producer.sh --broker-list 192.168.3.17:9092,192.168.3.19:9092,192.168.3.20:9092 --topic first_kafka
-
-./kafka-console-consumer.sh --bootstrap-server 192.168.3.17:9092,192.168.3.19:9092,192.168.3.20:9092 --topic first_kafka --from-beginning
-
-./kafka-topics.sh --describe --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --topic first_kafka
-
-./kafka-topics.sh --list --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181
-
-./kafka-topics.sh --delete --zookeeper 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181 --topic first_kafka
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/zookeeper-dan-ji-ban-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/zookeeper-dan-ji-ban-bu-shu/" class="post-title-link" itemprop="url">zookeeper单机版部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-03 14:56:50" itemprop="dateCreated datePublished" datetime="2020-03-03T14:56:50+08:00">2020-03-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="下载压缩包"><a href="#下载压缩包" class="headerlink" title="下载压缩包"></a>下载压缩包</h1><pre class="line-numbers language-sh"><code class="language-sh">wget http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.5.7/apache-zookeeper-3.5.7-bin.tar.gz
-
-tar -zxvf apache-zookeeper-3.5.7-bin.tar.gz 
-
-cd apache-zookeeper-3.5.7-bin/
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意：<code>zookeeper</code>从<code>3.5.5</code>版本开始，需要下载<code>*-bin.tar.gz</code>的包才能运行，否则启动会报错，缺少类。</p>
-</blockquote>
-<h1 id="拷贝zoo-cfg"><a href="#拷贝zoo-cfg" class="headerlink" title="拷贝zoo.cfg"></a>拷贝zoo.cfg</h1><p>用默认配置即可</p>
-<pre><code>cp conf/zoo_sample.cfg conf/zoo.cfg
-</code></pre>
-<h1 id="启动-amp-检查"><a href="#启动-amp-检查" class="headerlink" title="启动&amp;检查"></a>启动&amp;检查</h1><p>启动</p>
-<pre><code>./bin/zkServer.sh start
-</code></pre>
-<p>检查</p>
-<pre><code>./bin/zkServer.sh status
-</code></pre>
-<p>停止</p>
-<pre><code>./bin/zkServer.sh stop
-</code></pre>
-<p>重启</p>
-<pre><code>./bin/zkServer.sh restart
-</code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/guo-nei-ti-sheng-github-fang-wen-su-du/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/guo-nei-ti-sheng-github-fang-wen-su-du/" class="post-title-link" itemprop="url">国内提升github访问速度</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-03 09:28:59" itemprop="dateCreated datePublished" datetime="2020-03-03T09:28:59+08:00">2020-03-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="修改hosts文件"><a href="#修改hosts文件" class="headerlink" title="修改hosts文件"></a>修改hosts文件</h1><pre><code>151.101.72.133 assets-cdn.github.com
-151.101.73.194 github.global.ssl.fastly.net
-192.30.253.113 github.com
-11.238.159.92 git.node5.mirror.et2sqa
-</code></pre>
-<blockquote>
-<p>如果使用<code>Windows</code>系统，则是配置在<code>C:\Windows\System32\drivers\etc\hosts</code>文件中。<br>如果使用<code>Linux</code>系统，则是配置在的<code>/etc/hosts</code>文件中。</p>
-</blockquote>
-<h1 id="国内突然被墙了"><a href="#国内突然被墙了" class="headerlink" title="国内突然被墙了"></a>国内突然被墙了</h1><p><a target="_blank" rel="noopener" href="https://github.com.ipaddress.com/www.github.com">https://github.com.ipaddress.com/www.github.com</a></p>
-<p>返回上面的地址，获取<code>github.com</code>最新IP，填写到<code>hosts</code>文件中.</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>Domain</code></td>
-<td><code>github.com</code></td>
-</tr>
-<tr>
-<td><code>IP Address</code></td>
-<td><code>140.82.112.4</code></td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/44/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/44/">44</a><span class="page-number current">45</span><a class="page-number" href="/page/46/">46</a><span class="space">&hellip;</span><a class="page-number" href="/page/60/">60</a><a class="extend next" rel="next" href="/page/46/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/44/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/44/">44</a><span class="page-number current">45</span><a class="page-number" href="/page/46/">46</a><span class="space">&hellip;</span><a class="page-number" href="/page/61/">61</a><a class="extend next" rel="next" href="/page/46/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -886,20 +920,20 @@ cd apache-zookeeper-3.5.7-bin/
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">359</span>
+          <span class="site-state-item-count">362</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">222</span>
+        <span class="site-state-item-count">224</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"happywzy.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="patronipatroni 依赖第三方分布式存储, 可以托管 postgres 的配置管理和启停, 以及主备切换. 安装 安装epel源，安装pyhton3  yum -y install epel-release yum -y install python3 python3-devel   pip安装patroni   官方文档  yum install -y python3-psycopg2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="patroni安装使用">
+<meta property="og:url" content="https://happywzy.top/patroni-an-zhuang-shi-yong/index.html">
+<meta property="og:site_name" content="Happywzy">
+<meta property="og:description" content="patronipatroni 依赖第三方分布式存储, 可以托管 postgres 的配置管理和启停, 以及主备切换. 安装 安装epel源，安装pyhton3  yum -y install epel-release yum -y install python3 python3-devel   pip安装patroni   官方文档  yum install -y python3-psycopg2">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-06-25T09:15:27.000Z">
+<meta property="article:modified_time" content="2024-06-25T09:15:27.000Z">
+<meta property="article:author" content="wuzhiyong">
+<meta property="article:tag" content="postgres">
+<meta property="article:tag" content="patroni">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://happywzy.top/patroni-an-zhuang-shi-yong/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>patroni安装使用 | Happywzy</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Happywzy</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">enjoy coding...</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/patroni-an-zhuang-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          patroni安装使用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-06-25 17:15:27" itemprop="dateCreated datePublished" datetime="2024-06-25T17:15:27+08:00">2024-06-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="patroni"><a href="#patroni" class="headerlink" title="patroni"></a>patroni</h3><p>patroni 依赖第三方分布式存储, 可以托管 postgres 的配置管理和启停, 以及主备切换.</p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ol>
+<li>安装epel源，安装pyhton3</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">yum -y <span class="token function">install</span> epel-release
+yum -y <span class="token function">install</span> python3 python3-devel
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>pip安装patroni</li>
+</ol>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://patroni.readthedocs.io/en/latest/installation.html#general-installation-for-pip">官方文档</a></li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> -y python3-psycopg2
+pip3 <span class="token function">install</span> patroni<span class="token punctuation">[</span>etcd3,psycopg2<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true"># 执行patroni命令无报错证明安装完成</span>
+<span class="token punctuation">[</span>root@data8 data<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># patroni</span>
+Config is empty.
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>pip3 卸载命令:  <code>pip3 uninstall xxxx</code></p>
+</blockquote>
+<ol start="3">
+<li>生成patroni配置文件</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">patroni --generate-sample-config /etc/patroni/patroni.yml
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://patroni.readthedocs.io/en/latest/yaml_configuration.html">官方配置文件详细说明</a></li>
+</ul>
+<ol start="4">
+<li>patroni 配置文件样例</li>
+</ol>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">scope</span><span class="token punctuation">:</span> <span class="token string">'pg'</span> <span class="token comment" spellcheck="true"># 集群名称,保持一致</span>
+<span class="token key atrule">namespace</span><span class="token punctuation">:</span> <span class="token string">'/service'</span> <span class="token comment" spellcheck="true"># 保持默认</span>
+<span class="token key atrule">name</span><span class="token punctuation">:</span> data7 <span class="token comment" spellcheck="true"># 不同节点设置不同的name</span>
+
+<span class="token key atrule">log</span><span class="token punctuation">:</span>
+  <span class="token key atrule">format</span><span class="token punctuation">:</span> <span class="token string">'%(asctime)s %(levelname)s: %(message)s'</span>
+  <span class="token key atrule">level</span><span class="token punctuation">:</span> INFO
+  <span class="token key atrule">max_queue_size</span><span class="token punctuation">:</span> <span class="token number">1000</span>
+  <span class="token key atrule">traceback_level</span><span class="token punctuation">:</span> ERROR
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> plain
+
+<span class="token key atrule">restapi</span><span class="token punctuation">:</span>
+  <span class="token key atrule">connect_address</span><span class="token punctuation">:</span> 172.16.20.152<span class="token punctuation">:</span><span class="token number">8008</span>
+  <span class="token key atrule">listen</span><span class="token punctuation">:</span> 172.16.20.152<span class="token punctuation">:</span><span class="token number">8008</span>
+
+<span class="token comment" spellcheck="true"># 这里使用的是etcd3</span>
+<span class="token key atrule">etcd3</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> 172.16.20.152<span class="token punctuation">:</span><span class="token number">2379</span><span class="token punctuation">,</span>172.16.20.153<span class="token punctuation">:</span><span class="token number">2379</span><span class="token punctuation">,</span>172.16.20.154<span class="token punctuation">:</span><span class="token number">2379</span>
+
+<span class="token comment" spellcheck="true"># The bootstrap configuration. Works only when the cluster is not yet initialized.</span>
+<span class="token comment" spellcheck="true"># If the cluster is already initialized, all changes in the `bootstrap` section are ignored!</span>
+<span class="token key atrule">bootstrap</span><span class="token punctuation">:</span>
+  <span class="token comment" spellcheck="true"># This section will be written into &lt;dcs>:/&lt;namespace>/&lt;scope>/config after initializing</span>
+  <span class="token comment" spellcheck="true"># new cluster and all other cluster members will use it as a `global configuration`.</span>
+  <span class="token comment" spellcheck="true"># WARNING! If you want to change any of the parameters that were set up</span>
+  <span class="token comment" spellcheck="true"># via `bootstrap.dcs` section, please use `patronictl edit-config`!</span>
+  <span class="token key atrule">dcs</span><span class="token punctuation">:</span>
+    <span class="token key atrule">loop_wait</span><span class="token punctuation">:</span> <span class="token number">10</span>
+    <span class="token key atrule">retry_timeout</span><span class="token punctuation">:</span> <span class="token number">10</span>
+    <span class="token key atrule">ttl</span><span class="token punctuation">:</span> <span class="token number">30</span>
+    <span class="token key atrule">postgresql</span><span class="token punctuation">:</span>
+      <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+        <span class="token key atrule">hot_standby</span><span class="token punctuation">:</span> <span class="token string">'on'</span>
+        <span class="token key atrule">max_connections</span><span class="token punctuation">:</span> <span class="token number">200</span>
+        <span class="token key atrule">max_locks_per_transaction</span><span class="token punctuation">:</span> <span class="token number">64</span>
+        <span class="token key atrule">max_prepared_transactions</span><span class="token punctuation">:</span> <span class="token number">0</span>
+        <span class="token key atrule">max_replication_slots</span><span class="token punctuation">:</span> <span class="token number">10</span>
+        <span class="token key atrule">max_wal_senders</span><span class="token punctuation">:</span> <span class="token number">10</span>
+        <span class="token key atrule">max_worker_processes</span><span class="token punctuation">:</span> <span class="token number">8</span>
+        <span class="token key atrule">track_commit_timestamp</span><span class="token punctuation">:</span> <span class="token string">'off'</span>
+        <span class="token key atrule">wal_keep_size</span><span class="token punctuation">:</span> 128MB
+        <span class="token key atrule">wal_level</span><span class="token punctuation">:</span> replica
+        <span class="token key atrule">wal_log_hints</span><span class="token punctuation">:</span> <span class="token string">'on'</span>
+      <span class="token key atrule">use_pg_rewind</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+      <span class="token key atrule">use_slots</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">initdb</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> data<span class="token punctuation">-</span>checksums
+  <span class="token punctuation">-</span> <span class="token key atrule">encoding</span><span class="token punctuation">:</span> UTF8
+
+<span class="token key atrule">postgresql</span><span class="token punctuation">:</span>
+  <span class="token comment" spellcheck="true"># 这里的用户patroni会自动生成,直接写好用户密码即可.</span>
+  <span class="token key atrule">authentication</span><span class="token punctuation">:</span>
+    <span class="token key atrule">replication</span><span class="token punctuation">:</span>
+      <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token string">'replicator'</span>
+      <span class="token key atrule">username</span><span class="token punctuation">:</span> replicator
+    <span class="token key atrule">rewind</span><span class="token punctuation">:</span>
+      <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token string">'rewind_user'</span>
+      <span class="token key atrule">username</span><span class="token punctuation">:</span> rewind_user
+    <span class="token key atrule">superuser</span><span class="token punctuation">:</span>
+      <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token string">'123456'</span>
+      <span class="token key atrule">username</span><span class="token punctuation">:</span> postgres
+  <span class="token key atrule">connect_address</span><span class="token punctuation">:</span> 172.16.20.152<span class="token punctuation">:</span><span class="token number">5432</span>
+  <span class="token key atrule">data_dir</span><span class="token punctuation">:</span> <span class="token string">'/home/pgsql/data/'</span> <span class="token comment" spellcheck="true"># 指定data目录,需要设置好权限,可以是空目录表示一个新的pg集群,会自动初始化</span>
+  <span class="token key atrule">bin_dir</span><span class="token punctuation">:</span> <span class="token string">'/usr/local/pgsql/bin/'</span> <span class="token comment" spellcheck="true"># 指定pg的安装的bin目录</span>
+  <span class="token key atrule">listen</span><span class="token punctuation">:</span> 0.0.0.0<span class="token punctuation">:</span><span class="token number">5432 </span><span class="token comment" spellcheck="true"># 监听0.0.0.0</span>
+  <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+    <span class="token comment" spellcheck="true"># centos7 直接启动时会报错：SCRAM authentication requires libpq version 10 or above。解决办法写在后面。</span>
+    <span class="token key atrule">password_encryption</span><span class="token punctuation">:</span> scram<span class="token punctuation">-</span>sha<span class="token punctuation">-</span><span class="token number">256</span>
+  <span class="token key atrule">pg_hba</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> host all all 0.0.0.0/0 md5
+  <span class="token punctuation">-</span> host replication replicator 172.16.20.0/24 md5
+  <span class="token comment" spellcheck="true">#callbacks:</span>
+  <span class="token comment" spellcheck="true">#  on_reload: /etc/patroni/on_reload.sh</span>
+  <span class="token comment" spellcheck="true">#  on_restart: /etc/patroni/on_restart.sh</span>
+  <span class="token comment" spellcheck="true">#  on_role_change: /etc/patroni/on_role_change.sh</span>
+  <span class="token comment" spellcheck="true">#  on_start: /etc/patroni/on_start.sh</span>
+  <span class="token comment" spellcheck="true">#  on_stop: /etc/patroni/on_stop.sh</span>
+
+<span class="token key atrule">tags</span><span class="token punctuation">:</span>
+  <span class="token key atrule">clonefrom</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">failover_priority</span><span class="token punctuation">:</span> <span class="token number">1</span>
+  <span class="token key atrule">noloadbalance</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+  <span class="token key atrule">nostream</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+  <span class="token key atrule">nosync</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>注册 patroni service<br>创建文件<code>/usr/lib/systemd/system/patroni.service</code></li>
+</ol>
+<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
+Description=Runners to orchestrate a high-availability PostgreSQL
+After=syslog.target network.target
+ 
+[Service]
+Type=simple
+User=postgres
+Group=postgres
+ExecStart=/usr/local/bin/patroni /etc/patroni/patroni.yml
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=process
+TimeoutSec=30
+Restart=no
+ 
+[Install]
+WantedBy=multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>启动patroni</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动</span>
+systemctl start patroni
+<span class="token comment" spellcheck="true"># 检查运行状态,并查看pg data目录是否有数据了.</span>
+systemctl status patroni
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="7">
+<li>查询patroni节点状态</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data7 data<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># patronictl -c /etc/patroni/patroni.yml list</span>
++ Cluster: pg <span class="token punctuation">(</span>7384360501716690603<span class="token punctuation">)</span> -----------+----+-----------+----------------------+
+<span class="token operator">|</span> Member <span class="token operator">|</span> Host          <span class="token operator">|</span> Role    <span class="token operator">|</span> State     <span class="token operator">|</span> TL <span class="token operator">|</span> Lag <span class="token keyword">in</span> MB <span class="token operator">|</span> Tags                 <span class="token operator">|</span>
++--------+---------------+---------+-----------+----+-----------+----------------------+
+<span class="token operator">|</span> data7  <span class="token operator">|</span> 172.16.20.152 <span class="token operator">|</span> Leader  <span class="token operator">|</span> running   <span class="token operator">|</span>  1 <span class="token operator">|</span>           <span class="token operator">|</span> clonefrom: <span class="token boolean">true</span>      <span class="token operator">|</span>
+<span class="token operator">|</span>        <span class="token operator">|</span>               <span class="token operator">|</span>         <span class="token operator">|</span>           <span class="token operator">|</span>    <span class="token operator">|</span>           <span class="token operator">|</span> failover_priority: 1 <span class="token operator">|</span>
++--------+---------------+---------+-----------+----+-----------+----------------------+
+<span class="token operator">|</span> data8  <span class="token operator">|</span> 172.16.20.153 <span class="token operator">|</span> Replica <span class="token operator">|</span> streaming <span class="token operator">|</span>  1 <span class="token operator">|</span>         0 <span class="token operator">|</span> clonefrom: <span class="token boolean">true</span>      <span class="token operator">|</span>
+<span class="token operator">|</span>        <span class="token operator">|</span>               <span class="token operator">|</span>         <span class="token operator">|</span>           <span class="token operator">|</span>    <span class="token operator">|</span>           <span class="token operator">|</span> failover_priority: 1 <span class="token operator">|</span>
++--------+---------------+---------+-----------+----+-----------+----------------------+
+<span class="token operator">|</span> data9  <span class="token operator">|</span> 172.16.20.154 <span class="token operator">|</span> Replica <span class="token operator">|</span> streaming <span class="token operator">|</span>  1 <span class="token operator">|</span>         0 <span class="token operator">|</span> clonefrom: <span class="token boolean">true</span>      <span class="token operator">|</span>
+<span class="token operator">|</span>        <span class="token operator">|</span>               <span class="token operator">|</span>         <span class="token operator">|</span>           <span class="token operator">|</span>    <span class="token operator">|</span>           <span class="token operator">|</span> failover_priority: 1 <span class="token operator">|</span>
++--------+---------------+---------+-----------+----+-----------+----------------------+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="错误"><a href="#错误" class="headerlink" title="错误"></a>错误</h3><ol>
+<li><code>SCRAM authentication requires libpq version 10 or above</code><br>这个错误原因是 centos7 默认安装的 <code>postgresql-libs</code> 版本太低,需要升级.</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data8 data<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># yum list installed | grep postgre</span>
+postgresql-libs.x86_64                 9.2.24-9.el7_9                  @updates
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>卸载现有的lib</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum remove -y postgresql-libs.x86_64
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>安装pg yum 源</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>安装最新的,注意: <code>centos</code>最高只支持 <code>15</code> 版本</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> postgresql15-libs -y
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>确认</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data8 data<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># yum list installed | grep postgre</span>
+postgresql15-libs.x86_64               15.7-1PGDG.rhel7                @pgdg15 
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>注意,重新安装lib后patroni运行会报错</li>
+</ul>
+<pre class="line-numbers language-log"><code class="language-log"> FATAL: Patroni requires psycopg2>=2.5.4, psycopg2-binary, or psycopg>=3.0.0
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>需要 重新安装 </p>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> -y python3-psycopg2 
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/postgres/" rel="tag"># postgres</a>
+              <a href="/tags/patroni/" rel="tag"># patroni</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/zai-centos7-shang-postgres-yuan-ma-an-zhuang/" rel="prev" title="centos7 postgres源码安装">
+      <i class="fa fa-chevron-left"></i> centos7 postgres源码安装
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/yum-an-zhuang-postgres15/" rel="next" title="yum安装postgres15">
+      yum安装postgres15 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#patroni"><span class="nav-number">1.</span> <span class="nav-text">patroni</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">2.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF"><span class="nav-number">3.</span> <span class="nav-text">错误</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="wuzhiyong"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">wuzhiyong</p>
+  <div class="site-description" itemprop="description">日常学习笔记,共同进步</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">362</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">224</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/happywzy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;happywzy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:1154365135@qq.com" title="E-Mail → mailto:1154365135@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/wzy_168" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;wzy_168" rel="noopener" target="_blank">CSDN</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://gitee.com/happywzy" title="https:&#x2F;&#x2F;gitee.com&#x2F;happywzy" rel="noopener" target="_blank">Gitee</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/gpwz.html" title="&#x2F;gpwz.html">狗屁文章</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/lmbtfy" title="&#x2F;lmbtfy">教你百度</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/chinamap.html" title="&#x2F;chinamap.html">中国地图</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="/md2all" title="&#x2F;md2all">Md2All</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">wuzhiyong</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/lozad.js/1.14.0/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+  
+  <script type="text/javascript" color="0,0,0" opacity='0.7' zIndex="-2" count="99" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+  
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/miku.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":true},"react":{"opacity":0.7}});</script></body>
+</html>

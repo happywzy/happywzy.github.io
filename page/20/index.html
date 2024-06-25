@@ -77,9 +77,9 @@
 
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
-<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
+</head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
@@ -192,6 +192,361 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-shao-bing-mo-shi-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/redis-shao-bing-mo-shi-bu-shu/" class="post-title-link" itemprop="url">redis哨兵模式部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-19 17:03:53" itemprop="dateCreated datePublished" datetime="2021-08-19T17:03:53+08:00">2021-08-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="配置文件sentinel-conf"><a href="#配置文件sentinel-conf" class="headerlink" title="配置文件sentinel.conf"></a>配置文件sentinel.conf</h3><pre class="line-numbers language-bash"><code class="language-bash">port 26379
+sentinel monitor mymaster 192.168.41.128 6379 2
+sentinel down-after-milliseconds mymaster 30000
+sentinel parallel-syncs mymaster 1
+sentinel failover-timeout mymaster 10000
+sentinel deny-scripts-reconfig <span class="token function">yes</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动1主2从"><a href="#启动1主2从" class="headerlink" title="启动1主2从"></a>启动1主2从</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动主节点</span>
+docker run -d --net host --name redis-server redis:6.2.5 redis-server --port 6379
+<span class="token comment" spellcheck="true"># 启动从节点</span>
+docker run -d --net host --name redis-slave1 redis:6.2.5 redis-server --slaveof 192.168.41.128 6379  --port 6378
+docker run -d --net host --name redis-slave2 redis:6.2.5 redis-server --slaveof 192.168.41.128 6379  --port 6377
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动哨兵"><a href="#启动哨兵" class="headerlink" title="启动哨兵"></a>启动哨兵</h3><pre class="line-numbers language-bash"><code class="language-bash">docker run -d -p 26379:26379 --name redis-sentinel1 -v <span class="token variable">$PWD</span>/sentinel1.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
+docker run -d -p 26378:26379 --name redis-sentinel2 -v <span class="token variable">$PWD</span>/sentinel2.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
+docker run -d -p 26377:26379 --name redis-sentinel3 -v <span class="token variable">$PWD</span>/sentinel2.conf:/sentinel/sentinel.conf redis:6.2.5 redis-sentinel /sentinel/sentinel.conf
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="查看状态"><a href="#查看状态" class="headerlink" title="查看状态"></a>查看状态</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@node1 redis<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker exec -it redis-sentinel1 bash</span>
+root@be853924137f:/data<span class="token comment" spellcheck="true"># redis-cli -p 26379</span>
+127.0.0.1:26379<span class="token operator">></span> info sentinel
+<span class="token comment" spellcheck="true"># Sentinel</span>
+sentinel_masters:1
+sentinel_tilt:0
+sentinel_running_scripts:0
+sentinel_scripts_queue_length:0
+sentinel_simulate_failure_flags:0
+master0:name<span class="token operator">=</span>mymaster,status<span class="token operator">=</span>sdown,address<span class="token operator">=</span>192.168.41.128:6379,slaves<span class="token operator">=</span>1,sentinels<span class="token operator">=</span>3
+
+<span class="token comment" spellcheck="true"># 查看masters</span>
+127.0.0.1:26379<span class="token operator">></span> SENTINEL masters
+
+<span class="token comment" spellcheck="true"># 查看slaves</span>
+127.0.0.1:26379<span class="token operator">></span> SENTINEL slaves mymaster
+
+<span class="token comment" spellcheck="true"># 关闭redis-server</span>
+docker stop redis-server
+<span class="token comment" spellcheck="true"># 刷新查看master节点是否更换</span>
+docker <span class="token function">exec</span> -it  redis-sentinel1 redis-cli -p 26379 sentinel masters
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-zhu-cong-mo-shi-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/redis-zhu-cong-mo-shi-bu-shu/" class="post-title-link" itemprop="url">redis主从模式部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-19 16:49:41" itemprop="dateCreated datePublished" datetime="2021-08-19T16:49:41+08:00">2021-08-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="启动参数"><a href="#启动参数" class="headerlink" title="启动参数"></a>启动参数</h3><ul>
+<li><code>--requirepass 123456</code>:设置客户端连接redis的认证信息</li>
+<li><code>--masterauth 123456</code>:设置从节点连接redis的认证信息</li>
+</ul>
+<h3 id="一主一从"><a href="#一主一从" class="headerlink" title="一主一从"></a>一主一从</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动主节点</span>
+docker run -d -p 6379:6379 --name redis-server redis:6.2.5 redis-server
+
+<span class="token comment" spellcheck="true"># 启动从节点,可以启动多个</span>
+docker run -d -p 6378:6379 --name redis-slave redis:6.2.5 redis-server --slaveof 192.168.41.128 6379
+
+<span class="token comment" spellcheck="true"># 查看主从状态</span>
+docker <span class="token function">exec</span> -it redis-server <span class="token function">bash</span>
+root@2057712d5b24:/data<span class="token comment" spellcheck="true"># redis-cli </span>
+127.0.0.1:6379<span class="token operator">></span> info replication
+<span class="token comment" spellcheck="true"># Replication</span>
+role:master
+connected_slaves:1
+slave0:ip<span class="token operator">=</span>172.17.0.1,port<span class="token operator">=</span>6379,state<span class="token operator">=</span>online,offset<span class="token operator">=</span>844,lag<span class="token operator">=</span>0
+master_failover_state:no-failover
+master_replid:a7c3448b15070b13848c48139b99016a67cb5b9e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:844
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:844
+
+
+<span class="token comment" spellcheck="true"># 测试</span>
+<span class="token comment" spellcheck="true"># 主节点set,从节点可以get</span>
+<span class="token comment" spellcheck="true"># 从节点只支持读操作,不支持写</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-ji-qun-mo-shi-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/redis-ji-qun-mo-shi-bu-shu/" class="post-title-link" itemprop="url">redis集群模式部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-19 15:36:55" itemprop="dateCreated datePublished" datetime="2021-08-19T15:36:55+08:00">2021-08-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="一些重要参数"><a href="#一些重要参数" class="headerlink" title="一些重要参数"></a>一些重要参数</h3><ul>
+<li><code>--cluster-enabled</code>：是否启动集群，选值：yes 、no</li>
+<li><code>--cluster-config-file</code> 配置文件.conf ：指定节点信息，自动生成</li>
+<li><code>--cluster-node-timeout</code> 毫秒值： 配置节点连接超时时间</li>
+<li><code>--appendonly</code>：是否开启持久化，选值：yes、no</li>
+</ul>
+<h3 id="最简单3主模式"><a href="#最简单3主模式" class="headerlink" title="最简单3主模式"></a>最简单3主模式</h3><p>方便测试，使用<code>host</code>网络模式启动docker,且并没有将持久化映射出来.</p>
+<blockquote>
+<p>持久化启动参数<code>-v /data/redis-data/node1:/data</code>.</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 节点1</span>
+docker run -d --name redis-node1 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-1.conf --port 6379
+<span class="token comment" spellcheck="true"># 节点2</span>
+docker run -d --name redis-node2 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-2.conf --port 6380
+<span class="token comment" spellcheck="true"># 节点3</span>
+docker run -d --name redis-node3 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-3.conf --port 6381
+
+<span class="token comment" spellcheck="true"># 进入一个容器执行创建集群的命令</span>
+docker <span class="token function">exec</span> -it redis-node1 /bin/bash
+<span class="token comment" spellcheck="true"># 创建集群,只有三个节点,所有指定副本数为0</span>
+redis-cli --cluster create 192.168.41.128:6379  192.168.41.128:6380  192.168.41.128:6381 --cluster-replicas 0
+<span class="token operator">>></span><span class="token operator">></span> Performing <span class="token function">hash</span> slots allocation on 3 nodes<span class="token punctuation">..</span>.
+Master<span class="token punctuation">[</span>0<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 0 - 5460
+Master<span class="token punctuation">[</span>1<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 5461 - 10922
+Master<span class="token punctuation">[</span>2<span class="token punctuation">]</span> -<span class="token operator">></span> Slots 10923 - 16383
+M: 699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379
+   slots:<span class="token punctuation">[</span>0-5460<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
+M: ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380
+   slots:<span class="token punctuation">[</span>5461-10922<span class="token punctuation">]</span> <span class="token punctuation">(</span>5462 slots<span class="token punctuation">)</span> master
+M: 043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381
+   slots:<span class="token punctuation">[</span>10923-16383<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
+Can I <span class="token keyword">set</span> the above configuration? <span class="token punctuation">(</span>type <span class="token string">'yes'</span> to accept<span class="token punctuation">)</span>: <span class="token function">yes</span>
+<span class="token operator">>></span><span class="token operator">></span> Nodes configuration updated
+<span class="token operator">>></span><span class="token operator">></span> Assign a different config epoch to each node
+<span class="token operator">>></span><span class="token operator">></span> Sending CLUSTER MEET messages to <span class="token function">join</span> the cluster
+Waiting <span class="token keyword">for</span> the cluster to <span class="token function">join</span>
+<span class="token keyword">.</span>
+<span class="token operator">>></span><span class="token operator">></span> Performing Cluster Check <span class="token punctuation">(</span>using node 192.168.41.128:6379<span class="token punctuation">)</span>
+M: 699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379
+   slots:<span class="token punctuation">[</span>0-5460<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
+M: ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380
+   slots:<span class="token punctuation">[</span>5461-10922<span class="token punctuation">]</span> <span class="token punctuation">(</span>5462 slots<span class="token punctuation">)</span> master
+M: 043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381
+   slots:<span class="token punctuation">[</span>10923-16383<span class="token punctuation">]</span> <span class="token punctuation">(</span>5461 slots<span class="token punctuation">)</span> master
+<span class="token punctuation">[</span>OK<span class="token punctuation">]</span> All nodes agree about slots configuration.
+<span class="token operator">>></span><span class="token operator">></span> Check <span class="token keyword">for</span> <span class="token function">open</span> slots<span class="token punctuation">..</span>.
+<span class="token operator">>></span><span class="token operator">></span> Check slots coverage<span class="token punctuation">..</span>.
+<span class="token punctuation">[</span>OK<span class="token punctuation">]</span> All 16384 slots covered.
+
+<span class="token comment" spellcheck="true"># 查看集群状态</span>
+root@node1:/data<span class="token comment" spellcheck="true"># redis-cli </span>
+127.0.0.1:6379<span class="token operator">></span> cluster nodes
+ee2f07166809df6a56a57454470d65944ab8051f 192.168.41.128:6380@16380 master - 0 1629358092049 2 connected 5461-10922
+043f76013aec2600396c4e92c50d0861f01a0dde 192.168.41.128:6381@16381 master - 0 1629358091025 3 connected 10923-16383
+699e2ff7c0098cc1cee1ddae640b4bbb66747c72 192.168.41.128:6379@16379 myself,master - 0 1629358091000 1 connected 0-5460
+
+<span class="token comment" spellcheck="true"># 测试,连接集群,set数据,别的节点可以get到数据</span>
+root@node1:/data<span class="token comment" spellcheck="true"># redis-cli -c</span>
+127.0.0.1:6379<span class="token operator">></span> <span class="token keyword">set</span> hello world
+OK
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="3主3从模式"><a href="#3主3从模式" class="headerlink" title="3主3从模式"></a>3主3从模式</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 主备6个redis节点</span>
+docker run -d --name redis-node1 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-1.conf --port 6379
+docker run -d --name redis-node2 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-2.conf --port 6380
+docker run -d --name redis-node3 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-3.conf --port 6381
+docker run -d --name redis-node4 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-4.conf --port 6382
+docker run -d --name redis-node5 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-5.conf --port 6383
+docker run -d --name redis-node6 --net host redis:6.2.5 --cluster-enabled <span class="token function">yes</span> --cluster-config-file node-6.conf --port 6384
+
+<span class="token comment" spellcheck="true"># 进入任一节点</span>
+docker <span class="token function">exec</span> -it redis-node1 /bin/bash
+
+<span class="token comment" spellcheck="true"># 创建集群</span>
+redis-cli --cluster create 192.168.41.128:6379 192.168.41.128:6380 192.168.41.128:6381 192.168.41.128:6382 192.168.41.128:6383 192.168.41.128:6384 --cluster-replicas 1
+
+<span class="token comment" spellcheck="true"># 查看集群状态</span>
+root@node1:/data<span class="token comment" spellcheck="true"># redis-cli </span>
+127.0.0.1:6379<span class="token operator">></span> cluster nodes
+95b197193ee57fb0f331ee03df671b0e50d293c2 192.168.41.128:6380@16380 master - 0 1629359633234 2 connected 5461-10922
+10678b7ed61dbcd923472a272b6d365222fdad95 192.168.41.128:6384@16384 slave 345dd13e0bbf74a09ebe0011302f0ba8a011c726 0 1629359633000 3 connected
+34e4d85bbdebc619ed4e9a183a0939db0ad82d9a 192.168.41.128:6382@16382 slave 75325c54ff09715263c514bde71d6582fde2b8a8 0 1629359632000 1 connected
+345dd13e0bbf74a09ebe0011302f0ba8a011c726 192.168.41.128:6381@16381 master - 0 1629359635272 3 connected 10923-16383
+75325c54ff09715263c514bde71d6582fde2b8a8 192.168.41.128:6379@16379 myself,master - 0 1629359634000 1 connected 0-5460
+98b18508d3248973c3d28930b7a571d4564c8e2a 192.168.41.128:6383@16383 slave 95b197193ee57fb0f331ee03df671b0e50d293c2 0 1629359635000 2 connected
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -600,792 +955,10 @@ mvn protobuf:compile-custom
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/rook-ceph-an-zhuang-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/rook-ceph-an-zhuang-shi-yong/" class="post-title-link" itemprop="url">rook-ceph安装使用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-07-06 09:58:13" itemprop="dateCreated datePublished" datetime="2021-07-06T09:58:13+08:00">2021-07-06</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://rook.github.io/docs/rook/master/ceph-quickstart.html">官网</a></li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 检查磁盘是否满足条件</span>
-lsblk -f
-
-<span class="token comment" spellcheck="true"># 2. clone相关配置</span>
-<span class="token function">git</span> clone --single-branch --branch master https://github.com/rook/rook.git
-
-<span class="token comment" spellcheck="true"># 3. 进入rook ceph目录</span>
-<span class="token function">cd</span> rook/cluster/examples/kubernetes/ceph
-
-<span class="token comment" spellcheck="true"># 4. 安装crd,operator</span>
-kubectl create -f crds.yaml -f common.yaml -f operator.yaml
-
-<span class="token comment" spellcheck="true"># 5. 检查pod运行情况</span>
-kubectl -n rook-ceph get pod
-
-<span class="token comment" spellcheck="true"># 6. 安装ceph cluster</span>
-kubectl create -f cluster.yaml
-
-<span class="token comment" spellcheck="true"># 7. 检查pod运行情况</span>
-kubectl -n rook-ceph get pod
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="安装ceph-tool"><a href="#安装ceph-tool" class="headerlink" title="安装ceph tool"></a>安装ceph tool</h3><p>保存<code>toolbox.yaml</code></p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph
-  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">1</span>
-  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
-      <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-  <span class="token key atrule">template</span><span class="token punctuation">:</span>
-    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-        <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
-      <span class="token key atrule">dnsPolicy</span><span class="token punctuation">:</span> ClusterFirstWithHostNet
-      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
-        <span class="token key atrule">image</span><span class="token punctuation">:</span> rook/ceph<span class="token punctuation">:</span>master
-        <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/tini"</span><span class="token punctuation">]</span>
-        <span class="token key atrule">args</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"-g"</span><span class="token punctuation">,</span> <span class="token string">"--"</span><span class="token punctuation">,</span> <span class="token string">"/usr/local/bin/toolbox.sh"</span><span class="token punctuation">]</span>
-        <span class="token key atrule">imagePullPolicy</span><span class="token punctuation">:</span> IfNotPresent
-        <span class="token key atrule">env</span><span class="token punctuation">:</span>
-          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ROOK_CEPH_USERNAME
-            <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
-              <span class="token key atrule">secretKeyRef</span><span class="token punctuation">:</span>
-                <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon
-                <span class="token key atrule">key</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>username
-          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ROOK_CEPH_SECRET
-            <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
-              <span class="token key atrule">secretKeyRef</span><span class="token punctuation">:</span>
-                <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon
-                <span class="token key atrule">key</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>secret
-        <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
-          <span class="token punctuation">-</span> <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /etc/ceph
-            <span class="token key atrule">name</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>config
-          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoint<span class="token punctuation">-</span>volume
-            <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /etc/rook
-      <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoint<span class="token punctuation">-</span>volume
-          <span class="token key atrule">configMap</span><span class="token punctuation">:</span>
-            <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon<span class="token punctuation">-</span>endpoints
-            <span class="token key atrule">items</span><span class="token punctuation">:</span>
-            <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> data
-              <span class="token key atrule">path</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoints
-        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>config
-          <span class="token key atrule">emptyDir</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
-      <span class="token key atrule">tolerations</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"node.kubernetes.io/unreachable"</span>
-          <span class="token key atrule">operator</span><span class="token punctuation">:</span> <span class="token string">"Exists"</span>
-          <span class="token key atrule">effect</span><span class="token punctuation">:</span> <span class="token string">"NoExecute"</span>
-          <span class="token key atrule">tolerationSeconds</span><span class="token punctuation">:</span> <span class="token number">5</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 安装</span>
-kubectl create -f toolbox.yaml
-
-<span class="token comment" spellcheck="true"># 2. 进入容器</span>
-kubectl -n rook-ceph <span class="token function">exec</span> -it deploy/rook-ceph-tools -- <span class="token function">bash</span>
-
-<span class="token comment" spellcheck="true"># 3. 执行相关命令</span>
-ceph status
-ceph osd status
-ceph <span class="token function">df</span>
-rados <span class="token function">df</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="block存储-被单个pod使用"><a href="#block存储-被单个pod使用" class="headerlink" title="block存储(被单个pod使用)"></a>block存储(被单个pod使用)</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl create -f cluster/examples/kubernetes/ceph/csi/rbd/storageclass.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="Shared-Filesystem存储-被多个pod共享使用"><a href="#Shared-Filesystem存储-被多个pod共享使用" class="headerlink" title="Shared Filesystem存储(被多个pod共享使用)"></a>Shared Filesystem存储(被多个pod共享使用)</h3><ul>
-<li><code>filesystem.yaml</code></li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> ceph.rook.io/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> CephFilesystem
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> myfs
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">metadataPool</span><span class="token punctuation">:</span>
-    <span class="token key atrule">replicated</span><span class="token punctuation">:</span>
-      <span class="token key atrule">size</span><span class="token punctuation">:</span> <span class="token number">3</span>
-  <span class="token key atrule">dataPools</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">replicated</span><span class="token punctuation">:</span>
-        <span class="token key atrule">size</span><span class="token punctuation">:</span> <span class="token number">3</span>
-  <span class="token key atrule">preserveFilesystemOnDelete</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">metadataServer</span><span class="token punctuation">:</span>
-    <span class="token key atrule">activeCount</span><span class="token punctuation">:</span> <span class="token number">1</span>
-    <span class="token key atrule">activeStandby</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. </span>
-kubectl create -f filesystem.yaml
-
-<span class="token comment" spellcheck="true"># 2. </span>
-kubectl create -f cluster/examples/kubernetes/ceph/csi/cephfs/storageclass.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置自动扩容"><a href="#配置自动扩容" class="headerlink" title="配置自动扩容"></a>配置自动扩容</h3><blockquote>
-<p>新增一块设备后能被自动发现</p>
-</blockquote>
-<pre class="line-numbers language-yml"><code class="language-yml"># 开启自动发现磁盘
-# vim operator.yaml
-ROOK_ENABLE_DISCOVERY_DAEMON: "true"
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/an-zhuang-ingress-nginx-fei-helm/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/an-zhuang-ingress-nginx-fei-helm/" class="post-title-link" itemprop="url">安装ingress-nginx【非helm方式】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-07-05 16:35:07" itemprop="dateCreated datePublished" datetime="2021-07-05T16:35:07+08:00">2021-07-05</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>本文使用kubernetes环境: <code>v1.19</code>,不是这个版本<code>apiVersion</code>可能不一样.</p>
-</blockquote>
-<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>之前通过helm方式安装ingress-nginx，具体参考<a target="_blank" rel="noopener" href="https://blog.csdn.net/wzy_168/article/details/100582322">3.2 使用Helm部署Nginx Ingress</a>.</p>
-<p>但是现在<code>http://mirror.azure.cn/kubernetes/charts</code>仓库已经无法使用.本文通过<code>yaml</code>文件安装.</p>
-<h3 id="创建serviceaccount"><a href="#创建serviceaccount" class="headerlink" title="创建serviceaccount"></a>创建serviceaccount</h3><blockquote>
-<p>这里没有梳理可能用到的权限,所以直接赋予了全部权限.</p>
-</blockquote>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> ServiceAccount
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-
-<span class="token punctuation">---</span>
-
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> rbac.authorization.k8s.io/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> ClusterRole
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>normal
-<span class="token key atrule">rules</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">""</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">""</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-
-<span class="token punctuation">---</span>
-
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> rbac.authorization.k8s.io/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Role
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>minimal
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-<span class="token key atrule">rules</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resourceNames</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">apiGroups</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">resources</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-    <span class="token key atrule">verbs</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">'*'</span>
-
-<span class="token punctuation">---</span>
-
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> rbac.authorization.k8s.io/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> RoleBinding
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>minimal
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-<span class="token key atrule">roleRef</span><span class="token punctuation">:</span>
-  <span class="token key atrule">apiGroup</span><span class="token punctuation">:</span> rbac.authorization.k8s.io
-  <span class="token key atrule">kind</span><span class="token punctuation">:</span> Role
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>minimal
-<span class="token key atrule">subjects</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">kind</span><span class="token punctuation">:</span> ServiceAccount
-    <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-
-<span class="token punctuation">---</span>
-
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> rbac.authorization.k8s.io/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> ClusterRoleBinding
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>normal
-<span class="token key atrule">roleRef</span><span class="token punctuation">:</span>
-  <span class="token key atrule">apiGroup</span><span class="token punctuation">:</span> rbac.authorization.k8s.io
-  <span class="token key atrule">kind</span><span class="token punctuation">:</span> ClusterRole
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>normal
-<span class="token key atrule">subjects</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">kind</span><span class="token punctuation">:</span> ServiceAccount
-    <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/53204733/k8s-ingress-nginx-ingress-controller-is-not-in-running-mode">参考链接</a></li>
-</ul>
-<h3 id="创建configmap"><a href="#创建configmap" class="headerlink" title="创建configmap"></a>创建configmap</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> ConfigMap
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> tcp<span class="token punctuation">-</span>services
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="创建nginx-ingress-default-backend"><a href="#创建nginx-ingress-default-backend" class="headerlink" title="创建nginx-ingress-default-backend"></a>创建nginx-ingress-default-backend</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">chart</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>1.24.5
-    <span class="token key atrule">component</span><span class="token punctuation">:</span> default<span class="token punctuation">-</span>backend
-    <span class="token key atrule">heritage</span><span class="token punctuation">:</span> Tiller
-    <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>default<span class="token punctuation">-</span>backend
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">1</span>
-  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
-      <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-      <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">template</span><span class="token punctuation">:</span>
-    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-      <span class="token key atrule">creationTimestamp</span><span class="token punctuation">:</span> <span class="token null important">null</span>
-      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-        <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-        <span class="token key atrule">component</span><span class="token punctuation">:</span> default<span class="token punctuation">-</span>backend
-        <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
-      <span class="token key atrule">serviceAccount</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">image</span><span class="token punctuation">:</span> hub.deri.org.cn/k8s/defaultbackend<span class="token punctuation">-</span>amd64<span class="token punctuation">:</span><span class="token number">1.5</span>
-        <span class="token key atrule">imagePullPolicy</span><span class="token punctuation">:</span> IfNotPresent
-        <span class="token key atrule">livenessProbe</span><span class="token punctuation">:</span>
-          <span class="token key atrule">failureThreshold</span><span class="token punctuation">:</span> <span class="token number">3</span>
-          <span class="token key atrule">httpGet</span><span class="token punctuation">:</span>
-            <span class="token key atrule">path</span><span class="token punctuation">:</span> /healthz
-            <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8080</span>
-            <span class="token key atrule">scheme</span><span class="token punctuation">:</span> HTTP
-          <span class="token key atrule">initialDelaySeconds</span><span class="token punctuation">:</span> <span class="token number">30</span>
-          <span class="token key atrule">periodSeconds</span><span class="token punctuation">:</span> <span class="token number">10</span>
-          <span class="token key atrule">successThreshold</span><span class="token punctuation">:</span> <span class="token number">1</span>
-          <span class="token key atrule">timeoutSeconds</span><span class="token punctuation">:</span> <span class="token number">5</span>
-        <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>default<span class="token punctuation">-</span>backend
-        <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token key atrule">containerPort</span><span class="token punctuation">:</span> <span class="token number">8080</span>
-          <span class="token key atrule">name</span><span class="token punctuation">:</span> http
-          <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-        <span class="token key atrule">readinessProbe</span><span class="token punctuation">:</span>
-          <span class="token key atrule">failureThreshold</span><span class="token punctuation">:</span> <span class="token number">6</span>
-          <span class="token key atrule">httpGet</span><span class="token punctuation">:</span>
-            <span class="token key atrule">path</span><span class="token punctuation">:</span> /healthz
-            <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8080</span>
-            <span class="token key atrule">scheme</span><span class="token punctuation">:</span> HTTP
-          <span class="token key atrule">periodSeconds</span><span class="token punctuation">:</span> <span class="token number">5</span>
-          <span class="token key atrule">successThreshold</span><span class="token punctuation">:</span> <span class="token number">1</span>
-          <span class="token key atrule">timeoutSeconds</span><span class="token punctuation">:</span> <span class="token number">5</span>
-        <span class="token key atrule">resources</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
-        <span class="token key atrule">securityContext</span><span class="token punctuation">:</span>
-          <span class="token key atrule">runAsUser</span><span class="token punctuation">:</span> <span class="token number">65534</span>
-        <span class="token key atrule">terminationMessagePath</span><span class="token punctuation">:</span> /dev/termination<span class="token punctuation">-</span>log
-        <span class="token key atrule">terminationMessagePolicy</span><span class="token punctuation">:</span> File
-      <span class="token key atrule">dnsPolicy</span><span class="token punctuation">:</span> ClusterFirst
-      <span class="token key atrule">nodeSelector</span><span class="token punctuation">:</span>
-        <span class="token key atrule">node-role.kubernetes.io/edge</span><span class="token punctuation">:</span> <span class="token string">""</span>
-      <span class="token key atrule">restartPolicy</span><span class="token punctuation">:</span> Always
-      <span class="token key atrule">schedulerName</span><span class="token punctuation">:</span> default<span class="token punctuation">-</span>scheduler
-      <span class="token key atrule">terminationGracePeriodSeconds</span><span class="token punctuation">:</span> <span class="token number">60</span>
-      <span class="token key atrule">tolerations</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">effect</span><span class="token punctuation">:</span> NoSchedule
-        <span class="token key atrule">key</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>role.kubernetes.io/master
-        <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists
-      <span class="token punctuation">-</span> <span class="token key atrule">effect</span><span class="token punctuation">:</span> PreferNoSchedule
-        <span class="token key atrule">key</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>role.kubernetes.io/master
-        <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists
-
-<span class="token punctuation">---</span>
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">chart</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>1.24.5
-    <span class="token key atrule">component</span><span class="token punctuation">:</span> default<span class="token punctuation">-</span>backend
-    <span class="token key atrule">heritage</span><span class="token punctuation">:</span> Tiller
-    <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>default<span class="token punctuation">-</span>backend
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> http
-    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">80</span>
-    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> http
-  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">component</span><span class="token punctuation">:</span> default<span class="token punctuation">-</span>backend
-    <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">sessionAffinity</span><span class="token punctuation">:</span> None
-  <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP
-<span class="token key atrule">status</span><span class="token punctuation">:</span>
-  <span class="token key atrule">loadBalancer</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="创建nginx-ingress-controller"><a href="#创建nginx-ingress-controller" class="headerlink" title="创建nginx-ingress-controller"></a>创建nginx-ingress-controller</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">chart</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>1.24.5
-    <span class="token key atrule">component</span><span class="token punctuation">:</span> controller
-    <span class="token key atrule">heritage</span><span class="token punctuation">:</span> Tiller
-    <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>controller
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">1</span>
-  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
-      <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-      <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">template</span><span class="token punctuation">:</span>
-    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-        <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-        <span class="token key atrule">component</span><span class="token punctuation">:</span> controller
-        <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
-      <span class="token key atrule">serviceAccount</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-      <span class="token key atrule">affinity</span><span class="token punctuation">:</span>
-        <span class="token key atrule">podAntiAffinity</span><span class="token punctuation">:</span>
-          <span class="token key atrule">requiredDuringSchedulingIgnoredDuringExecution</span><span class="token punctuation">:</span>
-          <span class="token punctuation">-</span> <span class="token key atrule">labelSelector</span><span class="token punctuation">:</span>
-              <span class="token key atrule">matchExpressions</span><span class="token punctuation">:</span>
-              <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> app
-                <span class="token key atrule">operator</span><span class="token punctuation">:</span> In
-                <span class="token key atrule">values</span><span class="token punctuation">:</span>
-                <span class="token punctuation">-</span> nginx<span class="token punctuation">-</span>ingress
-              <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> component
-                <span class="token key atrule">operator</span><span class="token punctuation">:</span> In
-                <span class="token key atrule">values</span><span class="token punctuation">:</span>
-                <span class="token punctuation">-</span> controller
-            <span class="token key atrule">topologyKey</span><span class="token punctuation">:</span> kubernetes.io/hostname
-      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">args</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> /nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>controller
-        <span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>default<span class="token punctuation">-</span>backend<span class="token punctuation">-</span>service=ingress<span class="token punctuation">-</span>nginx/nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>default<span class="token punctuation">-</span>backend
-        <span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>election<span class="token punctuation">-</span>id=ingress<span class="token punctuation">-</span>controller<span class="token punctuation">-</span>leader
-        <span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>class=nginx
-        <span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>tcp<span class="token punctuation">-</span>services<span class="token punctuation">-</span>configmap=$(POD_NAMESPACE)/tcp<span class="token punctuation">-</span>services
-        <span class="token punctuation">-</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>configmap=ingress<span class="token punctuation">-</span>nginx/nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>controller
-        <span class="token key atrule">env</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> POD_NAME
-          <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
-            <span class="token key atrule">fieldRef</span><span class="token punctuation">:</span>
-              <span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-              <span class="token key atrule">fieldPath</span><span class="token punctuation">:</span> metadata.name
-        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> POD_NAMESPACE
-          <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
-            <span class="token key atrule">fieldRef</span><span class="token punctuation">:</span>
-              <span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-              <span class="token key atrule">fieldPath</span><span class="token punctuation">:</span> metadata.namespace
-        <span class="token key atrule">image</span><span class="token punctuation">:</span> hub.deri.org.cn/k8s/nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>controller<span class="token punctuation">:</span>0.26.1
-        <span class="token key atrule">imagePullPolicy</span><span class="token punctuation">:</span> IfNotPresent
-        <span class="token key atrule">livenessProbe</span><span class="token punctuation">:</span>
-          <span class="token key atrule">failureThreshold</span><span class="token punctuation">:</span> <span class="token number">3</span>
-          <span class="token key atrule">httpGet</span><span class="token punctuation">:</span>
-            <span class="token key atrule">path</span><span class="token punctuation">:</span> /healthz
-            <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">10254</span>
-            <span class="token key atrule">scheme</span><span class="token punctuation">:</span> HTTP
-          <span class="token key atrule">initialDelaySeconds</span><span class="token punctuation">:</span> <span class="token number">10</span>
-          <span class="token key atrule">periodSeconds</span><span class="token punctuation">:</span> <span class="token number">10</span>
-          <span class="token key atrule">successThreshold</span><span class="token punctuation">:</span> <span class="token number">1</span>
-          <span class="token key atrule">timeoutSeconds</span><span class="token punctuation">:</span> <span class="token number">1</span>
-        <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>controller
-        <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-        <span class="token punctuation">-</span> <span class="token key atrule">containerPort</span><span class="token punctuation">:</span> <span class="token number">80</span>
-          <span class="token key atrule">hostPort</span><span class="token punctuation">:</span> <span class="token number">80</span>
-          <span class="token key atrule">name</span><span class="token punctuation">:</span> http
-          <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-        <span class="token punctuation">-</span> <span class="token key atrule">containerPort</span><span class="token punctuation">:</span> <span class="token number">443</span>
-          <span class="token key atrule">hostPort</span><span class="token punctuation">:</span> <span class="token number">443</span>
-          <span class="token key atrule">name</span><span class="token punctuation">:</span> https
-          <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-        <span class="token key atrule">readinessProbe</span><span class="token punctuation">:</span>
-          <span class="token key atrule">failureThreshold</span><span class="token punctuation">:</span> <span class="token number">3</span>
-          <span class="token key atrule">httpGet</span><span class="token punctuation">:</span>
-            <span class="token key atrule">path</span><span class="token punctuation">:</span> /healthz
-            <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">10254</span>
-            <span class="token key atrule">scheme</span><span class="token punctuation">:</span> HTTP
-          <span class="token key atrule">initialDelaySeconds</span><span class="token punctuation">:</span> <span class="token number">10</span>
-          <span class="token key atrule">periodSeconds</span><span class="token punctuation">:</span> <span class="token number">10</span>
-          <span class="token key atrule">successThreshold</span><span class="token punctuation">:</span> <span class="token number">1</span>
-          <span class="token key atrule">timeoutSeconds</span><span class="token punctuation">:</span> <span class="token number">1</span>
-        <span class="token key atrule">resources</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
-        <span class="token key atrule">securityContext</span><span class="token punctuation">:</span>
-          <span class="token key atrule">allowPrivilegeEscalation</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-          <span class="token key atrule">capabilities</span><span class="token punctuation">:</span>
-            <span class="token key atrule">add</span><span class="token punctuation">:</span>
-            <span class="token punctuation">-</span> NET_BIND_SERVICE
-            <span class="token key atrule">drop</span><span class="token punctuation">:</span>
-            <span class="token punctuation">-</span> ALL
-          <span class="token key atrule">runAsUser</span><span class="token punctuation">:</span> <span class="token number">33</span>
-        <span class="token key atrule">terminationMessagePath</span><span class="token punctuation">:</span> /dev/termination<span class="token punctuation">-</span>log
-        <span class="token key atrule">terminationMessagePolicy</span><span class="token punctuation">:</span> File
-      <span class="token key atrule">dnsPolicy</span><span class="token punctuation">:</span> ClusterFirst
-      <span class="token key atrule">hostNetwork</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-      <span class="token key atrule">nodeSelector</span><span class="token punctuation">:</span>
-        <span class="token key atrule">node-role.kubernetes.io/edge</span><span class="token punctuation">:</span> <span class="token string">""</span>
-      <span class="token key atrule">restartPolicy</span><span class="token punctuation">:</span> Always
-      <span class="token key atrule">schedulerName</span><span class="token punctuation">:</span> default<span class="token punctuation">-</span>scheduler
-      <span class="token key atrule">tolerations</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">effect</span><span class="token punctuation">:</span> NoSchedule
-        <span class="token key atrule">key</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>role.kubernetes.io/master
-        <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists
-      <span class="token punctuation">-</span> <span class="token key atrule">effect</span><span class="token punctuation">:</span> PreferNoSchedule
-        <span class="token key atrule">key</span><span class="token punctuation">:</span> node<span class="token punctuation">-</span>role.kubernetes.io/master
-        <span class="token key atrule">operator</span><span class="token punctuation">:</span> Exists
-
-<span class="token punctuation">---</span>
-
-<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">chart</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>1.24.5
-    <span class="token key atrule">component</span><span class="token punctuation">:</span> controller
-    <span class="token key atrule">heritage</span><span class="token punctuation">:</span> Tiller
-    <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress<span class="token punctuation">-</span>controller
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> ingress<span class="token punctuation">-</span>nginx
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">externalTrafficPolicy</span><span class="token punctuation">:</span> Cluster
-  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> http
-    <span class="token key atrule">nodePort</span><span class="token punctuation">:</span> <span class="token number">31967</span>
-    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">80</span>
-    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> http
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> https
-    <span class="token key atrule">nodePort</span><span class="token punctuation">:</span> <span class="token number">31276</span>
-    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">443</span>
-    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> https
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 30107<span class="token punctuation">-</span>tcp
-    <span class="token key atrule">nodePort</span><span class="token punctuation">:</span> <span class="token number">32354</span>
-    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">30107</span>
-    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> 30107<span class="token punctuation">-</span>tcp
-  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-    <span class="token key atrule">component</span><span class="token punctuation">:</span> controller
-    <span class="token key atrule">release</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>ingress
-  <span class="token key atrule">sessionAffinity</span><span class="token punctuation">:</span> None
-  <span class="token key atrule">type</span><span class="token punctuation">:</span> LoadBalancer
-<span class="token key atrule">status</span><span class="token punctuation">:</span>
-  <span class="token key atrule">loadBalancer</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/configmap-re-jia-zai-cha-jian-stakater-reloader/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/configmap-re-jia-zai-cha-jian-stakater-reloader/" class="post-title-link" itemprop="url">configmap热加载插件stakater-reloader</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-07-05 09:29:05" itemprop="dateCreated datePublished" datetime="2021-07-05T09:29:05+08:00">2021-07-05</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="插件说明"><a href="#插件说明" class="headerlink" title="插件说明"></a>插件说明</h3><p>当我们部署的<code>DeploymentConfig</code>, <code>Deployment</code>, <code>Daemonset</code>, <code>Statefulset</code>等服务所挂载的<code>ConfigMap</code>或<code>Secret</code>发生变化的时候,我们的服务可以自动更新.</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://github.com/stakater/Reloader">官网</a></li>
-</ul>
-<h3 id="插件安装"><a href="#插件安装" class="headerlink" title="插件安装"></a>插件安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># kubernetes >= 1.9</span>
-kubectl apply -f https://raw.githubusercontent.com/stakater/Reloader/master/deployments/kubernetes/reloader.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><ul>
-<li>所有更新自动加载,包括ConfigMap和Secret</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-    <span class="token key atrule">reloader.stakater.com/auto</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>匹配模式</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># 开启search</span>
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-    <span class="token key atrule">reloader.stakater.com/search</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">template</span><span class="token punctuation">:</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># ConfigMap or Secret 开启match</span>
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> ConfigMap
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-    <span class="token key atrule">reloader.stakater.com/match</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
-<span class="token key atrule">data</span><span class="token punctuation">:</span>
-  <span class="token key atrule">key</span><span class="token punctuation">:</span> value
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>特定Configmap</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-    <span class="token key atrule">configmap.reloader.stakater.com/reload</span><span class="token punctuation">:</span> <span class="token string">"foo-configmap"</span>
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-    <span class="token key atrule">configmap.reloader.stakater.com/reload</span><span class="token punctuation">:</span> <span class="token string">"foo-configmap,bar-configmap,baz-configmap"</span>
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>特定secret</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-    <span class="token key atrule">secret.reloader.stakater.com/reload</span><span class="token punctuation">:</span> <span class="token string">"foo-secret"</span>
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-    <span class="token key atrule">secret.reloader.stakater.com/reload</span><span class="token punctuation">:</span> <span class="token string">"foo-secret,bar-secret,baz-secret"</span>
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/19/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/">19</a><span class="page-number current">20</span><a class="page-number" href="/page/21/">21</a><span class="space">&hellip;</span><a class="page-number" href="/page/60/">60</a><a class="extend next" rel="next" href="/page/21/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/19/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/">19</a><span class="page-number current">20</span><a class="page-number" href="/page/21/">21</a><span class="space">&hellip;</span><a class="page-number" href="/page/61/">61</a><a class="extend next" rel="next" href="/page/21/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1453,20 +1026,20 @@ kubectl apply -f https://raw.githubusercontent.com/stakater/Reloader/master/depl
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">359</span>
+          <span class="site-state-item-count">362</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">222</span>
+        <span class="site-state-item-count">224</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
