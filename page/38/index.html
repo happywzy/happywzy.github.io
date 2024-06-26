@@ -77,9 +77,9 @@
 
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
-<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"><link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
-</head>
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
@@ -192,6 +192,130 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-kai-fa-yi-bu-restful-jie-kou/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/springboot-kai-fa-yi-bu-restful-jie-kou/" class="post-title-link" itemprop="url">springboot开发异步restful接口</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-08 11:21:45" itemprop="dateCreated datePublished" datetime="2020-05-08T11:21:45+08:00">2020-05-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="SpringBoot中异步调用的使用"><a href="#SpringBoot中异步调用的使用" class="headerlink" title="SpringBoot中异步调用的使用"></a>SpringBoot中异步调用的使用</h3><blockquote>
+<p>同步请求是会一直等待服务端相应的，需要返回结果给客户端的；而异步调用服务端会马上返回给客户端响应，完成这次整个的请求，至于异步调用的任务服务端后台自己慢慢跑就行，客户端不会关心。</p>
+</blockquote>
+<ol>
+<li>开启异步调用,在启动类增加<code>@EnableAsync</code>使异步调用<code>@Async</code>注解生效</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@EnableAsync</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DbCompareApplication</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        SpringApplication<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>DbCompareApplication<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>在需要异步调用的方法，增加注解<code>@Async</code></li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestSleep</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Async</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">sleep</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">10000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"sleep"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>Controller调用异步方法</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@RestController</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TaskController</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Autowired</span>
+    TestSleep testSleep<span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/test"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> String <span class="token function">test</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        testSleep<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token string">"ok"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>效果</li>
+</ol>
+<ul>
+<li>如果不加<code>@Async</code>注解，客户端的调用，需要10秒才能返回结果;</li>
+<li>加了<code>@Async</code>注解,客户端的调用立马返回结果，调用的方法在服务端后台运行.</li>
+</ul>
+<ol start="5">
+<li>注意事项:部分情况下<code>@Async</code>注解失效</li>
+</ol>
+<ul>
+<li>调用同一个类下注有<code>@Async</code>异步方法</li>
+<li>调用的是静态(<code>static</code>)方法</li>
+<li>调用(<code>private</code>)私有化方法</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1151,72 +1275,6 @@ spring.datasource.druid.filter.stat.slow-sql-millis=1
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/fen-bu-shi-cun-chu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/fen-bu-shi-cun-chu/" class="post-title-link" itemprop="url">分布式存储</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-26 09:15:12" itemprop="dateCreated datePublished" datetime="2020-04-26T09:15:12+08:00">2020-04-26</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="CephFS"><a href="#CephFS" class="headerlink" title="CephFS"></a>CephFS</h3><h3 id="glusterfs"><a href="#glusterfs" class="headerlink" title="glusterfs"></a>glusterfs</h3><h3 id="rook"><a href="#rook" class="headerlink" title="rook"></a><a target="_blank" rel="noopener" href="https://github.com/rook/rook">rook</a></h3>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1288,7 +1346,7 @@ spring.datasource.druid.filter.stat.slow-sql-millis=1
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">362</span>
+          <span class="site-state-item-count">363</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1301,7 +1359,7 @@ spring.datasource.druid.filter.stat.slow-sql-millis=1
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">224</span>
+        <span class="site-state-item-count">225</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
