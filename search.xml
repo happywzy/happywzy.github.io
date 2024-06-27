@@ -33293,6 +33293,9 @@ cluster is healthy
 6937e3968a3fec18: name<span class="token operator">=</span>node154 peerURLs<span class="token operator">=</span>http://172.16.20.154:2380 clientURLs<span class="token operator">=</span>http://172.16.20.154:2379 isLeader<span class="token operator">=</span>false
 8b79f77c6775414b: name<span class="token operator">=</span>node153 peerURLs<span class="token operator">=</span>http://172.16.20.153:2380 clientURLs<span class="token operator">=</span>http://172.16.20.153:2379 isLeader<span class="token operator">=</span>false
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h3><ol>
+<li>通过v3版本写入，<code>etcdctl</code> 命令查不到.<br>ETCD v2 v3版本数据不互通,需要指定版本：<code>export ETCDCTL_API=3</code></li>
+</ol>
 ]]></content>
       <categories>
         <category>etcd</category>
@@ -33765,6 +33768,108 @@ systemctl <span class="token function">enable</span> vip-manager
       <tags>
         <tag>postgres</tag>
         <tag>vip-manager</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>基于postgres-15安装TimescaleDB</title>
+    <url>/ji-yu-postgres-15-an-zhuang-timescaledb/</url>
+    <content><![CDATA[<h3 id="TimescaleDB"><a href="#TimescaleDB" class="headerlink" title="TimescaleDB"></a>TimescaleDB</h3><p>TimescaleDB 是基于postgres的时序数据库，安装TimescaleDB需要先安装postgres，然后将postgres转成TimescaleDB.</p>
+<blockquote>
+<p>参考前文安装 <code>postgres-15</code>.</p>
+</blockquote>
+<h3 id="安装TimescaleDB"><a href="#安装TimescaleDB" class="headerlink" title="安装TimescaleDB"></a>安装TimescaleDB</h3><ul>
+<li><a href="https://docs.timescale.com/self-hosted/latest/install/installation-linux/">官方文档</a>,通过yum安装.</li>
+</ul>
+<ol>
+<li>安装yum源</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum <span class="token function">install</span> https://download.postgresql.org/pub/repos/yum/reporpms/EL-<span class="token variable"><span class="token variable">$(</span>rpm -E %<span class="token punctuation">{</span>rhel<span class="token punctuation">}</span><span class="token variable">)</span></span>-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="2">
+<li>安装TimescaleDB资源库</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">tee</span> /etc/yum.repos.d/timescale_timescaledb.repo <span class="token operator">&lt;&lt;</span><span class="token string">EOL
+[timescale_timescaledb]
+name=timescale_timescaledb
+baseurl=https://packagecloud.io/timescale/timescaledb/el/<span class="token variable"><span class="token variable">$(</span>rpm -E %<span class="token punctuation">{</span>rhel<span class="token punctuation">}</span><span class="token variable">)</span></span>/\<span class="token variable">$basearch</span>
+repo_gpgcheck=1
+gpgcheck=0
+enabled=1
+gpgkey=https://packagecloud.io/timescale/timescaledb/gpgkey
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+metadata_expire=300
+EOL</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>更新</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum update
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="4">
+<li>YUM安装TimescaleDB</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum <span class="token function">install</span> timescaledb-2-postgresql-15
+<span class="token comment" spellcheck="true"># 同时安装postgres15</span>
+<span class="token comment" spellcheck="true"># sudo yum install timescaledb-2-postgresql-16 postgresql16</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>初始化数据库（已经安装过了就跳过）</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> /usr/pgsql-16/bin/postgresql-15-setup initdb
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="6">
+<li>将PostgreSQL调成TimescaleDB</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 如果修改过data目录可以通过 -conf-path 指定位置,否在找不到。</span>
+<span class="token function">sudo</span> timescaledb-tune --pg-config<span class="token operator">=</span>/usr/pgsql-15/bin/pg_config -conf-path<span class="token operator">=</span>/home/pgsql/data/postgresql.conf
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="7">
+<li>重启数据库</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl restart postgresql-15
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="8">
+<li>添加数据库拓展</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 登录</span>
+psql -U postgres -h 127.0.0.1 -p 5432
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- Add TimescaleDB to the database</span>
+<span class="token keyword">CREATE</span> EXTENSION <span class="token keyword">IF</span> <span class="token operator">NOT</span> <span class="token keyword">EXISTS</span> timescaledb<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- Check that TimescaleDB is installed</span>
+postgres<span class="token operator">=</span><span class="token comment" spellcheck="true"># \dx</span>
+                                               List <span class="token keyword">of</span> installed extensions
+    Name     <span class="token operator">|</span> Version <span class="token operator">|</span>   <span class="token keyword">Schema</span>   <span class="token operator">|</span>                                     Description                                      
+<span class="token comment" spellcheck="true">-------------+---------+------------+--------------------------------------------------------------------------------------</span>
+ plpgsql     <span class="token operator">|</span> <span class="token number">1.0</span>     <span class="token operator">|</span> pg_catalog <span class="token operator">|</span> PL<span class="token operator">/</span>pgSQL procedural language
+ timescaledb <span class="token operator">|</span> <span class="token number">2.15</span><span class="token punctuation">.</span><span class="token number">2</span>  <span class="token operator">|</span> <span class="token keyword">public</span>     <span class="token operator">|</span> Enables scalable inserts <span class="token operator">and</span> complex queries <span class="token keyword">for</span> time<span class="token operator">-</span>series <span class="token keyword">data</span> <span class="token punctuation">(</span>Apache <span class="token number">2</span> Edition<span class="token punctuation">)</span>
+<span class="token punctuation">(</span><span class="token number">2</span> <span class="token keyword">rows</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<!-- ### 源码安装
+1. 安装编译环境
+```bash
+# 安装 gcc
+yum install -y gcc gcc-c++
+
+# 安装 openssl openssl-devel，安装cmake需要用到
+sudo yum install openssl openssl-devel
+
+# 安装cmake：yum安装的cmake版本太低，需要源码安装
+wget https://cmake.org/files/v3.22/cmake-3.22.1.tar.gz
+tar -zxvf cmake-3.22.1.tar.gz
+cd cmake-3.22.1
+./bootstrap && make && make install
+ln -s /usr/local/bin/cmake /usr/bin/cmake
+cmake --version
+``` -->]]></content>
+      <categories>
+        <category>postgres</category>
+      </categories>
+      <tags>
+        <tag>postgres</tag>
+        <tag>TimescaleDB</tag>
       </tags>
   </entry>
 </search>
