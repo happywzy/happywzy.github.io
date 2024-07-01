@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,150 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/haproxy-patroni-shi-xian-pg-ji-qun-fang-an/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/haproxy-patroni-shi-xian-pg-ji-qun-fang-an/" class="post-title-link" itemprop="url">haproxy+patroni实现pg集群方案</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-07-01 16:10:14" itemprop="dateCreated datePublished" datetime="2024-07-01T16:10:14+08:00">2024-07-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>基于patroni搭建了三台服务器的postgres集群，本文通过haproxy实现postgres的动态负载。</p>
+<p>3台机器都需要安装haproxy，三个haproxy上面可以由负载均衡器或者其他工具提供服务。</p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ol>
+<li>haproxy的安装</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 基于CentOS7系统，通过yum只能安装haproxy-1.5或haproxy-1.8，这两个版本都已EOL</span>
+yum <span class="token function">install</span> haproxy <span class="token comment" spellcheck="true"># haproxy-1.5</span>
+vim /etc/haproxy/haproxy.cfg
+
+yum <span class="token function">install</span> haproxy18 <span class="token comment" spellcheck="true"># haproxy-1.8，需要具有epel-release软件包</span>
+vim /etc/haproxy18/haproxy.cfg
+
+<span class="token comment" spellcheck="true"># 源码安装方式：省略</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>/etc/haproxy18/haproxy.conf</li>
+</ol>
+<pre class="line-numbers language-conf"><code class="language-conf">defaults     
+    mode tcp
+    log global
+    option tcplog
+    option dontlognull
+    retries 3 
+    option redispatch
+    timeout queue 1m
+    timeout client 30m
+    timeout connect 4s
+    timeout server 30m
+    timeout check 5s
+    #option clitcpka # haproxy与client端的keepalive配置
+    #clitcpka-cnt 3
+    #clitcpka-idle 180
+    #clitcpka-intvl 10
+
+listen primary
+    bind 0.0.0.0:15432
+    mode tcp
+    balance roundrobin
+    option httpchk HEAD /primary
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+    server DB01 192.168.86.101:5432 maxconn 2000 check port 8008
+    server DB02 192.168.86.102:5432 maxconn 2000 check port 8008
+    server DB03 192.168.86.103:5432 maxconn 2000 check port 8008
+    # acl is_lb_healthcheck src 192.168.0.10 # LB探活机制的源IP
+    # tcp-request connection reject if is_lb_healthcheck # 阻止探活转发到后端PG，避免造成PG频繁fork
+
+listen replicas
+    bind 0.0.0.0:15433
+    mode tcp
+    balance roundrobin
+    option httpchk HEAD /replica
+    # option tcpka
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+    server DB01 192.168.86.101:5432 maxconn 2000 check port 8008
+    server DB02 192.168.86.102:5432 maxconn 2000 check port 8008
+    server DB03 192.168.86.103:5432 maxconn 2000 check port 8008
+    # acl is_lb_healthcheck src 192.168.0.10 # LB探活机制的源IP
+    # tcp-request connection reject if is_lb_healthcheck # 阻止探活转发到后端PG，避免造成PG频繁fork
+
+listen monitor
+    bind 0.0.0.0:8888
+    mode http
+    option httplog
+    stats enable
+    stats uri /haproxy_stats
+    stats realm Haproxy\ Statistics
+    # stats auth admin:123456 # haproxy web管理用户名密码，自行设置
+    stats refresh 30s
+    stats hide-version
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>通过<code>15432</code>始终与主节点建立连接，通过<code>15433</code>始终与备节点建立连接，主节点可读可写，备节点只能读，实现读写分离。检测<code>8008</code>端口由patroni提供。</p>
+<ol start="3">
+<li>启动</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl start haproxy18.service
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1032,166 +1176,6 @@ host    all             all             172.16.20.0/24          md5
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/etcd-ji-qun-bu-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/etcd-ji-qun-bu-shu/" class="post-title-link" itemprop="url">etcd集群部署</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-06-24 16:57:39" itemprop="dateCreated datePublished" datetime="2024-06-24T16:57:39+08:00">2024-06-24</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/etcd/" itemprop="url" rel="index"><span itemprop="name">etcd</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>在三台机器上搭建一个集群</p>
-<table>
-<thead>
-<tr>
-<th>服务器</th>
-<th>IP</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>node152</code></td>
-<td><code>172.16.20.152</code></td>
-</tr>
-<tr>
-<td><code>node153</code></td>
-<td><code>172.16.20.153</code></td>
-</tr>
-<tr>
-<td><code>node154</code></td>
-<td><code>172.16.20.154</code></td>
-</tr>
-</tbody></table>
-<h3 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h3><ul>
-<li>安装etcd</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">yum -y <span class="token function">install</span> etcd
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ul>
-<li>修改默认配置: <code>/etc/etcd/etcd.conf</code></li>
-</ul>
-<pre class="line-numbers language-conf"><code class="language-conf">ETCD_DATA_DIR="/home/etcd/node152.etcd"
-ETCD_LISTEN_PEER_URLS="http://172.16.20.152:2380"
-ETCD_LISTEN_CLIENT_URLS="http://172.16.20.152:2379,http://localhost:2379"
-ETCD_NAME="node152"
-ETCD_INITIAL_ADVERTISE_PEER_URLS="http://172.16.20.152:2380"
-ETCD_ADVERTISE_CLIENT_URLS="http://172.16.20.152:2379"
-ETCD_INITIAL_CLUSTER="node152=http://172.16.20.152:2380,node153=http://172.16.20.153:2380,node154=http://172.16.20.154:2380"
-ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
-ETCD_INITIAL_CLUSTER_STATE="new"
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意：数据目录etcd用户有权限创建,或者提前创建好并分配权限;<br>其他节点根据IP修改.</p>
-</blockquote>
-<ul>
-<li>修改服务配置: <code>/usr/lib/systemd/system/etcd.service</code></li>
-</ul>
-<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
-Description=Etcd Server
-After=network.target
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=notify
-WorkingDirectory=/var/lib/etcd/
-EnvironmentFile=-/etc/etcd/etcd.conf
-User=etcd
-# set GOMAXPROCS to number of processors
-ExecStart=/bin/bash -c "GOMAXPROCS=$(nproc) /usr/bin/etcd --name=\"${ETCD_NAME}\" --data-dir=\"${ETCD_DATA_DIR}\" --listen-client-urls=\"${ETCD_LISTEN_CLIENT_URLS}\" \
---listen-peer-urls=\"${ETCD_LISTEN_PEER_URLS}\" \
---initial-advertise-peer-urls=\"${ETCD_INITIAL_ADVERTISE_PEER_URLS}\" \
---advertise-client-urls=\"${ETCD_ADVERTISE_CLIENT_URLS}\" \
---initial-cluster=\"${ETCD_INITIAL_CLUSTER}\"  \
---initial-cluster-token=\"${ETCD_INITIAL_CLUSTER_TOKEN}\" \
---initial-cluster-state=\"${ETCD_INITIAL_CLUSTER_STATE}\""
-
-Restart=on-failure
-LimitNOFILE=65536
-
-[Install]
-WantedBy=multi-user.target
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>启动并设置开机启动</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">systemctl start etcd
-systemctl <span class="token function">enable</span> etcd
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ul>
-<li>检查集群状态</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data7 home<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># etcdctl cluster-health</span>
-member 1031e29bb8572c51 is healthy: got healthy result from http://172.16.20.152:2379
-member 6937e3968a3fec18 is healthy: got healthy result from http://172.16.20.154:2379
-member 8b79f77c6775414b is healthy: got healthy result from http://172.16.20.153:2379
-cluster is healthy
-
-<span class="token punctuation">[</span>root@data7 home<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># etcdctl member list</span>
-1031e29bb8572c51: name<span class="token operator">=</span>node152 peerURLs<span class="token operator">=</span>http://172.16.20.152:2380 clientURLs<span class="token operator">=</span>http://172.16.20.152:2379 isLeader<span class="token operator">=</span>true
-6937e3968a3fec18: name<span class="token operator">=</span>node154 peerURLs<span class="token operator">=</span>http://172.16.20.154:2380 clientURLs<span class="token operator">=</span>http://172.16.20.154:2379 isLeader<span class="token operator">=</span>false
-8b79f77c6775414b: name<span class="token operator">=</span>node153 peerURLs<span class="token operator">=</span>http://172.16.20.153:2380 clientURLs<span class="token operator">=</span>http://172.16.20.153:2379 isLeader<span class="token operator">=</span>false
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h3><ol>
-<li>通过v3版本写入，<code>etcdctl</code> 命令查不到.<br>ETCD v2 v3版本数据不互通,需要指定版本：<code>export ETCDCTL_API=3</code></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1263,7 +1247,7 @@ cluster is healthy
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">364</span>
+          <span class="site-state-item-count">365</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

@@ -32990,6 +32990,25 @@ CHANGE <span class="token keyword">REPLICATION</span> SOURCE <span class="token 
 <ul>
 <li><a href="https://dev.mysql.com/doc/refman/8.4/en/replication.html">https://dev.mysql.com/doc/refman/8.4/en/replication.html</a></li>
 </ul>
+<h3 id="双主模式下的读写分离"><a href="#双主模式下的读写分离" class="headerlink" title="双主模式下的读写分离"></a>双主模式下的读写分离</h3><ol>
+<li>创建一个普通用户</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">USER</span> <span class="token string">'test'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED BY '</span>Test<span class="token variable">@123456</span><span class="token string">';
+GRANT SELECT, INSERT, UPDATE, DELETE ON *.* TO '</span>test<span class="token string">'@'</span><span class="token operator">%</span>'<span class="token punctuation">;</span>
+FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>超级用户可以在另一台MySQL动态设置只读<br>这里需要开发一个动态设置的读VIP所在MySQL只读的工具.</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 普通用户只能读，超级用户依然可以写</span>
+<span class="token keyword">set</span> <span class="token keyword">global</span> read_only <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- 检查设置的状态</span>
+<span class="token keyword">show</span> <span class="token keyword">global</span> variables <span class="token operator">like</span> <span class="token string">'%read_only%'</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>额外说明：<code>super_read_only</code>和<code>read_only</code>不一样，<code>super_read_only</code>是所有用户都不能写。</p>
+</blockquote>
 ]]></content>
       <categories>
         <category>mysql</category>
@@ -33870,6 +33889,97 @@ cmake --version
       <tags>
         <tag>postgres</tag>
         <tag>TimescaleDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>haproxy+patroni实现pg集群方案</title>
+    <url>/haproxy-patroni-shi-xian-pg-ji-qun-fang-an/</url>
+    <content><![CDATA[<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>基于patroni搭建了三台服务器的postgres集群，本文通过haproxy实现postgres的动态负载。</p>
+<p>3台机器都需要安装haproxy，三个haproxy上面可以由负载均衡器或者其他工具提供服务。</p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ol>
+<li>haproxy的安装</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 基于CentOS7系统，通过yum只能安装haproxy-1.5或haproxy-1.8，这两个版本都已EOL</span>
+yum <span class="token function">install</span> haproxy <span class="token comment" spellcheck="true"># haproxy-1.5</span>
+vim /etc/haproxy/haproxy.cfg
+
+yum <span class="token function">install</span> haproxy18 <span class="token comment" spellcheck="true"># haproxy-1.8，需要具有epel-release软件包</span>
+vim /etc/haproxy18/haproxy.cfg
+
+<span class="token comment" spellcheck="true"># 源码安装方式：省略</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>/etc/haproxy18/haproxy.conf</li>
+</ol>
+<pre class="line-numbers language-conf"><code class="language-conf">defaults     
+    mode tcp
+    log global
+    option tcplog
+    option dontlognull
+    retries 3 
+    option redispatch
+    timeout queue 1m
+    timeout client 30m
+    timeout connect 4s
+    timeout server 30m
+    timeout check 5s
+    #option clitcpka # haproxy与client端的keepalive配置
+    #clitcpka-cnt 3
+    #clitcpka-idle 180
+    #clitcpka-intvl 10
+
+listen primary
+    bind 0.0.0.0:15432
+    mode tcp
+    balance roundrobin
+    option httpchk HEAD /primary
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+    server DB01 192.168.86.101:5432 maxconn 2000 check port 8008
+    server DB02 192.168.86.102:5432 maxconn 2000 check port 8008
+    server DB03 192.168.86.103:5432 maxconn 2000 check port 8008
+    # acl is_lb_healthcheck src 192.168.0.10 # LB探活机制的源IP
+    # tcp-request connection reject if is_lb_healthcheck # 阻止探活转发到后端PG，避免造成PG频繁fork
+
+listen replicas
+    bind 0.0.0.0:15433
+    mode tcp
+    balance roundrobin
+    option httpchk HEAD /replica
+    # option tcpka
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+    server DB01 192.168.86.101:5432 maxconn 2000 check port 8008
+    server DB02 192.168.86.102:5432 maxconn 2000 check port 8008
+    server DB03 192.168.86.103:5432 maxconn 2000 check port 8008
+    # acl is_lb_healthcheck src 192.168.0.10 # LB探活机制的源IP
+    # tcp-request connection reject if is_lb_healthcheck # 阻止探活转发到后端PG，避免造成PG频繁fork
+
+listen monitor
+    bind 0.0.0.0:8888
+    mode http
+    option httplog
+    stats enable
+    stats uri /haproxy_stats
+    stats realm Haproxy\ Statistics
+    # stats auth admin:123456 # haproxy web管理用户名密码，自行设置
+    stats refresh 30s
+    stats hide-version
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>通过<code>15432</code>始终与主节点建立连接，通过<code>15433</code>始终与备节点建立连接，主节点可读可写，备节点只能读，实现读写分离。检测<code>8008</code>端口由patroni提供。</p>
+<ol start="3">
+<li>启动</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl start haproxy18.service
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>postgres</category>
+      </categories>
+      <tags>
+        <tag>haproxy</tag>
+        <tag>postgres</tag>
+        <tag>patroni</tag>
       </tags>
   </entry>
 </search>
