@@ -33982,4 +33982,351 @@ listen monitor
         <tag>patroni</tag>
       </tags>
   </entry>
+  <entry>
+    <title>centos源码安装timescaledb</title>
+    <url>/centos-yuan-ma-an-zhuang-timescaledb/</url>
+    <content><![CDATA[<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>因为 postgres 16 只能通过源码的方式在 centos 上安装，所以 timescaledb 也只能通过源码的方式安装.</p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ul>
+<li><a href="https://docs.timescale.com/self-hosted/latest/install/installation-source/">官方文档</a><br>前提条件：</li>
+<li>已经安装 postgresql</li>
+<li>CMake 版本大于 <code>3.11</code> (Cmake安装参考前文)</li>
+<li>gcc</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 下载源码</span>
+<span class="token function">git</span> clone https://github.com/timescale/timescaledb
+<span class="token function">cd</span> timescaledb
+<span class="token function">git</span> checkout 2.15.3
+
+<span class="token comment" spellcheck="true"># 配置，如果不使用openssl，请添加参数： ./bootstrap -DUSE_OPENSSL=0</span>
+./bootstrap
+
+<span class="token function">cd</span> build <span class="token operator">&amp;&amp;</span> <span class="token function">make</span>
+
+<span class="token function">make</span> <span class="token function">install</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装完成后配置"><a href="#安装完成后配置" class="headerlink" title="安装完成后配置"></a>安装完成后配置</h3><ul>
+<li>如果是单机 postgrsql</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> timescaledb-tune --pg-config<span class="token operator">=</span>/usr/local/pgsql/bin/pg_config -conf-path<span class="token operator">=</span>/home/pgsql/data/postgresql.conf
+
+systemctl restart postgresql-16
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>如果是patroni，直接修改postgresql.conf会被patroni重置。需要修改<code>patroni.yml</code></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># 将 timescaledb-tune 修改的配置文件通过 patroni 写到 postgres</span>
+<span class="token key atrule">postgresql</span><span class="token punctuation">:</span>
+  <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+    <span class="token key atrule">shared_preload_libraries</span><span class="token punctuation">:</span> <span class="token string">'timescaledb'</span>
+    <span class="token key atrule">shared_buffers</span><span class="token punctuation">:</span> 1955MB
+    <span class="token key atrule">effective_cache_size</span><span class="token punctuation">:</span> 5865MB
+    <span class="token key atrule">maintenance_work_mem</span><span class="token punctuation">:</span> 1001095kB
+    <span class="token key atrule">work_mem</span><span class="token punctuation">:</span> 5005kB
+    <span class="token key atrule">timescaledb.max_background_workers</span><span class="token punctuation">:</span> <span class="token number">16</span>
+    <span class="token key atrule">max_parallel_workers_per_gather</span><span class="token punctuation">:</span> <span class="token number">2</span>
+    <span class="token key atrule">max_parallel_workers</span><span class="token punctuation">:</span> <span class="token number">4</span>
+    <span class="token key atrule">wal_buffers</span><span class="token punctuation">:</span> 16MB
+    <span class="token key atrule">min_wal_size</span><span class="token punctuation">:</span> 512MB
+    <span class="token key atrule">max_wal_size</span><span class="token punctuation">:</span> 1GB
+    <span class="token key atrule">default_statistics_target</span><span class="token punctuation">:</span> <span class="token number">100</span>
+    <span class="token key atrule">random_page_cost</span><span class="token punctuation">:</span> <span class="token number">1.1</span>
+    <span class="token key atrule">checkpoint_completion_target</span><span class="token punctuation">:</span> <span class="token number">0.9</span>
+    <span class="token key atrule">autovacuum_max_workers</span><span class="token punctuation">:</span> <span class="token number">10</span>
+    <span class="token key atrule">autovacuum_naptime</span><span class="token punctuation">:</span> <span class="token number">10</span>
+    <span class="token key atrule">effective_io_concurrency</span><span class="token punctuation">:</span> <span class="token number">256</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>postgres</category>
+      </categories>
+      <tags>
+        <tag>postgres</tag>
+        <tag>timescaledb</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>cmake安装</title>
+    <url>/cmake-an-zhuang/</url>
+    <content><![CDATA[<h3 id="cmake安装"><a href="#cmake安装" class="headerlink" title="cmake安装"></a>cmake安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 到官网 https://cmake.org/download/ 下载最新的包</span>
+<span class="token function">wget</span> https://github.com/Kitware/CMake/releases/download/v3.30.0/cmake-3.30.0-linux-x86_64.tar.gz
+
+<span class="token comment" spellcheck="true"># 解压</span>
+<span class="token function">tar</span> -zxvf cmake-3.30.0-linux-x86_64.tar.gz
+
+<span class="token comment" spellcheck="true"># 改个名字并移动到/usr/local目录下</span>
+<span class="token function">mv</span> cmake-3.30.0-linux-x86_64 cmake
+<span class="token function">mv</span> cmake /usr/local/
+
+<span class="token comment" spellcheck="true"># 添加bin到环境变量</span>
+<span class="token function">export</span> PATH<span class="token operator">=</span>/usr/local/cmake/bin:<span class="token variable">$PATH</span>
+
+<span class="token comment" spellcheck="true"># 测试</span>
+cmake --version
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>cmake</category>
+      </categories>
+      <tags>
+        <tag>cmake</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ubuntu使用</title>
+    <url>/ubuntu-shi-yong/</url>
+    <content><![CDATA[<h3 id="网络配置"><a href="#网络配置" class="headerlink" title="网络配置"></a>网络配置</h3><ul>
+<li><code>sudo vim /etc/netplan/xxx.yaml</code></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">network</span><span class="token punctuation">:</span>
+    <span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token number">2</span>
+    <span class="token key atrule">ethernets</span><span class="token punctuation">:</span>
+        <span class="token key atrule">ens160</span><span class="token punctuation">:</span> <span class="token comment" spellcheck="true"># 网卡</span>
+            <span class="token key atrule">dhcp4</span><span class="token punctuation">:</span> no
+            <span class="token key atrule">addresses</span><span class="token punctuation">:</span>
+              <span class="token punctuation">-</span> 172.16.0.176/24
+            <span class="token key atrule">routes</span><span class="token punctuation">:</span> <span class="token comment" spellcheck="true"># 配置网关</span>
+              <span class="token punctuation">-</span> <span class="token key atrule">to</span><span class="token punctuation">:</span> default
+                <span class="token key atrule">via</span><span class="token punctuation">:</span> 172.16.0.1
+            <span class="token key atrule">nameservers</span><span class="token punctuation">:</span>
+              <span class="token key atrule">addresses</span><span class="token punctuation">:</span>
+                <span class="token punctuation">-</span> 223.5.5.5
+                <span class="token punctuation">-</span> 223.6.6.6
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>应用：<code>sudo netplan apply</code></li>
+</ul>
+<h3 id="关闭防火墙"><a href="#关闭防火墙" class="headerlink" title="关闭防火墙"></a>关闭防火墙</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 检查防火墙状态</span>
+<span class="token function">sudo</span> ufw status
+<span class="token comment" spellcheck="true"># 关闭防火墙</span>
+<span class="token function">sudo</span> ufw disable
+<span class="token comment" spellcheck="true"># 开通防火墙</span>
+<span class="token function">sudo</span> ufw allow 5432/tcp
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="包管理"><a href="#包管理" class="headerlink" title="包管理"></a>包管理</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 更新软件包列表</span>
+<span class="token function">sudo</span> apt update
+<span class="token comment" spellcheck="true"># 升级已安装的软件包</span>
+<span class="token function">sudo</span> apt upgrade
+<span class="token comment" spellcheck="true"># 安装新软件包</span>
+<span class="token function">sudo</span> apt <span class="token function">install</span> <span class="token operator">&lt;</span>package_name<span class="token operator">></span>
+<span class="token comment" spellcheck="true"># 删除软件包</span>
+<span class="token function">sudo</span> apt remove <span class="token operator">&lt;</span>package_name<span class="token operator">></span>
+<span class="token comment" spellcheck="true"># 清理不再需要的包</span>
+<span class="token function">sudo</span> apt autoremove
+<span class="token comment" spellcheck="true"># 查看包的信息</span>
+apt show <span class="token operator">&lt;</span>package_name<span class="token operator">></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p><code>apt-get</code>用法与<code>apt</code>基本一致，<code>apt</code> 结合了 <code>apt-get</code> 和 <code>apt-cache</code> 的一些常用功能，使其更加简洁和高效，如果你在编写脚本，使用 <code>apt-get</code> 可能会更好.</p>
+</blockquote>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 列出已安装的软件包</span>
+apt list --installed
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="安装docker"><a href="#安装docker" class="headerlink" title="安装docker"></a>安装docker</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> apt update
+<span class="token comment" spellcheck="true"># 安装必要的包</span>
+<span class="token function">sudo</span> apt <span class="token function">install</span> apt-transport-https ca-certificates curl software-properties-common
+<span class="token comment" spellcheck="true"># 添加 Docker 的官方 GPG 密钥</span>
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg <span class="token operator">|</span> <span class="token function">sudo</span> gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+<span class="token comment" spellcheck="true"># 添加 Docker 仓库到 APT 源</span>
+<span class="token keyword">echo</span> <span class="token string">"deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu <span class="token variable"><span class="token variable">$(</span>lsb_release -cs<span class="token variable">)</span></span> stable"</span> <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /etc/apt/sources.list.d/docker.list <span class="token operator">></span> /dev/null
+<span class="token function">sudo</span> apt update
+<span class="token comment" spellcheck="true"># 安装 Docker</span>
+<span class="token function">sudo</span> apt <span class="token function">install</span> docker-ce
+<span class="token comment" spellcheck="true"># 启动</span>
+<span class="token function">sudo</span> systemctl start docker
+<span class="token comment" spellcheck="true"># 开机启动</span>
+<span class="token function">sudo</span> systemctl <span class="token function">enable</span> docker
+
+<span class="token comment" spellcheck="true"># 将当前用户添加到 Docker 组,这样就不用加sudo了</span>
+<span class="token function">sudo</span> <span class="token function">usermod</span> -aG docker <span class="token variable">${USER}</span>
+<span class="token comment" spellcheck="true"># 立即生效</span>
+newgrp docker
+<span class="token comment" spellcheck="true"># 验证是否成功</span>
+<span class="token function">groups</span> <span class="token variable">$USER</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>设置docker数据目录及日志大小</li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+<span class="token property">"data-root"</span><span class="token operator">:</span> <span class="token string">"/data/docker"</span><span class="token punctuation">,</span>
+<span class="token property">"registry-mirrors"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token string">"https://7x3mic2t.mirror.aliyuncs.com"</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+<span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"max-size"</span><span class="token operator">:</span> <span class="token string">"100m"</span><span class="token punctuation">,</span>
+    <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"1"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl daemon-reload
+<span class="token function">sudo</span> systemctl restart docker
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="普通用户添加sudo"><a href="#普通用户添加sudo" class="headerlink" title="普通用户添加sudo"></a>普通用户添加sudo</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 将用户添加到 sudo 组</span>
+<span class="token function">sudo</span> <span class="token function">usermod</span> -aG <span class="token function">sudo</span> username
+<span class="token comment" spellcheck="true"># 验证用户是否已被添加到 sudo 组</span>
+<span class="token function">groups</span> username
+<span class="token comment" spellcheck="true"># 测试 sudo 权限</span>
+<span class="token function">sudo</span> apt update
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id=""><a href="#" class="headerlink" title=""></a></h3>]]></content>
+      <categories>
+        <category>ubuntu</category>
+      </categories>
+      <tags>
+        <tag>ubuntu</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ubuntu安装postgresql</title>
+    <url>/ubuntu-an-zhuang-postgresql/</url>
+    <content><![CDATA[<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ul>
+<li><a href="https://www.postgresql.org/download/linux/ubuntu/">官方文档</a></li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装 16 版本</span>
+<span class="token function">sudo</span> apt -y <span class="token function">install</span> postgresql-16
+<span class="token comment" spellcheck="true"># 启动</span>
+systemctl start postgresql
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="默认目录"><a href="#默认目录" class="headerlink" title="默认目录"></a>默认目录</h3><p>切换到 <code>postgres</code> 用户： <code>sudo su postgres</code>.</p>
+<ul>
+<li>配置文件目录： <code>/etc/postgresql/16/main/</code></li>
+<li>数据目录：<code>/var/lib/postgresql/16/main/</code></li>
+<li>可执行文件：<code>/usr/lib/postgresql/16/bin/</code></li>
+<li>日志目录：<code>/var/log/postgresql/</code></li>
+</ul>
+<p>可以通过 <code>pg_config</code> 命令查看 <code>PostgreSQL</code> 的具体安装路径和配置信息.</p>
+]]></content>
+      <categories>
+        <category>postgres</category>
+      </categories>
+      <tags>
+        <tag>postgres</tag>
+        <tag>ubuntu</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ubuntu安装timescaledb</title>
+    <url>/ubuntu-an-zhuang-timescaledb/</url>
+    <content><![CDATA[<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ul>
+<li><a href="https://docs.timescale.com/self-hosted/latest/install/installation-linux/">官方文档</a></li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># Add the TimescaleDB package</span>
+<span class="token keyword">echo</span> <span class="token string">"deb https://packagecloud.io/timescale/timescaledb/ubuntu/ <span class="token variable"><span class="token variable">$(</span>lsb_release -c -s<span class="token variable">)</span></span> main"</span> <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /etc/apt/sources.list.d/timescaledb.list
+<span class="token comment" spellcheck="true"># Install the TimescaleDB GPG key</span>
+<span class="token function">wget</span> --quiet -O - https://packagecloud.io/timescale/timescaledb/gpgkey <span class="token operator">|</span> <span class="token function">sudo</span> gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg
+<span class="token comment" spellcheck="true"># Update your local repository list</span>
+<span class="token function">sudo</span> apt update
+<span class="token comment" spellcheck="true"># Install TimescaleDB</span>
+<span class="token function">sudo</span> apt <span class="token function">install</span> timescaledb-2-postgresql-16 postgresql-client-16
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="转换"><a href="#转换" class="headerlink" title="转换"></a>转换</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># Tune your PostgreSQL instance for TimescaleDB</span>
+<span class="token function">sudo</span> timescaledb-tune
+<span class="token comment" spellcheck="true"># Restart PostgreSQL</span>
+<span class="token function">sudo</span> systemctl restart postgresql
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="添加拓展"><a href="#添加拓展" class="headerlink" title="添加拓展"></a>添加拓展</h3><p>重启pg后，登录到控制台：</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 添加</span>
+<span class="token keyword">CREATE</span> EXTENSION <span class="token keyword">IF</span> <span class="token operator">NOT</span> <span class="token keyword">EXISTS</span> timescaledb<span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- \dx 命令检查安装的拓展</span>
+postgres<span class="token operator">=</span><span class="token comment" spellcheck="true"># \dx</span>
+                                                List <span class="token keyword">of</span> installed extensions
+    Name     <span class="token operator">|</span> Version <span class="token operator">|</span>   <span class="token keyword">Schema</span>   <span class="token operator">|</span>                                      Description                                      
+<span class="token comment" spellcheck="true">-------------+---------+------------+---------------------------------------------------------------------------------------</span>
+ plpgsql     <span class="token operator">|</span> <span class="token number">1.0</span>     <span class="token operator">|</span> pg_catalog <span class="token operator">|</span> PL<span class="token operator">/</span>pgSQL procedural language
+ timescaledb <span class="token operator">|</span> <span class="token number">2.15</span><span class="token punctuation">.</span><span class="token number">3</span>  <span class="token operator">|</span> <span class="token keyword">public</span>     <span class="token operator">|</span> Enables scalable inserts <span class="token operator">and</span> complex queries <span class="token keyword">for</span> time<span class="token operator">-</span>series <span class="token keyword">data</span> <span class="token punctuation">(</span>Community Edition<span class="token punctuation">)</span>
+<span class="token punctuation">(</span><span class="token number">2</span> <span class="token keyword">rows</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="修改的配置详细过程"><a href="#修改的配置详细过程" class="headerlink" title="修改的配置详细过程"></a>修改的配置详细过程</h3><pre class="line-numbers language-bash"><code class="language-bash">postgres@deri:~$ <span class="token function">sudo</span> timescaledb-tune
+Using postgresql.conf at this path:
+/etc/postgresql/16/main/postgresql.conf
+
+Is this correct? <span class="token punctuation">[</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span>es/<span class="token punctuation">(</span>n<span class="token punctuation">)</span>o<span class="token punctuation">]</span>: y
+Writing backup to:
+/tmp/timescaledb_tune.backup202407030214
+
+shared_preload_libraries needs to be updated
+Current:
+<span class="token comment" spellcheck="true">#shared_preload_libraries = ''</span>
+Recommended:
+shared_preload_libraries <span class="token operator">=</span> <span class="token string">'timescaledb'</span>
+Is this okay? <span class="token punctuation">[</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span>es/<span class="token punctuation">(</span>n<span class="token punctuation">)</span>o<span class="token punctuation">]</span>: y
+success: shared_preload_libraries will be updated
+
+Tune memory/parallelism/WAL and other settings? <span class="token punctuation">[</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span>es/<span class="token punctuation">(</span>n<span class="token punctuation">)</span>o<span class="token punctuation">]</span>: y
+Recommendations based on 7.76 GB of available memory and 4 CPUs <span class="token keyword">for</span> PostgreSQL 16
+
+Memory settings recommendations
+Current:
+shared_buffers <span class="token operator">=</span> 128MB
+<span class="token comment" spellcheck="true">#effective_cache_size = 4GB</span>
+<span class="token comment" spellcheck="true">#maintenance_work_mem = 64MB</span>
+<span class="token comment" spellcheck="true">#work_mem = 4MB</span>
+Recommended:
+shared_buffers <span class="token operator">=</span> 1985MB
+effective_cache_size <span class="token operator">=</span> 5956MB
+maintenance_work_mem <span class="token operator">=</span> 1016498kB
+work_mem <span class="token operator">=</span> 5082kB
+Is this okay? <span class="token punctuation">[</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span>es/<span class="token punctuation">(</span>s<span class="token punctuation">)</span>kip/<span class="token punctuation">(</span>q<span class="token punctuation">)</span>uit<span class="token punctuation">]</span>: y
+success: memory settings will be updated
+
+Parallelism settings recommendations
+Current:
+missing: timescaledb.max_background_workers
+<span class="token comment" spellcheck="true">#max_worker_processes = 8</span>
+<span class="token comment" spellcheck="true">#max_parallel_workers_per_gather = 2</span>
+<span class="token comment" spellcheck="true">#max_parallel_workers = 8</span>
+Recommended:
+timescaledb.max_background_workers <span class="token operator">=</span> 16
+max_worker_processes <span class="token operator">=</span> 23
+max_parallel_workers_per_gather <span class="token operator">=</span> 2
+max_parallel_workers <span class="token operator">=</span> 4
+Is this okay? <span class="token punctuation">[</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span>es/<span class="token punctuation">(</span>s<span class="token punctuation">)</span>kip/<span class="token punctuation">(</span>q<span class="token punctuation">)</span>uit<span class="token punctuation">]</span>: y
+success: parallelism settings will be updated
+
+WAL settings recommendations
+Current:
+<span class="token comment" spellcheck="true">#wal_buffers = -1</span>
+min_wal_size <span class="token operator">=</span> 80MB
+Recommended:
+wal_buffers <span class="token operator">=</span> 16MB
+min_wal_size <span class="token operator">=</span> 512MB
+Is this okay? <span class="token punctuation">[</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span>es/<span class="token punctuation">(</span>s<span class="token punctuation">)</span>kip/<span class="token punctuation">(</span>q<span class="token punctuation">)</span>uit<span class="token punctuation">]</span>: y
+success: WAL settings will be updated
+
+Background writer settings recommendations
+Current:
+Recommended:
+Is this okay? <span class="token punctuation">[</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span>es/<span class="token punctuation">(</span>s<span class="token punctuation">)</span>kip/<span class="token punctuation">(</span>q<span class="token punctuation">)</span>uit<span class="token punctuation">]</span>: y
+success: background writer settings will be updated
+
+Miscellaneous settings recommendations
+Current:
+<span class="token comment" spellcheck="true">#default_statistics_target = 100</span>
+<span class="token comment" spellcheck="true">#random_page_cost = 4.0</span>
+<span class="token comment" spellcheck="true">#checkpoint_completion_target = 0.9</span>
+<span class="token comment" spellcheck="true">#max_locks_per_transaction = 64</span>
+<span class="token comment" spellcheck="true">#autovacuum_max_workers = 3</span>
+<span class="token comment" spellcheck="true">#autovacuum_naptime = 1min</span>
+<span class="token comment" spellcheck="true">#effective_io_concurrency = 1</span>
+Recommended:
+default_statistics_target <span class="token operator">=</span> 100
+random_page_cost <span class="token operator">=</span> 1.1
+checkpoint_completion_target <span class="token operator">=</span> 0.9
+max_locks_per_transaction <span class="token operator">=</span> 128
+autovacuum_max_workers <span class="token operator">=</span> 10
+autovacuum_naptime <span class="token operator">=</span> 10
+effective_io_concurrency <span class="token operator">=</span> 256
+Is this okay? <span class="token punctuation">[</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span>es/<span class="token punctuation">(</span>s<span class="token punctuation">)</span>kip/<span class="token punctuation">(</span>q<span class="token punctuation">)</span>uit<span class="token punctuation">]</span>: y
+success: miscellaneous settings will be updated
+Saving changes to: /etc/postgresql/16/main/postgresql.conf
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>postgres</category>
+      </categories>
+      <tags>
+        <tag>postgres</tag>
+        <tag>timescaledb</tag>
+        <tag>ubuntu</tag>
+      </tags>
+  </entry>
 </search>

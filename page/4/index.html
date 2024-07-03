@@ -196,6 +196,771 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/sync-gong-ju-bao-jie-shao/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/sync-gong-ju-bao-jie-shao/" class="post-title-link" itemprop="url">sync工具包介绍</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-27 11:40:07" itemprop="dateCreated datePublished" datetime="2024-05-27T11:40:07+08:00">2024-05-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="sync-Once"><a href="#sync-Once" class="headerlink" title="sync.Once"></a><code>sync.Once</code></h3><p>专门用于确保某些初始化代码只被执行一次，不论该代码由多少个 <code>goroutine</code> 调用.</p>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"fmt"</span>
+    <span class="token string">"sync"</span>
+    <span class="token string">"time"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">var</span> once sync<span class="token punctuation">.</span>Once
+    <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">10</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+        <span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// sync.Once 提供了一个方法 Do，这个方法接受一个函数作为参数，并确保该函数只会被执行一次</span>
+            once<span class="token punctuation">.</span><span class="token function">Do</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"once"</span><span class="token punctuation">)</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    time<span class="token punctuation">.</span><span class="token function">Sleep</span><span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>常用于单例模式，如</p>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"fmt"</span>
+    <span class="token string">"sync"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">type</span> Singleton <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// Fields for the singleton</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">var</span> instance <span class="token operator">*</span>Singleton
+<span class="token keyword">var</span> once sync<span class="token punctuation">.</span>Once
+
+<span class="token keyword">func</span> <span class="token function">GetInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>Singleton <span class="token punctuation">{</span>
+    once<span class="token punctuation">.</span><span class="token function">Do</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        instance <span class="token operator">=</span> <span class="token operator">&amp;</span>Singleton<span class="token punctuation">{</span><span class="token punctuation">}</span>
+        fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Singleton instance created"</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> instance
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="sync-WaitGroup"><a href="#sync-WaitGroup" class="headerlink" title="sync.WaitGroup"></a><code>sync.WaitGroup</code></h3><p><code>WaitGroup</code> 用于等待一组 <code>goroutine</code> 完成。可以增加计数器，并在 <code>goroutine</code> 完成时减少计数器</p>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"fmt"</span>
+    <span class="token string">"sync"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">var</span> once sync<span class="token punctuation">.</span>Once
+    <span class="token keyword">var</span> wg sync<span class="token punctuation">.</span>WaitGroup
+    <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">10</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+        wg<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">defer</span> wg<span class="token punctuation">.</span><span class="token function">Done</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            once<span class="token punctuation">.</span><span class="token function">Do</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"once"</span><span class="token punctuation">)</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    wg<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="sync-Mutex"><a href="#sync-Mutex" class="headerlink" title="sync.Mutex"></a><code>sync.Mutex</code></h3><p><code>Mutex</code> 是一个互斥锁，用于保护临界区，确保同一时间只有一个 <code>goroutine</code> 能够访问被保护的代码.</p>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"fmt"</span>
+    <span class="token string">"sync"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">var</span> count <span class="token builtin">int</span>
+<span class="token keyword">var</span> mutex sync<span class="token punctuation">.</span>Mutex
+
+<span class="token comment" spellcheck="true">// 通过Mutex解决线程安全问题</span>
+<span class="token keyword">func</span> <span class="token function">Increase</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    mutex<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    count<span class="token operator">++</span>
+    mutex<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">var</span> wg sync<span class="token punctuation">.</span>WaitGroup
+    <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">500</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+        wg<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">defer</span> wg<span class="token punctuation">.</span><span class="token function">Done</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token function">Increase</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    wg<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="sync-RWMutex"><a href="#sync-RWMutex" class="headerlink" title="sync.RWMutex"></a><code>sync.RWMutex</code></h3><p><code>RWMutex</code> 是一种读写互斥锁，允许多个读操作同时进行，但写操作会独占锁。</p>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"fmt"</span>
+    <span class="token string">"sync"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">var</span> counter <span class="token builtin">int</span>
+<span class="token keyword">var</span> rwMutex sync<span class="token punctuation">.</span>RWMutex
+
+<span class="token keyword">func</span> <span class="token function">read</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">int</span> <span class="token punctuation">{</span>
+    rwMutex<span class="token punctuation">.</span><span class="token function">RLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">defer</span> rwMutex<span class="token punctuation">.</span><span class="token function">RUnlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> counter
+<span class="token punctuation">}</span>
+
+<span class="token keyword">func</span> <span class="token function">write</span><span class="token punctuation">(</span>val <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    rwMutex<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    counter <span class="token operator">=</span> val
+    rwMutex<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">var</span> wg sync<span class="token punctuation">.</span>WaitGroup
+    <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">10</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+        wg<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span>i <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">defer</span> wg<span class="token punctuation">.</span><span class="token function">Done</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token function">write</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span>
+            fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Read value:"</span><span class="token punctuation">,</span> <span class="token function">read</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    wg<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/go-yu-yan-bao-de-ji-ben-gai-nian/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/go-yu-yan-bao-de-ji-ben-gai-nian/" class="post-title-link" itemprop="url">go语言包(package)的基本概念</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-27 11:15:22" itemprop="dateCreated datePublished" datetime="2024-05-27T11:15:22+08:00">2024-05-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><ul>
+<li>源码文件的第一行有效代码必须是 <code>package pacakgeName</code> 语句，通过该语句声明自己所在的包</li>
+<li>一般包的名称就是其源文件<code>所在目录的名称</code>，虽然Go语言没有强制要求包名必须和其所在的目录名同名，但还是建议包名和所在目录同名，这样结构更清晰</li>
+<li>包可以定义在很深的目录中，包名的定义是不包括目录路径的，但是包在引用时一般使用全路径引用。比如在<code>GOPATH/src/a/b/</code> 下定义一个包 <code>c</code>。在包 <code>c</code> 的源码中只需声明为<code>package c</code>，而不是声明为<code>package a/b/c</code>，但是在导入 <code>c</code> 包时，需要带上路径，例如<code>import "a/b/c"</code></li>
+<li>包名一般是小写的，使用一个简短且有意义的名称</li>
+<li>包名一般要和所在的目录同名，也可以不同，包名中不能包含 <code>-</code> 等特殊符号</li>
+<li>包一般使用域名作为目录名称，这样能保证包名的唯一性，比如 GitHub 项目的包一般会放到 <code>GOPATH/src/github.com/userName/projectName</code> 目录下</li>
+<li>包名为 <code>main</code> 的包为应用程序的入口包，编译不包含 <code>main</code> 包的源码文件时不会得到可执行文件</li>
+<li>一个文件夹下的所有源码文件只能属于同一个包，同样属于同一个包的源码文件不能放在多个文件夹下</li>
+</ul>
+<h3 id="包的导入"><a href="#包的导入" class="headerlink" title="包的导入"></a>包的导入</h3><ul>
+<li>import 导入语句通常放在源码文件开头包声明语句的下面</li>
+<li>导入的包名需要使用双引号包裹起来</li>
+<li>包名是从 <code>GOPATH/src/</code> 后开始计算的，使用 <code>/</code> 进行路径分隔</li>
+<li>包的引用路径有两种写法，分别是全路径导入和相对路径导入，相对路径只能用于导入 <code>GOPATH</code> 下的包，标准包的导入只能使用全路径导入</li>
+</ul>
+<h3 id="包的引用格式"><a href="#包的引用格式" class="headerlink" title="包的引用格式"></a>包的引用格式</h3><ol>
+<li>标准引用格式</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+<span class="token keyword">import</span> <span class="token string">"fmt"</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>自定义别名引用格式</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+<span class="token keyword">import</span> F <span class="token string">"fmt"</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 使用F.来代替标准引用格式的fmt.</span>
+    F<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>省略引用格式</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+<span class="token keyword">import</span> <span class="token punctuation">.</span> <span class="token string">"fmt"</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 不用加前缀fmt.</span>
+    <span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>匿名引用格式</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> main
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token comment" spellcheck="true">// 在引用某个包时，如果只是希望执行包初始化的 init 函数，而不使用包内部的数据时，可以使用匿名引用格式</span>
+    <span class="token comment" spellcheck="true">// 一个包可以有多个 init 函数，包加载时会执行全部的 init 函数，但并不能保证执行顺序</span>
+    <span class="token boolean">_</span> <span class="token string">"database/sql"</span>
+    <span class="token string">"fmt"</span>
+<span class="token punctuation">)</span>
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Hello world"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="包加载"><a href="#包加载" class="headerlink" title="包加载"></a>包加载</h3><p><img data-src="/./images/gopackage.png" alt="包加载"></p>
+<ul>
+<li>包初始化程序从 main 函数引用的包开始，逐级查找包的引用，直到找到没有引用其他包的包，最终生成一个包引用的有向无环图</li>
+<li>Go 编译器会将有向无环图转换为一棵树，然后从树的叶子节点开始逐层向上对包进行初始化</li>
+<li>单个包的初始化过程如上图所示，先初始化常量，然后是全局变量，最后执行包的 init 函数</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gomodule-shi-yong-zhi-la-qu-si-you-bao-cang-ku/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/gomodule-shi-yong-zhi-la-qu-si-you-bao-cang-ku/" class="post-title-link" itemprop="url">go module使用之拉取私有包仓库</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-24 11:10:08" itemprop="dateCreated datePublished" datetime="2024-05-24T11:10:08+08:00">2024-05-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="拉取非公共module"><a href="#拉取非公共module" class="headerlink" title="拉取非公共module"></a>拉取非公共module</h3><p>通过 Go 命令拉取项目依赖的公共 Go Module，只需要在每个开发机上设置环境变量 GOPROXY，配置一个高效且可靠的公共 GOPROXY 服务，如 <code>set GOPROXY=https://goproxy.cn,direct</code>。但是如果同时需要拉取私有的包怎么办呢？如企业自己开发的module依赖。这时我们需要配置<code>set GOPRIVATE=*gitee.com</code>，表示 <code>gitee.com</code>的包不使用代理而是直接拉取。通过<code>go env</code>命令可以看出：</p>
+<pre class="line-numbers language-shell"><code class="language-shell">set GONOPROXY=*gitee.com
+set GONOSUMDB=*gitee.com
+set GOPRIVATE=*gitee.com
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="开发私有module"><a href="#开发私有module" class="headerlink" title="开发私有module"></a>开发私有module</h3><ol>
+<li>如我们开发一个打印版本的方法，封装在了<code>gitee.com/happywzy/go-module-test</code>包中。</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> pkg
+
+<span class="token keyword">func</span> <span class="token function">Version</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">string</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token string">"version 1"</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>我们模拟提交了很多个版本，并在不同的commit打上了一些tag，提交到了远程仓库。</p>
+<pre class="line-numbers language-shell"><code class="language-shell"># 查看版本号
+> git ls-remote -q origin          
+9da810c37c774a3775a518d16cfe032a39f862ea        HEAD
+9da810c37c774a3775a518d16cfe032a39f862ea        refs/heads/master
+9da810c37c774a3775a518d16cfe032a39f862ea        refs/tags/v1.0.0
+f4c3585328e0a686ad35537e390473917c4b202b        refs/tags/v1.0.0-test
+1e40db9baf18cbb8ed5784858bc9418c738792a7        refs/tags/v2
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>我们需要在另一个Module中使用<code>Version()</code>方法<br>go.mod配置如下：</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go">module gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module
+
+<span class="token keyword">go</span> <span class="token number">1.19</span>
+
+<span class="token function">require</span> <span class="token punctuation">(</span>
+    gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test v1<span class="token number">.0</span><span class="token punctuation">.</span><span class="token number">0</span><span class="token operator">-</span>test
+<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>版本号可以配置成commitId，执行<code>go mod tidy</code>后，会根据<code>commitId</code>自动生成伪版本号，如<code>gitee.com/happywzy/go-module-test v0.0.0-20240524023550-1e40db9baf18</code>，这个版本号不要手敲，防止出错。</li>
+<li>版本号可以配置成tag，如<code>v1.0.0</code>、<code>v1.0.0-test</code>，但是配置成<code>v2</code>这种好像无法识别。</li>
+<li>可以通过<code>go get </code>命令去安装module，如 <code>go get gitee.com/happywzy/go-module-test@master</code>，<code>@</code>后面可以是分支名、tag名、commit ID，非常方便。</li>
+</ul>
+<h3 id="如何使用本地的Module"><a href="#如何使用本地的Module" class="headerlink" title="如何使用本地的Module"></a>如何使用本地的Module</h3><p>前面介绍的方式需要Module推送到远程仓库后才能使用，这在开发阶段非常不适用，如何直接使用本地的Module呢？有两种方式。</p>
+<ol>
+<li>使用 go.mod 中 replace</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token function">replace</span> <span class="token punctuation">(</span>
+    gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test v1<span class="token number">.0</span><span class="token punctuation">.</span><span class="token number">0</span><span class="token operator">-</span>test <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token operator">/</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test
+<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>表示<code>gitee.com/happywzy/go-module-test v1.0.0-test</code>这个包直接使用本地路径下的代码。这种方式需要注意在提交代码前需要将<code>replace</code>删除，防止出错。</p>
+<ol start="2">
+<li>使用 go.work<blockquote>
+<p><code>go.work</code> 在 <code>1.18</code> 版本之后才有。</p>
+</blockquote>
+</li>
+</ol>
+<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">go</span> <span class="token number">1.19</span>
+
+<span class="token function">use</span> <span class="token punctuation">(</span>
+    <span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test
+    <span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module
+<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>go.work</code>文件需要位于两个模块的上层目录，通过<code>go work init</code>初始化生成，使用<code>go work use gitee.com/happywzy/go-module-test</code>添加。</p>
+<blockquote>
+<p><code>go.work</code> 这个文件无需提交到git，仅用于本地开发即可。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/keepalived-tong-guo-jian-ce-duan-kou-jue-ding-vip/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/keepalived-tong-guo-jian-ce-duan-kou-jue-ding-vip/" class="post-title-link" itemprop="url">keepalived通过检测端口决定vip漂移到哪台机器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-14 15:08:38" itemprop="dateCreated datePublished" datetime="2024-05-14T15:08:38+08:00">2024-05-14</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> keepalived -y
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="编写检查端口是否通的脚本"><a href="#编写检查端口是否通的脚本" class="headerlink" title="编写检查端口是否通的脚本"></a>编写检查端口是否通的脚本</h3><pre class="line-numbers language-shell"><code class="language-shell">#!/bin/bash
+CHK_PORT=$1
+if [ -n "$CHK_PORT" ];then
+        PORT_PROCESS=`ss -lnt|grep $CHK_PORT|wc -l`
+        if [ $PORT_PROCESS -eq 0 ];then
+                echo "Port $CHK_PORT Is Not Used,End."
+                exit 1
+        fi
+else
+        echo "Check Port Cant Be Empty!"
+fi
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>测试：<code>./check_port.sh 8080</code>检测8080端口是否开通.</p>
+<h3 id="keepalived主节点配置"><a href="#keepalived主节点配置" class="headerlink" title="keepalived主节点配置"></a>keepalived主节点配置</h3><pre class="line-numbers language-conf"><code class="language-conf">! Configuration File for keepalived
+
+global_defs {
+   router_id 20.153
+}
+
+vrrp_script chk_port {
+    script "/etc/keepalived/check_port.sh 8080"
+    interval 2
+    weight -20
+}
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface ens192
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    virtual_ipaddress {
+        172.16.20.99
+    }
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="keepalived备节点配置"><a href="#keepalived备节点配置" class="headerlink" title="keepalived备节点配置"></a>keepalived备节点配置</h3><pre class="line-numbers language-conf"><code class="language-conf">! Configuration File for keepalived
+
+global_defs {
+   router_id 20.154
+}
+
+vrrp_script chk_port {
+    script "/etc/keepalived/check_port.sh 8080"
+    interval 2
+    weight -20
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface ens192
+    virtual_router_id 51
+    priority 90
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    virtual_ipaddress {
+        172.16.20.99
+    }
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="非抢占式及通知服务"><a href="#非抢占式及通知服务" class="headerlink" title="非抢占式及通知服务"></a>非抢占式及通知服务</h3><pre class="line-numbers language-conf"><code class="language-conf">vrrp_instance VI_1 {
+    state BACKUP // 主备都用BACKUP
+    interface ens192
+    virtual_router_id 51
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    virtual_ipaddress {
+        192.168.20.99
+    }
+    nopreempt // 非抢占式
+    notify_master /etc/keepalived/notify_master.sh
+    notify_backup /etc/keepalived/notify_backup.sh
+    notify_fault /etc/keepalived/notify_fault.sh
+    notify_stop /etc/keepalived/notify_stop.sh
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ognl-he-spel-biao-da-shi-yu-yan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ognl-he-spel-biao-da-shi-yu-yan/" class="post-title-link" itemprop="url">OGNL和SpEL表达式语言</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-04-30 09:26:40" itemprop="dateCreated datePublished" datetime="2024-04-30T09:26:40+08:00">2024-04-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>OGNL（Object-Graph Navigation Language）和SpEL（Spring Expression Language）都是用于在Java应用程序中进行对象导航和操作的表达式语言。</p>
+<h3 id="SpEL"><a href="#SpEL" class="headerlink" title="SpEL"></a>SpEL</h3><p>SpEL是一种表达式语言，用于在运行时在Spring应用程序中进行查询和操作对象图。您可以使用SpEL来访问对象的属性、调用对象的方法、进行算术运算等等。SpelExpressionParser是Spring框架中的一部分，用于解析SpEL（Spring表达式语言）。</p>
+<p>以下是一个简单的示例，演示如何在Spring应用程序中使用SpelExpressionParser：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>expression<span class="token punctuation">.</span>ExpressionParser<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>expression<span class="token punctuation">.</span>spel<span class="token punctuation">.</span>standard<span class="token punctuation">.</span>SpelExpressionParser<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>expression<span class="token punctuation">.</span>spel<span class="token punctuation">.</span>support<span class="token punctuation">.</span>StandardEvaluationContext<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SpelExample</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 创建SpelExpressionParser对象</span>
+        ExpressionParser parser <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SpelExpressionParser</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment" spellcheck="true">// 创建StandardEvaluationContext对象，它表示SpEL表达式的上下文</span>
+        StandardEvaluationContext context <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StandardEvaluationContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment" spellcheck="true">// 在上下文中添加变量</span>
+        context<span class="token punctuation">.</span><span class="token function">setVariable</span><span class="token punctuation">(</span><span class="token string">"name"</span><span class="token punctuation">,</span> <span class="token string">"Alice"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment" spellcheck="true">// 定义SpEL表达式</span>
+        String expression <span class="token operator">=</span> <span class="token string">"'Hello, ' + #name"</span><span class="token punctuation">;</span>
+        
+        <span class="token comment" spellcheck="true">// 解析并评估表达式</span>
+        String result <span class="token operator">=</span> parser<span class="token punctuation">.</span><span class="token function">parseExpression</span><span class="token punctuation">(</span>expression<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> String<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment" spellcheck="true">// 输出结果</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// 输出: Hello, Alice</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol>
+<li>访问对象属性和方法：SpEL允许您通过对象的属性名称直接访问对象的属性，也可以调用对象的方法。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">person<span class="token punctuation">.</span>name   <span class="token comment" spellcheck="true">// 访问person对象的name属性</span>
+person<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span>   <span class="token comment" spellcheck="true">// 调用person对象的getName()方法</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>进行算术运算和逻辑运算：您可以在SpEL中执行各种算术运算和逻辑运算。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+<span class="token number">5</span> <span class="token operator">+</span> <span class="token number">3</span>   <span class="token comment" spellcheck="true">// 执行加法运算，结果为8</span>
+age <span class="token operator">></span> <span class="token number">18</span>   <span class="token comment" spellcheck="true">// 执行大于运算，判断age是否大于18</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>调用静态方法和属性：您可以调用静态方法和属性，甚至可以调用静态常量。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+<span class="token function">T</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Math<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token punctuation">)</span>   <span class="token comment" spellcheck="true">// 调用Math类的random()方法</span>
+<span class="token function">T</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Integer<span class="token punctuation">)</span><span class="token punctuation">.</span>MAX_VALUE   <span class="token comment" spellcheck="true">// 获取Integer类的MAX_VALUE常量</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>集合操作：SpEL支持对集合进行操作，如访问集合元素、计算集合大小等。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+myList<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>   <span class="token comment" spellcheck="true">// 访问列表中的第一个元素</span>
+myMap<span class="token punctuation">[</span><span class="token string">'key'</span><span class="token punctuation">]</span>   <span class="token comment" spellcheck="true">// 访问映射中键为'key'的值</span>
+#myList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span>   <span class="token comment" spellcheck="true">// 计算列表的大小</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>条件运算：您可以在SpEL中使用条件运算符执行条件判断。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+isVip <span class="token operator">?</span> discountPrice <span class="token operator">:</span> regularPrice   <span class="token comment" spellcheck="true">// 如果isVip为true，则返回discountPrice，否则返回regularPrice</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>正则表达式：SpEL支持对字符串进行匹配和替换操作，使用正则表达式。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+#email<span class="token punctuation">.</span><span class="token function">matches</span><span class="token punctuation">(</span><span class="token string">'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}'</span><span class="token punctuation">)</span>   <span class="token comment" spellcheck="true">// 检查email是否匹配电子邮件格式</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="7">
+<li>安全导航运算符：SpEL引入了安全导航运算符（?.），用于避免空指针异常。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+person<span class="token operator">?</span><span class="token punctuation">.</span>address<span class="token operator">?</span><span class="token punctuation">.</span>city   <span class="token comment" spellcheck="true">// 如果person或address为null，则返回null，而不是抛出空指针异常</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这只是SpEL的一些基本用法示例，SpEL还提供了更多功能，例如集成Spring Bean引用、类型转换、字符串操作等等。通过这些功能，您可以编写更加灵活和强大的表达式来满足各种需求。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-dong-tai-xin-zeng-restful-jie-kou/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -292,582 +1057,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-shi-yong-enum-xu-lie-hua-he-fan-xu-lie-hua/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-shi-yong-enum-xu-lie-hua-he-fan-xu-lie-hua/" class="post-title-link" itemprop="url">springboot使用Enum序列化和反序列化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-01-02 10:59:03" itemprop="dateCreated datePublished" datetime="2024-01-02T10:59:03+08:00">2024-01-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// Enum对象</span>
-<span class="token annotation punctuation">@AllArgsConstructor</span>
-<span class="token annotation punctuation">@Getter</span>
-<span class="token keyword">public</span> <span class="token keyword">enum</span> Type <span class="token punctuation">{</span>
-    <span class="token function">SMS</span><span class="token punctuation">(</span><span class="token string">"sms"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-    <span class="token function">APP</span><span class="token punctuation">(</span><span class="token string">"app"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-    <span class="token function">UNKNOWN</span><span class="token punctuation">(</span><span class="token string">"unknown"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-    <span class="token punctuation">;</span>
-    <span class="token keyword">private</span> String type<span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-
-<span class="token comment" spellcheck="true">// 实际的接口对象,里面有个属性是Enum</span>
-<span class="token annotation punctuation">@Data</span>
-<span class="token annotation punctuation">@Accessors</span><span class="token punctuation">(</span>chain <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Noti</span> <span class="token punctuation">{</span>
-    <span class="token keyword">private</span> Type type<span class="token punctuation">;</span>
-    <span class="token keyword">private</span> <span class="token keyword">boolean</span> sync<span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p><code>springboot</code>接口难免用到<code>Enum</code>类型，这个时候如何配置Enum类型序列化和反序列化呢？<code>springboot</code>默认使用的<code>JSON</code>序列化工具是<code>jackson</code>.</p>
-<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// Enum对象</span>
-<span class="token annotation punctuation">@AllArgsConstructor</span>
-<span class="token annotation punctuation">@Getter</span>
-<span class="token keyword">public</span> <span class="token keyword">enum</span> Type <span class="token punctuation">{</span>
-    <span class="token function">SMS</span><span class="token punctuation">(</span><span class="token string">"sms"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-    <span class="token function">APP</span><span class="token punctuation">(</span><span class="token string">"app"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-    <span class="token function">UNKNOWN</span><span class="token punctuation">(</span><span class="token string">"unknown"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-    <span class="token punctuation">;</span>
-    <span class="token keyword">private</span> String type<span class="token punctuation">;</span>
-
-     <span class="token annotation punctuation">@JsonCreator</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> Type <span class="token function">fromString</span><span class="token punctuation">(</span>String value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span>Type type <span class="token operator">:</span> <span class="token function">values</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>type<span class="token punctuation">.</span><span class="token function">getType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                <span class="token keyword">return</span> type<span class="token punctuation">;</span>
-            <span class="token punctuation">}</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">return</span> Type<span class="token punctuation">.</span>UNKNOWN<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token annotation punctuation">@JsonValue</span>
-    <span class="token keyword">public</span> String <span class="token function">getTypeValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> type<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-
-<span class="token comment" spellcheck="true">// 实际的接口对象,里面有个属性是Enum</span>
-<span class="token annotation punctuation">@Data</span>
-<span class="token annotation punctuation">@Accessors</span><span class="token punctuation">(</span>chain <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Noti</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@JsonFormat</span><span class="token punctuation">(</span>shape <span class="token operator">=</span> JsonFormat<span class="token punctuation">.</span>Shape<span class="token punctuation">.</span>STRING<span class="token punctuation">)</span>
-    <span class="token keyword">private</span> Type type<span class="token punctuation">;</span>
-    <span class="token keyword">private</span> <span class="token keyword">boolean</span> sync<span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>通过以上配置就可以实现, json中的字符串转化成Enum对象，以及Enum对象转化成json中的字符串.</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-ji-cheng-websocket/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-ji-cheng-websocket/" class="post-title-link" itemprop="url">springboot集成websocket</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-12-21 10:52:43" itemprop="dateCreated datePublished" datetime="2023-12-21T10:52:43+08:00">2023-12-21</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-websocket<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="添加websocket配置类"><a href="#添加websocket配置类" class="headerlink" title="添加websocket配置类"></a>添加websocket配置类</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Configuration</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">WebSocketConfig</span> <span class="token punctuation">{</span>
-    <span class="token comment" spellcheck="true">/**
-     * 这个Bean会自动注册使用@ServerEndpoint注解声明的websocket endpoint
-     */</span>
-    <span class="token annotation punctuation">@Bean</span>
-    <span class="token keyword">public</span> ServerEndpointExporter <span class="token function">serverEndpointExporter</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">ServerEndpointExporter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="添加websocket-Endpoint"><a href="#添加websocket-Endpoint" class="headerlink" title="添加websocket Endpoint"></a>添加websocket Endpoint</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Slf4j</span>
-<span class="token annotation punctuation">@Component</span> 
-<span class="token annotation punctuation">@ServerEndpoint</span><span class="token punctuation">(</span><span class="token string">"/ws/{name}"</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">WebSocketTest</span> <span class="token punctuation">{</span>
-    <span class="token comment" spellcheck="true">// @Component 虽然表示是springboot的单例，但是这个创建的单例并不会用到.</span>
-    <span class="token comment" spellcheck="true">// 实际新的websocket连接进来的时候, 会创建新的 WebSocketTest 实例，所以这里的name、session属性都是该连接私有的</span>
-    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
-    <span class="token keyword">private</span> Session session<span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 可以创建一个构造器测试，是不是新的websocket连接进来会创建新的实例.</span>
-    <span class="token comment" spellcheck="true">// public WebSocketTest() {</span>
-    <span class="token comment" spellcheck="true">//     System.out.println("创建");</span>
-    <span class="token comment" spellcheck="true">// }</span>
-
-    <span class="token comment" spellcheck="true">// 可以创建一个静态属性保存所有的websocket连接</span>
-    <span class="token comment" spellcheck="true">// private static ConcurrentHashMap&lt;String, WebSocketTest> webSocketSet = new ConcurrentHashMap&lt;>();</span>
-
-    <span class="token annotation punctuation">@OnOpen</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onOpen</span><span class="token punctuation">(</span>Session session<span class="token punctuation">,</span> <span class="token annotation punctuation">@PathParam</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"name"</span><span class="token punctuation">)</span> String name<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>name <span class="token operator">=</span> name<span class="token punctuation">;</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>session <span class="token operator">=</span> session<span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// name 是用来表示唯一客户端</span>
-        webSocketSet<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"OnOpen"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token annotation punctuation">@OnClose</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">OnClose</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"OnClose"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token annotation punctuation">@OnMessage</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">OnMessage</span><span class="token punctuation">(</span>String msg<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        session<span class="token punctuation">.</span><span class="token function">getBasicRemote</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sendText</span><span class="token punctuation">(</span><span class="token string">"Hello "</span> <span class="token operator">+</span> name<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token annotation punctuation">@OnError</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onError</span><span class="token punctuation">(</span>Session session<span class="token punctuation">,</span> Throwable error<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"发生错误"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        error<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>可以通过在线 websocket 客户端来测试你的 ws 服务：<code>http://coolaf.com/tool/chattest</code>.</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nginx-basic-auth-ren-zheng/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/nginx-basic-auth-ren-zheng/" class="post-title-link" itemprop="url">Nginx basic auth 认证</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-12-14 16:01:55" itemprop="dateCreated datePublished" datetime="2023-12-14T16:01:55+08:00">2023-12-14</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="创建密码"><a href="#创建密码" class="headerlink" title="创建密码"></a>创建密码</h3><pre class="line-numbers language-shell"><code class="language-shell"># 创建一个test用户,终端输入密码,然后保存到pwd文件中
-htpasswd -c pwd test
-# 可以cat pwd 看看密码
-test:$apr1$XV.xFTZA$Gvuw/g8TAYYS6Nm5c7w5Q1
-# 可以向这个文件继续添加用户test2，密码sss
-htpasswd -b pwd test2 sss
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="nginx-conf"><a href="#nginx-conf" class="headerlink" title="nginx.conf"></a>nginx.conf</h3><p>将上面生成的文件 pwd 放到 /etc/nginx/pwd目录下,并在 nginx.conf 指定位置.</p>
-<pre class="line-numbers language-conf"><code class="language-conf">server {
-        listen    80 default_server;
-        server_name _;
-        location / {
-            auth_basic "you need login";
-            auth_basic_user_file /etc/nginx/pwd; 
-            proxy_pass   http://xxxx:222;
-            # Default is HTTP/1, keepalive is only enabled in HTTP/1.1
-            proxy_http_version 1.1;
-            # Remove the Connection header if the client sends it,
-            # it could be "close" to close a keepalive connection
-            proxy_set_header Connection ""; 
-      }
-    }
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意<code>proxy_http_version 1.1</code>、<code>proxy_set_header Connection ""</code>配置对于SSE这种需要保持长连接的接口很重要，一定要添加不然无数据返回. <code>proxy_http_version</code>指定版本,<code>proxy_set_header</code>设置<code>Connection</code>为空.</p>
-</blockquote>
-<h3 id="curl测试"><a href="#curl测试" class="headerlink" title="curl测试"></a>curl测试</h3><pre class="line-numbers language-shell"><code class="language-shell"># 第一种方式, -u 指定用户名密码
-curl -u "test2:sss"   http://172.16.20.91:38750/sse/test
-
-# 第二种,将用户名密码base64加密后添加到header
-echo -n "test2:sss" | base64
-curl -H "Authorization:Basic base64加密后的字符串" http://127.0.0.1:38750/test
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/idea-kuai-jie-jian/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/idea-kuai-jie-jian/" class="post-title-link" itemprop="url">开发工具快捷键</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-12-08 14:13:19" itemprop="dateCreated datePublished" datetime="2023-12-08T14:13:19+08:00">2023-12-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="IDEA快捷键"><a href="#IDEA快捷键" class="headerlink" title="IDEA快捷键"></a>IDEA快捷键</h3><table>
-<thead>
-<tr>
-<th>快捷键</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>Shift + Ctrl + V</code></td>
-<td>选择要粘贴的内容</td>
-</tr>
-<tr>
-<td><code>Ctrl + Alt + L</code></td>
-<td>重新格式化代码</td>
-</tr>
-<tr>
-<td><code>Ctrl + F12</code></td>
-<td>显示文件结构</td>
-</tr>
-<tr>
-<td>Ctrl + `</td>
-<td>更改视图模式</td>
-</tr>
-<tr>
-<td><code>Ctrl + G</code></td>
-<td>转到行:列</td>
-</tr>
-<tr>
-<td><code>Ctrl -/+</code></td>
-<td>收起和展开代码块</td>
-</tr>
-<tr>
-<td><code>Alt + Shift + ,/.</code></td>
-<td>缩小/放大字体</td>
-</tr>
-</tbody></table>
-<ul>
-<li><code>https://blog.jetbrains.com/zh-hans/idea/2022/11/intellij-idea-3/</code></li>
-</ul>
-<h3 id="VS-Code快捷键"><a href="#VS-Code快捷键" class="headerlink" title="VS Code快捷键"></a>VS Code快捷键</h3><table>
-<thead>
-<tr>
-<th>快捷键</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>Shift + Ctrl + K</code></td>
-<td>删除一行</td>
-</tr>
-<tr>
-<td><code>Shift + Alt + ↑/↓</code></td>
-<td>向上/向下复制一行</td>
-</tr>
-<tr>
-<td><code>Alt + ↑/↓</code></td>
-<td>向上/向下移动一行</td>
-</tr>
-<tr>
-<td><code>Shift + Alt + f</code></td>
-<td>代码格式化</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + n</code></td>
-<td>新建一个窗口</td>
-</tr>
-<tr>
-<td><code>Ctrl + ]/[</code></td>
-<td>行增加/减少缩进</td>
-</tr>
-<tr>
-<td><code>Ctrl -/+</code></td>
-<td>字体放大/减小</td>
-</tr>
-<tr>
-<td><code>Ctrl + b</code></td>
-<td>显示/隐藏左侧目录栏</td>
-</tr>
-<tr>
-<td><code>Ctrl + ~</code></td>
-<td>打开/关闭终端</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + ~</code></td>
-<td>打开新的终端</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + c</code></td>
-<td>当前目录打开cmd窗口</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-dong-tai-zhun-ru-kong-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-dong-tai-zhun-ru-kong-zhi/" class="post-title-link" itemprop="url">k8s动态准入控制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-11-27 15:28:47" itemprop="dateCreated datePublished" datetime="2023-11-27T15:28:47+08:00">2023-11-27</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>什么是准入 Webhook？</p>
-<p>准入 Webhook 是一种用于接收准入请求并对其进行处理的 HTTP 回调机制。 可以定义两种类型的准入 Webhook， 即验证性质的准入 Webhook 和变更性质的准入 Webhook。 变更性质的准入 Webhook 会先被调用。它们可以修改发送到 API 服务器的对象以执行自定义的设置默认值操作。</p>
-<h3 id="Admission-Webhook"><a href="#Admission-Webhook" class="headerlink" title="Admission Webhook"></a>Admission Webhook</h3><p>包涵两种 CRD：<code>mutatingwebhookconfiguration</code> 和 <code>validatingwebhookconfiguration</code>.</p>
-<p>MutatingWebhookConfiguration 描述准入 Webhook 的配置，该 Webhook 可接受或拒绝对象请求，并且可能变更对象。</p>
-<p>ValidatingWebhookConfiguration 描述准入 Webhook 的配置，该 Webhook 可在不更改对象的情况下接受或拒绝对象请求。</p>
-<h3 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/reference/access-authn-authz/extensible-admission-controllers/">https://kubernetes.io/zh-cn/docs/reference/access-authn-authz/extensible-admission-controllers/</a></li>
-<li><a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/extend-resources/mutating-webhook-configuration-v1/">https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/extend-resources/mutating-webhook-configuration-v1/</a></li>
-<li><a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/extend-resources/validating-webhook-configuration-v1/">https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/extend-resources/validating-webhook-configuration-v1/</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/61/">61</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/62/">62</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -935,20 +1128,20 @@ curl -H "Authorization:Basic base64加密后的字符串" http://127.0.0.1:38750
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">365</span>
+          <span class="site-state-item-count">370</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-count">52</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">226</span>
+        <span class="site-state-item-count">229</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
