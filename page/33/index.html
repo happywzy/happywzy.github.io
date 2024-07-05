@@ -196,6 +196,289 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-ban-tong-bu-fu-zhi-mo-shi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-ban-tong-bu-fu-zhi-mo-shi/" class="post-title-link" itemprop="url">mysql【半同步复制模式】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-30 14:14:57" itemprop="dateCreated datePublished" datetime="2020-07-30T14:14:57+08:00">2020-07-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="复制模式"><a href="#复制模式" class="headerlink" title="复制模式"></a>复制模式</h3><p>MySQL主从复制包括异步模式、半同步模式、GTID模式以及多源复制模式，默认是异步模式.</p>
+<ul>
+<li>异步复制（<code>Asynchronous replication</code>）</li>
+</ul>
+<p>所谓异步模式指的是MySQL 主服务器上I/O thread 线程将二进制日志写入binlog文件之后就返回客户端结果，不会考虑二进制日志是否完整传输到从服务器以及是否完整存放到从服务器上的relay log(中继日志)中，这种模式一旦主服务(器)宕机，数据就可能会发生丢失。</p>
+<ul>
+<li>全同步复制（<code>Fully synchronous replication</code>）</li>
+</ul>
+<p>指当主库执行完一个事务，所有的从库都执行了该事务才返回给客户端。因为需要等待所有从库执行完该事务才能返回，所以全同步复制的性能必然会收到严重的影响。</p>
+<ul>
+<li>半同步复制（<code>Semisynchronous replication</code>）</li>
+</ul>
+<p>介于异步复制和全同步复制之间，主库在执行完客户端提交的事务后不是立刻返回给客户端，而是等待至少一个从库接收到并写到relay log中才返回给客户端。相对于异步复制，半同步复制提高了数据的安全性，同时它也造成了一定程度的延迟，这个延迟最少是一个TCP/IP往返的时间。所以，半同步复制最好在低延时的网络中使用。</p>
+<h3 id="半同步潜藏问题"><a href="#半同步潜藏问题" class="headerlink" title="半同步潜藏问题"></a>半同步潜藏问题</h3><p><code>mysql5.7</code>版本前,客户端事务在存储引擎层提交后，在得到从库确认的过程中，主库宕机了，客户端会收到事务提交失败的信息,此时，可能的情况有两种:</p>
+<ul>
+<li>事务还没发送到从库上</li>
+<li>事务已经发送到从库上</li>
+</ul>
+<p>此时客户端由于提交失败，再次提交事务，出现问题.</p>
+<p><code>mysql5.7</code>版本引入新的半同步方式，事务提交需要从库同步完成.通过<code>rpl_semi_sync_master_wait_point</code>参数控制：</p>
+<ul>
+<li><code>AFTER_SYNC</code> , 这个是新的半同步方案</li>
+<li><code>AFTER_COMMIT</code>, 这个是老的半同步方案</li>
+</ul>
+<h3 id="开启半同步复制"><a href="#开启半同步复制" class="headerlink" title="开启半同步复制"></a>开启半同步复制</h3><p>半同步复制的安装部署条件:</p>
+<ul>
+<li><code>MySQL 5.5</code>及以上版本</li>
+<li>变量<code>have_dynamic_loading</code>为<code>YES</code> (查看命令：<code>show variables like "have_dynamic_loading";</code>)</li>
+<li>主从复制已经配置完成</li>
+</ul>
+<p>半同步复制是以插件的形式安装的，默认安装包在<code>/usr/local/mysql/lib/plugin/</code>目录下.可以通过命令查看</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看所有插件</span>
+<span class="token keyword">show</span> plugins<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- 模糊查询</span>
+<span class="token keyword">SELECT</span> PLUGIN_NAME<span class="token punctuation">,</span> PLUGIN_STATUS <span class="token keyword">FROM</span> INFORMATION_SCHEMA<span class="token punctuation">.</span>PLUGINS  <span class="token keyword">WHERE</span> PLUGIN_NAME <span class="token operator">LIKE</span> <span class="token string">'%semi%'</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>启动方式一：通过命令</li>
+</ul>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 主库执行安装插件</span>
+INSTALL PLUGIN rpl_semi_sync_master <span class="token keyword">SONAME</span> <span class="token string">'semisync_master.so'</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 主库执行开启</span>
+<span class="token keyword">SET</span> <span class="token keyword">GLOBAL</span> rpl_semi_sync_master_enabled <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+
+<span class="token comment" spellcheck="true">-- 从库执行安装插件</span>
+INSTALL PLUGIN rpl_semi_sync_slave <span class="token keyword">SONAME</span> <span class="token string">'semisync_slave.so'</span><span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 从库执行开启</span>
+<span class="token keyword">SET</span> <span class="token keyword">GLOBAL</span> rpl_semi_sync_master_enabled <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+
+<span class="token comment" spellcheck="true">-- 从库重启IO线程</span>
+STOP SLAVE IO_THREAD<span class="token punctuation">;</span>
+<span class="token keyword">START</span> SLAVE IO_THREAD<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- 主库卸载插件(先关闭半同步复制功能)</span>
+UNINSTALL PLUGIN rpl_semi_sync_master<span class="token punctuation">;</span>
+<span class="token comment" spellcheck="true">-- 从库卸载插件(先关闭半同步复制功能)</span>
+UNINSTALL PLUGIN rpl_semi_sync_slave<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>启动方式二：通过<code>my.cnf</code>,需要重启<code>mysql</code></li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 主库配置</span>
+plugin-load<span class="token operator">=</span>rpl_semi_sync_master<span class="token operator">=</span>semisync_master.so
+rpl_semi_sync_master_enabled<span class="token operator">=</span>1
+
+<span class="token comment" spellcheck="true"># 从库配置</span>
+plugin-load<span class="token operator">=</span>rpl_semi_sync_slave<span class="token operator">=</span>semisync_slave.so
+rpl_semi_sync_slave_enabled<span class="token operator">=</span>1
+
+<span class="token comment" spellcheck="true"># 如果既是主又是从</span>
+plugin-load<span class="token operator">=</span><span class="token string">"rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"</span>
+rpl-semi-sync-master-enabled<span class="token operator">=</span>1
+rpl-semi-sync-slave-enabled<span class="token operator">=</span>1
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>需要注意，<code>Mysql半同步复制</code>并不是严格意义上的半同步复制。当半同步复制发生超时时（由<code>rpl_semi_sync_master_timeout</code>参数控制，单位是毫秒，默认为<code>10000</code>，即<code>10s</code>），会暂时关闭半同步复制，转而使用异步复制。当master dump线程发送完一个事务的所有事件之后，如果在<code>rpl_semi_sync_master_timeout</code>内，收到了从库的响应，则主从又重新恢复为半同步复制。<code>一旦有一次超时自动降级为异步</code>.</p>
+</blockquote>
+<h3 id="查看半同步复制状态"><a href="#查看半同步复制状态" class="headerlink" title="查看半同步复制状态"></a>查看半同步复制状态</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 查看插件</span>
+mysql<span class="token operator">></span> <span class="token keyword">SELECT</span> PLUGIN_NAME<span class="token punctuation">,</span> PLUGIN_STATUS <span class="token keyword">FROM</span> INFORMATION_SCHEMA<span class="token punctuation">.</span>PLUGINS  <span class="token keyword">WHERE</span> PLUGIN_NAME <span class="token operator">LIKE</span> <span class="token string">'%semi%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------+---------------+</span>
+<span class="token operator">|</span> PLUGIN_NAME          <span class="token operator">|</span> PLUGIN_STATUS <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------+---------------+</span>
+<span class="token operator">|</span> rpl_semi_sync_master <span class="token operator">|</span> ACTIVE        <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------+---------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">-- 主库</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> <span class="token keyword">status</span> <span class="token operator">like</span> <span class="token string">'Rpl_semi_sync_master_status'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------------+-------+</span>
+<span class="token operator">|</span> Variable_name               <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------------+-------+</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_status <span class="token operator">|</span> <span class="token keyword">ON</span>    <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">-- 从库</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> <span class="token keyword">status</span> <span class="token operator">like</span> <span class="token string">'Rpl_semi_sync_slave_status'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------------+-------+</span>
+<span class="token operator">|</span> Variable_name              <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------------+-------+</span>
+<span class="token operator">|</span> Rpl_semi_sync_slave_status <span class="token operator">|</span> <span class="token keyword">ON</span>    <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+
+<span class="token comment" spellcheck="true">-- 查看主库半同步插件运行参数</span>
+<span class="token comment" spellcheck="true">-- rpl_semi_sync_master_wait_for_slave_count 设置主需要等待多少个slave应答，才能返回给客户端，默认为1</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%Rpl%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------------------+------------+</span>
+<span class="token operator">|</span> Variable_name                             <span class="token operator">|</span> <span class="token keyword">Value</span>      <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------------------+------------+</span>
+<span class="token operator">|</span> rpl_semi_sync_master_enabled              <span class="token operator">|</span> <span class="token keyword">ON</span>         <span class="token operator">|</span>
+<span class="token operator">|</span> rpl_semi_sync_master_timeout              <span class="token operator">|</span> <span class="token number">10000</span>      <span class="token operator">|</span>
+<span class="token operator">|</span> rpl_semi_sync_master_trace_level          <span class="token operator">|</span> <span class="token number">32</span>         <span class="token operator">|</span>
+<span class="token operator">|</span> rpl_semi_sync_master_wait_for_slave_count <span class="token operator">|</span> <span class="token number">1</span>          <span class="token operator">|</span> 
+<span class="token operator">|</span> rpl_semi_sync_master_wait_no_slave        <span class="token operator">|</span> <span class="token keyword">ON</span>         <span class="token operator">|</span>
+<span class="token operator">|</span> rpl_semi_sync_master_wait_point           <span class="token operator">|</span> AFTER_SYNC <span class="token operator">|</span>
+<span class="token operator">|</span> rpl_stop_slave_timeout                    <span class="token operator">|</span> <span class="token number">31536000</span>   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-------------------------------------------+------------+</span>
+
+<span class="token comment" spellcheck="true">-- 查看从库半同步插件运行参数</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%Rpl%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------------------+----------+</span>
+<span class="token operator">|</span> Variable_name                   <span class="token operator">|</span> <span class="token keyword">Value</span>    <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------------------+----------+</span>
+<span class="token operator">|</span> rpl_semi_sync_slave_enabled     <span class="token operator">|</span> <span class="token keyword">ON</span>       <span class="token operator">|</span>
+<span class="token operator">|</span> rpl_semi_sync_slave_trace_level <span class="token operator">|</span> <span class="token number">32</span>       <span class="token operator">|</span>
+<span class="token operator">|</span> rpl_stop_slave_timeout          <span class="token operator">|</span> <span class="token number">31536000</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------------------------+----------+</span>
+<span class="token number">3</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+
+<span class="token comment" spellcheck="true">-- 查看主库半同步插件运行状态status</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> <span class="token keyword">status</span> <span class="token operator">like</span> <span class="token string">'%Rpl_semi%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------------------+-------+</span>
+<span class="token operator">|</span> Variable_name                              <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------------------+-------+</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_clients               <span class="token operator">|</span> <span class="token number">1</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_net_avg_wait_time     <span class="token operator">|</span> <span class="token number">0</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_net_wait_time         <span class="token operator">|</span> <span class="token number">0</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_net_waits             <span class="token operator">|</span> <span class="token number">1</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_no_times              <span class="token operator">|</span> <span class="token number">0</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_no_tx                 <span class="token operator">|</span> <span class="token number">0</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_status                <span class="token operator">|</span> <span class="token keyword">ON</span>    <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_timefunc_failures     <span class="token operator">|</span> <span class="token number">0</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_tx_avg_wait_time      <span class="token operator">|</span> <span class="token number">461</span>   <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_tx_wait_time          <span class="token operator">|</span> <span class="token number">461</span>   <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_tx_waits              <span class="token operator">|</span> <span class="token number">1</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_wait_pos_backtraverse <span class="token operator">|</span> <span class="token number">0</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_wait_sessions         <span class="token operator">|</span> <span class="token number">0</span>     <span class="token operator">|</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_yes_tx                <span class="token operator">|</span> <span class="token number">1</span>     <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">--------------------------------------------+-------+</span>
+<span class="token number">14</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="简单测试"><a href="#简单测试" class="headerlink" title="简单测试"></a>简单测试</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 正常情况下插入数据</span>
+mysql<span class="token operator">></span> <span class="token keyword">insert</span> <span class="token keyword">into</span> test<span class="token punctuation">.</span>testttt <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token string">'22'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">-- 从库关闭主从复制</span>
+mysql<span class="token operator">></span> stop slave<span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">-- 再次插入数据,时间与设置的超时时间吻合</span>
+mysql<span class="token operator">></span> <span class="token keyword">insert</span> <span class="token keyword">into</span> test<span class="token punctuation">.</span>testttt <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token string">'222'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">10.01</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">-- 查看半同步插件状态</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> <span class="token keyword">status</span> <span class="token operator">like</span> <span class="token string">'Rpl_semi_sync_master_status'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------------+-------+</span>
+<span class="token operator">|</span> Variable_name               <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------------+-------+</span>
+<span class="token operator">|</span> Rpl_semi_sync_master_status <span class="token operator">|</span> <span class="token keyword">OFF</span>   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">-----------------------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+mysql<span class="token operator">></span> <span class="token keyword">show</span> <span class="token keyword">status</span> <span class="token operator">like</span> <span class="token string">'Rpl_semi_sync_slave_status'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------------+-------+</span>
+<span class="token operator">|</span> Variable_name              <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------------+-------+</span>
+<span class="token operator">|</span> Rpl_semi_sync_slave_status <span class="token operator">|</span> <span class="token keyword">OFF</span>   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">----------------------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">-- 从库开启同步</span>
+mysql<span class="token operator">></span> <span class="token keyword">start</span> slave<span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">-- 再次插入数据,恢复正常</span>
+mysql<span class="token operator">></span> <span class="token keyword">insert</span> <span class="token keyword">into</span> test<span class="token punctuation">.</span>testttt <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token string">'222'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment" spellcheck="true">-- 查看半同步插件状态也是ON</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="其它注意参数"><a href="#其它注意参数" class="headerlink" title="其它注意参数"></a>其它注意参数</h3><ul>
+<li><code>sync_binlog</code></li>
+</ul>
+<p>默认，<code>sync_binlog=0</code>，表示MySQL不控制binlog的刷新，由文件系统自己控制它的缓存的刷新。这时候的性能是最好的，但是风险也是最大的。因为一旦系统Crash，在binlog_cache中的所有binlog信息都会被丢失。</p>
+<p>如果<code>sync_binlog&gt;0</code>，表示每sync_binlog次事务提交，MySQL调用文件系统的刷新操作将缓存刷下去。最安全的就是<code>sync_binlog=1</code>了，表示每次事务提交，MySQL都会把binlog刷下去，是最安全但是性能损耗最大的设置。</p>
+<ul>
+<li>sync_relay_log</li>
+</ul>
+<p>默认为<code>10000</code>，即每<code>10000</code>次<code>sync_relay_log</code>事件会刷新到磁盘。为<code>0</code>则表示不刷新，交由系统的<code>cache</code>控制</p>
+<ul>
+<li>同步刷盘配置</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># my.cnf,最安全配置,牺牲性能</span>
+sync_binlog<span class="token operator">=</span>1
+sync_master_info<span class="token operator">=</span>1
+sync_relay_log<span class="token operator">=</span>1
+sync_relay_log_info<span class="token operator">=</span>1
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/kevingrace/p/10228694.html">MySQL 半同步复制模式说明及配置示例</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-zhu-cong-fu-zhi-mo-shi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1008,169 +1291,6 @@ mysql <span class="token operator">-</span>u root <span class="token operator">-
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-bu-shu-yong-rpm-fang-shi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-bu-shu-yong-rpm-fang-shi/" class="post-title-link" itemprop="url">mysql部署【用rpm方式】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-28 09:29:11" itemprop="dateCreated datePublished" datetime="2020-07-28T09:29:11+08:00">2020-07-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="部署说明"><a href="#部署说明" class="headerlink" title="部署说明"></a>部署说明</h3><p><code>Linux</code>上安装软件常见的几种方式：</p>
-<ul>
-<li>源码编译</li>
-<li>压缩包解压（一般为<code>tar.gz</code>）</li>
-<li>编译好的安装包（<code>RPM</code>、<code>DPKG</code>等）</li>
-<li>在线安装（<code>YUM</code>、<code>APT</code>等）</li>
-</ul>
-<blockquote>
-<p>部署方式简单程度：<code>YUM</code> &gt; <code>RPM</code> &gt; <code>tar.gz</code> &gt; 源码，本文介绍<code>RPM</code>方式.</p>
-</blockquote>
-<h3 id="部署步骤"><a href="#部署步骤" class="headerlink" title="部署步骤"></a>部署步骤</h3><ol>
-<li>删除旧包</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 查找</span>
-rpm -qa <span class="token operator">|</span> <span class="token function">grep</span> -i mysql
-<span class="token comment" spellcheck="true"># 删除</span>
-rpm -ev mysql-libs-* --nodeps
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li><p>下载<code>RPM</code>包<a target="_blank" rel="noopener" href="https://mirrors.huaweicloud.com/mysql/Downloads/MySQL-5.7/mysql-5.7.31-1.el7.x86_64.rpm-bundle.tar">mysql-5.7.31-1.el7.x86_64.rpm-bundle.tar</a></p>
-<blockquote>
-<p>由于国外资源下载缓慢，可以使用<a target="_blank" rel="noopener" href="https://mirrors.huaweicloud.com/">华为开源镜像</a></p>
-</blockquote>
-</li>
-<li><p>解压压缩包</p>
-</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@mysql03 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># tar -xvf mysql-5.7.31-1.el7.x86_64.rpm-bundle.tar </span>
-mysql-community-embedded-devel-5.7.31-1.el7.x86_64.rpm
-mysql-community-libs-5.7.31-1.el7.x86_64.rpm
-mysql-community-client-5.7.31-1.el7.x86_64.rpm
-mysql-community-server-5.7.31-1.el7.x86_64.rpm
-mysql-community-embedded-5.7.31-1.el7.x86_64.rpm
-mysql-community-embedded-compat-5.7.31-1.el7.x86_64.rpm
-mysql-community-common-5.7.31-1.el7.x86_64.rpm
-mysql-community-libs-compat-5.7.31-1.el7.x86_64.rpm
-mysql-community-devel-5.7.31-1.el7.x86_64.rpm
-mysql-community-test-5.7.31-1.el7.x86_64.rpm
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="4">
-<li>安装<br>只需要安装以下四个</li>
-</ol>
-<pre><code>mysql-community-libs-5.7.31-1.el7.x86_64.rpm
-mysql-community-client-5.7.31-1.el7.x86_64.rpm
-mysql-community-server-5.7.31-1.el7.x86_64.rpm
-mysql-community-common-5.7.31-1.el7.x86_64.rpm
-</code></pre>
-<p>四个包有依赖关系。安装有先后顺序要求。</p>
-<pre><code>shell&gt; rpm -ivh mysql-community-common-5.7.31-1.el7.x86_64.rpm
-shell&gt; rpm -ivh mysql-community-libs-5.7.31-1.el7.x86_64.rpm
-shell&gt; rpm -ivh mysql-community-client-5.7.31-1.el7.x86_64.rpm
-shell&gt; rpm -ivh mysql-community-server-5.7.31-1.el7.x86_64.rpm
-</code></pre>
-<p>更简单的安装命令</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 这样，包之间会自动处理依赖和先后顺序</span>
-yum <span class="token function">install</span> mysql-community-<span class="token punctuation">{</span>server,client,common,libs<span class="token punctuation">}</span>-*
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意上面命令要求在解压后的目录里执行，不然<code>yum</code>找不到包就会到公网下载，速度非常慢.</p>
-</blockquote>
-<ol start="5">
-<li>启动服务</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">service</span> mysqld start
-<span class="token function">service</span> mysqld stop
-<span class="token function">service</span> mysqld status
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<ol start="6">
-<li>登录修改默认密码</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 获取root用户临时密码</span>
-<span class="token function">cat</span> /var/log/mysqld.log <span class="token operator">|</span> <span class="token function">more</span>
-
-<span class="token comment" spellcheck="true"># mysqld.log 临时密码</span>
-2020-07-28T01:23:53.588166Z 1 <span class="token punctuation">[</span>Note<span class="token punctuation">]</span> A temporary password is generated <span class="token keyword">for</span> root@localhost: dDO<span class="token operator">></span>*a4<span class="token operator">!</span>uA+o
-
-<span class="token comment" spellcheck="true"># 登录, 使用初始化生成的临时密码登录</span>
-mysql -u root -p
-
-<span class="token comment" spellcheck="true"># 修改密码</span>
-<span class="token keyword">set</span> password <span class="token keyword">for</span> root@localhost <span class="token operator">=</span> password<span class="token punctuation">(</span><span class="token string">'123456'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true"># 开放远程连接</span>
-use mysql<span class="token punctuation">;</span>
-update user <span class="token keyword">set</span> user.Host<span class="token operator">=</span><span class="token string">'%'</span> where user.User<span class="token operator">=</span><span class="token string">'root'</span><span class="token punctuation">;</span>
-flush privileges<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>修改密码时会报错<code>ERROR 1819 (HY000): Your password does not satisfy the current policy requirements</code>,意思是密码强度不符合要求.<br>可以修改<code>/etc/my.cnf</code>, 添加<code>validate_password=OFF</code>, 关闭密码强度校验, 然后重启<code>service mysqld restart</code>.</p>
-</blockquote>
-<blockquote>
-<p><code>mysql</code>安装<code>RPM</code>方式比<code>tar.gz</code>方式简单不少.</p>
-</blockquote>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://juejin.im/post/5d07cf13f265da1bd522cfb6#heading-37">CentOS安装MySQL详解</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/jintheway/p/6542059.html">linux MySQL5.7 rpm安装</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1242,7 +1362,7 @@ flush privileges<span class="token punctuation">;</span>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">370</span>
+          <span class="site-state-item-count">371</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
