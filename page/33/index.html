@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,186 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-docker-bu-shu-zhi-zhu-cong-fu-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-docker-bu-shu-zhi-zhu-cong-fu-zhi/" class="post-title-link" itemprop="url">mysql【docker部署之主从复制】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-04 11:49:38" itemprop="dateCreated datePublished" datetime="2020-08-04T11:49:38+08:00">2020-08-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><ul>
+<li>使用的<code>docker</code>镜像<code>mysql:5.7.18</code>;</li>
+<li>容器中<code>mysql</code>配置文件目录<code>/etc/mysql/</code>;</li>
+</ul>
+<h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><ol>
+<li>启动镜像，将镜像中配置目录拷贝到宿主机</li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">#启动,并设置root密码
+docker run -d --name mysql  -e MYSQL_ROOT_PASSWORD=123456 hub.deri.org.cn/library/mysql:5.7
+
+#复制
+docker cp mysql:/etc/mysql /root
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-sh"><code class="language-sh">#配置文件目录结构
+[root@mysql01 mysql]# tree
+.
+├── conf.d
+│&nbsp;&nbsp; ├── docker.cnf
+│&nbsp;&nbsp; └── mysql.cnf
+├── my.cnf -> /etc/alternatives/my.cnf
+├── my.cnf.fallback
+├── mysql.cnf
+└── mysql.conf.d
+    └── mysqld.cnf
+
+2 directories, 6 files
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>查看<code>mysql data</code>目录,便于将<code>docker</code>中数据持久化到宿主机</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 登录</span>
+docker <span class="token keyword">exec</span> <span class="token operator">-</span>it mysql bash
+mysql <span class="token operator">-</span>uroot <span class="token operator">-</span>p123456
+<span class="token comment" spellcheck="true">-- 查询</span>
+mysql<span class="token operator">></span> <span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%datadir%'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-----------------+</span>
+<span class="token operator">|</span> Variable_name <span class="token operator">|</span> <span class="token keyword">Value</span>           <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-----------------+</span>
+<span class="token operator">|</span> datadir       <span class="token operator">|</span> <span class="token operator">/</span>var<span class="token operator">/</span>lib<span class="token operator">/</span>mysql<span class="token operator">/</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment" spellcheck="true">---------------+-----------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol>
+<li>修改<code>mysql.cnf</code></li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">#参考mysql主从配置
+[mysqld]
+server-id=1 # 主从设置不一样
+log-bin=mysql-bin #备无需开启
+auto-increment-increment=2
+auto-increment-offset=2 # 主从设置不一样：1,2
+log-slave-updates=true
+#replicate-ignore-db=information_schema
+max_binlog_size=1024M
+binlog-format=ROW
+#binlog_rows_query_log_events=on # 在row 模式的binlog中包含SQL EVENTS（即SQL语句也会保留）
+#master-info-repository=TABLE
+#relay-log-info-repository=TABLE
+#slave-skip-errors=all # 忽略复制产生的错误
+#slave-skip-errors=1062,1032,1060 # 跳过已知错误,主键冲突、表已存在等错误代码如1062,1032,1060等
+#relay-log-purge = 1    #是否自动清空不再需要中继日志时。默认值为1(启用)
+#expire_logs_days = 30  #超过 30 天的 binlog 删除
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>启动mysql</li>
+</ol>
+<pre class="line-numbers language-sh"><code class="language-sh">#映射端口、配置文件和data
+docker run -d --name mysql -v /root/mysql:/etc/mysql -v /var/lib/mysql/:/var/lib/mysql/ -e MYSQL_ROOT_PASSWORD=123456 -p 3306:3306  hub.deri.org.cn/library/mysql:5.7
+
+#也可以按需只映射一个配置文件mysql.cnf
+docker run -d --name mysql -v /root/mysql/mysql.cnf:/etc/mysql/mysql.cnf -v /var/lib/mysql/:/var/lib/mysql/ -e MYSQL_ROOT_PASSWORD=123456 -p 3307:3306  hub.deri.org.cn/library/mysql:5.7
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>其它主从配置,参考非<code>docker</code>安装配置</li>
+</ol>
+<ul>
+<li>添加主从帐号</li>
+<li>配置主从信息</li>
+<li>开启半同步复制</li>
+<li>开启从节点只读模式</li>
+<li>…</li>
+</ul>
+<ol start="6">
+<li>使用<code>keepalive</code>工具</li>
+</ol>
+<p>写一个脚本<code>/etc/docker_mysql.sh</code>判断<code>docker</code>中<code>mysql</code>是否存活</p>
+<pre class="line-numbers language-sh"><code class="language-sh">#! /bin/bash
+count=$(docker ps |grep hub.deri.org.cn/library/mysql:5.7 | grep Up| wc -l)
+if [ $count == "1" ];then
+    exit 0
+else
+    exit 1
+fi
+
+
+#测试这个脚本
+[root@mysql01 ~]# docker stop mysql
+mysql
+[root@mysql01 ~]# ./docker_mysql.sh 
+[root@mysql01 ~]# ./docker_mysql.sh ;echo $?
+1
+[root@mysql01 ~]# docker start mysql 
+mysql
+[root@mysql01 ~]# ./docker_mysql.sh ;echo $?
+0
+
+#配置keepalived
+vrrp_script chk_mysql {
+    script "/etc/docker_mysql.sh"
+    interval 2
+    timeout 2
+    fall 3
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -873,203 +1053,6 @@ reset slave<span class="token punctuation">;</span>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-shuang-zhu-mo-shi-haproxy-keepalived-gao-ke-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-shuang-zhu-mo-shi-haproxy-keepalived-gao-ke-yong/" class="post-title-link" itemprop="url">mysql【双主模式+haproxy+keepalived高可用】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-28 15:15:56" itemprop="dateCreated datePublished" datetime="2020-07-28T15:15:56+08:00">2020-07-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>前文仅仅通过<code>mysql双主 + keepalived</code>实现高可用，这种方式在一台出现问题的时候可以切换，但是正常情况下只有一台服务使用，无法实现负载均衡，本文引入<code>haproxy</code>实现正常情况下也能有负载均衡的效果.</p>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ol>
-<li>安装<code>haproxy</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> haproxy
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="2">
-<li>修改<code>haproxy</code>配置文件<br>默认目录：<code>/etc/haproxy/haproxy.cfg</code></li>
-</ol>
-<pre class="line-numbers language-cfg"><code class="language-cfg">#---------------------------------------------------------------------
-# Example configuration for a possible web application.  See the
-# full configuration options online.
-#
-#   http://haproxy.1wt.eu/download/1.4/doc/configuration.txt
-#
-#---------------------------------------------------------------------
-
-#---------------------------------------------------------------------
-# Global settings
-#---------------------------------------------------------------------
-global
-    # to have these messages end up in /var/log/haproxy.log you will
-    # need to:
-    #
-    # 1) configure syslog to accept network log events.  This is done
-    #    by adding the '-r' option to the SYSLOGD_OPTIONS in
-    #    /etc/sysconfig/syslog
-    #
-    # 2) configure local2 events to go to the /var/log/haproxy.log
-    #   file. A line like the following can be added to
-    #   /etc/sysconfig/syslog
-    #
-    #    local2.*                       /var/log/haproxy.log
-    #
-    log         127.0.0.1 local2
-
-    chroot      /var/lib/haproxy
-    pidfile     /var/run/haproxy.pid
-    maxconn     4000
-    user        haproxy
-    group       haproxy
-    daemon
-
-    # turn on stats unix socket
-    stats socket /var/lib/haproxy/stats
-
-#---------------------------------------------------------------------
-# common defaults that all the 'listen' and 'backend' sections will
-# use if not designated in their block
-#---------------------------------------------------------------------
-defaults
-    mode                    http
-    log                     global
-    option                  httplog
-    option                  dontlognull
-    option http-server-close
-    option forwardfor       except 127.0.0.0/8
-    option                  redispatch
-    retries                 3
-    timeout http-request    10s
-    timeout queue           1m
-    timeout connect         10s
-    timeout client          1m
-    timeout server          1m
-    timeout http-keep-alive 10s
-    timeout check           10s
-    maxconn                 3000
-
-
-######## 监控界面配置 #################
-listen admin_status
-        bind 0.0.0.0:8888
-        mode http
-        stats refresh 30s
-        stats uri /
-        stats realm welcome login\ Haproxy
-        stats auth admin:123456
-        stats hide-version
-        stats admin if TRUE
-        ########frontend配置##############
-
-######## mysql负载均衡配置 ###############
-listen mysql
-        bind 0.0.0.0:13306
-        mode tcp
-        balance roundrobin                  # 负载均衡策略
-        #option tcplog                      # tcp日志
-        option mysql-check user haproxy     # 在mysql中创建无任何权限用户haproxy，且无密码
-        server mysql_1 192.168.41.141:3306 check weight 1 maxconn 2000
-        server mysql_2 192.168.41.142:3306 check weight 1 maxconn 2000
-        option tcpka                        # 缺少这个配置,可能无法查看到数据库
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p><code>option mysql-check user haproxy</code>这里是配置健康检查的，需要在mysql中创建无任何权限用户<code>haproxy</code>，且无密码.    </p>
-<ul>
-<li><code>CREATE USER 'haproxy'@'%' IDENTIFIED BY ''; </code></li>
-</ul>
-</blockquote>
-<ol start="3">
-<li>修改ulimit配置<br><code>haproxy</code>要求<code>ulimit</code>大于<code>（maxconn*2 + 15 ）</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true">#临时修改</span>
-<span class="token function">ulimit</span> -n 65536
-
-<span class="token comment" spellcheck="true">#永久修改，需要修改/etc/security/limits.conf配置文件，文末增加以下内容，然后重新登录就可以生效</span>
-* soft nofile 65536
-* hard nofile 65536
-* soft nproc 65565
-* hard nproc 65565
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="4">
-<li>启动服务并配置自启动</li>
-</ol>
-<p>启动后访问<code>8888</code>端口，使用<code>admin/123456</code>登录就可以看到<code>UI界面</code>了。</p>
-<pre class="line-numbers language-bash"><code class="language-bash">systemctl start haproxy
-systemctl <span class="token function">enable</span> haproxy
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>修改<code>keepalived</code>配置<br>前文配置的<code>keepalived</code>监控的是<code>mysqld</code>进程，需要修改成监控<code>haproxy</code>进程.这样不管哪台机器的<code>mysql</code>或者<code>haproxy</code>或者<code>keepalived</code>出现问题，都不影响使用.</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改的配置如下</span>
-vrrp_script chk_mysql <span class="token punctuation">{</span>
-    script <span class="token string">"killall -0 haproxy"</span>
-    interval 2
-    <span class="token function">timeout</span> 2
-    fall 3
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="6">
-<li>测试<br>通过<code>VIP</code>连接数据库，增删改查测试.</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1141,20 +1124,20 @@ vrrp_script chk_mysql <span class="token punctuation">{</span>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">373</span>
+          <span class="site-state-item-count">374</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-count">53</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">230</span>
+        <span class="site-state-item-count">231</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

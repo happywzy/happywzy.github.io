@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,128 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubernetes-ji-qun-fa-bu-wai-bu-fu-wu-mysql-redis-bing-ce-shi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/kubernetes-ji-qun-fa-bu-wai-bu-fu-wu-mysql-redis-bing-ce-shi/" class="post-title-link" itemprop="url">kubernetes集群发布外部服务【mysql、redis并测试】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-21 14:44:18" itemprop="dateCreated datePublished" datetime="2019-10-21T14:44:18+08:00">2019-10-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>有时候我们需要将<code>k8s</code>集群外的服务引入到集群内部来，便于集群内部服务调用，我可以使用<code>Endpoints</code>.</p>
+<h3 id="引入外部myql"><a href="#引入外部myql" class="headerlink" title="引入外部myql"></a>引入外部<code>myql</code></h3><h4 id="编写k8s-mysql-endpoints-yaml"><a href="#编写k8s-mysql-endpoints-yaml" class="headerlink" title="编写k8s-mysql-endpoints.yaml"></a>编写<code>k8s-mysql-endpoints.yaml</code></h4><p>为外部<code>Mysql</code>创建<code>Endpoints</code></p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Endpoints
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> mysql
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+<span class="token key atrule">subsets</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">addresses</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">ip</span><span class="token punctuation">:</span> 192.168.1.11
+    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">20030</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol>
+<li>可以使用命令<code>kubectl get endpoints</code>查看是否创建完成</li>
+<li><code>kubectl describe  endpoints mysql</code> 查看具体描述</li>
+</ol>
+<h4 id="编写k8s-mysql-service-yaml"><a href="#编写k8s-mysql-service-yaml" class="headerlink" title="编写k8s-mysql-service.yaml"></a>编写<code>k8s-mysql-service.yaml</code></h4><p>编写<code>k8s-mysql-service.yaml</code>，为<code>endpoints</code>发布成内部<code>pod</code>可以调用的服务</p>
+<blockquote>
+<p>注意<code>metadata.name</code>与<code>k8s-mysql-endpoints.yaml</code>中<code>metadata.name</code>保持一致，此处均为<code>mysql</code>.</p>
+</blockquote>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> mysql
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">20030</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol>
+<li>可以使用命令 <code>kubectl get svc</code> 查看是否服务创建完成</li>
+<li><code>kubectl describe  svc mysql</code> 查看具体服务描述</li>
+</ol>
+<h4 id="测试endpoints是否生效"><a href="#测试endpoints是否生效" class="headerlink" title="测试endpoints是否生效"></a>测试endpoints是否生效</h4><p>为了方便测试<code>endpoints</code>是否生效，我们修改上述的<code>k8s-mysql-service.yaml</code>配置 </p>
+<blockquote>
+<ol>
+<li>我们将<code>type</code>类型改为<code>NodePort</code>，这样可以设定宿主机上的映射端口号<code>nodePort：30030</code>，这样直接通过宿主机<code>IP:30030</code>就可以调用到<code>mysql</code>服务。</li>
+<li>注意删除了创建好的<code>service</code>，对应的<code>endpoints</code>也会删除掉，需要重新创建！测试的时候注意！</li>
+</ol>
+</blockquote>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> mysql
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> NodePort
+  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">20030</span>
+    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">20030</span>
+    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
+    <span class="token key atrule">nodePort</span><span class="token punctuation">:</span> <span class="token number">30030</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="使用Navicat测试"><a href="#使用Navicat测试" class="headerlink" title="使用Navicat测试"></a>使用<code>Navicat</code>测试</h4><p>使用<code>Navicat</code>测试，输入宿主机<code>IP</code>和端口<code>30030</code>（用户名密码还是外部数据库原本的用户名密码），测试连接！成功！证明了通过<code>Endpoints</code>机制可以将外部服务发布成<code>k8s</code>内部的服务！</p>
+<blockquote>
+<p><strong>发布外部的<code>redis</code>服务也是同理，只需要修改<code>name</code>、<code>port</code>、<code>ip</code>等参数即可！</strong></p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1018,219 +1140,6 @@ http://192.168.1.11:8500/v1/kv/test/data
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/consul-acl-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/consul-acl-shi-yong/" class="post-title-link" itemprop="url">consul【ACL使用】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-10-09 10:19:14" itemprop="dateCreated datePublished" datetime="2019-10-09T10:19:14+08:00">2019-10-09</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/consul/" itemprop="url" rel="index"><span itemprop="name">consul</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="开启ACL"><a href="#开启ACL" class="headerlink" title="开启ACL"></a>开启ACL</h3><p>接前文，需要开启<code>consul ACL</code>配置，如下</p>
-<pre class="line-numbers language-json"><code class="language-json">// enable_key_list_policy开启<span class="token boolean">true</span>，为kv配置acl控制
-<span class="token property">"acl"</span><span class="token operator">:</span><span class="token punctuation">{</span>
-    <span class="token property">"enabled"</span><span class="token operator">:</span><span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"default_policy"</span><span class="token operator">:</span><span class="token string">"deny"</span><span class="token punctuation">,</span>
-    <span class="token property">"enable_token_persistence"</span><span class="token operator">:</span><span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"enable_key_list_policy"</span><span class="token operator">:</span><span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"tokens"</span><span class="token operator">:</span><span class="token punctuation">{</span>
-        <span class="token property">"master"</span><span class="token operator">:</span><span class="token string">"14d54c5e-24ca-41cc-8c9e-987ba7a96ffb"</span><span class="token punctuation">,</span>
-        <span class="token property">"agent"</span><span class="token operator">:</span><span class="token string">"db98c304-4d38-8660-fafe-6a4be56a40d0"</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="策略级别"><a href="#策略级别" class="headerlink" title="策略级别"></a>策略级别</h3><p>策略可以具有多个控制级别：</p>
-<ul>
-<li>read：允许读取但不修改资源。</li>
-<li>write：允许读取和修改资源。</li>
-<li>deny：不允许读取或修改资源。</li>
-<li>list：允许访问领事KV中某个网段下的所有键。注意，此策略只能与key_prefix资源一起使用，并且acl.enable_key_list_policy必须设置为true。</li>
-</ul>
-<h3 id="k-v创建token示例"><a href="#k-v创建token示例" class="headerlink" title="k-v创建token示例"></a>k-v创建token示例</h3><pre class="line-numbers language-json"><code class="language-json"># These control access to the key/value store.
-key_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-key_prefix <span class="token string">"foo/"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-key_prefix <span class="token string">"foo/private/"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
-# Or for exact key matches
-key <span class="token string">"foo/bar/secret"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
- 
-# This controls access to cluster-wide Consul operator information.
-operator = <span class="token string">"read"</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>等同于</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-  <span class="token property">"key_prefix"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-    <span class="token property">""</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-      <span class="token property">"policy"</span><span class="token operator">:</span> <span class="token string">"read"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token property">"foo/"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-      <span class="token property">"policy"</span><span class="token operator">:</span> <span class="token string">"write"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token property">"foo/private/"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-      <span class="token property">"policy"</span><span class="token operator">:</span> <span class="token string">"deny"</span>
-    <span class="token punctuation">}</span>
-  <span class="token punctuation">}</span><span class="token punctuation">,</span>
-  <span class="token property">"key"</span> <span class="token operator">:</span> <span class="token punctuation">{</span>
-    <span class="token property">"foo/bar/secret"</span> <span class="token operator">:</span> <span class="token punctuation">{</span>
-      <span class="token property">"policy"</span> <span class="token operator">:</span> <span class="token string">"deny"</span>
-    <span class="token punctuation">}</span>
-  <span class="token punctuation">}</span><span class="token punctuation">,</span>
-  <span class="token property">"operator"</span><span class="token operator">:</span> <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">key_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-key <span class="token string">"foo"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-key <span class="token string">"bar"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">key_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
- policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
- 
-key_prefix <span class="token string">"bar"</span> <span class="token punctuation">{</span>
- policy = <span class="token string">"list"</span>
-<span class="token punctuation">}</span>
- 
-key_prefix <span class="token string">"baz"</span> <span class="token punctuation">{</span>
- policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">node_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-node <span class="token string">"app"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-node <span class="token string">"admin"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">agent_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-agent <span class="token string">"foo"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-agent_prefix <span class="token string">"bar"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">event_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-event <span class="token string">"deploy"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">node_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-node <span class="token string">"app"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-node <span class="token string">"admin"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">query_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-query <span class="token string">"foo"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">service_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-service <span class="token string">"app"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-service <span class="token string">"admin"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-json"><code class="language-json">session_prefix <span class="token string">""</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"read"</span>
-<span class="token punctuation">}</span>
-session <span class="token string">"app"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"write"</span>
-<span class="token punctuation">}</span>
-session <span class="token string">"admin"</span> <span class="token punctuation">{</span>
-  policy = <span class="token string">"deny"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="遇到的坑！"><a href="#遇到的坑！" class="headerlink" title="遇到的坑！"></a>遇到的坑！</h3><p>当我创建一个<code>token</code>，分配了<code>policy</code>，如<code>service_prefix....</code>用这个<code>token</code>登录<code>ui</code>，在<code>Services</code>中可以看到权限内的<code>service</code>！同理<code>node</code>也是一样，但是针对<code>key/values</code>不行，会直接跳转到<code>ACL</code>登录页面!<br><img data-src="/images/consul18.png" alt="consul"><br><img data-src="/images/consul19.png" alt="consul"><br><img data-src="/images/consul20.png" alt="consul"><br><img data-src="/images/consul21.png" alt="consul"></p>
-<p>这时候并不是<code>acl</code>没有权限，需要在浏览器中直接输入<code>http://ip:8500/ui/dc1/kv/foo/</code>，<code>dc1</code>是<code>datacenter</code>的名字，<code>foo</code>为<code>policy</code>赋予的<code>kv前缀</code>，这样就可以在<code>ui</code>中修改<code>key/values</code>了.</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1302,20 +1211,20 @@ session <span class="token string">"admin"</span> <span class="token punctuation
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">373</span>
+          <span class="site-state-item-count">374</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-count">53</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">230</span>
+        <span class="site-state-item-count">231</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

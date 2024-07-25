@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,109 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/grpc-kai-fa-huan-jing-zhun-bei/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/grpc-kai-fa-huan-jing-zhun-bei/" class="post-title-link" itemprop="url">golang语言gRPC开发环境准备</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-06-03 13:57:48" itemprop="dateCreated datePublished" datetime="2024-06-03T13:57:48+08:00">2024-06-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="三个工具"><a href="#三个工具" class="headerlink" title="三个工具"></a>三个工具</h3><ul>
+<li>protoc</li>
+<li>protoc-gen-go</li>
+<li>protoc-gen-go-grpc</li>
+</ul>
+<h3 id="protoc"><a href="#protoc" class="headerlink" title="protoc"></a>protoc</h3><p>到<a target="_blank" rel="noopener" href="https://github.com/protocolbuffers/protobuf/releases">Gitehub下载页</a>下载最新的 <code>protoc</code> ，window 环境下载 <code>protoc-27.0-win64.zip</code>，解压后将 <code>bin/protoc.exe</code> 移动到 <code>$GOPATH/bin</code> 目录下。</p>
+<blockquote>
+<p>注意：<code>$GOPATH/bin</code> 需要配置在系统环境变量 <code>PATH</code> 中.</p>
+</blockquote>
+<h3 id="protoc-gen-go"><a href="#protoc-gen-go" class="headerlink" title="protoc-gen-go"></a>protoc-gen-go</h3><pre class="line-numbers language-shell"><code class="language-shell">go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="protoc-gen-go-grpc"><a href="#protoc-gen-go-grpc" class="headerlink" title="protoc-gen-go-grpc"></a>protoc-gen-go-grpc</h3><pre class="line-numbers language-shell"><code class="language-shell">go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>三个工具安装好后，在  <code>$GOPATH/bin</code> 下有：<code>protoc.exe</code> 、<code>protoc-gen-go.exe</code> 、 <code>protoc-gen-go-grpc.exe</code> 就算安装好了。</p>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>准备一个 <code>hello.proto</code> :</p>
+<pre class="line-numbers language-conf"><code class="language-conf">syntax = "proto3";
+
+option go_package = "./;proto";
+
+package proto;
+
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloResponse) {}
+  rpc SayHi (HelloRequest) returns (HelloResponse) {}
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloResponse {
+  string message = 1;
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>生成 <code>hello.pb.go</code> 和 <code>hello_grpc.pb.go</code></p>
+<pre class="line-numbers language-shell"><code class="language-shell">protoc --go_out=. --go-grpc_out=. hello.proto
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -889,137 +992,6 @@ fmt<span class="token punctuation">.</span><span class="token function">Printf</
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gomodule-shi-yong-zhi-la-qu-si-you-bao-cang-ku/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/gomodule-shi-yong-zhi-la-qu-si-you-bao-cang-ku/" class="post-title-link" itemprop="url">go module使用之拉取私有包仓库</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-05-24 11:10:08" itemprop="dateCreated datePublished" datetime="2024-05-24T11:10:08+08:00">2024-05-24</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="拉取非公共module"><a href="#拉取非公共module" class="headerlink" title="拉取非公共module"></a>拉取非公共module</h3><p>通过 Go 命令拉取项目依赖的公共 Go Module，只需要在每个开发机上设置环境变量 GOPROXY，配置一个高效且可靠的公共 GOPROXY 服务，如 <code>set GOPROXY=https://goproxy.cn,direct</code>。但是如果同时需要拉取私有的包怎么办呢？如企业自己开发的module依赖。这时我们需要配置<code>set GOPRIVATE=*gitee.com</code>，表示 <code>gitee.com</code>的包不使用代理而是直接拉取。通过<code>go env</code>命令可以看出：</p>
-<pre class="line-numbers language-shell"><code class="language-shell">set GONOPROXY=*gitee.com
-set GONOSUMDB=*gitee.com
-set GOPRIVATE=*gitee.com
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="开发私有module"><a href="#开发私有module" class="headerlink" title="开发私有module"></a>开发私有module</h3><ol>
-<li>如我们开发一个打印版本的方法，封装在了<code>gitee.com/happywzy/go-module-test</code>包中。</li>
-</ol>
-<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">package</span> pkg
-
-<span class="token keyword">func</span> <span class="token function">Version</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">string</span> <span class="token punctuation">{</span>
-    <span class="token keyword">return</span> <span class="token string">"version 1"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>我们模拟提交了很多个版本，并在不同的commit打上了一些tag，提交到了远程仓库。</p>
-<pre class="line-numbers language-shell"><code class="language-shell"># 查看版本号
-> git ls-remote -q origin          
-9da810c37c774a3775a518d16cfe032a39f862ea        HEAD
-9da810c37c774a3775a518d16cfe032a39f862ea        refs/heads/master
-9da810c37c774a3775a518d16cfe032a39f862ea        refs/tags/v1.0.0
-f4c3585328e0a686ad35537e390473917c4b202b        refs/tags/v1.0.0-test
-1e40db9baf18cbb8ed5784858bc9418c738792a7        refs/tags/v2
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>我们需要在另一个Module中使用<code>Version()</code>方法<br>go.mod配置如下：</li>
-</ol>
-<pre class="line-numbers language-go"><code class="language-go">module gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module
-
-<span class="token keyword">go</span> <span class="token number">1.19</span>
-
-<span class="token function">require</span> <span class="token punctuation">(</span>
-    gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test v1<span class="token number">.0</span><span class="token punctuation">.</span><span class="token number">0</span><span class="token operator">-</span>test
-<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>版本号可以配置成commitId，执行<code>go mod tidy</code>后，会根据<code>commitId</code>自动生成伪版本号，如<code>gitee.com/happywzy/go-module-test v0.0.0-20240524023550-1e40db9baf18</code>，这个版本号不要手敲，防止出错。</li>
-<li>版本号可以配置成tag，如<code>v1.0.0</code>、<code>v1.0.0-test</code>，但是配置成<code>v2</code>这种好像无法识别。</li>
-<li>可以通过<code>go get </code>命令去安装module，如 <code>go get gitee.com/happywzy/go-module-test@master</code>，<code>@</code>后面可以是分支名、tag名、commit ID，非常方便。</li>
-</ul>
-<h3 id="如何使用本地的Module"><a href="#如何使用本地的Module" class="headerlink" title="如何使用本地的Module"></a>如何使用本地的Module</h3><p>前面介绍的方式需要Module推送到远程仓库后才能使用，这在开发阶段非常不适用，如何直接使用本地的Module呢？有两种方式。</p>
-<ol>
-<li>使用 go.mod 中 replace</li>
-</ol>
-<pre class="line-numbers language-go"><code class="language-go"><span class="token function">replace</span> <span class="token punctuation">(</span>
-    gitee<span class="token punctuation">.</span>com<span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test v1<span class="token number">.0</span><span class="token punctuation">.</span><span class="token number">0</span><span class="token operator">-</span>test <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token operator">/</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test
-<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>表示<code>gitee.com/happywzy/go-module-test v1.0.0-test</code>这个包直接使用本地路径下的代码。这种方式需要注意在提交代码前需要将<code>replace</code>删除，防止出错。</p>
-<ol start="2">
-<li>使用 go.work<blockquote>
-<p><code>go.work</code> 在 <code>1.18</code> 版本之后才有。</p>
-</blockquote>
-</li>
-</ol>
-<pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">go</span> <span class="token number">1.19</span>
-
-<span class="token function">use</span> <span class="token punctuation">(</span>
-    <span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module<span class="token operator">-</span>test
-    <span class="token punctuation">.</span><span class="token operator">/</span>happywzy<span class="token operator">/</span><span class="token keyword">go</span><span class="token operator">-</span>module
-<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p><code>go.work</code>文件需要位于两个模块的上层目录，通过<code>go work init</code>初始化生成，使用<code>go work use gitee.com/happywzy/go-module-test</code>添加。</p>
-<blockquote>
-<p><code>go.work</code> 这个文件无需提交到git，仅用于本地开发即可。</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1091,20 +1063,20 @@ f4c3585328e0a686ad35537e390473917c4b202b        refs/tags/v1.0.0-test
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">373</span>
+          <span class="site-state-item-count">374</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-count">53</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">230</span>
+        <span class="site-state-item-count">231</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

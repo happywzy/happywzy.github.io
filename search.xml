@@ -32496,11 +32496,16 @@ vrrp_instance VI_1 {
     track_script {
          chk_port
     }
+    unicast_src_ip 192.168.1.1  # 本地节点的 IP 地址
+    unicast_peer {
+        192.168.1.2  # 另一个节点的 IP 地址
+        192.168.1.3  # 另一个节点的 IP 地址
+    }
     virtual_ipaddress {
         172.16.20.99
     }
 }
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="keepalived备节点配置"><a href="#keepalived备节点配置" class="headerlink" title="keepalived备节点配置"></a>keepalived备节点配置</h3><pre class="line-numbers language-conf"><code class="language-conf">! Configuration File for keepalived
 
 global_defs {
@@ -32526,11 +32531,16 @@ vrrp_instance VI_1 {
     track_script {
          chk_port
     }
+    unicast_src_ip 192.168.1.2  # 本地节点的 IP 地址
+    unicast_peer {
+        192.168.1.1  # 另一个节点的 IP 地址
+        192.168.1.3  # 另一个节点的 IP 地址
+    }
     virtual_ipaddress {
         172.16.20.99
     }
 }
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="非抢占式及通知服务"><a href="#非抢占式及通知服务" class="headerlink" title="非抢占式及通知服务"></a>非抢占式及通知服务</h3><pre class="line-numbers language-conf"><code class="language-conf">vrrp_instance VI_1 {
     state BACKUP // 主备都用BACKUP
     interface ens192
@@ -34531,5 +34541,52 @@ docker run -d -p 9000:9000 --name ui -e ZK_HOSTS<span class="token operator">=</
       <categories>
         <category>kafka</category>
       </categories>
+  </entry>
+  <entry>
+    <title>containerd初使用</title>
+    <url>/containerd-chu-shi-yong/</url>
+    <content><![CDATA[<h3 id="containerd"><a href="#containerd" class="headerlink" title="containerd"></a>containerd</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl <span class="token function">enable</span> --now containerd
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="nerdctl"><a href="#nerdctl" class="headerlink" title="nerdctl"></a>nerdctl</h3><p>containerd 自带的 ctr 命令用不习惯，可以安装 nerdctl ，nerdctl 命令同 docker 风格一致的 containerd 客户端工具.</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装</span>
+<span class="token function">wget</span> https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-1.7.6-linux-amd64.tar.gz
+<span class="token function">tar</span> -zxvf nerdctl-1.7.6-linux-amd64.tar.gz
+<span class="token function">cp</span> nerdctl /usr/local/bin/
+<span class="token comment" spellcheck="true"># 测试，如果没有安装 buildkit 会提示没有 buildctl 命令</span>
+nerdctl version
+<span class="token comment" spellcheck="true"># 使用</span>
+nerdctl <span class="token function">ps</span>
+nerdctl images
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="buildkit"><a href="#buildkit" class="headerlink" title="buildkit"></a>buildkit</h3><p>nerdctl build：从 Dockerfile 构建镜像，需要安装 buildkit</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">wget</span> https://github.com/moby/buildkit/releases/download/v0.9.0/buildkit-v0.9.0.linux-amd64.tar.gz
+<span class="token function">tar</span> -zxvf buildkit-v0.9.0.linux-amd64.tar.gz
+<span class="token comment" spellcheck="true"># 将解压出来的 bin 文件全部复制</span>
+<span class="token function">cp</span> bin/* /usr/local/bin/
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用 Systemd 来管理 buildkitd, <code>cat /etc/systemd/system/buildkit.service</code></p>
+<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
+Description=BuildKit
+Documentation=https://github.com/moby/buildkit
+
+[Service]
+ExecStart=/usr/local/bin/buildkitd --oci-worker=false --containerd-worker=true
+
+[Install]
+WantedBy=multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>启动/停止</p>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl daemon-reload
+systemctl <span class="token function">enable</span> --now buildkit
+systemctl status buildkit
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>docker</category>
+        <category>containerd</category>
+      </categories>
+      <tags>
+        <tag>containerd</tag>
+      </tags>
   </entry>
 </search>
