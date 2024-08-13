@@ -196,6 +196,204 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/centos-yuan-ma-an-zhuang-timescaledb/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/centos-yuan-ma-an-zhuang-timescaledb/" class="post-title-link" itemprop="url">centos源码安装timescaledb</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-07-03 14:52:43" itemprop="dateCreated datePublished" datetime="2024-07-03T14:52:43+08:00">2024-07-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>因为 postgres 16 只能通过源码的方式在 centos 上安装，所以 timescaledb 也只能通过源码的方式安装.</p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.timescale.com/self-hosted/latest/install/installation-source/">官方文档</a><br>前提条件：</li>
+<li>已经安装 postgresql</li>
+<li>CMake 版本大于 <code>3.11</code> (Cmake安装参考前文)</li>
+<li>gcc</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 下载源码</span>
+<span class="token function">git</span> clone https://github.com/timescale/timescaledb
+<span class="token function">cd</span> timescaledb
+<span class="token function">git</span> checkout 2.15.3
+
+<span class="token comment" spellcheck="true"># 配置，如果不使用openssl，请添加参数： ./bootstrap -DUSE_OPENSSL=0</span>
+./bootstrap
+
+<span class="token function">cd</span> build <span class="token operator">&amp;&amp;</span> <span class="token function">make</span>
+
+<span class="token function">make</span> <span class="token function">install</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装完成后配置"><a href="#安装完成后配置" class="headerlink" title="安装完成后配置"></a>安装完成后配置</h3><ul>
+<li>如果是单机 postgrsql</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> timescaledb-tune --pg-config<span class="token operator">=</span>/usr/local/pgsql/bin/pg_config -conf-path<span class="token operator">=</span>/home/pgsql/data/postgresql.conf
+
+systemctl restart postgresql-16
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>如果是patroni，直接修改postgresql.conf会被patroni重置。需要修改<code>patroni.yml</code></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># 将 timescaledb-tune 修改的配置文件通过 patroni 写到 postgres</span>
+<span class="token key atrule">postgresql</span><span class="token punctuation">:</span>
+  <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+    <span class="token key atrule">shared_preload_libraries</span><span class="token punctuation">:</span> <span class="token string">'timescaledb'</span>
+    <span class="token key atrule">shared_buffers</span><span class="token punctuation">:</span> 1955MB
+    <span class="token key atrule">effective_cache_size</span><span class="token punctuation">:</span> 5865MB
+    <span class="token key atrule">maintenance_work_mem</span><span class="token punctuation">:</span> 1001095kB
+    <span class="token key atrule">work_mem</span><span class="token punctuation">:</span> 5005kB
+    <span class="token key atrule">timescaledb.max_background_workers</span><span class="token punctuation">:</span> <span class="token number">16</span>
+    <span class="token key atrule">max_parallel_workers_per_gather</span><span class="token punctuation">:</span> <span class="token number">2</span>
+    <span class="token key atrule">max_parallel_workers</span><span class="token punctuation">:</span> <span class="token number">4</span>
+    <span class="token key atrule">wal_buffers</span><span class="token punctuation">:</span> 16MB
+    <span class="token key atrule">min_wal_size</span><span class="token punctuation">:</span> 512MB
+    <span class="token key atrule">max_wal_size</span><span class="token punctuation">:</span> 1GB
+    <span class="token key atrule">default_statistics_target</span><span class="token punctuation">:</span> <span class="token number">100</span>
+    <span class="token key atrule">random_page_cost</span><span class="token punctuation">:</span> <span class="token number">1.1</span>
+    <span class="token key atrule">checkpoint_completion_target</span><span class="token punctuation">:</span> <span class="token number">0.9</span>
+    <span class="token key atrule">autovacuum_max_workers</span><span class="token punctuation">:</span> <span class="token number">10</span>
+    <span class="token key atrule">autovacuum_naptime</span><span class="token punctuation">:</span> <span class="token number">10</span>
+    <span class="token key atrule">effective_io_concurrency</span><span class="token punctuation">:</span> <span class="token number">256</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/cmake-an-zhuang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/cmake-an-zhuang/" class="post-title-link" itemprop="url">cmake安装</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-07-03 14:18:01" itemprop="dateCreated datePublished" datetime="2024-07-03T14:18:01+08:00">2024-07-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/cmake/" itemprop="url" rel="index"><span itemprop="name">cmake</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="cmake安装"><a href="#cmake安装" class="headerlink" title="cmake安装"></a>cmake安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 到官网 https://cmake.org/download/ 下载最新的包</span>
+<span class="token function">wget</span> https://github.com/Kitware/CMake/releases/download/v3.30.0/cmake-3.30.0-linux-x86_64.tar.gz
+
+<span class="token comment" spellcheck="true"># 解压</span>
+<span class="token function">tar</span> -zxvf cmake-3.30.0-linux-x86_64.tar.gz
+
+<span class="token comment" spellcheck="true"># 改个名字并移动到/usr/local目录下</span>
+<span class="token function">mv</span> cmake-3.30.0-linux-x86_64 cmake
+<span class="token function">mv</span> cmake /usr/local/
+
+<span class="token comment" spellcheck="true"># 添加bin到环境变量</span>
+<span class="token function">export</span> PATH<span class="token operator">=</span>/usr/local/cmake/bin:<span class="token variable">$PATH</span>
+
+<span class="token comment" spellcheck="true"># 测试</span>
+cmake --version
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/ubuntu-an-zhuang-timescaledb/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -756,295 +954,6 @@ listen monitor
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ji-yu-postgres-15-an-zhuang-timescaledb/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ji-yu-postgres-15-an-zhuang-timescaledb/" class="post-title-link" itemprop="url">基于postgres-15安装TimescaleDB</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-06-27 11:48:29" itemprop="dateCreated datePublished" datetime="2024-06-27T11:48:29+08:00">2024-06-27</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="TimescaleDB"><a href="#TimescaleDB" class="headerlink" title="TimescaleDB"></a>TimescaleDB</h3><p>TimescaleDB 是基于postgres的时序数据库，安装TimescaleDB需要先安装postgres，然后将postgres转成TimescaleDB.</p>
-<blockquote>
-<p>参考前文安装 <code>postgres-15</code>.</p>
-</blockquote>
-<h3 id="安装TimescaleDB"><a href="#安装TimescaleDB" class="headerlink" title="安装TimescaleDB"></a>安装TimescaleDB</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://docs.timescale.com/self-hosted/latest/install/installation-linux/">官方文档</a>,通过yum安装.</li>
-</ul>
-<ol>
-<li>安装yum源</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum <span class="token function">install</span> https://download.postgresql.org/pub/repos/yum/reporpms/EL-<span class="token variable"><span class="token variable">$(</span>rpm -E %<span class="token punctuation">{</span>rhel<span class="token punctuation">}</span><span class="token variable">)</span></span>-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="2">
-<li>安装TimescaleDB资源库</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">tee</span> /etc/yum.repos.d/timescale_timescaledb.repo <span class="token operator">&lt;&lt;</span><span class="token string">EOL
-[timescale_timescaledb]
-name=timescale_timescaledb
-baseurl=https://packagecloud.io/timescale/timescaledb/el/<span class="token variable"><span class="token variable">$(</span>rpm -E %<span class="token punctuation">{</span>rhel<span class="token punctuation">}</span><span class="token variable">)</span></span>/\<span class="token variable">$basearch</span>
-repo_gpgcheck=1
-gpgcheck=0
-enabled=1
-gpgkey=https://packagecloud.io/timescale/timescaledb/gpgkey
-sslverify=1
-sslcacert=/etc/pki/tls/certs/ca-bundle.crt
-metadata_expire=300
-EOL</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="3">
-<li>更新</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum update
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="4">
-<li>YUM安装TimescaleDB</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> yum <span class="token function">install</span> timescaledb-2-postgresql-15
-<span class="token comment" spellcheck="true"># 同时安装postgres15</span>
-<span class="token comment" spellcheck="true"># sudo yum install timescaledb-2-postgresql-16 postgresql16</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>初始化数据库（已经安装过了就跳过）</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> /usr/pgsql-16/bin/postgresql-15-setup initdb
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="6">
-<li>将PostgreSQL调成TimescaleDB</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 如果修改过data目录可以通过 -conf-path 指定位置,否在找不到。</span>
-<span class="token function">sudo</span> timescaledb-tune --pg-config<span class="token operator">=</span>/usr/pgsql-15/bin/pg_config -conf-path<span class="token operator">=</span>/home/pgsql/data/postgresql.conf
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="7">
-<li>重启数据库</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">systemctl restart postgresql-15
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="8">
-<li>添加数据库拓展</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 登录</span>
-psql -U postgres -h 127.0.0.1 -p 5432
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- Add TimescaleDB to the database</span>
-<span class="token keyword">CREATE</span> EXTENSION <span class="token keyword">IF</span> <span class="token operator">NOT</span> <span class="token keyword">EXISTS</span> timescaledb<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">-- Check that TimescaleDB is installed</span>
-postgres<span class="token operator">=</span><span class="token comment" spellcheck="true"># \dx</span>
-                                               List <span class="token keyword">of</span> installed extensions
-    Name     <span class="token operator">|</span> Version <span class="token operator">|</span>   <span class="token keyword">Schema</span>   <span class="token operator">|</span>                                     Description                                      
-<span class="token comment" spellcheck="true">-------------+---------+------------+--------------------------------------------------------------------------------------</span>
- plpgsql     <span class="token operator">|</span> <span class="token number">1.0</span>     <span class="token operator">|</span> pg_catalog <span class="token operator">|</span> PL<span class="token operator">/</span>pgSQL procedural language
- timescaledb <span class="token operator">|</span> <span class="token number">2.15</span><span class="token punctuation">.</span><span class="token number">2</span>  <span class="token operator">|</span> <span class="token keyword">public</span>     <span class="token operator">|</span> Enables scalable inserts <span class="token operator">and</span> complex queries <span class="token keyword">for</span> time<span class="token operator">-</span>series <span class="token keyword">data</span> <span class="token punctuation">(</span>Apache <span class="token number">2</span> Edition<span class="token punctuation">)</span>
-<span class="token punctuation">(</span><span class="token number">2</span> <span class="token keyword">rows</span><span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<!-- ### 源码安装
-1. 安装编译环境
-```bash
-# 安装 gcc
-yum install -y gcc gcc-c++
-
-# 安装 openssl openssl-devel，安装cmake需要用到
-sudo yum install openssl openssl-devel
-
-# 安装cmake：yum安装的cmake版本太低，需要源码安装
-wget https://cmake.org/files/v3.22/cmake-3.22.1.tar.gz
-tar -zxvf cmake-3.22.1.tar.gz
-cd cmake-3.22.1
-./bootstrap && make && make install
-ln -s /usr/local/bin/cmake /usr/bin/cmake
-cmake --version
-``` -->
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/vip-manager-an-zhuang-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/vip-manager-an-zhuang-shi-yong/" class="post-title-link" itemprop="url">vip-manager安装使用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-06-26 09:17:42" itemprop="dateCreated datePublished" datetime="2024-06-26T09:17:42+08:00">2024-06-26</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p><code>Patroni</code> + <code>etcd</code> + <code>vipmanager</code> 是cybertec推出的postgresql 高可用方案。其中， Etcd 用于存放集群状态信息。Patroni 负责为PostgreSQL 集群提供故障转移和高可用服务。vipmanager 根据etcd或Consul中保存的状态管理虚拟IP用于提供和管理虚拟ip，用于对外提供访问地址。</p>
-<h3 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h3><ol>
-<li><p><a target="_blank" rel="noopener" href="https://github.com/cybertec-postgresql/vip-manager">vip-manager Github 文档</a>,可以直接下载RPM包进行安装。</p>
-</li>
-<li><p>下载</p>
-</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">wget</span> https://github.com/cybertec-postgresql/vip-manager/releases/download/v2.5.0/vip-manager_2.5.0_Linux_x86_64.rpm
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="3">
-<li>安装</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">rpm -ivh vip-manager_2.5.0_Linux_x86_64.rpm
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<blockquote>
-<p><code>rpm -qa</code>查询所有RPM包; <code>rpm -e</code> 卸载 RPM 包</p>
-</blockquote>
-<ol start="4">
-<li>修改默认配置: <code>/etc/default/vip-manager.yml</code></li>
-</ol>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># 检测间隔,单位毫秒</span>
-<span class="token key atrule">interval</span><span class="token punctuation">:</span> <span class="token number">1000</span>
-<span class="token comment" spellcheck="true"># 和 patroni 配置保持一致：&lt;namespace>/&lt;scope>/leader</span>
-<span class="token key atrule">trigger-key</span><span class="token punctuation">:</span> <span class="token string">"/service/pg/leader"</span>
-<span class="token comment" spellcheck="true"># 和 patroni 配置保持一致：&lt;name></span>
-<span class="token key atrule">trigger-value</span><span class="token punctuation">:</span> <span class="token string">"data7"</span>
-
-<span class="token key atrule">ip</span><span class="token punctuation">:</span> 172.16.20.99 <span class="token comment" spellcheck="true"># 虚拟ip</span>
-<span class="token key atrule">netmask</span><span class="token punctuation">:</span> <span class="token number">24 </span><span class="token comment" spellcheck="true"># netmask for the virtual ip</span>
-<span class="token key atrule">interface</span><span class="token punctuation">:</span> ens192 <span class="token comment" spellcheck="true">#网卡</span>
-
-<span class="token comment" spellcheck="true"># how the virtual ip should be managed. we currently support "ip addr add/remove" through shell commands or the Hetzner api</span>
-<span class="token key atrule">hosting-type</span><span class="token punctuation">:</span> basic <span class="token comment" spellcheck="true"># possible values: basic, or hetzner.</span>
-
-<span class="token key atrule">dcs-type</span><span class="token punctuation">:</span> etcd <span class="token comment" spellcheck="true"># etcd or consul</span>
-<span class="token comment" spellcheck="true"># etcd 地址</span>
-<span class="token key atrule">dcs-endpoints</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> http<span class="token punctuation">:</span>//172.16.20.152<span class="token punctuation">:</span><span class="token number">2379</span>
-  <span class="token punctuation">-</span> http<span class="token punctuation">:</span>//172.16.20.153<span class="token punctuation">:</span><span class="token number">2379</span>
-  <span class="token punctuation">-</span> http<span class="token punctuation">:</span>//172.16.20.154<span class="token punctuation">:</span><span class="token number">2379</span>
-
-<span class="token comment" spellcheck="true"># 本地的认证都取消了,没有配置</span>
-<span class="token comment" spellcheck="true">#etcd-user: "patroni"</span>
-<span class="token comment" spellcheck="true">#etcd-password: "Julian's secret password"</span>
-<span class="token comment" spellcheck="true"># when etcd-ca-file is specified, TLS connections to the etcd endpoints will be used.</span>
-<span class="token comment" spellcheck="true">#etcd-ca-file: "/path/to/etcd/trusted/ca/file"</span>
-<span class="token comment" spellcheck="true"># when etcd-cert-file and etcd-key-file are specified, we will authenticate at the etcd endpoints using this certificate and key.</span>
-<span class="token comment" spellcheck="true">#etcd-cert-file: "/path/to/etcd/client/cert/file"</span>
-<span class="token comment" spellcheck="true">#etcd-key-file: "/path/to/etcd/client/key/file"</span>
-
-<span class="token comment" spellcheck="true"># don't worry about parameter with a prefix that doesn't match the endpoint_type. You can write anything there, I won't even look at it.</span>
-<span class="token comment" spellcheck="true">#consul-token: "Julian's secret token"</span>
-
-<span class="token comment" spellcheck="true"># how often things should be retried and how long to wait between retries. (currently only affects arpClient)</span>
-<span class="token key atrule">retry-num</span><span class="token punctuation">:</span> <span class="token number">2</span>
-<span class="token key atrule">retry-after</span><span class="token punctuation">:</span> <span class="token number">250  </span><span class="token comment" spellcheck="true">#in milliseconds</span>
-
-<span class="token comment" spellcheck="true"># verbose logs (currently only supported for hetzner)</span>
-<span class="token key atrule">verbose</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>启动/停止/自启</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">systemctl start vip-manager
-systemctl stop vip-manager
-systemctl <span class="token function">enable</span> vip-manager
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1116,20 +1025,20 @@ systemctl <span class="token function">enable</span> vip-manager
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">374</span>
+          <span class="site-state-item-count">376</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">53</span>
+        <span class="site-state-item-count">55</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">231</span>
+        <span class="site-state-item-count">234</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
