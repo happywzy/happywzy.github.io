@@ -196,6 +196,138 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/logback-guan-bi-qi-dong-shi-zi-shen-diao-shi-xin-xi-da-yin/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/logback-guan-bi-qi-dong-shi-zi-shen-diao-shi-xin-xi-da-yin/" class="post-title-link" itemprop="url">logback关闭启动时自身调试信息打印</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-01 17:59:08" itemprop="dateCreated datePublished" datetime="2020-04-01T17:59:08+08:00">2020-04-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>使用logback打印日志，启动服务时logback会打印一些自身的调试信息如下，会打印它检查了哪些配置、看见了哪些配置：</p>
+<pre class="line-numbers language-log"><code class="language-log">18:00:22,729 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback-test.xml]
+18:00:22,729 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback.groovy]
+18:00:22,729 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Found resource [logback.xml] at [file:/D:/DeriGateway/DBCompare/target/classes/logback.xml]
+18:00:22,770 |-INFO in ch.qos.logback.classic.joran.action.ConfigurationAction - debug attribute not set
+18:00:22,775 |-INFO in ch.qos.logback.core.joran.action.TimestampAction - Using current interpretation time, i.e. now, as time reference.
+18:00:22,788 |-INFO in ch.qos.logback.core.joran.action.TimestampAction - Adding property to the context with key="DATETIME" and value="2020-04-01 18:00:22" to the LOCAL scope
+18:00:22,788 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - About to instantiate appender of type [ch.qos.logback.core.ConsoleAppender]
+18:00:22,793 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - Naming appender as [STDOUT]
+18:00:22,796 |-INFO in ch.qos.logback.core.joran.action.NestedComplexPropertyIA - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+18:00:22,813 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - About to instantiate appender of type [ch.qos.logback.core.rolling.RollingFileAppender]
+18:00:22,816 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - Naming appender as [FILEOUT]
+18:00:22,817 |-INFO in ch.qos.logback.core.joran.action.NestedComplexPropertyIA - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+18:00:22,828 |-INFO in c.q.l.core.rolling.TimeBasedRollingPolicy@984849465 - No compression will be used
+18:00:22,829 |-INFO in c.q.l.core.rolling.TimeBasedRollingPolicy@984849465 - Will use the pattern ./logs//log.%d.%i.log for the active file
+18:00:22,830 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP@2eee9593 - The date pattern is 'yyyy-MM-dd' from file name pattern './logs//log.%d.%i.log'.
+18:00:22,830 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP@2eee9593 - Roll-over at midnight.
+18:00:22,832 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP@2eee9593 - Setting initial period to Wed Apr 01 18:00:22 CST 2020
+18:00:22,833 |-WARN in ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP@2eee9593 - SizeAndTimeBasedFNATP is deprecated. Use SizeAndTimeBasedRollingPolicy instead
+18:00:22,833 |-WARN in ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP@2eee9593 - For more information see http://logback.qos.ch/manual/appenders.html#SizeAndTimeBasedRollingPolicy
+18:00:22,834 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[FILEOUT] - Active log file name: ./logs//log.2020-04-01.0.log
+18:00:22,834 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[FILEOUT] - File property is set to [null]
+18:00:22,835 |-INFO in ch.qos.logback.classic.joran.action.RootLoggerAction - Setting level of ROOT logger to INFO
+18:00:22,835 |-INFO in ch.qos.logback.core.joran.action.AppenderRefAction - Attaching appender named [STDOUT] to Logger[ROOT]
+18:00:22,835 |-INFO in ch.qos.logback.core.joran.action.AppenderRefAction - Attaching appender named [FILEOUT] to Logger[ROOT]
+18:00:22,835 |-INFO in ch.qos.logback.classic.joran.action.ConfigurationAction - End of configuration.
+18:00:22,836 |-INFO in ch.qos.logback.classic.joran.JoranConfigurator@7907ec20 - Registering current configuration as safe fallback point
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="关闭logback自身调试信息打印"><a href="#关闭logback自身调试信息打印" class="headerlink" title="关闭logback自身调试信息打印"></a>关闭logback自身调试信息打印</h3><p>只需增加一行以下配置即可。将状态信息监听器设置为无操作监听器。</p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>statusListener</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.status.NopStatusListener<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="完整logback-xml"><a href="#完整logback-xml" class="headerlink" title="完整logback.xml"></a>完整logback.xml</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="UTF-8"?></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>statusListener</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.status.NopStatusListener<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ROOT<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>./logs/<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILESIZE<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>100MB<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>MAXHISTORY<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>30<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timestamp</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>DATETIME<span class="token punctuation">"</span></span> <span class="token attr-name">datePattern</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>yyyy-MM-dd HH:mm:ss<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token comment" spellcheck="true">&lt;!-- 控制台打印 --></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>STDOUT<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.ConsoleAppender<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>encoder</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pattern</span><span class="token punctuation">></span></span>[%-5level] %d{${DATETIME}} [%thread] %logger{36} - %m%n<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pattern</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>encoder</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appender</span><span class="token punctuation">></span></span>
+    <span class="token comment" spellcheck="true">&lt;!-- 输入到文件，按日期和文件大小 --></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILEOUT<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.RollingFileAppender<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>encoder</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pattern</span><span class="token punctuation">></span></span>[%-5level] %d{${DATETIME}} [%thread] %logger{36} - %m%n<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pattern</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>encoder</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>rollingPolicy</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.TimeBasedRollingPolicy<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>fileNamePattern</span><span class="token punctuation">></span></span>${ROOT}/log.%d.%i.log<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>fileNamePattern</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>maxHistory</span><span class="token punctuation">></span></span>${MAXHISTORY}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>maxHistory</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timeBasedFileNamingAndTriggeringPolicy</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>maxFileSize</span><span class="token punctuation">></span></span>${FILESIZE}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>maxFileSize</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>timeBasedFileNamingAndTriggeringPolicy</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>rollingPolicy</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appender</span><span class="token punctuation">></span></span>
+    <span class="token comment" spellcheck="true">&lt;!-- Logger 根目录 --></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>root</span> <span class="token attr-name">level</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>INFO<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>STDOUT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILEOUT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>root</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/spring-boot-li-yong-xi-tong-bian-liang-he-pei-zhi-wen-jian-shi-xian-ling-huo-pei-zhi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -979,96 +1111,6 @@ username<span class="token punctuation">,</span>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flinksql-yong-hu-zi-ding-yi-han-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/flinksql-yong-hu-zi-ding-yi-han-shu/" class="post-title-link" itemprop="url">flinkSQL用户自定义函数(UDX)</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-25 16:58:21" itemprop="dateCreated datePublished" datetime="2020-03-25T16:58:21+08:00">2020-03-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="UDX分类"><a href="#UDX分类" class="headerlink" title="UDX分类"></a>UDX分类</h3><p><a target="_blank" rel="noopener" href="https://help.aliyun.com/document_detail/69463.html">参考</a></p>
-<table>
-<thead>
-<tr>
-<th>UDX分类</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>UDF（User Defined Function）</td>
-<td>用户自定义标量函数（User Defined Scalar Function）。其输入与输出是一对一的关系，即读入一行数据，写出一条输出值。</td>
-</tr>
-<tr>
-<td>UDAF（User Defined Aggregation Function）</td>
-<td>自定义聚合函数，其输入与输出是多对一的关系， 即将多条输入记录聚合成一条输出值。可以与SQL中的GROUP BY语句一起使用。</td>
-</tr>
-<tr>
-<td>UDTF（User Defined Table-valued Function）</td>
-<td>自定义表函数，调用一次函数输出多行或多列数据。</td>
-</tr>
-</tbody></table>
-<h3 id="注册用户定义的函数"><a href="#注册用户定义的函数" class="headerlink" title="注册用户定义的函数"></a>注册用户定义的函数</h3><p>在大多数情况下，必须先注册用户定义的函数，然后才能在查询中使用它。没有必要为<code>Scala Table API</code>注册函数。</p>
-<p><code>TableEnvironment</code>通过调用<code>registerFunction()</code>方法来注册函数。注册用户定义的函数时，会将其插入到函数目录中<code>TableEnvironment</code>，以便 <code>Table API</code>或<code>SQL</code>解析器可以识别并正确转换它。</p>
-<p>请找到如何注册，如何调用每个类型的用户定义函数（详细的例子<code>ScalarFunction</code>，<code>TableFunction</code>和<code>AggregateFunction</code>下面的子会话）。</p>
-<h3 id="自定义标量函数UDF"><a href="#自定义标量函数UDF" class="headerlink" title="自定义标量函数UDF"></a>自定义标量函数UDF</h3><h3 id="自定义聚合函数UDAF"><a href="#自定义聚合函数UDAF" class="headerlink" title="自定义聚合函数UDAF"></a>自定义聚合函数UDAF</h3><h3 id="自定义表值函数UDTF"><a href="#自定义表值函数UDTF" class="headerlink" title="自定义表值函数UDTF"></a>自定义表值函数UDTF</h3>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1140,7 +1182,7 @@ username<span class="token punctuation">,</span>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">376</span>
+          <span class="site-state-item-count">377</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1153,7 +1195,7 @@ username<span class="token punctuation">,</span>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">234</span>
+        <span class="site-state-item-count">235</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

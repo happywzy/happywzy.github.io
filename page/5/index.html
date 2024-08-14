@@ -196,6 +196,96 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gorm-zhong-raw-he-exec-de-qu-bie/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/gorm-zhong-raw-he-exec-de-qu-bie/" class="post-title-link" itemprop="url">gorm中Raw和Exec的区别</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-28 15:58:59" itemprop="dateCreated datePublished" datetime="2024-05-28T15:58:59+08:00">2024-05-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="Raw和Exec"><a href="#Raw和Exec" class="headerlink" title="Raw和Exec"></a>Raw和Exec</h3><p>在 <code>GORM</code> 中，<code>db.Raw</code> 和 <code>db.Exec</code> 是执行 <code>原生 SQL</code> 查询的两种不同方法，它们有不同的用途和返回值。</p>
+<ul>
+<li><code>db.Raw</code> 用于执行原生 SQL 查询并返回记录。通常用于执行 <code>SELECT</code> 查询，需要使用 <code>Scan</code> 方法将结果扫描到指定的结构体或变量中</li>
+<li><code>db.Exec</code> 用于执行不需要返回记录的原生 SQL 查询，通常用于 <code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code> 语句，或者执行 <code>DDL</code>（数据定义语言）语句，如创建表或修改表结构, 不需要 <code>Scan</code>，可以直接检查 <code>result.RowsAffected</code> 和 <code>result.Error</code>.</li>
+</ul>
+<h3 id="Raw"><a href="#Raw" class="headerlink" title="Raw"></a>Raw</h3><pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">var</span> users <span class="token punctuation">[</span><span class="token punctuation">]</span>User
+result <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Raw</span><span class="token punctuation">(</span><span class="token string">"SELECT id, name, email FROM users"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Scan</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>users<span class="token punctuation">)</span>
+<span class="token keyword">if</span> result<span class="token punctuation">.</span>Error <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Error<span class="token punctuation">)</span>
+    <span class="token keyword">return</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> user <span class="token operator">:=</span> <span class="token keyword">range</span> users <span class="token punctuation">{</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"ID: %d, Name: %s, Email: %s\n"</span><span class="token punctuation">,</span> user<span class="token punctuation">.</span>ID<span class="token punctuation">,</span> user<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> user<span class="token punctuation">.</span>Email<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Exec"><a href="#Exec" class="headerlink" title="Exec"></a>Exec</h3><pre class="line-numbers language-go"><code class="language-go">result <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Exec</span><span class="token punctuation">(</span><span class="token string">"INSERT INTO users (name, email) VALUES (?, ?)"</span><span class="token punctuation">,</span> <span class="token string">"John Doe"</span><span class="token punctuation">,</span> <span class="token string">"john@example.com"</span><span class="token punctuation">)</span>
+<span class="token keyword">if</span> result<span class="token punctuation">.</span>Error <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Error<span class="token punctuation">)</span>
+    <span class="token keyword">return</span>
+<span class="token punctuation">}</span>
+
+fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"Rows affected: %d\n"</span><span class="token punctuation">,</span> result<span class="token punctuation">.</span>RowsAffected<span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/sync-gong-ju-bao-jie-shao/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -967,106 +1057,6 @@ person<span class="token operator">?</span><span class="token punctuation">.</sp
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-dong-tai-xin-zeng-restful-jie-kou/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-dong-tai-xin-zeng-restful-jie-kou/" class="post-title-link" itemprop="url">springboot动态新增restful接口</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-04-22 13:33:54" itemprop="dateCreated datePublished" datetime="2024-04-22T13:33:54+08:00">2024-04-22</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>springboot动态增加和删除restful接口.</p>
-<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Service</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Test</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@Autowired</span>
-    RequestMappingHandlerMapping requestMappingHandlerMapping<span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 初始化后自动添加一个 GET /test 接口</span>
-    <span class="token annotation punctuation">@PostConstruct</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">test</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> NoSuchMethodException <span class="token punctuation">{</span>
-        RequestMappingInfo<span class="token punctuation">.</span>BuilderConfiguration options <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RequestMappingInfo<span class="token punctuation">.</span>BuilderConfiguration</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        options<span class="token punctuation">.</span><span class="token function">setPatternParser</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">PathPatternParser</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        RequestMappingInfo requestMappingInfo <span class="token operator">=</span> RequestMappingInfo
-                <span class="token punctuation">.</span><span class="token function">paths</span><span class="token punctuation">(</span><span class="token string">"/test"</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">produces</span><span class="token punctuation">(</span><span class="token string">"application/json;charset=UTF-8"</span><span class="token punctuation">)</span>
-<span class="token comment" spellcheck="true">//                .consumes("text/plain;charset=UTF-8")</span>
-                <span class="token punctuation">.</span><span class="token function">methods</span><span class="token punctuation">(</span>RequestMethod<span class="token punctuation">.</span>GET<span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">options</span><span class="token punctuation">(</span>options<span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        requestMappingHandlerMapping<span class="token punctuation">.</span><span class="token function">registerMapping</span><span class="token punctuation">(</span>requestMappingInfo<span class="token punctuation">,</span> <span class="token string">"handler"</span><span class="token punctuation">,</span> Handle<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">getDeclaredMethod</span><span class="token punctuation">(</span><span class="token string">"test"</span><span class="token punctuation">,</span> HttpServletRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 删除接口</span>
-        <span class="token comment" spellcheck="true">//requestMappingHandlerMapping.unregisterMapping(requestMappingInfo);</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-
-<span class="token annotation punctuation">@RestController</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Handler</span> <span class="token punctuation">{</span>
-    <span class="token keyword">public</span> String <span class="token function">test</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">)</span>  <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> <span class="token string">"hello"</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/tuxiaoer/p/17100570.html">https://www.cnblogs.com/tuxiaoer/p/17100570.html</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1138,7 +1128,7 @@ person<span class="token operator">?</span><span class="token punctuation">.</sp
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">376</span>
+          <span class="site-state-item-count">377</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1151,7 +1141,7 @@ person<span class="token operator">?</span><span class="token punctuation">.</sp
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">234</span>
+        <span class="site-state-item-count">235</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
