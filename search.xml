@@ -33974,11 +33974,13 @@ vim /etc/haproxy18/haproxy.cfg
     retries 3 
     option redispatch
     timeout queue 1m
-    timeout client 30m
-    timeout connect 4s
-    timeout server 30m
+    timeout client 30m # 1h
+    timeout connect 4s # 10s
+    timeout server 30m # 1h
     timeout check 5s
     #option clitcpka # haproxy与client端的keepalive配置
+    #option srvtcpka # haproxy与server端的keepalive配置
+    option tcpka # haproxy与双方都建立长连接
     #clitcpka-cnt 3
     #clitcpka-idle 180
     #clitcpka-intvl 10
@@ -33989,7 +33991,7 @@ listen primary
     balance roundrobin
     option httpchk HEAD /primary
     http-check expect status 200
-    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+    default-server inter 3s fall 2 rise 1 on-marked-down shutdown-sessions
     server DB01 192.168.86.101:5432 maxconn 2000 check port 8008
     server DB02 192.168.86.102:5432 maxconn 2000 check port 8008
     server DB03 192.168.86.103:5432 maxconn 2000 check port 8008
@@ -34003,7 +34005,7 @@ listen replicas
     option httpchk HEAD /replica
     # option tcpka
     http-check expect status 200
-    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+    default-server inter 3s fall 2 rise 1 on-marked-down shutdown-sessions
     server DB01 192.168.86.101:5432 maxconn 2000 check port 8008
     server DB02 192.168.86.102:5432 maxconn 2000 check port 8008
     server DB03 192.168.86.103:5432 maxconn 2000 check port 8008
@@ -34020,7 +34022,7 @@ listen monitor
     # stats auth admin:123456 # haproxy web管理用户名密码，自行设置
     stats refresh 30s
     stats hide-version
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>通过<code>15432</code>始终与主节点建立连接，通过<code>15433</code>始终与备节点建立连接，主节点可读可写，备节点只能读，实现读写分离。检测<code>8008</code>端口由patroni提供。</p>
 <ol start="3">
 <li>启动</li>
