@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,570 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/route-ming-ling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/route-ming-ling/" class="post-title-link" itemprop="url">route命令</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-22 09:00:55" itemprop="dateCreated datePublished" datetime="2020-07-22T09:00:55+08:00">2020-07-22</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="route命令"><a href="#route命令" class="headerlink" title="route命令"></a>route命令</h3><p><code>route</code>命令用来显示并设置<code>Linux</code>内核中的<code>网络路由表</code>，<code>route</code>命令设置的路由主要是<code>静态路由</code>。要实现两个不同的子网之间的通信，需要一台连接两个网络的路由器，或者同时位于两个网络的网关来实现。</p>
+<p>在Linux系统中设置路由通常是为了解决以下问题：</p>
+<ul>
+<li>该Linux系统在一个局域网中，局域网中有一个网关，能够让机器访问Internet，那么就需要将这台机器的ip地址设置为Linux机器的默认路由。</li>
+<li>直接在命令行下执行route命令来添加路由，不会永久保存，当网卡重启或者机器重启之后，该路由就失效了</li>
+<li>可以在<code>/etc/rc.local</code>中添加<code>route</code>命令来保证该路由设置永久有效，这个方法只能在重启电脑的时候生效，重启网络不生效；</li>
+<li>推荐在<code>/etc/sysconfig/static-routes</code>编写路由，重启网络或服务器都能生效；</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh"># vim /etc/sysconfig/static-routes
+# 这个文件默认不存在
+any net 192.168.11.0 gw 192.168.21.1 netmask 255.255.255.0 metric 1 dev eth0
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意，如果本机安装了docker,添加路由后重启网络，会导致docker服务启动添加的路由失效，导致docker服务调用失败，创建新的docker服务会报以下错误,重启docker服务可以解决。<code>systemctl restart docker</code></p>
+</blockquote>
+<pre><code>[root@localhost ~]# docker run -d -p 9000:80 centos:httpd /bin/sh -c /usr/local/bin/start.sh
+d5b2bd5a7bc4895a973fe61efd051847047d26385f65c278aaa09e4fa31c4d76
+docker: Error response from daemon: driver failed programming external connectivity on endpoint quirky_allen (6bda693d1143657e46bee0300276aa05820da2b21a3d89441e820d1a274c48b6): (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 9000 -j DNAT --to-destination 172.17.0.2:80 ! -i docker0: iptables: No chain/target/match by that name.
+(exit status 1)).
+</code></pre>
+<h3 id="route语法"><a href="#route语法" class="headerlink" title="route语法"></a>route语法</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 设置和查看路由表都可以用 route 命令，设置内核路由表的命令格式是：</span>
+route  <span class="token punctuation">[</span>add<span class="token operator">|</span>del<span class="token punctuation">]</span> <span class="token punctuation">[</span>-net<span class="token operator">|</span>-host<span class="token punctuation">]</span> target <span class="token punctuation">[</span>netmask Nm<span class="token punctuation">]</span> <span class="token punctuation">[</span>gw Gw<span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">[</span>dev<span class="token punctuation">]</span> If<span class="token punctuation">]</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol>
+<li>方法</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>add</td>
+<td>增加指定的路由记录；</td>
+</tr>
+<tr>
+<td>del</td>
+<td>删除指定的路由记录；</td>
+</tr>
+<tr>
+<td>target</td>
+<td>目的网络或目的主机；</td>
+</tr>
+<tr>
+<td>gw</td>
+<td>设置默认网关；</td>
+</tr>
+<tr>
+<td>mss</td>
+<td>设置TCP的最大区块长度（MSS），单位MB；</td>
+</tr>
+<tr>
+<td>netmask</td>
+<td>目的地址的网络掩码</td>
+</tr>
+<tr>
+<td>window</td>
+<td>指定通过路由表的TCP连接的TCP窗口大小；</td>
+</tr>
+<tr>
+<td>dev</td>
+<td>路由记录所表示的网络接口。</td>
+</tr>
+</tbody></table>
+<ol start="2">
+<li>选项</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-A</td>
+<td>设置地址类型；</td>
+</tr>
+<tr>
+<td>-C</td>
+<td>打印将Linux核心的路由缓存；</td>
+</tr>
+<tr>
+<td>-v</td>
+<td>详细信息模式；</td>
+</tr>
+<tr>
+<td>-n</td>
+<td>不执行DNS反向查找，直接显示数字形式的IP地址；</td>
+</tr>
+<tr>
+<td>-e</td>
+<td>netstat格式显示路由表；</td>
+</tr>
+<tr>
+<td>-net</td>
+<td>到一个网络的路由表；</td>
+</tr>
+<tr>
+<td>-host</td>
+<td>到一个主机的路由表。</td>
+</tr>
+</tbody></table>
+<ol start="3">
+<li>Flags标志说明</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>flag</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>U</td>
+<td>Up表示此路由当前为启动状态。</td>
+</tr>
+<tr>
+<td>H</td>
+<td>Host，表示此网关为一主机。</td>
+</tr>
+<tr>
+<td>G</td>
+<td>Gateway，表示此网关为一路由器。</td>
+</tr>
+<tr>
+<td>R</td>
+<td>Reinstate Route，使用动态路由重新初始化的路由。</td>
+</tr>
+<tr>
+<td>D</td>
+<td>Dynamically,此路由是动态性地写入。</td>
+</tr>
+<tr>
+<td>M</td>
+<td>Modified，此路由是由路由守护程序或导向器动态修改。</td>
+</tr>
+<tr>
+<td>!</td>
+<td>表示此路由当前为关闭状态。</td>
+</tr>
+</tbody></table>
+<ol start="4">
+<li>route命令输出说明</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>输出列</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Destination</td>
+<td>目标网段或者主机</td>
+</tr>
+<tr>
+<td>Gateway</td>
+<td>网关地址，<code>*</code>表示目标是本主机所属的网络，不需要路由</td>
+</tr>
+<tr>
+<td>Genmask</td>
+<td>网络掩码</td>
+</tr>
+<tr>
+<td>Flags</td>
+<td>标记。</td>
+</tr>
+<tr>
+<td>Metric</td>
+<td>路由距离，到达指定网络所需的中转数</td>
+</tr>
+<tr>
+<td>Ref</td>
+<td>路由项引用次数</td>
+</tr>
+<tr>
+<td>Use</td>
+<td>此路由项被路由软件查找的次数</td>
+</tr>
+<tr>
+<td>Iface</td>
+<td>该路由表项对应的输出接口</td>
+</tr>
+</tbody></table>
+<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 显示当前路由</span>
+<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># route </span>
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         gateway         0.0.0.0         UG    0      0        0 ens33
+link-local      0.0.0.0         255.255.0.0     U     1002   0        0 ens33
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+172.18.0.0      0.0.0.0         255.255.0.0     U     0      0        0 br-caa257c6f76d
+192.168.41.0    0.0.0.0         255.255.255.0   U     0      0        0 ens33
+192.168.122.0   0.0.0.0         255.255.255.0   U     0      0        0 virbr0
+<span class="token punctuation">[</span>root@node1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># route -n</span>
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.41.2    0.0.0.0         UG    0      0        0 ens33
+169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 ens33
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+172.18.0.0      0.0.0.0         255.255.0.0     U     0      0        0 br-caa257c6f76d
+192.168.41.0    0.0.0.0         255.255.255.0   U     0      0        0 ens33
+192.168.122.0   0.0.0.0         255.255.255.0   U     0      0        0 virbr0
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 增加一条到达244.0.0.0的路由。</span>
+route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
+
+<span class="token comment" spellcheck="true"># 添加到主机的路由</span>
+route add -host 192.168.1.2 dev eth0
+<span class="token comment" spellcheck="true"># 添加到10.20.30.148的网关</span>
+route add -host 10.20.30.148 gw 10.20.30.40
+<span class="token comment" spellcheck="true"># 添加10.20.30.40的网络</span>
+route add -net 10.20.30.40 netmask 255.255.255.248 eth0
+<span class="token comment" spellcheck="true"># 网络掩码 255.255.255.0简写</span>
+route add -net 192.168.1.0/24 eth1
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 增加一条屏蔽的路由，目的地址为224.x.x.x将被拒绝。</span>
+route add -net 224.0.0.0 netmask 240.0.0.0 reject
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 删除路由记录</span>
+route del -net 224.0.0.0 netmask 240.0.0.0
+route del -net 224.0.0.0 netmask 240.0.0.0 reject
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 删除和添加设置默认网关</span>
+route del default gw 192.168.120.240
+route add default gw 192.168.120.240
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="设置包转发"><a href="#设置包转发" class="headerlink" title="设置包转发"></a>设置包转发</h3><p>在 <code>CentOS</code> 中默认的内核配置已经包含了路由功能，但默认并没有在系统启动时启用此功能。开启 <code>Linux</code> 的路由功能可以通过调整内核的网络参数来实现。要配置和调整内核参数可以使用 <code>sysctl</code> 命令。例如：要开启 <code>Linux</code> 内核的数据包转发功能可以使用如下的命令。</p>
+<pre class="line-numbers language-bash"><code class="language-bash">sysctl -w net.ipv4.ip_forward<span class="token operator">=</span>1
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>这样设置之后，当前系统就能实现包转发，但下次启动计算机时将失效。为了使在下次启动计算机时仍然有效，需要将下面的行写入配置文件<code>/etc/sysctl.conf</code>。</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># vi /etc/sysctl.conf</span>
+net.ipv4.ip_forward <span class="token operator">=</span> 1
+<span class="token comment" spellcheck="true"># 或者 使用下面的命令</span>
+<span class="token keyword">echo</span> net.ipv4.ip_forward<span class="token operator">=</span>1 <span class="token operator">>></span> /etc/sysctl.conf
+<span class="token comment" spellcheck="true"># 使上面配置生效</span>
+sysctl -p 
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>用户还可以使用如下的命令查看当前系统是否支持包转发。</p>
+<pre class="line-numbers language-bash"><code class="language-bash">sysctl net.ipv4.ip_forward
+
+<span class="token comment" spellcheck="true"># 或者下面命令 输出1 证明已生效</span>
+<span class="token function">cat</span> /proc/sys/net/ipv4/ip_forward
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="iptables-SNAT-x2F-DNAT服务"><a href="#iptables-SNAT-x2F-DNAT服务" class="headerlink" title="iptables SNAT/DNAT服务"></a>iptables SNAT/DNAT服务</h3><ul>
+<li><code>SNAT</code> : <code>source network address translation</code>, 修改网络包源IP</li>
+<li><code>DNAT</code> : <code>destination network address translation</code>, 修改网络包目的IP</li>
+<li>修改源IP目的是这个包还能返回到自己这里，在<code>iptables</code>中，SNAT是在出口<code>POSTROUTING</code>链中发挥作用</li>
+<li>修改目的IP目的是这个包能够发送出去，让包传递下去，在<code>iptables</code>中，DNAT是在入口<code>PREROUTING</code>链中发挥作用,以便让包进入<code>FORWARD</code>表.</li>
+</ul>
+<h3 id="iptables-SNAT-x2F-DNAT服务使用场景"><a href="#iptables-SNAT-x2F-DNAT服务使用场景" class="headerlink" title="iptables SNAT/DNAT服务使用场景"></a>iptables SNAT/DNAT服务使用场景</h3><ul>
+<li>云上虚拟机作为客户端访问外网服务器, <code>SNAT</code>类似于代理的作用, 客户端通过<code>SNAT</code>服务可以访问外网.</li>
+<li>云上虚拟机作为服务端为外网提供服务, <code>DNAT</code>类似于反向代理, 外网请求通过<code>DNAT</code>服务可以将包传到内网服务端.</li>
+</ul>
+<p><img data-src="/images/nat.png" alt="SNAT/DNAT"></p>
+<pre class="line-numbers language-bash"><code class="language-bash">lsmod<span class="token operator">|</span><span class="token function">grep</span> ^ip <span class="token comment" spellcheck="true">#查看nat模块</span>
+<span class="token comment" spellcheck="true"># 载入：modprobe iptable-nat</span>
+<span class="token comment" spellcheck="true"># 开启上网命令</span>
+iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j SNAT --to-source 192.168.1.202
+iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j SNAT --to 192.168.1.202
+
+<span class="token comment" spellcheck="true"># 确认查看</span>
+iptables -t nat -nL
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-zui-da-lian-jie-shu-she-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mysql-zui-da-lian-jie-shu-she-zhi/" class="post-title-link" itemprop="url">mysql最大连接数设置</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-22 08:59:36" itemprop="dateCreated datePublished" datetime="2020-07-22T08:59:36+08:00">2020-07-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="查看"><a href="#查看" class="headerlink" title="查看"></a>查看</h2><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%max_connections%'</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<blockquote>
+<p>数值过小会经常出现<code>ERROR 1040: Too many connections</code>错误</p>
+</blockquote>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">show</span> <span class="token keyword">global</span> <span class="token keyword">status</span> <span class="token operator">like</span> <span class="token string">'Max_used_connections'</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- Threads_connected： 打开的连接数，Threads_running:激活的 正在使用的连接数</span>
+<span class="token keyword">show</span> <span class="token keyword">status</span> <span class="token operator">like</span> <span class="token string">'Threads%'</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">-- 查看最大缓存的连接数量，可以适当增加</span>
+<span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'thread_cache_size'</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="设置"><a href="#设置" class="headerlink" title="设置"></a>设置</h2><ol>
+<li>临时设置</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">set</span> <span class="token keyword">global</span> max_connections<span class="token operator">=</span><span class="token number">1024</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>重启失效.</p>
+<ol start="2">
+<li>永久设置</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 修改mysql配置文件my.cnf，在[mysqld]段中添加或修改max_connections值：</span>
+max_connections<span class="token operator">=</span><span class="token number">512</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>重启生效.</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/java-er-wei-ma-gong-ju-google-zxing-de-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/java-er-wei-ma-gong-ju-google-zxing-de-shi-yong/" class="post-title-link" itemprop="url">java二维码工具google.zxing的使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-10 10:57:45" itemprop="dateCreated datePublished" datetime="2020-07-10T10:57:45+08:00">2020-07-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="引入依赖"><a href="#引入依赖" class="headerlink" title="引入依赖"></a>引入依赖</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>com.google.zxing<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>javase<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>3.3.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="编写工具类"><a href="#编写工具类" class="headerlink" title="编写工具类"></a>编写工具类</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">QRCodeUtil</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 设置二维码长宽</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">int</span> width <span class="token operator">=</span> <span class="token number">400</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">int</span> height <span class="token operator">=</span> <span class="token number">400</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> String format <span class="token operator">=</span> <span class="token string">"png"</span><span class="token punctuation">;</span>
+
+    <span class="token comment" spellcheck="true">// 将文本信息封装到二维码中,并返回图片的Base64编码后的字符串</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">encodeQRCode</span><span class="token punctuation">(</span>String text<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        ByteArrayOutputStream outputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ByteArrayOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        String result <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            Map<span class="token operator">&lt;</span>EncodeHintType<span class="token punctuation">,</span> Object<span class="token operator">></span> hints <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 设置字符集编码</span>
+            hints<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>EncodeHintType<span class="token punctuation">.</span>CHARACTER_SET<span class="token punctuation">,</span> <span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// ErrorCorrectionLevel：误差校正等级，L = ~7% correction、M = ~15% correction、Q = ~25% correction、H = ~30% correction</span>
+            <span class="token comment" spellcheck="true">// 不设置时，默认为 L 等级，等级不一样，生成的图案不同，但扫描的结果是一样的</span>
+            hints<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>EncodeHintType<span class="token punctuation">.</span>ERROR_CORRECTION<span class="token punctuation">,</span> ErrorCorrectionLevel<span class="token punctuation">.</span>M<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 设置二维码边距，单位像素，值越小，二维码距离四周越近</span>
+            hints<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>EncodeHintType<span class="token punctuation">.</span>MARGIN<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 生成二维码矩阵</span>
+            BitMatrix bitMatrix <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MultiFormatWriter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>text<span class="token punctuation">,</span> BarcodeFormat<span class="token punctuation">.</span>QR_CODE<span class="token punctuation">,</span> width<span class="token punctuation">,</span> height<span class="token punctuation">,</span> hints<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 写入文件</span>
+            MatrixToImageWriter<span class="token punctuation">.</span><span class="token function">writeToStream</span><span class="token punctuation">(</span>bitMatrix<span class="token punctuation">,</span> format<span class="token punctuation">,</span> outputStream<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bitMatrix<span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            result <span class="token operator">=</span> <span class="token string">"data:image/png;base64,"</span> <span class="token operator">+</span> Base64<span class="token punctuation">.</span><span class="token function">getEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encodeToString</span><span class="token punctuation">(</span>outputStream<span class="token punctuation">.</span><span class="token function">toByteArray</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                outputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">// 通过base64编码后的图片，解析出二维码中的文本信息</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">decodeQRCode</span><span class="token punctuation">(</span>String base64<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Result result <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        BufferedImage image <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        ByteArrayInputStream inputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ByteArrayInputStream</span><span class="token punctuation">(</span>Base64<span class="token punctuation">.</span><span class="token function">getDecoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>base64<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// 读取图片</span>
+            image <span class="token operator">=</span> ImageIO<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span>inputStream<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 多步解析</span>
+            LuminanceSource source <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BufferedImageLuminanceSource</span><span class="token punctuation">(</span>image<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            Binarizer binarizer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HybridBinarizer</span><span class="token punctuation">(</span>source<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            BinaryBitmap binaryBitmap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BinaryBitmap</span><span class="token punctuation">(</span>binarizer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 设置字符集编码</span>
+            Map<span class="token operator">&lt;</span>DecodeHintType<span class="token punctuation">,</span> String<span class="token operator">></span> hints <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            hints<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>DecodeHintType<span class="token punctuation">.</span>CHARACTER_SET<span class="token punctuation">,</span> <span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 对图像进行解码</span>
+            result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MultiFormatReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>binaryBitmap<span class="token punctuation">,</span> hints<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            image<span class="token punctuation">.</span><span class="token function">getGraphics</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">dispose</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                inputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">.</span><span class="token function">getText</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><pre class="line-numbers language-java"><code class="language-java">    <span class="token comment" spellcheck="true">// 测试准确率还是非常高的</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 生成二维码</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token function">encodeQRCode</span><span class="token punctuation">(</span><span class="token string">"我叫XX勇~~~"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 解码二维码</span>
+        <span class="token comment" spellcheck="true">// 注意：需要去掉data:image/png;base64,</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token function">decodeQRCode</span><span class="token punctuation">(</span><span class="token string">"xxxxxxxxxx.....xxxxxxxx"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -665,541 +1229,10 @@ specCaptcha<span class="token punctuation">.</span><span class="token function">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/shu-zi-hei-dong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/shu-zi-hei-dong/" class="post-title-link" itemprop="url">数字黑洞495,6174...</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-02 15:59:21" itemprop="dateCreated datePublished" datetime="2020-07-02T15:59:21+08:00">2020-07-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>1955年，卡普耶卡(D.R.Kaprekar)研究了对四位数的一种变换：任给出四位数k0,用它的四个数字由大到小重新排列成一个四位数m,再减去它的反序数rev(m),得出数k1=m-rev(m),然后，继续对k1重复上述变换，得数k2.如此进行下去，卡普耶卡发现，无论k0是多大的四位数，只要四个数字不全相同，最多进行7次上述变换，就会出现四位数6174。因此这项研究在国际数学界又被称为“马丁猜想—6174问题”。</p>
-</blockquote>
-<h3 id="有趣的数字6174"><a href="#有趣的数字6174" class="headerlink" title="有趣的数字6174"></a>有趣的数字6174</h3><ul>
-<li>随机生成四个不完全一样的数字(<code>0000</code>,<code>1111</code>,<code>2222</code>,等排除);</li>
-<li>四个数字组成一个<code>最大的数</code> 和 一个<code>最小的数</code>,如<code>2,5,7,3</code>组成的最大的数<code>7532</code>,最小的数<code>2357</code>;</li>
-<li>最大的数 <code>-</code> 最小的数，如果不等于<code>6174</code>，就按照上一步将差值重新组成一个<code>最大的数</code> 和 一个<code>最小的数</code>;</li>
-<li>最后一定有一次能得到差值为<code>6174</code>.俗称<code>数字黑洞</code>.</li>
-</ul>
-<h3 id="JAVA实现"><a href="#JAVA实现" class="headerlink" title="JAVA实现"></a>JAVA实现</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Test6174</span> <span class="token punctuation">{</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
-        <span class="token comment" spellcheck="true">// 无线循环测试</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            <span class="token comment" spellcheck="true">// 随机生成四个数字，考虑到出现四个一样的概率非常低 没有处理</span>
-            List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> meta <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">4</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                meta<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token punctuation">}</span>
-            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"原始数字:"</span> <span class="token operator">+</span> meta<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">int</span> result <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-            <span class="token keyword">while</span> <span class="token punctuation">(</span>result <span class="token operator">!=</span> <span class="token number">6174</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                <span class="token comment" spellcheck="true">// 获取四个数字组合的最大的数 和 最小的数</span>
-                <span class="token keyword">int</span> max <span class="token operator">=</span> <span class="token function">getMax</span><span class="token punctuation">(</span>meta<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                <span class="token keyword">int</span> min <span class="token operator">=</span> <span class="token function">getMin</span><span class="token punctuation">(</span>meta<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                result <span class="token operator">=</span> Math<span class="token punctuation">.</span><span class="token function">abs</span><span class="token punctuation">(</span>max <span class="token operator">-</span> min<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                count<span class="token operator">++</span><span class="token punctuation">;</span>
-                <span class="token comment" spellcheck="true">// 数字为啥是6174？</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>result <span class="token operator">==</span> <span class="token number">6174</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">",次数:"</span> <span class="token operator">+</span> count<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                <span class="token punctuation">}</span>
-                meta <span class="token operator">=</span> <span class="token function">getMeta</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token punctuation">}</span>
-            Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">getMax</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> meta<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> tmp <span class="token operator">=</span> meta<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sorted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">1000</span> <span class="token operator">+</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">100</span> <span class="token operator">+</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">10</span> <span class="token operator">+</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">getMin</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> meta<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> tmp <span class="token operator">=</span> meta<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sorted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">10</span> <span class="token operator">+</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">100</span> <span class="token operator">+</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">1000</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> <span class="token function">getMeta</span><span class="token punctuation">(</span><span class="token keyword">int</span> num<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> tmp <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        tmp<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>num <span class="token operator">/</span> <span class="token number">1000</span> <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        tmp<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>num <span class="token operator">/</span> <span class="token number">100</span> <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        tmp<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>num <span class="token operator">/</span> <span class="token number">10</span> <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        tmp<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>num <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> tmp<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="同样的黑洞数字还有很多哦"><a href="#同样的黑洞数字还有很多哦" class="headerlink" title="同样的黑洞数字还有很多哦"></a>同样的黑洞数字还有很多哦</h3><p>不如写个程序来找出不同位数的黑洞数字吧</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestN</span> <span class="token punctuation">{</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
-        <span class="token comment" spellcheck="true">// 输入几位数就是找几位数的黑洞数字</span>
-        <span class="token keyword">int</span> digits <span class="token operator">=</span> <span class="token number">5</span><span class="token punctuation">;</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> meta <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> digits<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            meta<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">getMax</span><span class="token punctuation">(</span>meta<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token function">getMin</span><span class="token punctuation">(</span>meta<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"数字完全一样,不符合要求"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            System<span class="token punctuation">.</span><span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"原始数字:"</span> <span class="token operator">+</span> meta<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> result <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            <span class="token keyword">int</span> max <span class="token operator">=</span> <span class="token function">getMax</span><span class="token punctuation">(</span>meta<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">int</span> min <span class="token operator">=</span> <span class="token function">getMin</span><span class="token punctuation">(</span>meta<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            result <span class="token operator">=</span> Math<span class="token punctuation">.</span><span class="token function">abs</span><span class="token punctuation">(</span>max <span class="token operator">-</span> min<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            meta <span class="token operator">=</span> <span class="token function">getMeta</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> digits<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token comment" spellcheck="true">// 获取数字组合的最大数</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">getMax</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> meta<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> tmp <span class="token operator">=</span> meta<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sorted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">double</span> result <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> tmp<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            result <span class="token operator">=</span> result <span class="token operator">+</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token punctuation">(</span>Math<span class="token punctuation">.</span><span class="token function">pow</span><span class="token punctuation">(</span><span class="token number">10.0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">double</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> result<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token comment" spellcheck="true">// 获取数字组合的最小数</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">getMin</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> meta<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> tmp <span class="token operator">=</span> meta<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sorted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">double</span> result <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> tmp<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            result <span class="token operator">=</span> result <span class="token operator">+</span> tmp<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token punctuation">(</span>Math<span class="token punctuation">.</span><span class="token function">pow</span><span class="token punctuation">(</span><span class="token number">10.0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">double</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>tmp<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> result<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token comment" spellcheck="true">// 获取数的各位数</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> <span class="token function">getMeta</span><span class="token punctuation">(</span><span class="token keyword">int</span> num<span class="token punctuation">,</span> <span class="token keyword">int</span> c<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> tmp <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> c<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            tmp<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>num <span class="token operator">/</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> Math<span class="token punctuation">.</span><span class="token function">pow</span><span class="token punctuation">(</span><span class="token number">10.0</span><span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">return</span> tmp<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>如上程序测试运行：</p>
-<table>
-<thead>
-<tr>
-<th><code>digits</code>(位数)</th>
-<th>黑洞数(个)</th>
-<th>结果</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>1</code></td>
-<td><code>-</code></td>
-<td><code>-</code></td>
-</tr>
-<tr>
-<td><code>2</code></td>
-<td><code>5</code></td>
-<td><code>9,81,63,27,45</code></td>
-</tr>
-<tr>
-<td><code>3</code></td>
-<td><code>1</code></td>
-<td><code>495</code></td>
-</tr>
-<tr>
-<td><code>4</code></td>
-<td><code>1</code></td>
-<td><code>6174</code></td>
-</tr>
-<tr>
-<td><code>5</code></td>
-<td><code>4</code></td>
-<td><code>71973,83952,74943,62964</code></td>
-</tr>
-<tr>
-<td><code>6</code></td>
-<td><code>7</code></td>
-<td><code>840852,860832,862632,642654,...</code></td>
-</tr>
-<tr>
-<td><code>7</code></td>
-<td><code>8</code></td>
-<td><code>9529641,8719722,8649432,7519743,...</code></td>
-</tr>
-<tr>
-<td><code>8</code></td>
-<td><code>3</code></td>
-<td><code>64308654,83208762,86526432</code></td>
-</tr>
-<tr>
-<td><code>9</code></td>
-<td><code>14</code></td>
-<td><code>954197541,883098612,976494321,...</code></td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-dns-jie-xi-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-dns-jie-xi-wen-ti/" class="post-title-link" itemprop="url">k8s【coredns解析问题】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-02 10:31:47" itemprop="dateCreated datePublished" datetime="2020-07-02T10:31:47+08:00">2020-07-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master busybox<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod -nkube-system -owide</span>
-NAME                             READY   STATUS    RESTARTS   AGE     IP               NODE     NOMINATED NODE   READINESS GATES
-coredns-5c98db65d4-8zjps         1/1     Running   1          2d23h   10.244.0.13      master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
-coredns-5c98db65d4-d2kth         1/1     Running   1          2d23h   10.244.0.14      master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master busybox<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get pod -owide</span>
-NAME                      READY   STATUS    RESTARTS   AGE    IP            NODE     NOMINATED NODE   READINESS GATES
-curl-6bf6db5c4f-pjld9     1/1     Running   1          3d     10.244.1.2    node2    <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
-gateway-99b655cc6-np685   1/1     Running   0          44s    10.244.0.54   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
-test-post-start1          1/1     Running   0          115s   10.244.1.6    node2    <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
-test-post-start2          1/1     Running   0          115s   10.244.0.52   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
-test-post-start3          1/1     Running   0          115s   10.244.0.53   master   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>如上所示，出现部署在<code>master</code>节点上的<code>pod</code>，无法解析<code>gateway.default.svc.cluster.local</code>域名，但是部署在<code>node2</code>，确可以解析，如上<code>curl-6bf6db5c4f-pjld9</code>,<code>test-post-start1</code>通过<code>nslookup</code>都可以解析.</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 报错</span>
-/ <span class="token comment" spellcheck="true"># nslookup gateway</span>
-nslookup: can<span class="token string">'t resolve '</span><span class="token punctuation">(</span>null<span class="token punctuation">)</span><span class="token string">': Name does not resolve
-
-nslookup: can'</span>t resolve <span class="token string">'gateway'</span><span class="token keyword">:</span> Try again
-
-/ <span class="token comment" spellcheck="true"># nslookup gateway.default.svc.cluster.local</span>
-Server:    10.244.0.10
-Address 1: 10.244.0.10
-
-nslookup: can<span class="token string">'t resolve '</span>gateway.default.svc.cluster.local'
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>进入<code>master</code>节点<code>pod</code>，直接通过<code>coredns pod ip</code>解析测试</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl <span class="token function">exec</span> -it test-post-start2 sh
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash">/ <span class="token comment" spellcheck="true"># nslookup gateway.default.svc.cluster.local 10.244.0.13</span>
-Server:    10.244.0.13
-Address 1: 10.244.0.13 10-244-0-13.kube-dns.kube-system.svc.cluster.local
-
-Name:      gateway.default.svc.cluster.local
-Address 1: 10.244.106.29 gateway.default.svc.cluster.local
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>发现直接通过<code>coredns pod ip</code>解析可以成功，证明<code>coredns</code>服务本身没有问题.</p>
-<p>查看<code>dns clusterIP</code>.</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc -nkube-system</span>
-NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>                  AGE
-kube-dns        ClusterIP   10.244.0.10    <span class="token operator">&lt;</span>none<span class="token operator">></span>        53/UDP,53/TCP,9153/TCP   21m
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 通过clusterIP解析域名失败</span>
-<span class="token function">nslookup</span> gateway.default.svc.cluster.local 10.244.0.10
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>通过以上测试证明问题出现在<code>coredns service</code>上.</p>
-<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><p>导出现有<code>kube-dns service</code>配置</p>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl get svc -nkube-system kube-dns -oyaml <span class="token operator">></span> kube-dns-svc.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>修改<code>kube-dns-svc.yaml</code>.</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
-    <span class="token key atrule">prometheus.io/port</span><span class="token punctuation">:</span> <span class="token string">"9153"</span>
-    <span class="token key atrule">prometheus.io/scrape</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
-  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
-    <span class="token key atrule">k8s-app</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns
-    <span class="token key atrule">kubernetes.io/cluster-service</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
-    <span class="token key atrule">kubernetes.io/name</span><span class="token punctuation">:</span> KubeDNS
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>system
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> dns
-    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">53</span>
-    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> UDP
-    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">53</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> dns<span class="token punctuation">-</span>tcp
-    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">53</span>
-    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">53</span>
-  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> metrics
-    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9153</span>
-    <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
-    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">9153</span>
-  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
-    <span class="token key atrule">k8s-app</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>dns
-  <span class="token key atrule">sessionAffinity</span><span class="token punctuation">:</span> None
-  <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f kube-dns-svc.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>查看最新的<code>coredns clusterIP</code>,当前为<code>10.244.47.231</code>.</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@master ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># kubectl get svc -nkube-system</span>
-NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>                  AGE
-kube-dns        ClusterIP   10.244.47.231    <span class="token operator">&lt;</span>none<span class="token operator">></span>        53/UDP,53/TCP,9153/TCP   21m
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>进去之前无法解析的<code>pod</code>中测试，证明新的<code>clusterIP</code>没有问题.</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">nslookup</span> gateway.default.svc.cluster.local 10.244.47.231
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>修改<code>kubelet --clusterDNS</code>,这样新创建的<code>pod /etc/resolv.conf</code>中<code>nameserver</code>为新的<code>coredns clusterIP</code>.</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改kubelet配置</span>
-vim  /var/lib/kubelet/config.yaml
-
-<span class="token comment" spellcheck="true"># 找到clusterDNS</span>
-clusterDNS:
-- 10.244.47.231
-
-<span class="token comment" spellcheck="true"># 重启kubelet生效,注意k8s中所有节点都需要修改重启</span>
-systemctl restart kubelet.service
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>最后测试，新的<code>pod</code>中<code>/etc/resolv.conf</code>.解析没有问题.</p>
-<pre class="line-numbers language-bash"><code class="language-bash">/ <span class="token comment" spellcheck="true"># cat /etc/resolv.conf </span>
-nameserver 10.244.47.231
-search default.svc.cluster.local svc.cluster.local cluster.local
-options ndots:5
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-nei-cun-you-hua/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/influxdb-nei-cun-you-hua/" class="post-title-link" itemprop="url">influxDB内存优化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-30 14:58:54" itemprop="dateCreated datePublished" datetime="2020-06-30T14:58:54+08:00">2020-06-30</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="查询series-cardinality命令"><a href="#查询series-cardinality命令" class="headerlink" title="查询series cardinality命令"></a>查询<code>series cardinality</code>命令</h3><ul>
-<li>InfluxDB官网说明：<a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/troubleshooting/frequently-asked-questions/#why-does-series-cardinality-matter">Why does series cardinality matter?</a></li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java">InfluxDB maintains an in<span class="token operator">-</span>memory index of every series in the system<span class="token punctuation">.</span> As the number of unique series grows<span class="token punctuation">,</span> so does the RAM usage<span class="token punctuation">.</span> High series cardinality can lead to the operating system killing the InfluxDB process with an out of <span class="token function">memory</span> <span class="token punctuation">(</span>OOM<span class="token punctuation">)</span> exception<span class="token punctuation">.</span> See SHOW CARDINALITY to learn about the InfluxSQL commands <span class="token keyword">for</span> series cardinality<span class="token punctuation">.</span>
-
-<span class="token comment" spellcheck="true">// 翻译</span>
-InfluxDB会在系统上为每个series维护一个内存索引，而随着这些series的增加，RAM内存使用率也会增加。如果series cardinality如果太高，就会导致操作系统触发OOMKiller机制，将Influxdb进程KILL掉<span class="token punctuation">.</span> 使用 SHOW CARDINALITY 命令可以查看到 series cardinality。
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/query_language/spec/#show-cardinality">SHOW CARDINALITY命令</a></li>
-</ul>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- show estimated cardinality of the series on current database</span>
-<span class="token keyword">SHOW</span> SERIES CARDINALITY
-<span class="token comment" spellcheck="true">-- show estimated cardinality of the series on specified database</span>
-<span class="token keyword">SHOW</span> SERIES CARDINALITY <span class="token keyword">ON</span> mydb
-<span class="token comment" spellcheck="true">-- show exact series cardinality</span>
-<span class="token keyword">SHOW</span> SERIES EXACT CARDINALITY
-<span class="token comment" spellcheck="true">-- show series cardinality of the series on specified database</span>
-<span class="token keyword">SHOW</span> SERIES EXACT CARDINALITY <span class="token keyword">ON</span> mydb
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/troubleshooting/frequently-asked-questions/#how-can-i-remove-series-from-the-index">How can I remove series from the index?</a></li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java">To reduce series cardinality<span class="token punctuation">,</span> series must be dropped from the index<span class="token punctuation">.</span> DROP DATABASE<span class="token punctuation">,</span> DROP MEASUREMENT<span class="token punctuation">,</span> and DROP SERIES will all remove series from the index and reduce the overall series cardinality<span class="token punctuation">.</span>
-
-<span class="token comment" spellcheck="true">//大意</span>
-要减少或者删除series cardinality<span class="token punctuation">,</span> 需要删除库<span class="token operator">/</span>表<span class="token operator">/</span>series
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="将series由保存到内存改为保存到TSI文件"><a href="#将series由保存到内存改为保存到TSI文件" class="headerlink" title="将series由保存到内存改为保存到TSI文件"></a>将series由保存到内存改为保存到TSI文件</h3><h4 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h4><ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/config/#index-version-inmem">官网influxdb详细配置说明</a></li>
-</ul>
-<p>这里我们需要修改的配置是<code>index-version</code>项,可以在<code>influxdb.conf</code>中<code>[data]</code>下修改，也可以通过环境变量<code>INFLUXDB_DATA_INDEX_VERSION</code>修改.</p>
-<pre class="line-numbers language-conf"><code class="language-conf">[data]
-  # The type of shard index to use for new shards.  The default is an in-memory index that is
-  # recreated at startup.  A value of "tsi1" will use a disk based index that supports higher
-  # cardinality datasets.
-  # 这个配置项默认值inmem,可以取消注释修改为tsi1，那么后续的index将会保存在TSI文件中了.重启生效.
-  # index-version = "inmem"
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/config/#settings-for-the-tsm-engine">其它关于内存的配置</a></li>
-</ul>
-<h4 id="重构TSI索引"><a href="#重构TSI索引" class="headerlink" title="重构TSI索引"></a>重构TSI索引</h4><ul>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/tools/influx_inspect#influx-inspect-utility">influx_inspect buildtsi命令</a></li>
-<li><a target="_blank" rel="noopener" href="https://docs.influxdata.com/influxdb/v1.7/administration/rebuild-tsi-index/">Rebuild the TSI index</a></li>
-</ul>
-<ol>
-<li>停止<code>InfluxDB</code>服务</li>
-<li>删除所有<code>_series</code>文件夹<br>默认情况下,<code>_series</code>保存在<code>/data/&lt;dbName&gt;/_series</code>,检查并删除<code>/data</code>目录下所有<code>_series</code></li>
-<li>删除所有<code>index</code>文件夹<br>默认情况下,<code>index</code>文件夹在<code>/data/&lt;dbName/&lt;rpName&gt;/&lt;shardID&gt;/index</code></li>
-<li>使用<code>influx_inspect</code>重构<code>TSI index</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 格式</span>
-influx_inspect buildtsi -datadir <span class="token operator">&lt;</span>data_dir<span class="token operator">></span> -waldir <span class="token operator">&lt;</span>wal_dir<span class="token operator">></span>
-<span class="token comment" spellcheck="true"># 示例</span>
-influx_inspect buildtsi -datadir /data -waldir /wal
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>启动<code>influxDB</code>服务</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/35/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><span class="page-number current">36</span><a class="page-number" href="/page/37/">37</a><span class="space">&hellip;</span><a class="page-number" href="/page/63/">63</a><a class="extend next" rel="next" href="/page/37/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/35/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><span class="page-number current">36</span><a class="page-number" href="/page/37/">37</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/37/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1267,7 +1300,7 @@ influx_inspect buildtsi -datadir /data -waldir /wal
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">377</span>
+          <span class="site-state-item-count">380</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1280,7 +1313,7 @@ influx_inspect buildtsi -datadir /data -waldir /wal
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">235</span>
+        <span class="site-state-item-count">236</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

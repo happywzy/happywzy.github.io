@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,506 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-shu-ju-ban-ben/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/hbase-shu-ju-ban-ben/" class="post-title-link" itemprop="url">hbase数据版本</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-14 11:39:27" itemprop="dateCreated datePublished" datetime="2020-04-14T11:39:27+08:00">2020-04-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="Hbase版本数量"><a href="#Hbase版本数量" class="headerlink" title="Hbase版本数量"></a>Hbase版本数量</h3><p>Hbase版本数量分为<code>最大版本数量</code>和<code>最小版本数量</code>：</p>
+<ul>
+<li><strong>HBase最大版本数量</strong>:HBase 通过 HColumnDescriptor 为每个列族配置要存储的最大行数版本。最大版本的默认值为1。最大版本的数量可能需要根据应用程序需求增加或减少。不建议将最高版本数设置为极高的级别（例如，数百个或更多）。</li>
+<li><strong>HBase最小版本数量</strong>：与最大行版本数一样，HBase 通过 HColumnDescriptor 为每个列族配置要保留的最小行数版本。最小版本的默认值为0，这意味着该功能被禁用。行版本参数的最小数目与<code>生存时间</code>参数一起使用，并且可以与行版本参数的数目组合在一起，以允许诸如“保留最多T分钟值的数据，最多N个版本，但是至少保留 M 个版本 “（其中M 是最小行版本数的值，<code>M &lt; N</code> ）。仅当对列族启用了生存时间并且必须小于行版本的数量时，才应设置此参数。</li>
+</ul>
+<h3 id="HBase-生存时间（TTL）"><a href="#HBase-生存时间（TTL）" class="headerlink" title="HBase 生存时间（TTL）"></a>HBase 生存时间（TTL）</h3><ul>
+<li>ColumnFamilies 可以以<code>秒</code>为单位来设置 TTL（<code>Time To Live</code>）长度，一旦达到到期时间，HBase 将自动删除行。</li>
+<li>也支持设置时间以每个单元为基础生存。</li>
+<li>单元 TTL 以毫秒为单位而不是秒。</li>
+<li>单元 TTL 不能将一个单元的有效生命周期延长超过 ColumnFamily 级 TTL 设置。</li>
+</ul>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>默认<code>Hbase</code>列族最多保存一个版本的数据，可以通过下面命令修改,也可以使用<code>HColumnDescriptor</code>：</p>
+<pre class="line-numbers language-sh"><code class="language-sh">alter 'test', NAME => 'cf', VERSIONS => 3
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>创建表的时候指定版本数量:</p>
+<pre class="line-numbers language-sh"><code class="language-sh">hbase(main):018:0> create 'test',{NAME=>'base_info',VERSIONS=>3 },{NAME=>'extra_info',VERSIONS=>1 } 
+0 row(s) in 4.2670 seconds
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>更多详细的用法可以参考<code>help 'create'</code>:</p>
+<pre class="line-numbers language-sh"><code class="language-sh">hbase(main):016:0> help 'create'
+Creates a table. Pass a table name, and a set of column family
+specifications (at least one), and, optionally, table configuration.
+Column specification can be a simple string (name), or a dictionary
+(dictionaries are described below in main help output), necessarily
+including NAME attribute.
+Examples:
+
+Create a table with namespace=ns1 and table qualifier=t1
+  hbase> create 'ns1:t1', {NAME => 'f1', VERSIONS => 5}
+
+Create a table with namespace=default and table qualifier=t1
+  hbase> create 't1', {NAME => 'f1'}, {NAME => 'f2'}, {NAME => 'f3'}
+  hbase> # The above in shorthand would be the following:
+  hbase> create 't1', 'f1', 'f2', 'f3'
+  hbase> create 't1', {NAME => 'f1', VERSIONS => 1, TTL => 2592000, BLOCKCACHE => true}
+  hbase> create 't1', {NAME => 'f1', CONFIGURATION => {'hbase.hstore.blockingStoreFiles' => '10'}}
+  hbase> create 't1', {NAME => 'f1', IS_MOB => true, MOB_THRESHOLD => 1000000, MOB_COMPACT_PARTITION_POLICY => 'weekly'}
+
+Table configuration options can be put at the end.
+Examples:
+
+  hbase> create 'ns1:t1', 'f1', SPLITS => ['10', '20', '30', '40']
+  hbase> create 't1', 'f1', SPLITS => ['10', '20', '30', '40']
+  hbase> create 't1', 'f1', SPLITS_FILE => 'splits.txt', OWNER => 'johndoe'
+  hbase> create 't1', {NAME => 'f1', VERSIONS => 5}, METADATA => { 'mykey' => 'myvalue' }
+  hbase> # Optionally pre-split the table into NUMREGIONS, using
+  hbase> # SPLITALGO ("HexStringSplit", "UniformSplit" or classname)
+  hbase> create 't1', 'f1', {NUMREGIONS => 15, SPLITALGO => 'HexStringSplit'}
+  hbase> create 't1', 'f1', {NUMREGIONS => 15, SPLITALGO => 'HexStringSplit', REGION_REPLICATION => 2, CONFIGURATION => {'hbase.hregion.scan.loadColumnFamiliesOnDemand' => 'true'}}
+  hbase> create 't1', 'f1', {SPLIT_ENABLED => false, MERGE_ENABLED => false}
+  hbase> create 't1', {NAME => 'f1', DFS_REPLICATION => 1}
+
+You can also keep around a reference to the created table:
+
+  hbase> t1 = create 't1', 'f1'
+
+Which gives you a reference to the table named 't1', on which you can then
+call methods.
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-mo-ren-duan-kou-shuo-ming/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/hbase-mo-ren-duan-kou-shuo-ming/" class="post-title-link" itemprop="url">hbase默认端口说明</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-13 11:07:13" itemprop="dateCreated datePublished" datetime="2020-04-13T11:07:13+08:00">2020-04-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <table>
+   <tbody><tr>
+      <td>节点</td>
+      <td>端口号</td>
+      <td>协议</td>
+      <td>使用</td>
+      <td>说明</td>
+   </tr>
+   <tr>
+      <td rowspan="3">zookeeper</td>
+      <td>2181</td>
+      <td></td>
+      <td>zkCli.sh -server zookeeper1:2181</td>
+      <td>客户端接入</td>
+   </tr>
+   <tr>
+      <td>2888</td>
+      <td></td>
+      <td>N/A</td>
+      <td>集群内部通讯</td>
+   </tr>
+      <tr>
+      <td>3888</td>
+      <td></td>
+      <td>N/A</td>
+      <td>集群内部通讯</td>
+   </tr>
+   <tr>
+      <td rowspan="2">HDFS Namenode</td>
+      <td>9000</td>
+      <td>HDFS</td>
+      <td>hdfs dfs -ls hdfs://namenode1:9000/</td>
+      <td>客户端接入</td>
+   </tr>
+   <tr>
+      <td>50070</td>
+      <td>HTTP</td>
+      <td>http://namenode1:50070/</td>
+      <td>集群监控</td>
+   </tr>
+   <tr>
+      <td>HDFS SecondaryNamenode</td>
+      <td>50090</td>
+      <td>HTTP</td>
+      <td>http://namenode1:50090/</td>
+      <td>secondary监控</td>
+   </tr>
+   <tr>
+      <td rowspan="3">HDFS Datanode</td>
+      <td>50010</td>
+      <td></td>
+      <td>N/A</td>
+      <td>客户端接入/其他节点接入</td>
+   </tr>
+   <tr>
+      <td>50020</td>
+      <td></td>
+      <td>N/A</td>
+      <td></td>
+   </tr>
+   <tr>
+      <td>50075</td>
+      <td>HTTP</td>
+      <td>http://datanode1:50075/</td>
+      <td>节点监控</td>
+   </tr>
+   <tr>
+      <td rowspan="2">HBase Master</td>
+      <td>16000</td>
+      <td></td>
+      <td>hbase-client-1.x.x.jar</td>
+      <td>RegionServer接入</td>
+   </tr>
+   <tr>
+      <td>16010</td>
+      <td>HTTP</td>
+      <td>http://namenode1:16010/</td>
+      <td>集群监控</td>
+   </tr>
+   <tr>
+      <td rowspan="2">HBase RegionServer</td>
+      <td>16020</td>
+      <td></td>
+      <td>N/A</td>
+      <td>客户端接入</td>
+   </tr>
+   <tr>
+      <td>16030</td>
+      <td>HTTP</td>
+      <td>http://datanode1:16030/</td>
+      <td>节点监控</td>
+   </tr>
+</tbody></table>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-mo-ren-pei-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/hbase-mo-ren-pei-zhi/" class="post-title-link" itemprop="url">HBase默认配置</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-13 10:34:01" itemprop="dateCreated datePublished" datetime="2020-04-13T10:34:01+08:00">2020-04-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><code>hbase-default.xml</code>默认配置中<strong>常用的</strong>的配置项：</p>
+<table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>说明</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>hbase.tmp.dir</code></td>
+<td>本地文件系统上的临时目录。将此设置更改为指向比“/tmp”更持久的位置，因为在重新启动计算机时清除了“/tmp”目录。</td>
+<td><code>${java.io.tmpdir}/hbase-${user.name}</code></td>
+</tr>
+<tr>
+<td><code>hbase.rootdir</code></td>
+<td>这个目录是region servers共享的目录。</td>
+<td><code>${hbase.tmp.dir}/hbase</code></td>
+</tr>
+<tr>
+<td><code>hbase.cluster.distributed</code></td>
+<td>群集所处的模式。对于独立模式，可能的值为false，对于分布式模式，可能的值为true。</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>hbase.zookeeper.quorum</code></td>
+<td>使用逗号分隔的ZooKeeper集合中的服务器列表</td>
+<td><code>localhost</code></td>
+</tr>
+<tr>
+<td><code>zookeeper.recovery.retry.maxsleeptime</code></td>
+<td>在重试 zookeeper操作之前的最大睡眠时间（以毫秒为单位）</td>
+<td><code>60000</code></td>
+</tr>
+<tr>
+<td><code>hbase.local.dir</code></td>
+<td>将本地文件系统上的目录用作本地存储。</td>
+<td><code>${hbase.tmp.dir}/local/</code></td>
+</tr>
+<tr>
+<td><code>hbase.master.port</code></td>
+<td>HBase Master应该绑定的端口。</td>
+<td><code>16000</code></td>
+</tr>
+<tr>
+<td><code>hbase.master.info.port</code></td>
+<td>HBase Master Web UI的端口。如果您不想运行UI实例，请将其设置为-1。</td>
+<td><code>16010</code></td>
+</tr>
+<tr>
+<td><code>hbase.master.info.bindAddress</code></td>
+<td>HBase Master Web UI的绑定地址</td>
+<td><code>0.0.0.0</code></td>
+</tr>
+<tr>
+<td><code>hbase.master.logcleaner.ttl</code></td>
+<td>WAL在归档（{hbase.rootdir} / oldWALs）目录中保留多久，之后将由主线程清除。该值以毫秒为单位。</td>
+<td><code>600000</code></td>
+</tr>
+<tr>
+<td><code>hbase.master.procedurewalcleaner.ttl</code></td>
+<td>程序WAL将在归档目录中保留多久，之后将由主线程清除。该值以毫秒为单位。</td>
+<td><code>604800000</code></td>
+</tr>
+<tr>
+<td><code>hbase.master.fileSplitTimeout</code></td>
+<td>分割一个区域，在放弃尝试之前等待文件分割步骤需要多长时间。</td>
+<td><code>600000</code></td>
+</tr>
+<tr>
+<td><code>hbase.regionserver.port</code></td>
+<td>HBase RegionServer绑定的端口。</td>
+<td><code>16020</code></td>
+</tr>
+<tr>
+<td><code>hbase.regionserver.info.port</code></td>
+<td>HBase RegionServer Web UI的端口如果您不希望RegionServer UI运行，请将其设置为-1。</td>
+<td><code>16030</code></td>
+</tr>
+<tr>
+<td><code>hbase.regionserver.info.bindAddress</code></td>
+<td>HBase RegionServer Web UI的地址</td>
+<td><code>0.0.0.0</code></td>
+</tr>
+<tr>
+<td><code>hbase.regionserver.msginterval</code></td>
+<td>从RegionServer到Master的消息间隔（以毫秒为单位）。</td>
+<td><code>3000</code></td>
+</tr>
+<tr>
+<td><code>hbase.regionserver.regionSplitLimit</code></td>
+<td>限制区域数量，之后不再发生区域分割。这并不是硬性限制区域数量，而是作为区域服务商在一定限度之后停止分裂的指导方针。默认设置为1000。</td>
+<td><code>1000</code></td>
+</tr>
+<tr>
+<td><code>zookeeper.session.timeout</code></td>
+<td>ZooKeeper会话超时（以毫秒为单位）。它使用两种不同的方式。首先，这个值用于HBase用来连接到集合的ZK客户端。当它启动一个ZK服务器时它也被HBase使用</td>
+<td><code>90000</code></td>
+</tr>
+<tr>
+<td><code>zookeeper.znode.parent</code></td>
+<td>ZooKeeper中用于HBase的Root ZNode。所有配置了相对路径的HBase的ZooKeeper文件都会在这个节点下。</td>
+<td><code>/hbase</code></td>
+</tr>
+<tr>
+<td><code>zookeeper.znode.acl.parent</code></td>
+<td>Root ZNode用于访问控制列表。</td>
+<td><code>acl</code></td>
+</tr>
+<tr>
+<td><code>hbase.zookeeper.dns.interface</code></td>
+<td>ZooKeeper服务器应从中报告其IP地址的网络接口的名称。</td>
+<td><code>default</code></td>
+</tr>
+<tr>
+<td><code>hbase.zookeeper.peerport</code></td>
+<td>ZooKeeper同伴使用的端口进行彼此会话。</td>
+<td><code>2888</code></td>
+</tr>
+<tr>
+<td><code>hbase.zookeeper.leaderport</code></td>
+<td>ZooKeeper用于leader选举的端口。</td>
+<td><code>3888</code></td>
+</tr>
+<tr>
+<td><code>hbase.zookeeper.property.dataDir</code></td>
+<td>来自ZooKeeper的配置zoo.cfg的属性。快照存储的目录。</td>
+<td><code>${hbase.tmp.dir}/zookeeper</code></td>
+</tr>
+<tr>
+<td><code>hbase.zookeeper.property.clientPort</code></td>
+<td>来自ZooKeeper的配置zoo.cfg的属性。客户端将连接的端口。</td>
+<td><code>2181</code></td>
+</tr>
+<tr>
+<td><code>hbase.zookeeper.property.maxClientCnxns</code></td>
+<td>来自ZooKeeper的配置zoo.cfg的属性。限制由IP地址标识的单个客户端的并发连接数量</td>
+<td><code>300</code></td>
+</tr>
+<tr>
+<td><code>hbase.column.max.version</code></td>
+<td>新的列族描述符将使用此值作为要保留的默认版本数。</td>
+<td><code>1</code></td>
+</tr>
+</tbody></table>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://hbase.apache.org/book.html#config.files">官网</a></li>
+<li><a target="_blank" rel="noopener" href="http://hbase.apache.org/book.html#example_config">官网示例</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.imooc.com/hbase/defaultconfiguration.html">慕课网中文翻译</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.imooc.com/hbase/configurationexample.html">慕课网中文翻译示例</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -724,313 +1224,10 @@ Truncating 'test' table (it may take a while):
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ce-shi-wen-zhang-jia-mi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/ce-shi-wen-zhang-jia-mi/" class="post-title-link" itemprop="url">测试文章加密，密码123456</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-07 14:58:03" itemprop="dateCreated datePublished" datetime="2020-04-07T14:58:03+08:00">2020-04-07</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/test/" itemprop="url" rel="index"><span itemprop="name">test</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          Here's something encrypted, password is required to continue reading.
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/ce-shi-wen-zhang-jia-mi/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql-biao-jie-gou-cha-xun/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql-biao-jie-gou-cha-xun/" class="post-title-link" itemprop="url">mysql表结构查询</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-02 11:02:01" itemprop="dateCreated datePublished" datetime="2020-04-02T11:02:01+08:00">2020-04-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="方法1"><a href="#方法1" class="headerlink" title="方法1"></a>方法1</h3><p>这种方法能够查询到一些表信息，但是不够详细</p>
-<pre class="line-numbers language-java"><code class="language-java">PreparedStatement pst <span class="token operator">=</span> connection<span class="token punctuation">.</span><span class="token function">prepareStatement</span><span class="token punctuation">(</span><span class="token string">"select * from t_gateway_logs where 1=2"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-ResultSet rs <span class="token operator">=</span> pst<span class="token punctuation">.</span><span class="token function">executeQuery</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-ResultSetMetaData rsd <span class="token operator">=</span> rs<span class="token punctuation">.</span><span class="token function">getMetaData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> rsd<span class="token punctuation">.</span><span class="token function">getColumnCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"java类型："</span><span class="token operator">+</span>rsd<span class="token punctuation">.</span><span class="token function">getColumnClassName</span><span class="token punctuation">(</span>i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"  数据库类型:"</span><span class="token operator">+</span>rsd<span class="token punctuation">.</span><span class="token function">getColumnTypeName</span><span class="token punctuation">(</span>i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"  字段名称:"</span><span class="token operator">+</span>rsd<span class="token punctuation">.</span><span class="token function">getColumnName</span><span class="token punctuation">(</span>i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"  字段长度:"</span><span class="token operator">+</span>rsd<span class="token punctuation">.</span><span class="token function">getColumnDisplaySize</span><span class="token punctuation">(</span>i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"  是否为空:"</span><span class="token operator">+</span>rsd<span class="token punctuation">.</span><span class="token function">isNullable</span><span class="token punctuation">(</span>i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"  是否自增:"</span><span class="token operator">+</span>rsd<span class="token punctuation">.</span><span class="token function">isAutoIncrement</span><span class="token punctuation">(</span>i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h3><p>查询出来的内容非常多。</p>
-<h4 id="查询出库中所有表"><a href="#查询出库中所有表" class="headerlink" title="查询出库中所有表"></a>查询出库中所有表</h4><pre class="line-numbers language-java"><code class="language-java">ResultSet tableRet <span class="token operator">=</span> connection<span class="token punctuation">.</span><span class="token function">getMetaData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getTables</span><span class="token punctuation">(</span>null<span class="token punctuation">,</span> <span class="token string">"%"</span><span class="token punctuation">,</span><span class="token string">"%"</span><span class="token punctuation">,</span><span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token string">"TABLE"</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">while</span><span class="token punctuation">(</span>tableRet<span class="token punctuation">.</span><span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>tableRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"TABLE_NAME"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="查询某个表的主键信息"><a href="#查询某个表的主键信息" class="headerlink" title="查询某个表的主键信息"></a>查询某个表的主键信息</h4><pre class="line-numbers language-java"><code class="language-java">ResultSet pkInfo <span class="token operator">=</span> connection<span class="token punctuation">.</span><span class="token function">getMetaData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getPrimaryKeys</span><span class="token punctuation">(</span>null<span class="token punctuation">,</span> <span class="token string">"%"</span><span class="token punctuation">,</span> <span class="token string">"test_table"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">while</span> <span class="token punctuation">(</span>pkInfo<span class="token punctuation">.</span><span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"TABLE_CAT:"</span> <span class="token operator">+</span> pkInfo<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"TABLE_CAT"</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"TABLE_NAME:"</span> <span class="token operator">+</span> pkInfo<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"TABLE_NAME"</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"COLUMN_NAME:"</span> <span class="token operator">+</span> pkInfo<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"COLUMN_NAME"</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"PK_NAME:"</span> <span class="token operator">+</span> pkInfo<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"PK_NAME"</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"TABLE_SCHEM:"</span> <span class="token operator">+</span> pkInfo<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"TABLE_SCHEM"</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"KEY_SEQ:"</span> <span class="token operator">+</span> pkInfo<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"KEY_SEQ"</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="查询某个表的详细信息"><a href="#查询某个表的详细信息" class="headerlink" title="查询某个表的详细信息"></a>查询某个表的详细信息</h4><pre class="line-numbers language-java"><code class="language-java">ResultSet colRet <span class="token operator">=</span> connection<span class="token punctuation">.</span><span class="token function">getMetaData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getColumns</span><span class="token punctuation">(</span>null<span class="token punctuation">,</span> <span class="token string">"%"</span><span class="token punctuation">,</span> <span class="token string">"test_table"</span><span class="token punctuation">,</span> <span class="token string">"%"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">while</span> <span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"TABLE_CAT"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"TABLE_SCHEM"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"TABLE_NAME"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"COLUMN_NAME"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"DATA_TYPE"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"TYPE_NAME"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"COLUMN_SIZE"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"BUFFER_LENGTH"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"DECIMAL_DIGITS"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"NUM_PREC_RADIX"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"NULLABLE"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"REMARKS"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"COLUMN_DEF"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"SQL_DATA_TYPE"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"SQL_DATETIME_SUB"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"CHAR_OCTET_LENGTH"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"ORDINAL_POSITION"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getBoolean</span><span class="token punctuation">(</span><span class="token string">"IS_NULLABLE"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"SCOPE_CATALOG"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"SCOPE_SCHEMA"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"SCOPE_TABLE"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"SOURCE_DATA_TYPE"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getBoolean</span><span class="token punctuation">(</span><span class="token string">"IS_AUTOINCREMENT"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>colRet<span class="token punctuation">.</span><span class="token function">getBoolean</span><span class="token punctuation">(</span><span class="token string">"IS_GENERATEDCOLUMN"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/maven-da-bao-cha-jian-zhi-ding-main-han-shu-ji-yi-lai-bao/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/maven-da-bao-cha-jian-zhi-ding-main-han-shu-ji-yi-lai-bao/" class="post-title-link" itemprop="url">maven打包插件指定main函数及依赖包</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-02 09:15:29" itemprop="dateCreated datePublished" datetime="2020-04-02T09:15:29+08:00">2020-04-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p><code>Maven</code>打包<code>jar</code>用的默认插件是<code>maven-jar-plugin</code>，默认<code>Maven</code>生成的<code>JAR</code>包只包含了编译生成的<code>.class</code>文件和项目资源文件。有两个问题：</p>
-<ul>
-<li>运行时提示没有主清单属性;</li>
-<li>依赖的jar包也没有打包进去.</li>
-</ul>
-<h3 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h3><p><code>maven</code>打包插件有很多种：</p>
-<ul>
-<li><code>maven-shade-plugin</code></li>
-<li><code>maven-assembly-plugin</code></li>
-<li><code>maven-jar-plugin</code></li>
-</ul>
-<p>我们直接重新定义<code>maven-jar-plugin</code>,详细配置如下：</p>
-<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.apache.maven.plugins<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>maven-shade-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.2.1<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>executions</span><span class="token punctuation">></span></span>
-                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>execution</span><span class="token punctuation">></span></span>
-                    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>phase</span><span class="token punctuation">></span></span>package<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>phase</span><span class="token punctuation">></span></span>
-                    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>goals</span><span class="token punctuation">></span></span>
-                        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>goal</span><span class="token punctuation">></span></span>shade<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>goal</span><span class="token punctuation">></span></span>
-                    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>goals</span><span class="token punctuation">></span></span>
-                    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
-                        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>transformers</span><span class="token punctuation">></span></span>
-                            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>transformer</span>
-                                    <span class="token attr-name">implementation</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>org.apache.maven.plugins.shade.resource.ManifestResourceTransformer<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-                                <span class="token comment" spellcheck="true">&lt;!-- 这里指定main函数 --></span>
-                                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>mainClass</span><span class="token punctuation">></span></span>com.deri.App<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>mainClass</span><span class="token punctuation">></span></span>
-                            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>transformer</span><span class="token punctuation">></span></span>
-                        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>transformers</span><span class="token punctuation">></span></span>
-                    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
-                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>execution</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>executions</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/43/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/43/">43</a><span class="page-number current">44</span><a class="page-number" href="/page/45/">45</a><span class="space">&hellip;</span><a class="page-number" href="/page/63/">63</a><a class="extend next" rel="next" href="/page/45/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/43/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/43/">43</a><span class="page-number current">44</span><a class="page-number" href="/page/45/">45</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/45/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1098,7 +1295,7 @@ ResultSetMetaData rsd <span class="token operator">=</span> rs<span class="token
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">377</span>
+          <span class="site-state-item-count">380</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1111,7 +1308,7 @@ ResultSetMetaData rsd <span class="token operator">=</span> rs<span class="token
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">235</span>
+        <span class="site-state-item-count">236</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

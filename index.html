@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,289 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-chi-xian-an-zhuang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-chi-xian-an-zhuang/" class="post-title-link" itemprop="url">docker离线安装</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-09-25 13:55:21" itemprop="dateCreated datePublished" datetime="2024-09-25T13:55:21+08:00">2024-09-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="下载安装包"><a href="#下载安装包" class="headerlink" title="下载安装包"></a>下载安装包</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># https://download.docker.com/linux/static/stable/x86_64/</span>
+<span class="token function">wget</span> https://download.docker.com/linux/static/stable/x86_64/docker-24.0.6.tgz
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 解压</span>
+<span class="token function">tar</span> -zxvf docker-24.0.6.tgz
+<span class="token comment" spellcheck="true"># 将解压之后的docker文件移到 /usr/bin目录下</span>
+<span class="token function">sudo</span> <span class="token function">cp</span> docker/* /usr/bin/
+<span class="token comment" spellcheck="true"># 将docker注册成系统服务</span>
+vim /etc/systemd/system/docker.service
+<span class="token comment" spellcheck="true"># 给文件增加可执行权限</span>
+<span class="token function">chmod</span> +x /etc/systemd/system/docker.service
+systemctl daemon-reload
+<span class="token comment" spellcheck="true"># 设置开机自启动</span>
+systemctl <span class="token function">enable</span> docker.service
+systemctl start docker
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>docker.service</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
+Description=Docker Application Container Engine
+Documentation=https://docs.docker.com
+After=network-online.target firewalld.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/dockerd
+ExecReload=/bin/kill -s HUP $MAINPID
+LimitNOFILE=infinity
+LimitNPROC=infinity
+TimeoutStartSec=0
+Delegate=yes
+KillMode=process
+Restart=on-failure
+StartLimitBurst=3
+StartLimitInterval=60s
+
+[Install]
+WantedBy=multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置docker"><a href="#配置docker" class="headerlink" title="配置docker"></a>配置docker</h3><ul>
+<li><code>/etc/docker/daemon.json</code></li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+<span class="token property">"data-root"</span><span class="token operator">:</span><span class="token string">"/data/docker"</span><span class="token punctuation">,</span>
+<span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"max-size"</span><span class="token operator">:</span> <span class="token string">"50m"</span><span class="token punctuation">,</span>
+    <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"1"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/yum-zhao-bu-dao-bao-zen-me-ban/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/yum-zhao-bu-dao-bao-zen-me-ban/" class="post-title-link" itemprop="url">yum找不到包怎么办</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-09-13 11:20:00" itemprop="dateCreated datePublished" datetime="2024-09-13T11:20:00+08:00">2024-09-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="本地安装"><a href="#本地安装" class="headerlink" title="本地安装"></a>本地安装</h3><p>对于CentOS上的安装软件，可以去一个强大的网站：<code>https://centos.pkgs.org</code> 搜索到想要安装的 <code>.rpm</code> 包</p>
+<pre class="line-numbers language-bash"><code class="language-bash">yum localinstall xxxx.rpm
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="epel源"><a href="#epel源" class="headerlink" title="epel源"></a>epel源</h3><pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> epel-release
+yum clean all
+yum makecache
+yum update
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/openvpn-yong-hu-ming-mi-ma-deng-lu-yan-zheng/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/openvpn-yong-hu-ming-mi-ma-deng-lu-yan-zheng/" class="post-title-link" itemprop="url">openvpn用户名密码登录验证</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-09-06 11:19:49" itemprop="dateCreated datePublished" datetime="2024-09-06T11:19:49+08:00">2024-09-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/openvpn/" itemprop="url" rel="index"><span itemprop="name">openvpn</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="服务端"><a href="#服务端" class="headerlink" title="服务端"></a>服务端</h3><p>在配置文件加入3行参数：</p>
+<pre class="line-numbers language-conf"><code class="language-conf">script-security 3   #允许使用自定义脚本
+auth-user-pass-verify /etc/openvpn/check.sh via-env
+username-as-common-name #用户密码登陆方式验证
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>check.sh</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token shebang important">#!/bin/bash</span>
+
+<span class="token comment" spellcheck="true"># 从环境变量中获取用户名和密码</span>
+username<span class="token operator">=</span><span class="token string">"<span class="token variable">$username</span>"</span>
+password<span class="token operator">=</span><span class="token string">"<span class="token variable">$password</span>"</span>
+
+<span class="token comment" spellcheck="true"># 验证用户名和密码</span>
+<span class="token keyword">if</span> <span class="token punctuation">[</span><span class="token punctuation">[</span> <span class="token string">"<span class="token variable">$username</span>"</span> <span class="token operator">==</span> <span class="token string">"valid_user"</span> <span class="token operator">&amp;&amp;</span> <span class="token string">"<span class="token variable">$password</span>"</span> <span class="token operator">==</span> <span class="token string">"valid_pass"</span> <span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token keyword">then</span>
+    <span class="token keyword">exit</span> 0  <span class="token comment" spellcheck="true"># 验证成功</span>
+<span class="token keyword">else</span>
+    <span class="token keyword">exit</span> 1  <span class="token comment" spellcheck="true"># 验证失败</span>
+<span class="token keyword">fi</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>修改配置后重启生效.</p>
+<h3 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h3><p>在末尾添加参数</p>
+<pre class="line-numbers language-conf"><code class="language-conf">auth-user-pass
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -501,325 +784,10 @@ https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/G
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/containerd-chu-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/containerd-chu-shi-yong/" class="post-title-link" itemprop="url">containerd初使用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-25 10:32:12" itemprop="dateCreated datePublished" datetime="2024-07-25T10:32:12+08:00">2024-07-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/containerd/" itemprop="url" rel="index"><span itemprop="name">containerd</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="containerd"><a href="#containerd" class="headerlink" title="containerd"></a>containerd</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">sudo</span> systemctl <span class="token function">enable</span> --now containerd
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="nerdctl"><a href="#nerdctl" class="headerlink" title="nerdctl"></a>nerdctl</h3><p>containerd 自带的 ctr 命令用不习惯，可以安装 nerdctl ，nerdctl 命令同 docker 风格一致的 containerd 客户端工具.</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装</span>
-<span class="token function">wget</span> https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-1.7.6-linux-amd64.tar.gz
-<span class="token function">tar</span> -zxvf nerdctl-1.7.6-linux-amd64.tar.gz
-<span class="token function">cp</span> nerdctl /usr/local/bin/
-<span class="token comment" spellcheck="true"># 测试，如果没有安装 buildkit 会提示没有 buildctl 命令</span>
-nerdctl version
-<span class="token comment" spellcheck="true"># 使用</span>
-nerdctl <span class="token function">ps</span>
-nerdctl images
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="buildkit"><a href="#buildkit" class="headerlink" title="buildkit"></a>buildkit</h3><p>nerdctl build：从 Dockerfile 构建镜像，需要安装 buildkit</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">wget</span> https://github.com/moby/buildkit/releases/download/v0.9.0/buildkit-v0.9.0.linux-amd64.tar.gz
-<span class="token function">tar</span> -zxvf buildkit-v0.9.0.linux-amd64.tar.gz
-<span class="token comment" spellcheck="true"># 将解压出来的 bin 文件全部复制</span>
-<span class="token function">cp</span> bin/* /usr/local/bin/
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<p>使用 Systemd 来管理 buildkitd, <code>cat /etc/systemd/system/buildkit.service</code></p>
-<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
-Description=BuildKit
-Documentation=https://github.com/moby/buildkit
-
-[Service]
-ExecStart=/usr/local/bin/buildkitd --oci-worker=false --containerd-worker=true
-
-[Install]
-WantedBy=multi-user.target
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>启动/停止</p>
-<pre class="line-numbers language-bash"><code class="language-bash">systemctl daemon-reload
-systemctl <span class="token function">enable</span> --now buildkit
-systemctl status buildkit
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kafka-xiao-xi-da-xiao-xian-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/kafka-xiao-xi-da-xiao-xian-zhi/" class="post-title-link" itemprop="url">kafka消息大小限制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-18 17:03:55" itemprop="dateCreated datePublished" datetime="2024-07-18T17:03:55+08:00">2024-07-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="kafka服务端"><a href="#kafka服务端" class="headerlink" title="kafka服务端"></a>kafka服务端</h3><p>kafka默认的消息大小限制为1MB，如果有需要可以修改大一点。</p>
-<ul>
-<li>server.properties</li>
-</ul>
-<pre class="line-numbers language-conf"><code class="language-conf"># 100M
-message.max.bytes=104857600
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ul>
-<li>修改单个topic配置</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改配置</span>
-bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type topics --entity-name my-topic
-  --alter --add-config max.message.bytes<span class="token operator">=</span>128000
-
-<span class="token comment" spellcheck="true"># 检查配置</span>
-bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type topics --entity-name my-topic --describe
-
-<span class="token comment" spellcheck="true"># 删除配置</span>
-bin/kafka-configs.sh --bootstrap-server localhost:9092  --entity-type topics --entity-name my-topic
-  --alter --delete-config max.message.bytes
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h3><ul>
-<li>go: <strong>sarama</strong></li>
-</ul>
-<pre class="line-numbers language-go"><code class="language-go">kafkaConfig <span class="token operator">:=</span> sarama<span class="token punctuation">.</span><span class="token function">NewConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-kafkaConfig<span class="token punctuation">.</span>Producer<span class="token punctuation">.</span>MaxMessageBytes <span class="token operator">=</span> <span class="token number">104857600</span> <span class="token comment" spellcheck="true">//最大消息大小限制: 100M</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kafka-connect-chu-ti-yan/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/kafka-connect-chu-ti-yan/" class="post-title-link" itemprop="url">kafka-connect初体验</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-05 16:27:01" itemprop="dateCreated datePublished" datetime="2024-07-05T16:27:01+08:00">2024-07-05</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="kafka-connect"><a href="#kafka-connect" class="headerlink" title="kafka-connect"></a>kafka-connect</h3><p><code>kafka-connect</code> 是 <code>kafka</code> 自带的一个用于数据集成工具，包含两类 <code>connector</code>: <code>source connector</code> 和 <code>sink connector</code>，顾名思义一个是作为数据源往 kafka 写数据，一个是从 kafka 读数据。</p>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 数据流</span>
-jdbc/file/mqtt/http/<span class="token punctuation">..</span>.  -<span class="token operator">></span>  <span class="token function">source</span> connector  -<span class="token operator">></span>  kafka cluster  -<span class="token operator">></span> sink connector  -<span class="token operator">></span>  jdbc/file/mqtt/http/es/<span class="token punctuation">..</span>.
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p><code>kafka-connect</code> 有两个模式：单机 <code>standalone</code> 和分布式 <code>distributed</code>，本文以单机模式从一个文件经过 connector 同步到另一个文件为例进行测试。</p>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>进入到 kafka 安装的根目录：</p>
-<ol>
-<li>修改 standalone 配置：<code>config/connect-standalone.properties</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># kakfa 节点</span>
-bootstrap.servers<span class="token operator">=</span>172.16.20.152:9092
-<span class="token comment" spellcheck="true"># file connector 路径，官方自带的 jar 包</span>
-plugin.path<span class="token operator">=</span>/root/kafka_2.13-3.7.1/libs/connect-file-3.7.1.jar
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>Source file connector 配置：<code>config/connect-file-source.properties</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># connector 名称</span>
-name<span class="token operator">=</span>local-file-source
-connector.class<span class="token operator">=</span>FileStreamSource
-tasks.max<span class="token operator">=</span>1
-<span class="token comment" spellcheck="true"># kafka 根目录下 test.txt 文件</span>
-file<span class="token operator">=</span>test.txt
-topic<span class="token operator">=</span>connect-test
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="3">
-<li>Sink file connector 配置：<code>config/connect-file-sink.properties</code></li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">name<span class="token operator">=</span>local-file-sink
-connector.class<span class="token operator">=</span>FileStreamSink
-tasks.max<span class="token operator">=</span>1
-<span class="token comment" spellcheck="true"># 同步到目标文件名</span>
-file<span class="token operator">=</span>test.sink.txt
-topics<span class="token operator">=</span>connect-test
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="4">
-<li>启动</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash">bin/connect-standalone.sh config/connect-standalone.properties  config/connect-file-source.properties config/connect-file-sink.properties
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="5">
-<li>测试</li>
-</ol>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 往 test.txt 文件里追加写数据</span>
-<span class="token keyword">echo</span> <span class="token string">"data1"</span> <span class="token operator">>></span> test.txt
-<span class="token keyword">echo</span> <span class="token string">"data2"</span> <span class="token operator">>></span> test.txt
-<span class="token keyword">echo</span> <span class="token string">"data3"</span> <span class="token operator">>></span> test.txt
-
-<span class="token comment" spellcheck="true"># 可以看到另一个文件内容也跟着改变</span>
-<span class="token function">tail</span> -f test.sink.txt
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/63/">63</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -887,7 +855,7 @@ topics<span class="token operator">=</span>connect-test
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">377</span>
+          <span class="site-state-item-count">380</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -900,7 +868,7 @@ topics<span class="token operator">=</span>connect-test
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">235</span>
+        <span class="site-state-item-count">236</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

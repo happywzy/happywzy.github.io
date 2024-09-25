@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,450 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/xml-he-bean-hu-zhuan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/xml-he-bean-hu-zhuan/" class="post-title-link" itemprop="url">xml和bean互转</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-04-06 09:38:36" itemprop="dateCreated datePublished" datetime="2023-04-06T09:38:36+08:00">2023-04-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本文通过 <code>JDK</code> 中原生的 <code>JAXB</code> 实现 <code>XML</code> 和 <code>java bean</code> 之间的互转，不依赖任何第三方包.</p>
+<ul>
+<li><code>JAXBContext</code> 类，是应用的入口，用于管理XML/Java绑定信息</li>
+<li><code>Marshaller</code> 接口，将Java对象序列化为XML数据</li>
+<li><code>Unmarshaller</code> 接口，将XML数据反序列化为Java对象</li>
+</ul>
+<h3 id="常用Annotation"><a href="#常用Annotation" class="headerlink" title="常用Annotation"></a>常用Annotation</h3><ol>
+<li><code>@XmlAccessorType(XmlAccessType.NONE)</code> ，控制字段或属性的序列化</li>
+</ol>
+<ul>
+<li><code>FIELD</code>: JAXB 绑定类中的每个非静态、非瞬态字段将会自动绑定到 XML，除非由 XmlTransient 注释。</li>
+<li><code>NONE</code>: 所有字段或属性都不能绑定到 XML，除非使用一些 JAXB 注释专门对它们进行注释。</li>
+<li><code>PROPERTY</code>: JAXB 绑定类中的每个获取方法/设置方法对将会自动绑定到 XML，除非由 XmlTransient 注释。</li>
+<li><code>PUBLIC_MEMBER</code>:每个公共获取方法/设置方法对和每个公共字段将会自动绑定到 XML，除非由 XmlTransient 注释。</li>
+</ul>
+<ol start="2">
+<li><p><code>@XmlRootElement</code><br>xml 文件的根元素</p>
+</li>
+<li><p><code>@XmlElement</code><br>代表的生成xml的属性名称，一般用在属性上，或者set方法上。</p>
+</li>
+</ol>
+<ul>
+<li>用法 <code>@XmlElement(name="elementName")</code></li>
+</ul>
+<ol start="4">
+<li><p><code>@XmlTransient</code><br>放在属性上，或者set方法上，代表不进行序列化</p>
+</li>
+<li><p><code>@XmlAttribute</code><br>该属性作为xml的attribute</p>
+</li>
+</ol>
+<ul>
+<li><code>@XmlAttribute(name = "NAME")</code></li>
+</ul>
+<ol start="6">
+<li><p><code>@XmlAccessorOrder</code><br>控制JAXB 绑定类中属性和字段的排序</p>
+</li>
+<li><p><code>@XmlJavaTypeAdapter</code><br>使用定制的适配器（即扩展抽象类XmlAdapter并覆盖marshal()和unmarshal()方法），以序列化Java类为XML</p>
+</li>
+<li><p><code>@XmlElementWrapper</code><br>对于数组或集合（即包含多个元素的成员变量），生成一个包装该数组或集合的XML元素（称为包装器）</p>
+</li>
+</ol>
+<h3 id="XML和Bean互转Util"><a href="#XML和Bean互转Util" class="headerlink" title="XML和Bean互转Util"></a>XML和Bean互转Util</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> javax<span class="token punctuation">.</span>xml<span class="token punctuation">.</span>bind<span class="token punctuation">.</span>JAXBContext<span class="token punctuation">;</span>
+<span class="token keyword">import</span> javax<span class="token punctuation">.</span>xml<span class="token punctuation">.</span>bind<span class="token punctuation">.</span>JAXBException<span class="token punctuation">;</span>
+<span class="token keyword">import</span> javax<span class="token punctuation">.</span>xml<span class="token punctuation">.</span>bind<span class="token punctuation">.</span>Marshaller<span class="token punctuation">;</span>
+<span class="token keyword">import</span> javax<span class="token punctuation">.</span>xml<span class="token punctuation">.</span>bind<span class="token punctuation">.</span>Unmarshaller<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>io<span class="token punctuation">.</span>StringReader<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>io<span class="token punctuation">.</span>StringWriter<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">/**
+ * @ClassName: FormatUtil
+ * @Description: XML 和 JSON 互转工具
+ * @Author: wuzhiyong
+ * @Time: 2023/4/4 14:39
+ * @Version: v1.0
+ **/</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FormatUtil</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">xmlToBean</span><span class="token punctuation">(</span>String xml<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> tClass<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Object object <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            JAXBContext context <span class="token operator">=</span> JAXBContext<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>tClass<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            Unmarshaller unmarshaller <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">createUnmarshaller</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            object <span class="token operator">=</span> unmarshaller<span class="token punctuation">.</span><span class="token function">unmarshal</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">StringReader</span><span class="token punctuation">(</span>xml<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">JAXBException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span>T<span class="token punctuation">)</span> object<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">/**
+     * 对象转xml
+     *
+     * @param obj
+     * @return
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">beanToXml</span><span class="token punctuation">(</span>Object obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        StringWriter writer <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            JAXBContext context <span class="token operator">=</span> JAXBContext<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            Marshaller marshaller <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">createMarshaller</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 格式化</span>
+            marshaller<span class="token punctuation">.</span><span class="token function">setProperty</span><span class="token punctuation">(</span>Marshaller<span class="token punctuation">.</span>JAXB_FORMATTED_OUTPUT<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 去掉生成xml的默认报文头 &lt;?xml version="1.0" encoding="utf-8" standalone="yes"?></span>
+            marshaller<span class="token punctuation">.</span><span class="token function">setProperty</span><span class="token punctuation">(</span>Marshaller<span class="token punctuation">.</span>JAXB_FRAGMENT<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            marshaller<span class="token punctuation">.</span><span class="token function">setProperty</span><span class="token punctuation">(</span>Marshaller<span class="token punctuation">.</span>JAXB_ENCODING<span class="token punctuation">,</span> <span class="token string">"utf-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            writer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StringWriter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            marshaller<span class="token punctuation">.</span><span class="token function">marshal</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> writer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">JAXBException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> writer <span class="token operator">!=</span> null <span class="token operator">?</span> writer<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><ul>
+<li>School.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@NoArgsConstructor</span>
+<span class="token annotation punctuation">@XmlRootElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"SCHOOL"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@XmlAccessorType</span><span class="token punctuation">(</span>XmlAccessType<span class="token punctuation">.</span>NONE<span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">School</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@XmlElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"ADDRESS"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> String addr<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@XmlElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"NUMBER"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> count<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@XmlElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"TEACHERS"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> Teachers teachers<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>Teachers.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@NoArgsConstructor</span>
+<span class="token annotation punctuation">@AllArgsConstructor</span>
+<span class="token annotation punctuation">@XmlAccessorType</span><span class="token punctuation">(</span>XmlAccessType<span class="token punctuation">.</span>FIELD<span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Teachers</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@XmlElement</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"TEACHER"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> List<span class="token operator">&lt;</span>Teacher<span class="token operator">></span> teachers<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>Teacher.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@NoArgsConstructor</span>
+<span class="token annotation punctuation">@AllArgsConstructor</span>
+<span class="token annotation punctuation">@XmlAccessorType</span><span class="token punctuation">(</span>XmlAccessType<span class="token punctuation">.</span>FIELD<span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Teacher</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@XmlAttribute</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"NAME"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@XmlValue</span>
+    <span class="token keyword">private</span> String desc<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>测试.java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Test</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 测试数据</span>
+        School school <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">School</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        school<span class="token punctuation">.</span><span class="token function">setAddr</span><span class="token punctuation">(</span><span class="token string">"Nanjing"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        school<span class="token punctuation">.</span><span class="token function">setCount</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        List<span class="token operator">&lt;</span>Teacher<span class="token operator">></span> teachers <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        teachers<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Teacher</span><span class="token punctuation">(</span><span class="token string">"张三"</span><span class="token punctuation">,</span> <span class="token string">"高级教师"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        teachers<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Teacher</span><span class="token punctuation">(</span><span class="token string">"李四"</span><span class="token punctuation">,</span> <span class="token string">"中级教师"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        teachers<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Teacher</span><span class="token punctuation">(</span><span class="token string">"王五"</span><span class="token punctuation">,</span> <span class="token string">"初级教师"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        school<span class="token punctuation">.</span><span class="token function">setTeachers</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Teachers</span><span class="token punctuation">(</span>teachers<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token function">beanToXml</span><span class="token punctuation">(</span>school<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">/**
+         * 输出
+         * &lt;SCHOOL>
+         *     &lt;ADDRESS>Nanjing&lt;/ADDRESS>
+         *     &lt;NUMBER>1000&lt;/NUMBER>
+         *     &lt;TEACHERS>
+         *         &lt;TEACHER NAME="张三">高级教师&lt;/TEACHER>
+         *         &lt;TEACHER NAME="李四">中级教师&lt;/TEACHER>
+         *         &lt;TEACHER NAME="王五">初级教师&lt;/TEACHER>
+         *     &lt;/TEACHERS>
+         * &lt;/SCHOOL>
+         */</span>
+
+        String xml <span class="token operator">=</span> <span class="token string">"&lt;SCHOOL>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"    &lt;ADDRESS>Nanjing&lt;/ADDRESS>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"    &lt;NUMBER>1000&lt;/NUMBER>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"    &lt;TEACHERS>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"        &lt;TEACHER NAME=\"张三\">高级教师&lt;/TEACHER>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"        &lt;TEACHER NAME=\"李四\">中级教师&lt;/TEACHER>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"        &lt;TEACHER NAME=\"王五\">初级教师&lt;/TEACHER>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"    &lt;/TEACHERS>\n"</span> <span class="token operator">+</span>
+                <span class="token string">"&lt;/SCHOOL>"</span><span class="token punctuation">;</span>
+        School school1 <span class="token operator">=</span> <span class="token function">xmlToBean</span><span class="token punctuation">(</span>xml<span class="token punctuation">,</span> School<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>school<span class="token punctuation">.</span><span class="token function">getAddr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>school<span class="token punctuation">.</span><span class="token function">getCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>school<span class="token punctuation">.</span><span class="token function">getTeachers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">/**
+         * 输出
+         * Nanjing
+         * 1000
+         * Teachers(teachers=[Teacher(name=张三, desc=高级教师), Teacher(name=李四, desc=中级教师), Teacher(name=王五, desc=初级教师)])
+         */</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-shi-yong-xin-ban-nfs-client/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/k8s-shi-yong-xin-ban-nfs-client/" class="post-title-link" itemprop="url">k8s使用新版nfs-client</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-03-30 15:31:04" itemprop="dateCreated datePublished" datetime="2023-03-30T15:31:04+08:00">2023-03-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="nfs-client"><a href="#nfs-client" class="headerlink" title="nfs-client"></a>nfs-client</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner">官方github地址</a></li>
+</ul>
+<h3 id="安装NFS"><a href="#安装NFS" class="headerlink" title="安装NFS"></a>安装NFS</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装并设置自动启动</span>
+yum <span class="token function">install</span> nfs-utils
+systemctl <span class="token function">enable</span> rpcbind
+systemctl <span class="token function">enable</span> nfs
+<span class="token comment" spellcheck="true"># 启动</span>
+systemctl start rpcbind
+systemctl start nfs
+<span class="token comment" spellcheck="true"># 服务启动之后，我们在服务端配置一个共享目录</span>
+<span class="token function">mkdir</span> /data
+<span class="token function">chmod</span> 755 /data
+<span class="token comment" spellcheck="true"># 根据这个目录，相应配置导出目录</span>
+<span class="token function">vi</span> /etc/exports
+<span class="token comment" spellcheck="true"># 添加如下配置</span>
+/data/     192.168.0.0/24<span class="token punctuation">(</span>rw,sync,no_root_squash,no_all_squash<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true"># 保存设置之后，重启 NFS 服务</span>
+systemctl restart nfs
+<span class="token comment" spellcheck="true"># 可以检查一下本地的共享目录</span>
+showmount -e localhost
+Export list <span class="token keyword">for</span> localhost:
+/data 192.168.0.0/24
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="helm安装nfs-client"><a href="#helm安装nfs-client" class="headerlink" title="helm安装nfs-client"></a>helm安装nfs-client</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 添加仓库</span>
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+<span class="token comment" spellcheck="true"># 更新</span>
+helm repo update
+<span class="token comment" spellcheck="true"># 安装</span>
+helm <span class="token function">install</span> my-nfs nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+    --set nfs.server<span class="token operator">=</span>x.x.x.x \
+    --set nfs.path<span class="token operator">=</span>/data
+
+<span class="token comment" spellcheck="true"># 设置镜像仓库,默认仓库拉不下来</span>
+--set image.repository<span class="token operator">=</span>hub.deri.org.cn/k8s/nfs-subdir-external-provisioner
+<span class="token comment" spellcheck="true"># 设置SC名字,默认nfs-client</span>
+--set storageClass.name<span class="token operator">=</span>my-nfs
+<span class="token comment" spellcheck="true"># 设置供应商名字,默认自动生成一个</span>
+--set storageClass.provisionerName<span class="token operator">=</span>cluster.local/nfsxxx
+<span class="token comment" spellcheck="true"># 完整安装命令</span>
+helm <span class="token function">install</span> nfs-client nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --set nfs.server<span class="token operator">=</span>192.168.3.22 --set nfs.path<span class="token operator">=</span>/data/nfs --set image.repository<span class="token operator">=</span>hub.deri.org.cn/k8s/nfs-subdir-external-provisioner --set storageClass.name<span class="token operator">=</span>nfs-client --set storageClass.provisionerName<span class="token operator">=</span>cluster.local/nfs-client
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/etcd-jian-kong-ming-ling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/etcd-jian-kong-ming-ling/" class="post-title-link" itemprop="url">etcd监控命令</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-03-30 15:00:31" itemprop="dateCreated datePublished" datetime="2023-03-30T15:00:31+08:00">2023-03-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/etcd/" itemprop="url" rel="index"><span itemprop="name">etcd</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="etcd"><a href="#etcd" class="headerlink" title="etcd"></a>etcd</h3><p>ETCD对磁盘要求较高，官方推荐SSD起步。</p>
+<pre class="line-numbers language-bash"><code class="language-bash">ENDPOINTS<span class="token operator">=</span>https://192.168.3.28:2379,https://192.168.3.29:2379,https://192.168.3.30:2379
+
+<span class="token comment" spellcheck="true"># 查看集群状态</span>
+/usr/local/bin/etcdctl --cacert<span class="token operator">=</span>/etc/ssl/etcd/ssl/ca.pem --cert<span class="token operator">=</span>/etc/ssl/etcd/ssl/member-05.pem --key<span class="token operator">=</span>/etc/ssl/etcd/ssl/member-05-key.pem  --endpoints<span class="token operator">=</span><span class="token variable">$ENDPOINT</span> endpoint status
+
+<span class="token comment" spellcheck="true"># 查看健康状态</span>
+/usr/local/bin/etcdctl --cacert<span class="token operator">=</span>/etc/ssl/etcd/ssl/ca.pem --cert<span class="token operator">=</span>/etc/ssl/etcd/ssl/member-05.pem --key<span class="token operator">=</span>/etc/ssl/etcd/ssl/member-05-key.pem  --endpoints<span class="token operator">=</span><span class="token variable">$ENDPOINT</span> endpoint health
+
+<span class="token comment" spellcheck="true"># 查看所有监控指标</span>
+curl --cacert /etc/ssl/etcd/ssl/ca.pem --cert /etc/ssl/etcd/ssl/member-05.pem --key /etc/ssl/etcd/ssl/member-05-key.pem  https://10.201.112.28:2379/metrics 
+<span class="token comment" spellcheck="true"># 查看和磁盘相关的</span>
+curl --cacert /etc/ssl/etcd/ssl/ca.pem --cert /etc/ssl/etcd/ssl/member-05.pem --key /etc/ssl/etcd/ssl/member-05-key.pem  https://10.201.112.28:2379/metrics <span class="token operator">|</span> <span class="token function">grep</span> disk_backend_commit_duration_seconds
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -468,511 +912,10 @@ innodb_flush_log_at_trx_commit=2
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-ji-cheng-kafka/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-ji-cheng-kafka/" class="post-title-link" itemprop="url">springboot集成kafka</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-03-02 15:11:06" itemprop="dateCreated datePublished" datetime="2023-03-02T15:11:06+08:00">2023-03-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="引入依赖"><a href="#引入依赖" class="headerlink" title="引入依赖"></a>引入依赖</h3><pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.kafka<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-kafka<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spring</span><span class="token punctuation">:</span>
-  <span class="token key atrule">kafka</span><span class="token punctuation">:</span>
-    <span class="token key atrule">bootstrap-servers</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span>KAFKA_SERVERS<span class="token punctuation">:</span>localhost<span class="token punctuation">:</span><span class="token number">9092</span><span class="token punctuation">}</span>
-    <span class="token key atrule">producer</span><span class="token punctuation">:</span>
-      <span class="token key atrule">retries</span><span class="token punctuation">:</span> <span class="token number">0</span>
-      <span class="token key atrule">acks</span><span class="token punctuation">:</span> <span class="token number">1</span>
-      <span class="token key atrule">batch-size</span><span class="token punctuation">:</span> <span class="token number">100000</span>
-      <span class="token key atrule">buffer-memory</span><span class="token punctuation">:</span> <span class="token number">33554432</span>
-      <span class="token key atrule">key-serializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringSerializer
-      <span class="token key atrule">value-serializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringSerializer
-    <span class="token key atrule">consumer</span><span class="token punctuation">:</span>
-    <span class="token comment" spellcheck="true"># 默认的group名称</span>
-      <span class="token key atrule">group-id</span><span class="token punctuation">:</span> service<span class="token punctuation">-</span>group
-    <span class="token comment" spellcheck="true">#   关闭自动提交</span>
-      <span class="token key atrule">enable-auto-commit</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-      <span class="token key atrule">auto-commit-interval</span><span class="token punctuation">:</span> <span class="token number">1000</span>
-      <span class="token key atrule">auto-offset-reset</span><span class="token punctuation">:</span> latest
-      <span class="token key atrule">max-poll-records</span><span class="token punctuation">:</span> <span class="token number">1000</span>
-      <span class="token key atrule">key-deserializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringDeserializer
-      <span class="token key atrule">value-deserializer</span><span class="token punctuation">:</span> org.apache.kafka.common.serialization.StringDeserializer
-    <span class="token key atrule">listener</span><span class="token punctuation">:</span>
-      <span class="token key atrule">ack-mode</span><span class="token punctuation">:</span> manual_immediate
-      <span class="token key atrule">missing-topics-fatal</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-      <span class="token key atrule">type</span><span class="token punctuation">:</span> batch
-<span class="token comment" spellcheck="true"># 自定义配置监听的topic</span>
-<span class="token key atrule">log</span><span class="token punctuation">:</span>
-  <span class="token key atrule">topics</span><span class="token punctuation">:</span> topic1<span class="token punctuation">,</span>topic2<span class="token punctuation">,</span>topic3
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="java"><a href="#java" class="headerlink" title="java"></a>java</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@KafkaListener</span><span class="token punctuation">(</span>topics <span class="token operator">=</span><span class="token string">"#{'${log.topics}'.split(',')}"</span><span class="token punctuation">)</span>
-<span class="token comment" spellcheck="true">// public void processMessage(List&lt;String> records, Acknowledgment ack) {</span>
-<span class="token comment" spellcheck="true">// public void processMessage(ConsumerRecord&lt;?, ?> records, Acknowledgment ack) {</span>
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">processMessage</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>ConsumerRecord<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token punctuation">,</span> <span class="token operator">?</span><span class="token operator">>></span> records<span class="token punctuation">,</span> Acknowledgment ack<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token keyword">try</span> <span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>records<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>records<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 手动提交</span>
-        ack<span class="token punctuation">.</span><span class="token function">acknowledge</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/loki-cai-ji-docker-ri-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/loki-cai-ji-docker-ri-zhi/" class="post-title-link" itemprop="url">loki采集docker日志</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-02-17 14:56:58" itemprop="dateCreated datePublished" datetime="2023-02-17T14:56:58+08:00">2023-02-17</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/loki/" itemprop="url" rel="index"><span itemprop="name">loki</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本文通过安装 docker loki plugin 直接采集docker容器日志，并推送至loki。<a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/clients/docker-driver/">官方文档</a></p>
-<h3 id="插件安装"><a href="#插件安装" class="headerlink" title="插件安装"></a>插件安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装最新的插件</span>
-docker plugin <span class="token function">install</span> grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
-<span class="token comment" spellcheck="true"># 查看插件</span>
-<span class="token punctuation">[</span>root@data1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker plugin ls</span>
-ID             NAME          DESCRIPTION           ENABLED
-744b79d5d1a9   loki:latest   Loki Logging Driver   <span class="token boolean">true</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="插件升级"><a href="#插件升级" class="headerlink" title="插件升级"></a>插件升级</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 停用</span>
-docker plugin disable loki --force
-<span class="token comment" spellcheck="true"># 升级</span>
-docker plugin upgrade loki grafana/loki-docker-driver:latest --grant-all-permissions
-<span class="token comment" spellcheck="true"># 启用</span>
-docker plugin <span class="token function">enable</span> loki
-<span class="token comment" spellcheck="true"># 重启docker</span>
-systemctl restart docker
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="插件卸载"><a href="#插件卸载" class="headerlink" title="插件卸载"></a>插件卸载</h3><pre class="line-numbers language-bash"><code class="language-bash">docker plugin disable loki --force
-docker plugin <span class="token function">rm</span> loki
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><h4 id="单独为一个容器设置日志驱动"><a href="#单独为一个容器设置日志驱动" class="headerlink" title="单独为一个容器设置日志驱动"></a>单独为一个容器设置日志驱动</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># --log-driver=loki</span>
-docker run --log-driver<span class="token operator">=</span>loki \
-    --log-opt loki-url<span class="token operator">=</span><span class="token string">"http://IP:3100/loki/api/v1/push"</span> \
-    --log-opt loki-retries<span class="token operator">=</span>5 \
-    --log-opt loki-batch-size<span class="token operator">=</span>400 \
-    --log-opt max-size<span class="token operator">=</span>50m \
-    --log-opt max-file<span class="token operator">=</span>3 \
-    grafana/grafana
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="为所有的容器设置默认参数"><a href="#为所有的容器设置默认参数" class="headerlink" title="为所有的容器设置默认参数"></a>为所有的容器设置默认参数</h4><p>编辑<code>/etc/docker/daemon.json</code>文件(如果没有就新建).</p>
-<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
-    <span class="token property">"debug"</span> <span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
-    <span class="token property">"log-driver"</span><span class="token operator">:</span> <span class="token string">"loki"</span><span class="token punctuation">,</span>
-    <span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-        <span class="token property">"loki-url"</span><span class="token operator">:</span> <span class="token string">"http://IP:3100/loki/api/v1/push"</span><span class="token punctuation">,</span>
-        <span class="token property">"loki-batch-size"</span><span class="token operator">:</span> <span class="token string">"400"</span><span class="token punctuation">,</span>
-        <span class="token property">"loki-retries"</span><span class="token operator">:</span> <span class="token number">5</span><span class="token punctuation">,</span>
-        <span class="token property">"max-size"</span><span class="token operator">:</span> <span class="token string">"50m"</span><span class="token punctuation">,</span>
-        <span class="token property">"max-file"</span><span class="token operator">:</span> <span class="token string">"10"</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>更多如<code>docker-compose</code>的用法参考<a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/clients/docker-driver/configuration/">官网文档</a>.</p>
-</blockquote>
-<ul>
-<li>loki.yaml</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">auth_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-
-<span class="token key atrule">server</span><span class="token punctuation">:</span>
-  <span class="token key atrule">http_listen_port</span><span class="token punctuation">:</span> <span class="token number">3100</span>
-  <span class="token key atrule">grpc_listen_port</span><span class="token punctuation">:</span> <span class="token number">9095</span>
-
-<span class="token key atrule">ingester</span><span class="token punctuation">:</span>
-  <span class="token key atrule">chunk_idle_period</span><span class="token punctuation">:</span> 3m
-  <span class="token key atrule">chunk_block_size</span><span class="token punctuation">:</span> <span class="token number">262144</span>
-  <span class="token key atrule">chunk_retain_period</span><span class="token punctuation">:</span> 1m
-  <span class="token key atrule">max_transfer_retries</span><span class="token punctuation">:</span> <span class="token number">0</span>
-  <span class="token key atrule">lifecycler</span><span class="token punctuation">:</span>
-    <span class="token key atrule">ring</span><span class="token punctuation">:</span>
-      <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
-        <span class="token key atrule">store</span><span class="token punctuation">:</span> inmemory
-      <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
-
-<span class="token key atrule">limits_config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">reject_old_samples</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">reject_old_samples_max_age</span><span class="token punctuation">:</span> 168h
-
-<span class="token key atrule">common</span><span class="token punctuation">:</span>
-  <span class="token key atrule">path_prefix</span><span class="token punctuation">:</span> /tmp/loki
-  <span class="token key atrule">storage</span><span class="token punctuation">:</span>
-    <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
-      <span class="token key atrule">chunks_directory</span><span class="token punctuation">:</span> /tmp/loki/chunks
-      <span class="token key atrule">rules_directory</span><span class="token punctuation">:</span> /tmp/loki/rules
-  <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
-  <span class="token key atrule">ring</span><span class="token punctuation">:</span>
-    <span class="token key atrule">instance_addr</span><span class="token punctuation">:</span> 127.0.0.1
-    <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
-      <span class="token key atrule">store</span><span class="token punctuation">:</span> inmemory
-
-<span class="token key atrule">storage_config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">boltdb_shipper</span><span class="token punctuation">:</span>
-    <span class="token key atrule">active_index_directory</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>active
-    <span class="token key atrule">cache_location</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>cache
-    <span class="token key atrule">cache_ttl</span><span class="token punctuation">:</span> 24h
-    <span class="token key atrule">shared_store</span><span class="token punctuation">:</span> filesystem
-  <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
-    <span class="token key atrule">directory</span><span class="token punctuation">:</span> /tmp/loki/chunks
-
-<span class="token key atrule">chunk_store_config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">max_look_back_period</span><span class="token punctuation">:</span> 672h
-
-<span class="token key atrule">table_manager</span><span class="token punctuation">:</span>
-  <span class="token key atrule">retention_deletes_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">retention_period</span><span class="token punctuation">:</span> 672h
-
-<span class="token key atrule">compactor</span><span class="token punctuation">:</span>
-  <span class="token key atrule">working_directory</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>compactor
-  <span class="token key atrule">shared_store</span><span class="token punctuation">:</span> filesystem
-  <span class="token key atrule">retention_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-  <span class="token key atrule">retention_delete_delay</span><span class="token punctuation">:</span> 2h
-
-<span class="token key atrule">query_range</span><span class="token punctuation">:</span>
-  <span class="token key atrule">results_cache</span><span class="token punctuation">:</span>
-    <span class="token key atrule">cache</span><span class="token punctuation">:</span>
-      <span class="token key atrule">embedded_cache</span><span class="token punctuation">:</span>
-        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-        <span class="token key atrule">max_size_mb</span><span class="token punctuation">:</span> <span class="token number">200</span>
-
-<span class="token key atrule">querier</span><span class="token punctuation">:</span>
-  <span class="token key atrule">query_timeout</span><span class="token punctuation">:</span> 2m
-
-<span class="token key atrule">schema_config</span><span class="token punctuation">:</span>
-  <span class="token key atrule">configs</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token datetime number">2020-10-24</span>
-      <span class="token key atrule">store</span><span class="token punctuation">:</span> boltdb<span class="token punctuation">-</span>shipper
-      <span class="token key atrule">object_store</span><span class="token punctuation">:</span> filesystem
-      <span class="token key atrule">schema</span><span class="token punctuation">:</span> v11
-      <span class="token key atrule">index</span><span class="token punctuation">:</span>
-        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> index_
-        <span class="token key atrule">period</span><span class="token punctuation">:</span> 24h
-
-<span class="token comment" spellcheck="true"># ruler:</span>
-<span class="token comment" spellcheck="true">#   alertmanager_url: http://localhost:9093</span>
-
-<span class="token comment" spellcheck="true"># By default, Loki will send anonymous, but uniquely-identifiable usage and configuration</span>
-<span class="token comment" spellcheck="true"># analytics to Grafana Labs. These statistics are sent to https://stats.grafana.org/</span>
-<span class="token comment" spellcheck="true">#</span>
-<span class="token comment" spellcheck="true"># Statistics help us better understand how Loki is used, and they show us performance</span>
-<span class="token comment" spellcheck="true"># levels for most users. This helps us prioritize features and documentation.</span>
-<span class="token comment" spellcheck="true"># For more information on what's sent, look at</span>
-<span class="token comment" spellcheck="true"># https://github.com/grafana/loki/blob/main/pkg/usagestats/stats.go</span>
-<span class="token comment" spellcheck="true"># Refer to the buildReport method to see what goes into a report.</span>
-<span class="token comment" spellcheck="true">#</span>
-<span class="token comment" spellcheck="true"># If you would like to disable reporting, uncomment the following lines:</span>
-<span class="token key atrule">analytics</span><span class="token punctuation">:</span>
- <span class="token key atrule">reporting_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-tong-guo-zhu-jie-shi-xian-xian-liu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-tong-guo-zhu-jie-shi-xian-xian-liu/" class="post-title-link" itemprop="url">springboot通过注解和redis实现接口限流</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-02-06 13:57:36" itemprop="dateCreated datePublished" datetime="2023-02-06T13:57:36+08:00">2023-02-06</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本文通过 <code>自定义注解</code> + <code>Redis</code> 实现接口限流。</p>
-<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><ul>
-<li>自定义注解</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Inherited</span>
-<span class="token annotation punctuation">@Documented</span>
-<span class="token annotation punctuation">@Target</span><span class="token punctuation">(</span><span class="token punctuation">{</span>ElementType<span class="token punctuation">.</span>METHOD<span class="token punctuation">}</span><span class="token punctuation">)</span>
-<span class="token annotation punctuation">@Retention</span><span class="token punctuation">(</span>RetentionPolicy<span class="token punctuation">.</span>RUNTIME<span class="token punctuation">)</span>
-<span class="token comment" spellcheck="true">// 默认就是60秒内可以访问2次</span>
-<span class="token keyword">public</span> @<span class="token keyword">interface</span> <span class="token class-name">RequestLimit</span> <span class="token punctuation">{</span>
-    <span class="token comment" spellcheck="true">/**
-     * 时间，秒为单位
-     */</span>
-    <span class="token keyword">int</span> <span class="token function">second</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token number">60</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">/**
-     * second时间内允许访问的次数
-     */</span>
-    <span class="token keyword">int</span> <span class="token function">maxCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token number">2</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>通过AOP实现限流</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Configuration</span>
-<span class="token annotation punctuation">@EnableAspectJAutoProxy</span>
-<span class="token annotation punctuation">@Aspect</span>
-<span class="token annotation punctuation">@Slf4j</span>
-<span class="token annotation punctuation">@Order</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">// 如果有多个AOP，需要将Order设置到最小，优先判断限流</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RequestLimitAspect</span> <span class="token punctuation">{</span>
-    <span class="token comment" spellcheck="true">// 这里通过将访问信息保存在redis中，判断是否限流</span>
-    <span class="token annotation punctuation">@Autowired</span>
-    <span class="token keyword">private</span> RedisTemplate<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">></span> redisTemplate<span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 定义切点，所有添加RequestLimit注解的</span>
-    <span class="token annotation punctuation">@Pointcut</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"@annotation(org.xxx.xxx.annotation.RequestLimit)"</span><span class="token punctuation">)</span>
-    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">handleRequestLimit</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token annotation punctuation">@Around</span><span class="token punctuation">(</span><span class="token string">"handleRequestLimit()"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> Object <span class="token function">handleResponseEncrypt</span><span class="token punctuation">(</span>ProceedingJoinPoint pjp<span class="token punctuation">)</span> <span class="token keyword">throws</span> Throwable <span class="token punctuation">{</span>
-        MethodSignature signature <span class="token operator">=</span> <span class="token punctuation">(</span>MethodSignature<span class="token punctuation">)</span> pjp<span class="token punctuation">.</span><span class="token function">getSignature</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Method method <span class="token operator">=</span> signature<span class="token punctuation">.</span><span class="token function">getMethod</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        RequestLimit requestLimit <span class="token operator">=</span> method<span class="token punctuation">.</span><span class="token function">getAnnotation</span><span class="token punctuation">(</span>RequestLimit<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 没有添加注解直接放行</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>null <span class="token operator">==</span> requestLimit<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            <span class="token keyword">return</span> pjp<span class="token punctuation">.</span><span class="token function">proceed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        ServletRequestAttributes requestAttributes <span class="token operator">=</span> <span class="token punctuation">(</span>ServletRequestAttributes<span class="token punctuation">)</span> RequestContextHolder<span class="token punctuation">.</span><span class="token function">getRequestAttributes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 获取HttpServletRequest</span>
-        HttpServletRequest request <span class="token operator">=</span> <span class="token punctuation">(</span>HttpServletRequest<span class="token punctuation">)</span> requestAttributes<span class="token punctuation">.</span><span class="token function">resolveReference</span><span class="token punctuation">(</span>RequestAttributes<span class="token punctuation">.</span>REFERENCE_REQUEST<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 获取公网IP</span>
-        String ip <span class="token operator">=</span> CommonUtils<span class="token punctuation">.</span><span class="token function">getPublicIp</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 实现同一个公网IP 限流</span>
-        String key <span class="token operator">=</span> <span class="token string">"limit:"</span> <span class="token operator">+</span> ip <span class="token operator">+</span> <span class="token string">":"</span> <span class="token operator">+</span> request<span class="token punctuation">.</span><span class="token function">getServletPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        String count <span class="token operator">=</span> redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            count <span class="token operator">=</span> <span class="token string">"1"</span><span class="token punctuation">;</span>
-            redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> count<span class="token punctuation">,</span> requestLimit<span class="token punctuation">.</span><span class="token function">second</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">return</span> pjp<span class="token punctuation">.</span><span class="token function">proceed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>Integer<span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span> <span class="token operator">&lt;</span> requestLimit<span class="token punctuation">.</span><span class="token function">maxCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">increment</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">return</span> pjp<span class="token punctuation">.</span><span class="token function">proceed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"RemoteAddr:{} 请求接口:{} 请求过于频繁, 已拒绝请求."</span><span class="token punctuation">,</span> ip<span class="token punctuation">,</span> request<span class="token punctuation">.</span><span class="token function">getServletPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        HttpServletResponse response <span class="token operator">=</span> requestAttributes<span class="token punctuation">.</span><span class="token function">getResponse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        response<span class="token punctuation">.</span><span class="token function">setCharacterEncoding</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        response<span class="token punctuation">.</span><span class="token function">setContentType</span><span class="token punctuation">(</span><span class="token string">"application/json; charset=utf-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        response<span class="token punctuation">.</span><span class="token function">getWriter</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-                <span class="token comment" spellcheck="true">// 触发限流自定义返回内容</span>
-                <span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>JSON<span class="token punctuation">.</span><span class="token function">toJSONString</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Response</span><span class="token punctuation">(</span>Constant<span class="token punctuation">.</span>ResponseCode<span class="token punctuation">.</span>RequestLimit<span class="token punctuation">,</span> Constant<span class="token punctuation">.</span>ResponseMsg<span class="token punctuation">.</span>RequestLimit<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
-
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>获取公网IP</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">getPublicIp</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    String ip <span class="token operator">=</span> null<span class="token punctuation">;</span>
-    <span class="token keyword">try</span> <span class="token punctuation">{</span>
-        ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"x-forwarded-for"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"Proxy-Client-IP"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> ip<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"WL-Proxy-Client-IP"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"HTTP_CLIENT_IP"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"HTTP_X_FORWARDED_FOR"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getRemoteAddr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"getPublicIp ERROR "</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-    <span class="token comment" spellcheck="true">//使用代理，则获取第一个IP地址</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> ip<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">15</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>ip<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token string">","</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            ip <span class="token operator">=</span> ip<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> ip<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token string">","</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span>
-    <span class="token keyword">return</span> ip<span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/8/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><span class="page-number current">9</span><a class="page-number" href="/page/10/">10</a><span class="space">&hellip;</span><a class="page-number" href="/page/63/">63</a><a class="extend next" rel="next" href="/page/10/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/8/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><span class="page-number current">9</span><a class="page-number" href="/page/10/">10</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/10/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1040,7 +983,7 @@ docker run --log-driver<span class="token operator">=</span>loki \
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">377</span>
+          <span class="site-state-item-count">380</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1053,7 +996,7 @@ docker run --log-driver<span class="token operator">=</span>loki \
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">235</span>
+        <span class="site-state-item-count">236</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
