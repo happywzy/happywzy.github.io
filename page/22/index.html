@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,148 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/opentsdb-da-jian/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/opentsdb-da-jian/" class="post-title-link" itemprop="url">opentsdb搭建</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-27 09:21:08" itemprop="dateCreated datePublished" datetime="2021-08-27T09:21:08+08:00">2021-08-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/opentsdb/" itemprop="url" rel="index"><span itemprop="name">opentsdb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="前提"><a href="#前提" class="headerlink" title="前提"></a>前提</h3><ul>
+<li>已搭建hbase集群</li>
+<li>GnuPlot 4.2+</li>
+</ul>
+<h3 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h3><ol>
+<li>安装GnuPlot</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> -y gnuplot
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="2">
+<li>下载opentsdb.rpm</li>
+</ol>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/OpenTSDB/opentsdb/releases">https://github.com/OpenTSDB/opentsdb/releases</a></li>
+</ul>
+<ol start="3">
+<li>安装opentsdb</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">rpm -ivh opentsdb-2.4.0.noarch.rpm
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="4">
+<li>修改opentsdb.conf</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/opentsdb/opentsdb.conf
+
+tsd.network.port <span class="token operator">=</span> 4242
+tsd.core.auto_create_metrics <span class="token operator">=</span> <span class="token boolean">true</span>
+tsd.storage.hbase.zk_quorum <span class="token operator">=</span> 192.168.3.17:2181,192.168.3.19:2181,192.168.3.20:2181
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>在HBase中创建表结构</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">create</span> <span class="token string">'tsdb'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'t'</span><span class="token punctuation">,</span> VERSIONS <span class="token operator">=</span><span class="token operator">></span> <span class="token number">1</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span>}
+<span class="token keyword">create</span> <span class="token string">'tsdb-uid'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'id'</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span>}<span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'name'</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span>}
+<span class="token keyword">create</span> <span class="token string">'tsdb-tree'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'t'</span><span class="token punctuation">,</span> VERSIONS <span class="token operator">=</span><span class="token operator">></span> <span class="token number">1</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span>}
+<span class="token keyword">create</span> <span class="token string">'tsdb-meta'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'name'</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span>}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>压缩(COMPRESSION)类型有NONE, LZO, GZIP , SNAPPY. 如使用SNAPPY</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">create</span> <span class="token string">'tsdb'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'t'</span><span class="token punctuation">,</span> VERSIONS <span class="token operator">=</span><span class="token operator">></span> <span class="token number">1</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span><span class="token punctuation">,</span> COMPRESSION <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'SNAPPY'</span>}
+<span class="token keyword">create</span> <span class="token string">'tsdb-uid'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'id'</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span><span class="token punctuation">,</span> COMPRESSION <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'SNAPPY'</span>}<span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'name'</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span><span class="token punctuation">,</span> COMPRESSION <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'SNAPPY'</span>}
+<span class="token keyword">create</span> <span class="token string">'tsdb-tree'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'t'</span><span class="token punctuation">,</span> VERSIONS <span class="token operator">=</span><span class="token operator">></span> <span class="token number">1</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span><span class="token punctuation">,</span> COMPRESSION <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'SNAPPY'</span>}
+<span class="token keyword">create</span> <span class="token string">'tsdb-meta'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'name'</span><span class="token punctuation">,</span> BLOOMFILTER <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'ROW'</span><span class="token punctuation">,</span> COMPRESSION <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'SNAPPY'</span>}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>创建opentsdb服务</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data1 opentsdb<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># cat opentsdb.service</span>
+<span class="token punctuation">[</span>Unit<span class="token punctuation">]</span>
+Description<span class="token operator">=</span>OpenTSDB Service
+<span class="token punctuation">[</span>Service<span class="token punctuation">]</span>
+Type<span class="token operator">=</span>forking
+PrivateTmp<span class="token operator">=</span>yes
+ExecStart<span class="token operator">=</span>/usr/share/opentsdb/etc/init.d/opentsdb start
+ExecStop<span class="token operator">=</span>/usr/share/opentsdb/etc/init.d/opentsdb stop
+Restart<span class="token operator">=</span>on-abort
+<span class="token punctuation">[</span>Install<span class="token punctuation">]</span>
+WantedBy<span class="token operator">=</span>multi-user.target
+
+<span class="token comment" spellcheck="true"># </span>
+<span class="token function">chmod</span> +x opentsdb.service 
+<span class="token function">cp</span> opentsdb.service /etc/systemd/system/
+systemctl <span class="token function">enable</span> opentsdb.service
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="7">
+<li>启动</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl status/start/stop/restart opentsdb
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h3><p>/var/log/opentsdb</p>
+<h3 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h3><pre class="line-numbers language-log"><code class="language-log">2020-10-13 12:21:31,740 WARN  [AsyncHBase I/O Worker #1] HBaseClient: Probe Exists(table="tsdb-uid", key=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 65, 115, 121, 110, 99, 72, 66, 97, 115, 101, 126, 112, 114, 111, 98, 101, 126, 60, 59, 95, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 65, 115, 121, 110, 99, 72, 66, 97, 115, 101, 126, 112, 114, 111, 98, 101, 126, 60, 59, 95, 60], family=null, qualifiers=null, attempt=0, region=RegionInfo(table="tsdb-uid", region_name="tsdb-uid,,1542978859652.665eaacf411c9f82e13e35a62cfff831.", stop_key="")) failed
+org.hbase.async.NonRecoverableException: Too many attempts: Exists(table="tsdb-uid", key=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 65, 115, 121, 110, 99, 72, 66, 97, 115, 101, 126, 112, 114, 111, 98, 101, 126, 60, 59, 95, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 65, 115, 121, 110, 99, 72, 66, 97, 115, 101, 126, 112, 114, 111, 98, 101, 126, 60, 59, 95, 60], family=null, qualifiers=null, attempt=11, region=RegionInfo(table="tsdb-uid", region_name="tsdb-uid,,1542978859652.665eaacf411c9f82e13e35a62cfff831.", stop_key=""))
+    at org.hbase.async.HBaseClient.tooManyAttempts(HBaseClient.java:2056) [asynchbase-1.7.2.jar:na]
+    at org.hbase.async.HBaseClient.sendRpcToRegion(HBaseClient.java:1920) [asynchbase-1.7.2.jar:na]
+    at org.hbase.async.HBaseClient$1RetryRpc.call(HBaseClient.java:1944) [asynchbase-1.7.2.jar:na]
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>原因可能是由于hbase压缩算法不支持，创建的表有问题。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -842,89 +984,6 @@ get /mynode
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql8-yong-hu-mi-ma-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql8-yong-hu-mi-ma-wen-ti/" class="post-title-link" itemprop="url">mysql8用户密码问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-25 15:19:01" itemprop="dateCreated datePublished" datetime="2021-08-25T15:19:01+08:00">2021-08-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p><code>navicat</code>连接<code>mysql8.0.26</code>时报错.</p>
-<pre class="line-numbers language-log"><code class="language-log">Client does not support authentication protocol requested by server; consider upgrading MySQL client.
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 进入mysql</span>
-docker <span class="token function">exec</span> -it mysql <span class="token function">bash</span>
-<span class="token comment" spellcheck="true"># 登录</span>
-mysql -u root -p
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">use</span> mysql<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 查看密码加密规则,8.0后使用的是caching_sha2_password,需要修改成mysql_native_password</span>
-<span class="token keyword">select</span> <span class="token keyword">user</span><span class="token punctuation">,</span>host<span class="token punctuation">,</span>plugin <span class="token keyword">from</span> <span class="token keyword">user</span> <span class="token keyword">where</span> <span class="token keyword">user</span><span class="token operator">=</span><span class="token string">'root'</span><span class="token punctuation">;</span>
-<span class="token keyword">ALTER</span> <span class="token keyword">USER</span> <span class="token string">'root'</span>@'localhost<span class="token string">' IDENTIFIED BY '</span><span class="token number">123456</span><span class="token string">' PASSWORD EXPIRE NEVER;
-ALTER USER '</span>root<span class="token string">'@'</span>localhost<span class="token string">' IDENTIFIED WITH mysql_native_password BY '</span><span class="token number">123456</span><span class="token string">';
-ALTER USER '</span>root<span class="token string">'@'</span><span class="token operator">%</span><span class="token string">' IDENTIFIED BY '</span><span class="token number">123456</span><span class="token string">' PASSWORD EXPIRE NEVER;
-ALTER USER '</span>root<span class="token string">'@'</span><span class="token operator">%</span><span class="token string">' IDENTIFIED WITH mysql_native_password BY '</span><span class="token number">123456</span>'<span class="token punctuation">;</span>
-flush <span class="token keyword">privileges</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -996,14 +1055,14 @@ flush <span class="token keyword">privileges</span><span class="token punctuatio
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">380</span>
+          <span class="site-state-item-count">381</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">55</span>
+        <span class="site-state-item-count">56</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">

@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,127 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/prometheus-si-chong-shu-ju-lei-xing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/prometheus-si-chong-shu-ju-lei-xing/" class="post-title-link" itemprop="url">prometheus四种数据类型</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-06-23 14:45:25" itemprop="dateCreated datePublished" datetime="2022-06-23T14:45:25+08:00">2022-06-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/prometheus/" itemprop="url" rel="index"><span itemprop="name">prometheus</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Prometheus 定义了 4 中不同的指标类型 (metric type)：Counter（计数器）、Gauge（仪表盘）、Histogram（直方图）、Summary（摘要）.</p>
+<h3 id="Counter"><a href="#Counter" class="headerlink" title="Counter"></a>Counter</h3><ul>
+<li>Counter 用于累计值，例如 记录 请求次数、任务完成数、错误发生次数</li>
+<li>一直增加，不会减少</li>
+<li>重启进程后，会被重置</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># http响应总数</span>
+http_response_total<span class="token punctuation">{</span>method<span class="token operator">=</span><span class="token string">"GET"</span>,endpoint<span class="token operator">=</span><span class="token string">"/api/tracks"</span><span class="token punctuation">}</span> 100
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="Gauge"><a href="#Gauge" class="headerlink" title="Gauge"></a>Gauge</h3><ul>
+<li>Gauge 常规数值，例如 温度变化、内存使用变化</li>
+<li>可增可减的仪表盘</li>
+<li>重启进程后，会被重置</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 如cpu、内存使用量</span>
+memory_usage_bytes<span class="token punctuation">{</span>host<span class="token operator">=</span><span class="token string">"master-01"</span><span class="token punctuation">}</span> 80
+cpu_usage<span class="token punctuation">{</span>host<span class="token operator">=</span><span class="token string">"master-01"</span><span class="token punctuation">}</span> 60
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="Histogram"><a href="#Histogram" class="headerlink" title="Histogram"></a>Histogram</h3><ul>
+<li>对记录的内容进行分组，提供 count 和 sum 全部值</li>
+<li>直接反应了在不同区间内样本的个数</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 如：prometheus_tsdb_compaction_chunk_range_bucket 指标</span>
+<span class="token comment" spellcheck="true"># HELP prometheus_tsdb_compaction_chunk_range Final time range of chunks on their first compaction</span>
+<span class="token comment" spellcheck="true"># TYPE prometheus_tsdb_compaction_chunk_range histogram</span>
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"100"</span><span class="token punctuation">}</span> 0
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"400"</span><span class="token punctuation">}</span> 0
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"1600"</span><span class="token punctuation">}</span> 0
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"6400"</span><span class="token punctuation">}</span> 0
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"25600"</span><span class="token punctuation">}</span> 0
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"102400"</span><span class="token punctuation">}</span> 0
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"409600"</span><span class="token punctuation">}</span> 0
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"1.6384e+06"</span><span class="token punctuation">}</span> 260
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"6.5536e+06"</span><span class="token punctuation">}</span> 780
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"2.62144e+07"</span><span class="token punctuation">}</span> 780
+prometheus_tsdb_compaction_chunk_range_bucket<span class="token punctuation">{</span>le<span class="token operator">=</span><span class="token string">"+Inf"</span><span class="token punctuation">}</span> 780
+prometheus_tsdb_compaction_chunk_range_sum 1.1540798e+09
+prometheus_tsdb_compaction_chunk_range_count 780
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><ul>
+<li>提供 count 和 sum 全部值</li>
+<li>提供一个 quantiles 的功能，可以按%比划分跟踪的结果</li>
+<li>例如：quantile 取值 0.95，表示取采样值里面的 95% 数据</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># HELP prometheus_tsdb_wal_fsync_duration_seconds Duration of WAL fsync.</span>
+<span class="token comment" spellcheck="true"># TYPE prometheus_tsdb_wal_fsync_duration_seconds summary</span>
+prometheus_tsdb_wal_fsync_duration_seconds<span class="token punctuation">{</span>quantile<span class="token operator">=</span><span class="token string">"0.5"</span><span class="token punctuation">}</span> 0.012352463
+prometheus_tsdb_wal_fsync_duration_seconds<span class="token punctuation">{</span>quantile<span class="token operator">=</span><span class="token string">"0.9"</span><span class="token punctuation">}</span> 0.014458005
+prometheus_tsdb_wal_fsync_duration_seconds<span class="token punctuation">{</span>quantile<span class="token operator">=</span><span class="token string">"0.99"</span><span class="token punctuation">}</span> 0.017316173
+prometheus_tsdb_wal_fsync_duration_seconds_sum 2.888716127000002
+prometheus_tsdb_wal_fsync_duration_seconds_count 216
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>从上面的样本中可以得知当前 Prometheus Server 进行 wal_fsync 操作的总次数为 216 次，耗时 2.888716127000002s。其中中位数（quantile=0.5）的耗时为 0.012352463，9 分位数（quantile=0.9）的耗时为 0.014458005s。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -726,89 +847,6 @@ email =  "email"
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/helm3-chang-yong-ming-ling/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/helm3-chang-yong-ming-ling/" class="post-title-link" itemprop="url">helm3常用命令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-06-06 15:42:25" itemprop="dateCreated datePublished" datetime="2022-06-06T15:42:25+08:00">2022-06-06</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 添加仓库, 如</span>
-helm repo add loki https://grafana.github.io/loki/charts
-<span class="token comment" spellcheck="true"># 更新仓库</span>
-helm repo update
-<span class="token comment" spellcheck="true"># 安装服务并设置自定义配置</span>
-helm <span class="token function">install</span> loki --namespace<span class="token operator">=</span>loki loki/loki-stack --set grafana.enabled<span class="token operator">=</span>true
-<span class="token comment" spellcheck="true"># 下载chart到本地</span>
-helm pull loki/loki-stack
-<span class="token comment" spellcheck="true"># 使用本地chart安装服务</span>
-helm <span class="token function">install</span> loki --namespace<span class="token operator">=</span>loki  <span class="token keyword">.</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<ul>
-<li><code>helm install</code> 等价于 <code>helm upgrade --install</code></li>
-<li>如果安装前没有创建 <code>namespace</code> 可以添加命令 <code>--create-namespace</code> 自动创建</li>
-</ul>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -880,14 +918,14 @@ helm <span class="token function">install</span> loki --namespace<span class="to
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">380</span>
+          <span class="site-state-item-count">381</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">55</span>
+        <span class="site-state-item-count">56</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
