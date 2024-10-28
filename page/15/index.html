@@ -196,6 +196,129 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/loki-ji-qun-pei-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/loki-ji-qun-pei-zhi/" class="post-title-link" itemprop="url">loki集群配置</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-06-07 09:17:54" itemprop="dateCreated datePublished" datetime="2022-06-07T09:17:54+08:00">2022-06-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/loki/" itemprop="url" rel="index"><span itemprop="name">loki</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>通过 helm 部署的 Loki 默认都是采用一个副本，如果想部署集群方案直接将 Loki 副本数改成 3 或者其它数是不行的，网上集群相关的文档也比较少，不过在 Loki 官方仓库 production 目录下有相关的配置样例，具体参考 <a target="_blank" rel="noopener" href="https://github.com/grafana/loki/blob/main/production/docker/config/loki-docker-memberlist-boltdb-shipper.yaml">production</a>。</p>
+<h3 id="Loki组件"><a href="#Loki组件" class="headerlink" title="Loki组件"></a>Loki组件</h3><p><img data-src="/images/loki5.png" alt="loki"></p>
+<ul>
+<li>Distributor（分配器）<br>Distributor主要负责分发从客户端上报的日志, 在进行完日志的校验之后便会分发给ingester处理. Distributor使用了一致性哈希以及一个可以配置的副本数来决定不同的日志流的后端ingester. 哈希环信息的存储使用了Consul. Ingester会根据自身的状态注册在哈希环上来标识自身可提供服务的状态. Distributor会使用注册租户id和标签集时作为哈希的输入, 计算出对应的哈希环位置, 并找到对应的ingester.</li>
+<li>Ingester（采集器）<br>Ingester是loki中比较核心的服务, 该服务将从Distributor发送来的日志进行转储到后端存储, 并给Querier提供仍在内存中未写盘的数据查询功能.<br>Ingester注册在哈希环上的状态有PENDING, JOINING, ACTIVE, LEAVING, UNHEALTHY, 除了ACTIVE状态外, 其余状态都只会提供部分服务。<br>在存储到真正的存储前, 日志流只有按顺序收到才会被处理, Ingester会按照标签的组合set构建若干压缩过的chunks, 间隔一段时间将chunks作为整体刷写到后端存储. 刷进后端存储的chunks被标记为只读.</li>
+<li>Querier frontend<br>该服务是一个可选组件，在一组查询器前面，来负责在它们之间公平地调度请求，尽可能地并行化它们并缓存请求。</li>
+<li>Querier（查询器）<br>Querier则是用来提供查询服务, 他使用了LogQL, 一种类似于PromQL的语言作为用户界面. Querier会查询已经写入后端存储的chunks以及仍在ingester内存中的数据, 根据label查找数据后, 再遍历数据查找到满足条件的日志</li>
+<li>Chunk（块）存储<br>Chunk Store是Loki的后端存储框架, 可以支持多种存储方式, 存储分为两部分:索引的存储（Index）和日志数据存储.<br><img data-src="/images/loki6.png" alt="loki"></li>
+</ul>
+<h3 id="Loki集群方案"><a href="#Loki集群方案" class="headerlink" title="Loki集群方案"></a>Loki集群方案</h3><p><img data-src="/images/loki7.png" alt="loki"></p>
+<ul>
+<li>loki 核心服务 distributor、ingester、querier 没有分离，而是启动在一个实例当中；</li>
+<li>是直接用 memberlist 在内存中维护集群状态；</li>
+<li>使用 <a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/operations/storage/boltdb-shipper/">boltdb-shipper</a> 替代其他日志索引方案</li>
+</ul>
+<h3 id="Loki集群配置"><a href="#Loki集群配置" class="headerlink" title="Loki集群配置"></a>Loki集群配置</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">ingester</span><span class="token punctuation">:</span>
+    <span class="token key atrule">lifecycler</span><span class="token punctuation">:</span>
+      <span class="token key atrule">ring</span><span class="token punctuation">:</span>
+        <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
+        <span class="token comment" spellcheck="true"># store 支持 consul, etcd, inmemory, memberlist</span>
+          <span class="token key atrule">store</span><span class="token punctuation">:</span> memberlist
+        <span class="token comment" spellcheck="true"># 设置副本数</span>
+        <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
+  <span class="token key atrule">memberlist</span><span class="token punctuation">:</span>
+    <span class="token comment" spellcheck="true"># 加入集群的节点地址列表</span>
+    <span class="token key atrule">join_members</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"loki-1.loki-headless.loki"</span><span class="token punctuation">,</span> <span class="token string">"loki-2.loki-headless.loki"</span><span class="token punctuation">,</span> <span class="token string">"loki-0.loki-headless.loki"</span><span class="token punctuation">]</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>更多配置参考官方 <a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/configuration/">configuration</a>.</li>
+</ul>
+<h3 id="Loki-helm安装"><a href="#Loki-helm安装" class="headerlink" title="Loki helm安装"></a>Loki helm安装</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://grafana.github.io/loki/charts/">charts</a></li>
+</ul>
+<h3 id="Promtail-配置注意事项"><a href="#Promtail-配置注意事项" class="headerlink" title="Promtail 配置注意事项"></a>Promtail 配置注意事项</h3><ul>
+<li>vim charts/promtail/values.yaml</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># Extra volumes to scrape logs from</span>
+<span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> docker
+  <span class="token key atrule">hostPath</span><span class="token punctuation">:</span>
+    <span class="token comment" spellcheck="true"># 修改为docker的实际路径</span>
+    <span class="token key atrule">path</span><span class="token punctuation">:</span> /home/docker/containers
+<span class="token comment" spellcheck="true">#  ...</span>
+<span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> docker
+  <span class="token comment" spellcheck="true"># 修改为docker的实际路径</span>
+  <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /home/docker/containers
+  <span class="token key atrule">readOnly</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h3><ul>
+<li>参考文档：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_49366475/article/details/116978885">1</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/helm3-chang-yong-ming-ling/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -851,141 +974,6 @@ PUT /my-index<span class="token number">-000001</span>/_settings
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/elasticsearch-fen-pian-guo-lu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/elasticsearch-fen-pian-guo-lu/" class="post-title-link" itemprop="url">elasticsearch分片过滤</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-04-22 09:12:48" itemprop="dateCreated datePublished" datetime="2022-04-22T09:12:48+08:00">2022-04-22</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="分片过滤"><a href="#分片过滤" class="headerlink" title="分片过滤"></a>分片过滤</h3><ul>
-<li>第一步</li>
-</ul>
-<p>在节点<code>elasticsearch.yml</code>配置中可以为节点增加自定义属性，如</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token comment" spellcheck="true"># small,big,...</span>
-<span class="token key atrule">node.attr.size</span><span class="token punctuation">:</span> medium
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>或者在启动时增加自定义属性</p>
-<pre class="line-numbers language-bash"><code class="language-bash">./bin/elasticsearch -Enode.attr.size<span class="token operator">=</span>medium
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>节点自带属性</p>
-<table>
-<thead>
-<tr>
-<th>属性</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>_name</code></td>
-<td>Match nodes by node name</td>
-</tr>
-<tr>
-<td><code>_host_ip</code></td>
-<td>Match nodes by host IP address (IP associated with hostname)</td>
-</tr>
-<tr>
-<td><code>_publish_ip</code></td>
-<td>Match nodes by publish IP address</td>
-</tr>
-<tr>
-<td><code>_ip</code></td>
-<td>Match either _host_ip or _publish_ip</td>
-</tr>
-<tr>
-<td><code>_host</code></td>
-<td>Match nodes by hostname</td>
-</tr>
-<tr>
-<td><code>_id</code></td>
-<td>Match nodes by node id</td>
-</tr>
-<tr>
-<td><code>_tier</code></td>
-<td>Match nodes by the node’s data tier role.</td>
-</tr>
-</tbody></table>
-<ul>
-<li>第二步</li>
-</ul>
-<p>创建或修改索引的分片过滤条件,支持<code>require</code>,<code>exclude</code>,<code>include</code></p>
-<pre class="line-numbers language-yaml"><code class="language-yaml">PUT test/_settings
-<span class="token comment" spellcheck="true"># 例1</span>
-<span class="token punctuation">{</span>
-  <span class="token key atrule">"index.routing.allocation.include.size"</span><span class="token punctuation">:</span> <span class="token string">"big,medium"</span>
-<span class="token punctuation">}</span>
-<span class="token comment" spellcheck="true"># 例2</span>
-<span class="token punctuation">{</span>
-  <span class="token key atrule">"index.routing.allocation.require.size"</span><span class="token punctuation">:</span> <span class="token string">"big"</span><span class="token punctuation">,</span>
-  <span class="token key atrule">"index.routing.allocation.require.rack"</span><span class="token punctuation">:</span> <span class="token string">"rack1"</span>
-<span class="token punctuation">}</span>
-<span class="token comment" spellcheck="true"># 例3</span>
-<span class="token punctuation">{</span>
-  <span class="token key atrule">"index.routing.allocation.include._ip"</span><span class="token punctuation">:</span> <span class="token string">"192.168.2.*"</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/shard-allocation-filtering.html">官方文档分片过滤</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1057,7 +1045,7 @@ PUT /my-index<span class="token number">-000001</span>/_settings
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">381</span>
+          <span class="site-state-item-count">382</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

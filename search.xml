@@ -33087,8 +33087,10 @@ FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuatio
 <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <h3 id="3-查看可安装的MySQL包"><a href="#3-查看可安装的MySQL包" class="headerlink" title="3. 查看可安装的MySQL包"></a>3. 查看可安装的MySQL包</h3><pre class="line-numbers language-shell"><code class="language-shell">yum repolist enabled | grep mysql.*-community
 <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="4-安装MySQL"><a href="#4-安装MySQL" class="headerlink" title="4. 安装MySQL"></a>4. 安装MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell">yum install mysql-community-server
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="4-安装MySQL"><a href="#4-安装MySQL" class="headerlink" title="4. 安装MySQL"></a>4. 安装MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell"># EL8 systems 需要先禁止.
+yum module disable mysql
+yum install mysql-community-server
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <h3 id="5-启动MySQL"><a href="#5-启动MySQL" class="headerlink" title="5. 启动MySQL"></a>5. 启动MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell">systemctl start mysqld
 <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <h3 id="6-登录MySQL"><a href="#6-登录MySQL" class="headerlink" title="6. 登录MySQL"></a>6. 登录MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell"># 查看生成的随机密码
@@ -34958,6 +34960,67 @@ yum update
       </categories>
       <tags>
         <tag>traefik</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>节点重启flannel网络不通问题排查记录</title>
+    <url>/jie-dian-chong-qi-flannel-wang-luo-bu-tong-wen-ti-pai-cha-ji-lu/</url>
+    <content><![CDATA[<h3 id="问题现象"><a href="#问题现象" class="headerlink" title="问题现象"></a>问题现象</h3><p>k8s集群中有一台机器重启了，重启后在这台节点ping其他机器的<code>pod ip</code>都不通。</p>
+<p>抓ping的包可以看到只有<code>request</code>的,正常情况是有<code>reply</code>的。</p>
+<pre class="line-numbers language-log"><code class="language-log">tcpdump -i flannel.1 icmp
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on flannel.1, link-type EN10MB (Ethernet), capture size 262144 bytes
+22:28:45.852513 IP 10.233.65.0 > 10.233.64.0: ICMP echo request, id 12, seq 48, length 64
+22:28:46.872698 IP 10.233.65.0 > 10.233.64.0: ICMP echo request, id 12, seq 49, length 64
+22:28:47.896618 IP 10.233.65.0 > 10.233.64.0: ICMP echo request, id 12, seq 50, length 64
+22:28:49.851093 IP 10.233.65.0 > 10.233.64.0: ICMP echo request, id 13, seq 1, length 64
+22:28:50.872665 IP 10.233.65.0 > 10.233.64.0: ICMP echo request, id 13, seq 2, length 64
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>NC命令测试,问题节点启动UDP监听</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动udp监听</span>
+nc -u -l -p 12345 
+<span class="token comment" spellcheck="true"># 抓包</span>
+tcpdump -i flannel.1 port 12345
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>正常节点发送udp报文</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token keyword">echo</span> <span class="token string">"test"</span><span class="token operator">|</span> nc -u 10.233.64.0  12345
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>此时后台抓包可以看到有报文过来,但是nc控制台无任何显示。</p>
+<h3 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h3><ol>
+<li><p>网上搜很多是云平台安全组策略问题,这可能是一种情况，但是我这里安全组策略都是开通的。</p>
+</li>
+<li><p>学习下<a href="https://www.arvintian.cn/post/kubernetes/flannel%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%BC%8F%E4%B9%8Bvxlan/">Flannel网络模式之VXLAN</a><br>文中提到每个节点都会保存<code>Routing Table</code>、<code>ARP Table</code>和<code>FDB Table</code>，然后我在所有节点上都查询了这些表，</p>
+</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 查询route</span>
+route -n
+
+<span class="token comment" spellcheck="true"># 查询ARP</span>
+ip neigh <span class="token operator">|</span> <span class="token function">grep</span> flannel
+
+<span class="token comment" spellcheck="true"># 查询 FDB</span>
+bridge fdb show <span class="token operator">|</span> <span class="token function">grep</span> flannel.1
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>发现别的节点 ARP 表和 FDB 表保存的重启节点的 <code>Flannel.1</code> 网卡的 <code>MAC</code> 地址不对。更新MAC地址:</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 删除FDB命令：bridge fdb del &lt;MAC地址> dev &lt;接口> dst &lt;目标IP></span>
+bridge fdb del 46:83:71:f7:d7:69 dev flannel.1 dst 10.201.112.29
+<span class="token comment" spellcheck="true"># 新增：bridge fdb add &lt;MAC地址> dev &lt;接口> dst &lt;目标IP></span>
+bridge fdb add 46:83:71:f7:d7:69 dev flannel.1 dst 10.201.112.29
+
+<span class="token comment" spellcheck="true"># 删除ARP</span>
+ip neigh del 10.233.64.0 dev flannel.1
+<span class="token comment" spellcheck="true"># 新增</span>
+ip neigh add 10.233.64.0 lladdr f2:b5:5e:29:23:55 dev flannel.1 nud permanent
+<span class="token comment" spellcheck="true"># 注意：删除ARP后可能会自动添加一个，导致新增失败，RTNETLINK answers: File exists，可以将删除和新增放同一个命令执行。</span>
+ip neigh del 10.233.64.0 dev flannel.1 <span class="token operator">&amp;&amp;</span> ip neigh add 10.233.64.0 lladdr 0a:9c:93:d8:1c:bd dev flannel.1 nud permanent
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>然后测试ping别的机器POD IP,问题解决。</p>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>flannel</tag>
       </tags>
   </entry>
 </search>

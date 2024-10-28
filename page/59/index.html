@@ -196,6 +196,146 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ingress-nginx-she-zhi-https-zheng-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ingress-nginx-she-zhi-https-zheng-shu/" class="post-title-link" itemprop="url">ingress-nginx设置https证书</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-19 11:26:00" itemprop="dateCreated datePublished" datetime="2019-11-19T11:26:00+08:00">2019-11-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="创建自签署证书"><a href="#创建自签署证书" class="headerlink" title="创建自签署证书"></a>创建自签署证书</h3><blockquote>
+<p>注意证书中的<code>CN=tls.echo.example</code>改成自己的域名地址。</p>
+</blockquote>
+<pre><code>echo "生成自签署的 ca 证书"
+openssl req -x509 -sha256 -newkey rsa:4096 -keyout ca.key -out ca.crt -days 3560 -nodes -subj '/CN=My Cert Authority'
+ 
+echo "生成用上述 ca 签署的 server 证书"
+openssl req -new -newkey rsa:4096 -keyout server.key -out server.csr -nodes -subj '/CN=tls.echo.example'
+openssl x509 -req -sha256 -days 3650 -in server.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out server.crt
+</code></pre>
+<h3 id="将-server-证书上传到-kubernetes"><a href="#将-server-证书上传到-kubernetes" class="headerlink" title="将 server 证书上传到 kubernetes"></a>将 server 证书上传到 kubernetes</h3><blockquote>
+<p>注意其中的命名空间<code>demo-echo和secret</code>名称<code>tls-echo-exmaple-secret</code>，改成自己的。</p>
+</blockquote>
+<pre><code>kubectl -n demo-echo create secret generic tls-echo-exmaple-secret --from-file=tls.crt=server.crt --from-file=tls.key=server.key
+</code></pre>
+<h3 id="配置ingress"><a href="#配置ingress" class="headerlink" title="配置ingress"></a>配置ingress</h3><blockquote>
+<p><code>ignress</code> 中的 <code>host</code> 一定要与证书的 <code>CN</code> 相同，在 <code>tls</code> 配置中引用前面创建的 <code>secret</code></p>
+</blockquote>
+<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-echo-with-tls
+spec:
+  rules:
+  - host: tls.echo.example
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: echo
+          servicePort: 80
+  tls:
+  - hosts:
+    - tls.echo.example
+    secretName: tls-echo-exmaple-secret
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="为多个域名配置证书"><a href="#为多个域名配置证书" class="headerlink" title="为多个域名配置证书"></a>为多个域名配置证书</h3><pre class="line-numbers language-yml"><code class="language-yml">apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: foo-tls
+  namespace: default
+spec:
+  tls:
+  - hosts:
+    - foo.bar.com
+    # This secret must exist beforehand
+    # The cert must also contain the subj-name foo.bar.com
+    # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
+    secretName: foobar
+  - hosts:
+    - bar.baz.com
+    # This secret must exist beforehand
+    # The cert must also contain the subj-name bar.baz.com
+    # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
+    secretName: barbaz
+  rules:
+  - host: foo.bar.com
+    http:
+      paths:
+      - backend:
+          serviceName: http-svc
+          servicePort: 80
+        path: /
+  - host: bar.baz.com
+    http:
+      paths:
+      - backend:
+          serviceName: nginx
+          servicePort: 80
+        path: /
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://www.lijiaocn.com/soft/k8s/ingress-nginx/tls.html">https://www.lijiaocn.com/soft/k8s/ingress-nginx/tls.html</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-dong-tai-fen-pei-cun-chu-helm-an-zhuang-nfs-client/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -832,81 +972,6 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/spring-boot-zi-ding-yi-pei-zhi-boolean-shu-xing-bu-neng-sheng-xiao-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/spring-boot-zi-ding-yi-pei-zhi-boolean-shu-xing-bu-neng-sheng-xiao-wen-ti/" class="post-title-link" itemprop="url">spring boot自定义配置Boolean属性不能生效问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-08 17:20:02" itemprop="dateCreated datePublished" datetime="2019-11-08T17:20:02+08:00">2019-11-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>有时候我们需要在 <code>application.yaml</code>文件中自定义配置，在程序中通过属性名映射过去，但是有时候定义错误的属性名会导致配置不生效。<br>属性名<font color="red"><strong>不能</strong>是<code>is</code>开头</font>，例如属性名为<code>isLog</code>，你在配置文件中不管怎么给这个属性设值都不会生效，需要改成log即可。</p>
-<p>我使用<code>spring boot</code>版本：</p>
-<pre><code>&lt;parent&gt;
-    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-    &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
-    &lt;version&gt;2.0.6.RELEASE&lt;/version&gt;
-    &lt;relativePath/&gt;
-&lt;/parent&gt;
-</code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -978,7 +1043,7 @@ tiller-deploy-7bf78cdbf7-9q94c          1m           16Mi
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">381</span>
+          <span class="site-state-item-count">382</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
