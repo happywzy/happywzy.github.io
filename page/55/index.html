@@ -196,6 +196,411 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mybatis-zhu-jie-fang-shi-dong-tai-pin-jie-sql/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/mybatis-zhu-jie-fang-shi-dong-tai-pin-jie-sql/" class="post-title-link" itemprop="url">Mybatis注解方式动态拼接SQL</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-31 09:40:00" itemprop="dateCreated datePublished" datetime="2019-12-31T09:40:00+08:00">2019-12-31</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在spring boot中，集成Mybatis可以使用完全注解的方式，完全不用新增任何配置文件。多条件判断，可以使用<code>&lt;script&gt;</code>和<code>&lt;set&gt;</code>搭配实现。</p>
+<h3 id="Update"><a href="#Update" class="headerlink" title="@Update"></a>@Update</h3><pre><code>@Update("&lt;script&gt;update t_user " +
+        "&lt;set&gt; " +
+        "&lt;if test='userName != null'&gt; user_name = #{userName},&lt;/if&gt;" +
+        "&lt;if test='userPwd != null'&gt; user_pwd = #{userPwd},&lt;/if&gt;" +
+        "&lt;if test='userRemark != null'&gt; user_remark = #{userRemark},&lt;/if&gt;" +
+        "&lt;if test='userPhone != null'&gt; user_phone = #{userPhone},&lt;/if&gt;" +
+        "&lt;if test='userEmail != null'&gt; user_email = #{userEmail},&lt;/if&gt;" +
+        "&lt;/set&gt; " +
+        "where user_id = #{userId}&lt;/script&gt;")
+</code></pre>
+<h3 id="Select"><a href="#Select" class="headerlink" title="@Select"></a>@Select</h3><pre><code>@Select("select id,name,description,enabled,deleted,date_created as dateCreated,last_modified as lastModified from admin_role (#{roleParam})")
+</code></pre>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">//不使用 @Param 时，那么，此时 collection 需要定义为 list，否则会报错</span>
+<span class="token annotation punctuation">@Select</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+        <span class="token string">"&lt;script>"</span><span class="token punctuation">,</span>
+        <span class="token string">"SELECT * "</span><span class="token punctuation">,</span>
+        <span class="token string">"FROM users WHERE id IN"</span><span class="token punctuation">,</span>
+        <span class="token string">"&lt;foreach item='id' index='index' collection='ids' open='(' separator=',' close=')'>"</span><span class="token punctuation">,</span>
+        <span class="token string">"#{id}"</span><span class="token punctuation">,</span>
+        <span class="token string">"&lt;/foreach>"</span><span class="token punctuation">,</span>
+        <span class="token string">"&lt;/script>"</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+List<span class="token operator">&lt;</span>UserEntity<span class="token operator">></span> <span class="token function">getUserById</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Param</span><span class="token punctuation">(</span><span class="token string">"ids"</span><span class="token punctuation">)</span> List<span class="token operator">&lt;</span>String<span class="token operator">></span> ids<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Insert"><a href="#Insert" class="headerlink" title="@Insert"></a>@Insert</h3><pre><code>@Insert("insert into t_alert_log (alert_name,severity,message,start_at,end_at) " +
+            "values(#{alertName},#{severity},#{message},#{startAt},#{endAt})")
+@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+</code></pre>
+<h3 id="Update-1"><a href="#Update-1" class="headerlink" title="@Update"></a>@Update</h3><pre><code>@Update("update t_alert_log set status=true,remark=#{remark} where token=#{token}")
+</code></pre>
+<h3 id="ResultType"><a href="#ResultType" class="headerlink" title="@ResultType"></a>@ResultType</h3><pre><code>@ResultType(String.class)
+</code></pre>
+<h3 id="注解方式传入表名和字段名"><a href="#注解方式传入表名和字段名" class="headerlink" title="注解方式传入表名和字段名"></a>注解方式传入表名和字段名</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 一般通过#{xxx}方式传入内容,但是表名和字段名不能通过这个方式.</span>
+<span class="token comment" spellcheck="true">// 动态传入表名和字段名用到${xxx}</span>
+<span class="token annotation punctuation">@Delete</span><span class="token punctuation">(</span><span class="token string">"delete from ${tableName} where DATE(${columnName}) &lt;= DATE(DATE_SUB(NOW(),INTERVAL #{interval} day));"</span><span class="token punctuation">)</span>
+<span class="token keyword">void</span> <span class="token function">delete</span><span class="token punctuation">(</span>String tableName<span class="token punctuation">,</span> String columnName<span class="token punctuation">,</span> <span class="token keyword">int</span> interval<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/helm-chang-yong-ming-ling-zong-jie/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/helm-chang-yong-ming-ling-zong-jie/" class="post-title-link" itemprop="url">helm常用命令总结</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-30 15:37:26" itemprop="dateCreated datePublished" datetime="2019-12-30T15:37:26+08:00">2019-12-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<h2 id="Helm用途"><a href="#Helm用途" class="headerlink" title="Helm用途"></a>Helm用途</h2><p>做为Kubernetes的一个包管理工具，Helm具有如下功能：</p>
+<ul>
+<li>创建新的chart</li>
+<li>chart打包成tgz格式</li>
+<li>上传chart到chart仓库或从仓库中下载chart</li>
+<li>在Kubernetes集群中安装或卸载chart</li>
+<li>管理用Helm安装的chart的发布周期<br>Helm有三个重要概念：</li>
+<li>chart：包含了创建Kubernetes的一个应用实例的必要信息</li>
+<li>config：包含了应用发布配置信息</li>
+<li>release：是一个chart及其配置的一个运行实例</li>
+</ul>
+</blockquote>
+<h2 id="Helm常用命令"><a href="#Helm常用命令" class="headerlink" title="Helm常用命令"></a>Helm常用命令</h2><table>
+<thead>
+<tr>
+<th>操作类型</th>
+<th>命令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>添加仓库</td>
+<td>helm repo add loki <a target="_blank" rel="noopener" href="https://grafana.github.io/loki/charts">https://grafana.github.io/loki/charts</a></td>
+</tr>
+<tr>
+<td>更新仓库</td>
+<td>helm repo update</td>
+</tr>
+<tr>
+<td>查看helm仓库列表</td>
+<td>helm repo list</td>
+</tr>
+<tr>
+<td>查看本地已安装的包</td>
+<td>helm list (ls)</td>
+</tr>
+<tr>
+<td>查看全部release(包括删除的…)</td>
+<td>helm list -a</td>
+</tr>
+<tr>
+<td>查看helm版本</td>
+<td>helm version</td>
+</tr>
+<tr>
+<td>删除release</td>
+<td>helm delete loki</td>
+</tr>
+<tr>
+<td>设置安装release名称</td>
+<td>–name test</td>
+</tr>
+<tr>
+<td>设置安装的namespace</td>
+<td>–namespace test</td>
+</tr>
+<tr>
+<td>设置自定义属性</td>
+<td>–set “loki.serviceName=loki”</td>
+</tr>
+<tr>
+<td>从文件读取自定义属性集合</td>
+<td>-f values.yaml</td>
+</tr>
+<tr>
+<td>查找本地release的版本列表</td>
+<td>helm search testapi -l</td>
+</tr>
+<tr>
+<td>指定charts版本</td>
+<td>–version 8.2.4</td>
+</tr>
+<tr>
+<td>查看安装历史</td>
+<td>helm history prometheus-operator</td>
+</tr>
+<tr>
+<td>版本回滚</td>
+<td>helm rollback prometheus-operator&nbsp;1</td>
+</tr>
+<tr>
+<td>打包chart</td>
+<td>helm&nbsp;package&nbsp;mychart</td>
+</tr>
+<tr>
+<td>获取charts</td>
+<td>helm&nbsp;fetch&nbsp;stable/mysql&nbsp;–version&nbsp;0.2.8&nbsp;–untar</td>
+</tr>
+<tr>
+<td>检查chart是否存在问题</td>
+<td>helm&nbsp;lint&nbsp;mysql</td>
+</tr>
+<tr>
+<td>创建一个本地仓库</td>
+<td>helm&nbsp;serve&nbsp;–address&nbsp;0.0.0.0:8879&nbsp;–repo-path&nbsp;./charts</td>
+</tr>
+<tr>
+<td>创建一个chart</td>
+<td>helm&nbsp;create&nbsp;mychart</td>
+</tr>
+<tr>
+<td>查看release状态</td>
+<td>helm&nbsp;status&nbsp;mysql</td>
+</tr>
+<tr>
+<td>更新release</td>
+<td>helm&nbsp;upgrade&nbsp;mysql&nbsp;-f&nbsp;mysql/values.yaml&nbsp;–set&nbsp;resources.requests.memory=1024Mi&nbsp;mysql</td>
+</tr>
+<tr>
+<td>查看指定release的历史版本部署时部分配置信息</td>
+<td>helm&nbsp;get&nbsp;–revision&nbsp;1&nbsp;mysql</td>
+</tr>
+<tr>
+<td>对chart的模板和配置进行测试</td>
+<td>helm install –dry-run –debug ./</td>
+</tr>
+<tr>
+<td>查看release默认配置</td>
+<td>helm inspect values stable/prometheus-operator</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-bookinfo-shi-li-zhi-jian-dan-lu-you-guan-li/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/istio-shi-yong-bookinfo-shi-li-zhi-jian-dan-lu-you-guan-li/" class="post-title-link" itemprop="url">Istio使用【Bookinfo示例之简单路由管理】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-30 14:47:41" itemprop="dateCreated datePublished" datetime="2019-12-30T14:47:41+08:00">2019-12-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p><strong>本文使用的istio版本：<code>1.4.2</code></strong></p>
+</blockquote>
+<blockquote>
+<p>上章内容只是简单运行了<code>Bookinfo</code>示例（<a href="">Istio使用【Bookinfo示例】</a>），访问页面，<code>Reviews</code>虽然有三个版本，但是刷新浏览器，三个版本是随机返回。本章内容仍然使用官方样例配置，定义一些自定义路由规则。在这之前最好了解下<a target="_blank" rel="noopener" href="https://haolin.club/2020/01/03/istio-shi-yong-crds/">Istio使用【CRDs】</a>。</p>
+</blockquote>
+<h3 id="创建所有服务的DestinationRule"><a href="#创建所有服务的DestinationRule" class="headerlink" title="创建所有服务的DestinationRule"></a>创建所有服务的<code>DestinationRule</code></h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="定义V1和V2版本8-2比重，V3不返回"><a href="#定义V1和V2版本8-2比重，V3不返回" class="headerlink" title="定义V1和V2版本8:2比重，V3不返回"></a>定义<code>V1</code>和<code>V2</code>版本<code>8:2</code>比重，<code>V3</code>不返回</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> reviews
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v1
+      <span class="token key atrule">weight</span><span class="token punctuation">:</span> <span class="token number">80</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v2
+      <span class="token key atrule">weight</span><span class="token punctuation">:</span> <span class="token number">20</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="定义如果Header中包含jason用户返回V2版本，否则返回V3版本"><a href="#定义如果Header中包含jason用户返回V2版本，否则返回V3版本" class="headerlink" title="定义如果Header中包含jason用户返回V2版本，否则返回V3版本"></a>定义如果<code>Header</code>中包含<code>jason</code>用户返回<code>V2</code>版本，否则返回<code>V3</code>版本</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> networking.istio.io/v1alpha3
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> VirtualService
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> reviews
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> reviews
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">headers</span><span class="token punctuation">:</span>
+        <span class="token key atrule">end-user</span><span class="token punctuation">:</span>
+          <span class="token key atrule">exact</span><span class="token punctuation">:</span> jason
+    <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v2
+  <span class="token punctuation">-</span> <span class="token key atrule">route</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">destination</span><span class="token punctuation">:</span>
+        <span class="token key atrule">host</span><span class="token punctuation">:</span> reviews
+        <span class="token key atrule">subset</span><span class="token punctuation">:</span> v3
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其它可以参考<code>samples/bookinfo/networking/</code>目录下配置。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-bookinfo-shi-li/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -577,406 +982,10 @@ jaeger-query             NodePort       10.101.53.38     <span class="token oper
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/logback-pei-zhi-wen-jian-mo-ban/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/logback-pei-zhi-wen-jian-mo-ban/" class="post-title-link" itemprop="url">logback配置文件模板</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-25 16:30:22" itemprop="dateCreated datePublished" datetime="2019-12-25T16:30:22+08:00">2019-12-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="Logback默认配置的步骤"><a href="#Logback默认配置的步骤" class="headerlink" title="Logback默认配置的步骤"></a>Logback默认配置的步骤</h2><ol>
-<li>尝试在 classpath下查找文件logback-test.xml；</li>
-<li>如果文件不存在，则查找文件logback.xml；</li>
-<li>如果两个文件都不存在，logback用BasicConfigurator自动对自己进行配置，这会导致记录输出到控制台。</li>
-</ol>
-<h2 id="logback配置文件模板"><a href="#logback配置文件模板" class="headerlink" title="logback配置文件模板"></a>logback配置文件模板</h2><pre class="line-numbers language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="UTF-8"?></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>statusListener</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.status.NopStatusListener<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ROOT<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>./logs/<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILESIZE<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>100MB<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>MAXHISTORY<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>30<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timestamp</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>DATETIME<span class="token punctuation">"</span></span> <span class="token attr-name">datePattern</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>yyyy-MM-dd HH:mm:ss<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token comment" spellcheck="true">&lt;!-- 控制台打印 --></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>STDOUT<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.ConsoleAppender<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>encoder</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pattern</span><span class="token punctuation">></span></span>[%-5level] %d{yyyy-MM-dd HH:mm:ss:SSS} [%thread] %logger{36} - %m%n<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pattern</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>encoder</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appender</span><span class="token punctuation">></span></span>
-    <span class="token comment" spellcheck="true">&lt;!-- 输入到文件，按日期和文件大小 --></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILEOUT<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.RollingFileAppender<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>encoder</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pattern</span><span class="token punctuation">></span></span>[%-5level] %d{yyyy-MM-dd HH:mm:ss:SSS} [%thread] %logger{36} - %m%n<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pattern</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>encoder</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>rollingPolicy</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.TimeBasedRollingPolicy<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>fileNamePattern</span><span class="token punctuation">></span></span>${ROOT}/log.%d.%i.log<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>fileNamePattern</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>maxHistory</span><span class="token punctuation">></span></span>${MAXHISTORY}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>maxHistory</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timeBasedFileNamingAndTriggeringPolicy</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>maxFileSize</span><span class="token punctuation">></span></span>${FILESIZE}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>maxFileSize</span><span class="token punctuation">></span></span>
-            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>timeBasedFileNamingAndTriggeringPolicy</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>rollingPolicy</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appender</span><span class="token punctuation">></span></span>
-    <span class="token comment" spellcheck="true">&lt;!-- Logger 根目录 --></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>root</span> <span class="token attr-name">level</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>INFO<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>STDOUT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>FILEOUT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>root</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-dashboard-kiali/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/istio-shi-yong-dashboard-kiali/" class="post-title-link" itemprop="url">Istio使用【dashboard—kiali】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-25 15:38:30" itemprop="dateCreated datePublished" datetime="2019-12-25T15:38:30+08:00">2019-12-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>本文使用的istio版本号：<code>1.4.2</code></p>
-</blockquote>
-<h3 id="配置安装kiali"><a href="#配置安装kiali" class="headerlink" title="配置安装kiali"></a>配置安装kiali</h3><p>默认配置，istio并未选择安装kiali，参考上一章<a href="">安装</a>，修改<code>values.yaml</code></p>
-<pre class="line-numbers language-sh"><code class="language-sh">vim install/kubernetes/helm/istio/values.yaml
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<pre class="line-numbers language-yml"><code class="language-yml"># ....
-kiali:
-  enabled: true
-# ....
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<p>同时如果需要链路监控，需要开启安装<code>jaeger</code></p>
-<pre class="line-numbers language-yml"><code class="language-yml">#....
-tracing:
-  enabled: true
-#....
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<p>如果系统中没有安装<code>grafana</code>和<code>Prometheus</code>，也需要开启</p>
-<pre class="line-numbers language-yml"><code class="language-yml">#.....
-grafana:
-  enabled: true
- 
-prometheus:
-  enabled: true
-#.....
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置kiali"><a href="#配置kiali" class="headerlink" title="配置kiali"></a>配置kiali</h3><p>可以在安装前配置好<code>kaili</code>，主要配置集中在</p>
-<pre><code>vim install/kubernetes/helm/istio/charts/kiali/values.yaml
-</code></pre>
-<pre class="line-numbers language-yml"><code class="language-yml">#......
-ingress:
-  enabled: false
-  hosts:
-    - kiali.local
- 
-dashboard:
-  auth:
-    strategy: login
-  secretName: kiali 
-  viewOnlyMode: false 
-  grafanaURL:  
-  jaegerURL:  
-prometheusAddr: http://prometheus:9090
-#.....
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>配置访问：ingress是否开启，hosts地址，tls…</li>
-<li><code>strategy</code>：认证策略，可以是anonymous, login, openshift，默认login</li>
-<li><code>secretName</code>：登录用户名/密码，需要提前创建好secret</li>
-</ul>
-<pre class="line-numbers language-yml"><code class="language-yml">apiVersion: v1
-kind: Secret
-metadata:
-  name: kiali
-  labels:
-    app: kiali
-    version: v1.9
-type: Opaque
-data:
-  username: YWRtaW4=    # admin
-  passphrase: YWRtaW4=    # admin
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-sh"><code class="language-sh">#base64 加密
-echo -n "admin" | base64
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ul>
-<li>grafanaURL：grafana地址，如果是在同一个namespace下，可以是</li>
-</ul>
-<pre><code>http://grafana:3000 或者 http://grafana.monitoring.svc.cluster.local:3000
-</code></pre>
-<ul>
-<li>prometheusAddr：Prometheus地址，如果是在同一个namespace下，可以是</li>
-</ul>
-<pre><code>http://prometheus:9090 或者 http://prometheus.monitoring.svc.cluster.local:9090
-</code></pre>
-<ul>
-<li>jaegerURL：jaeger地址，默认在同一个namespace istio-system下，可以是</li>
-</ul>
-<pre><code>http://jaeger-query:16686/jaeger
-</code></pre>
-<p>如果是在安装后，想要修改kiali配置，可以修改<code>istio-system</code>下<code>configmap</code> <code>kiali</code></p>
-<pre><code>kubectl edit cm  kiali   -n istio-system
-</code></pre>
-<p>修改<code>configmap</code>里面的<code>config.yaml</code>文件，对应的</p>
-<pre class="line-numbers language-yml"><code class="language-yml">istio_namespace: istio-system
-deployment:
-  accessible_namespaces: ['**']
-auth:
-  strategy: login
-server:
-  port: 20001
-  web_root: /kiali
-external_services:
-  tracing:
-    url: http://jaeger-query:16686/jaeger
-  grafana:
-    url: http://grafana:3000
-  prometheus:
-    url: http://prometheus:9090
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>修改完需要重启<code>kiali POD</code>。</p>
-<h3 id="预览"><a href="#预览" class="headerlink" title="预览"></a>预览</h3><p><img data-src="/images/istio4.png" alt="istio"></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/istio-shi-yong-dashboard-naftis/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/istio-shi-yong-dashboard-naftis/" class="post-title-link" itemprop="url">istio使用【dashboard—Naftis】</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-12-25 15:05:27" itemprop="dateCreated datePublished" datetime="2019-12-25T15:05:27+08:00">2019-12-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/istio/" itemprop="url" rel="index"><span itemprop="name">istio</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>本文使用的istio版本号：<code>1.4.2</code></p>
-</blockquote>
-<h3 id="简介（参考官网，Naftis小米开源，不在维护）"><a href="#简介（参考官网，Naftis小米开源，不在维护）" class="headerlink" title="简介（参考官网，Naftis小米开源，不在维护）"></a>简介（参考<a target="_blank" rel="noopener" href="https://github.com/xiaomi/naftis/blob/master/README-CN.md">官网</a>，Naftis小米开源，不在维护）</h3><p><code>Naftis</code> 是一个基于 web 的 <code>Istio dashboard</code>，通过任务模板的方式来帮助用户更方便地执行 Istio 任务。 用户可以在 Naftis 中定义自己的任务模板，并填充变量来构造单个或多个构造任务实例，从而完成各种服务治理功能。</p>
-<ul>
-<li>内部集成了一些常用 dashboard</li>
-<li>可定制的任务模板支持</li>
-<li>支持回滚指定任务</li>
-<li>支持指定根服务节点的服务拓扑图</li>
-<li>提供查看 Istio 的 Services 和 Pod 的支持</li>
-<li>开箱即用，通过 Kubectl 相关指令即可快速部署</li>
-<li>支持 Istio 1.0</li>
-</ul>
-<h3 id="快速安装"><a href="#快速安装" class="headerlink" title="快速安装"></a>快速安装</h3><pre class="line-numbers language-sh"><code class="language-sh"># 下载最新 release 文件和部署清单
-wget -O - https://raw.githubusercontent.com/XiaoMi/naftis/master/tool/getlatest.sh | bash
- 
-# 创建 Naftis 命名空间
-$ kubectl create namespace naftis
- 
-# 确认 Naftis 命名空间已创建
-$ kubectl get namespace naftis
-NAME           STATUS    AGE
-naftis         Active    18m
- 
-# 部署 Naftis MySQL 服务（本地 Kuberenetes 集群）
-$ kubectl apply -n naftis -f mysql.yaml
-# 部署 Naftis MySQL 服务（云服务商提供的 Kuberenetes 集群）
-$ kubectl apply -n naftis -f mysql-cloud.yaml
- 
-# 确认 MySQL 已部署
-NAME                           READY     STATUS    RESTARTS   AGE
-naftis-mysql-c78f99d6c-kblbq   0/1       Running   0          9s
-naftis-mysql-test              1/1       Running   0          10s
- 
-# 部署 Naftis API 和 UI 服务
-kubectl apply -n naftis -f naftis.yaml
- 
-# 确认 Naftis 所有的服务已经正确定义并正常运行中
-kubectl get svc -n naftis
-NAME           TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
-naftis-api     ClusterIP      10.233.3.144    <none>        50000/TCP      7s
-naftis-mysql   ClusterIP      10.233.57.230   <none>        3306/TCP       55s
-naftis-ui      LoadBalancer   10.233.18.125   <pending>     80:31286/TCP   6s
- 
-kubectl get pod -n naftis
-NAME                           READY     STATUS    RESTARTS   AGE
-naftis-api-0                   1/2       Running   0          19s
-naftis-mysql-c78f99d6c-kblbq   1/1       Running   0          1m
-naftis-mysql-test              1/1       Running   0          1m
-naftis-ui-69f7d75f47-4jzwz     1/1       Running   0          19s
- 
-# 端口转发访问 Naftis
-kubectl -n naftis port-forward $(kubectl -n naftis get pod -l app=naftis-ui -o jsonpath='{.items[0].metadata.name}') 8080:80 &
- 
-# 打开浏览器，访问 http://localhost:8080 即可。默认用户名和密码分别为 admin、admin。
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="预览"><a href="#预览" class="headerlink" title="预览"></a>预览</h3><p><img data-src="/images/k8s11.png" alt="naftis"></p>
-<p>安装比较简单，功能也比较简单。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/54/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><span class="page-number current">55</span><a class="page-number" href="/page/56/">56</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/56/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/54/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><span class="page-number current">55</span><a class="page-number" href="/page/56/">56</a><span class="space">&hellip;</span><a class="page-number" href="/page/65/">65</a><a class="extend next" rel="next" href="/page/56/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1044,20 +1053,20 @@ kubectl -n naftis port-forward $(kubectl -n naftis get pod -l app=naftis-ui -o j
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">382</span>
+          <span class="site-state-item-count">385</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">56</span>
+        <span class="site-state-item-count">57</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">236</span>
+        <span class="site-state-item-count">237</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

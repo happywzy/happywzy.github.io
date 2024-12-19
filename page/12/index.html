@@ -196,6 +196,346 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-zheng-shu-ren-zheng/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/springboot-zheng-shu-ren-zheng/" class="post-title-link" itemprop="url">springboot证书单向/双向认证</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-11-10 13:40:45" itemprop="dateCreated datePublished" datetime="2022-11-10T13:40:45+08:00">2022-11-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="springboot单向认证和双向认证"><a href="#springboot单向认证和双向认证" class="headerlink" title="springboot单向认证和双向认证"></a>springboot单向认证和双向认证</h3><ul>
+<li>单向认证<br>服务端开启 SSL 证书,通过 springboot 或者 nginx 都可以实现, 开启单向认证后访问服务端接口需要使用 https 协议即可。</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">server</span><span class="token punctuation">:</span>
+  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8443</span>
+  <span class="token key atrule">ssl</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token comment" spellcheck="true">#服务端证书路径, classpath:local-dev.p12</span>
+    <span class="token key atrule">key-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
+    <span class="token comment" spellcheck="true">#证书密码</span>
+    <span class="token key atrule">key-store-passwd</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+    <span class="token comment" spellcheck="true">#证书类型</span>
+    <span class="token key atrule">key-store-type</span><span class="token punctuation">:</span> JKS
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>双向认证<br>springboot 服务端除了开启 SSL 证书,还要开启客户端证书认证 <code>client-auth: need</code>, 需要将客户端证书导入到服务端<code>信任库</code>中, 否则访问报错, 提示<code>无法建立连接, 不接受您的登录证书, 或者您可能没有提供登录证书</code> 等报错信息.</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">server</span><span class="token punctuation">:</span>
+  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8443</span>
+  <span class="token key atrule">ssl</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token comment" spellcheck="true">#服务端证书路径, classpath:local-dev.p12</span>
+    <span class="token key atrule">key-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
+    <span class="token comment" spellcheck="true">#证书密码</span>
+    <span class="token key atrule">key-store-passwd</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+    <span class="token comment" spellcheck="true">#证书类型</span>
+    <span class="token key atrule">key-store-type</span><span class="token punctuation">:</span> JKS
+    <span class="token comment" spellcheck="true">#是否需要进行认证,可选: need/want/none</span>
+    <span class="token key atrule">client-auth</span><span class="token punctuation">:</span> need
+    <span class="token comment" spellcheck="true">#可信任的客户端证书, classpath:local-dev.p12</span>
+    <span class="token key atrule">trust-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
+    <span class="token comment" spellcheck="true">#密码，即步骤一中输入的密码</span>
+    <span class="token key atrule">trust-store-password</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+    <span class="token key atrule">trust-store-type</span><span class="token punctuation">:</span> JKS
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="使用-keytool-创建证书"><a href="#使用-keytool-创建证书" class="headerlink" title="使用 keytool 创建证书"></a>使用 keytool 创建证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建 test_server, 如果是单向认证创建完 test_server.jks 并配置正确即可.</span>
+keytool -genkeypair -alias test_server -keypass 123456 -storepass 123456  -dname <span class="token string">"C=CN,ST=JS,L=NJ,O=test,OU=dev,CN=test.server.cn"</span> -keyalg RSA -keysize 20
+48 -validity 3650 -keystore test_server.jks
+
+<span class="token comment" spellcheck="true"># 双向认证还需要进行以下步骤</span>
+<span class="token comment" spellcheck="true"># 使用 keytool 创建 test_client 证书库</span>
+keytool -genkeypair -alias test_client -keypass 123456 -storepass 123456  -dname <span class="token string">"C=CN,ST=JS,L=NJ,O=test,OU=dev,CN=test.client.cn"</span> -keyalg RSA -keysize 20
+48 -validity 3650 -keystore test_client.jks
+<span class="token comment" spellcheck="true"># 从证书库中导出客户端证书, 注意：加上 -rfc 选项输出PEM编码格式的证书, 否则导入服务端信任库会报错.</span>
+keytool -exportcert -keystore test_client.jks -rfc -file test_client.cer -alias test_client -storepass 123456
+<span class="token comment" spellcheck="true"># 将客户端证书导入到服务端信任库</span>
+keytool -importcert -keystore test_server.jks -file test_client.cer -alias test_client -storepass 123456 -noprompt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>在信任库中, 导入后的证书为 <code>trustedCertEntry</code> 实体类型，而私钥证书为 <code>PrivateKeyEntry</code>.   </p>
+</blockquote>
+<blockquote>
+<p>上述操作完成后, 就可以通过客户端证书调用服务端接口，但是想要服务端调用客户端，需要按照上述步骤将服务端证书导入到客户端信任库.</p>
+</blockquote>
+<ul>
+<li>keytool 查看<code>证书库</code>详情</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">keytool -list -keystore test_server.jks -storepass 123456
+<span class="token comment" spellcheck="true"># 加 -v 查看详情</span>
+keytool -list -v -keystore test_server.jks -storepass 123456
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>keytool 查看<code>证书</code>详情</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">keytool -printcert -file test_client.cer
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="openssl-创建自签名证书"><a href="#openssl-创建自签名证书" class="headerlink" title="openssl 创建自签名证书"></a>openssl 创建自签名证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建私钥（.key）</span>
+openssl genrsa -out my.key 2048
+<span class="token comment" spellcheck="true"># 基于私钥（.key）创建证书签名请求（.csr）</span>
+openssl req -new -key my.key -out my.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span class="token comment" spellcheck="true"># （可选）直接同时生成私钥（.key）和证书签名请求（.csr）</span>
+openssl req -new -newkey rsa:2048 -nodes -keyout my.key -out my.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span class="token comment" spellcheck="true"># 使用自己的私钥（.key）签署自己的证书签名请求（.csr），生成自签名证书（.crt）</span>
+openssl x509 -req -in my.csr -out my.crt -signkey my.key -days 3650
+<span class="token comment" spellcheck="true"># （可选）直接同时生成私钥（.key）和自签名证书（.crt）</span>
+openssl req -x509 -newkey rsa:2048 -nodes -keyout my.key -out my.crt -days 3650  -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="openssl-创建私有CA签发的证书"><a href="#openssl-创建私有CA签发的证书" class="headerlink" title="openssl 创建私有CA签发的证书"></a>openssl 创建私有CA签发的证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成CA私钥（ca.key）和CA自签名证书（ca.crt）</span>
+openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt -days 3650  -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span class="token comment" spellcheck="true"># 生成Server端私钥（server.key）和证书签名请求（server.csr）</span>
+openssl req -new -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
+<span class="token comment" spellcheck="true"># 使用CA证书（ca.crt）与密钥（ca.key）签署服务器的证书签名请求（server.csr），生成私有CA签名的服务器证书（server.crt）</span>
+openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 3650
+<span class="token comment" spellcheck="true"># 验证server.crt是否真得是由ca签发的, 结果显示 ok</span>
+openssl verify -CAfile ca.crt server.crt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="openssl创建的证书导入java证书信任库"><a href="#openssl创建的证书导入java证书信任库" class="headerlink" title="openssl创建的证书导入java证书信任库"></a>openssl创建的证书导入java证书信任库</h3><pre class="line-numbers language-bash"><code class="language-bash">keytool -importcert -keystore test_server.jks -file openssl_client.crt -alias test_client -storepass 123456 -noprompt
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="证书格式转换-参考链接"><a href="#证书格式转换-参考链接" class="headerlink" title="证书格式转换(参考链接)"></a>证书格式转换(<a target="_blank" rel="noopener" href="https://www.cnblogs.com/littleatp/p/5922362.html">参考链接</a>)</h3><ul>
+<li>jks / pkcs12 格式转换</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># jks 转 p12</span>
+keytool -importkeystore -srckeystore server.keystore -destkeystore server.p12 -srcalias serverkey -destalias serverkey \
+    -srcstoretype jks -deststoretype pkcs12 -srcstorepass 111111 -deststorepass 111111  -destkeypass  111111 -noprompt
+<span class="token comment" spellcheck="true"># p12 转 jks 同理</span>
+keytool -importkeystore -srckeystore server.p12 -destkeystore server.keystore \
+-srcstoretype pkcs12 -deststoretype jks -srcalias server -destalias server \
+-deststorepass 111111 -srcstorepass 111111
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>Nginx 证书 转 JKS<br>Java 通常使用 JKS 作为证书存储格式，而Nginx往往采用 PEM 证书格式</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># pem证书和私钥合成p12,注意定义-name 选项，这将作为keystore识别实体的参数</span>
+openssl pkcs12 -export -in server.crt -inkey server.key -passin pass:111111 -password pass:111111 -name server -out server.p12
+<span class="token comment" spellcheck="true"># p12 证书转jks 证书</span>
+keytool -importkeystore -srckeystore server.p12 -destkeystore server.keystore \
+-srcstoretype pkcs12 -deststoretype jks -srcalias server -destalias server \
+-deststorepass 111111 -srcstorepass 111111
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>如果 p12 文件中未指定实体名称，使用 keytool 转换时则不需提供 srcalias/destalias 参数，而输出的 keystore 实体名称默认为 1</p>
+</blockquote>
+<ul>
+<li>JKS 证书 转 Nginx证书</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># jks 证书转p12</span>
+keytool -importkeystore -srckeystore server.keystore  -destkeystore server.p12 \
+-srcstoretype jks -deststoretype pkcs12 -srcalias server -destalias server \
+-deststorepass 111111 -destkeypass 111111 -srcstorepass 111111
+<span class="token comment" spellcheck="true"># p12 证书提取pem证书和私钥</span>
+openssl pkcs12 -in server.p12 -clcerts -nokeys -password pass:111111 -out server.crt
+openssl pkcs12 -in server.p12  -nocerts -password pass:111111 -passout pass:111111 -out server.key
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="postman-双向认证测试"><a href="#postman-双向认证测试" class="headerlink" title="postman 双向认证测试"></a>postman 双向认证测试</h3><ol>
+<li>创建服务端信任库</li>
+<li>创建客户端证书</li>
+<li>将客户端证书添加到服务端信任库</li>
+<li><code>postman</code> 设置选择：<code>setting</code> - <code>General</code> - 关闭<code>SSL certificate verification</code></li>
+<li><code>postman</code> 设置选择：<code>setting</code> - <code>Certificates</code> - <code>Client Certificates</code> - 选择 <code>Add Certificates</code></li>
+<li>设置<code>地址</code>和<code>端口号</code>、<code>CAR file</code> 、<code>KEY file</code>，证书有密码就输入<code>Passphrase</code></li>
+<li>测试</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubernetes-geng-xin-zheng-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/kubernetes-geng-xin-zheng-shu/" class="post-title-link" itemprop="url">kubernetes更新证书</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-11-08 09:36:15" itemprop="dateCreated datePublished" datetime="2022-11-08T09:36:15+08:00">2022-11-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 查看证书过期时间</span>
+kubeadm alpha certs check-expiration
+<span class="token comment" spellcheck="true"># 更新证书</span>
+kubeadm alpha certs renew all
+<span class="token comment" spellcheck="true"># 证书如果没有生效,重启相关服务生效</span>
+docker <span class="token function">ps</span> <span class="token operator">|</span> <span class="token function">grep</span> -E <span class="token string">'k8s_kube-apiserver|k8s_kube-controller-manager|k8s_kube-scheduler|k8s_etcd_etcd'</span> <span class="token operator">|</span> <span class="token function">awk</span> -F <span class="token string">' '</span> <span class="token string">'{print <span class="token variable">$1</span>}'</span> <span class="token operator">|</span> <span class="token function">xargs</span> docker restart
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/geng-xin-hexo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/geng-xin-hexo/" class="post-title-link" itemprop="url">更新hexo版本</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-09-21 17:24:23" itemprop="dateCreated datePublished" datetime="2022-09-21T17:24:23+08:00">2022-09-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hexo/" itemprop="url" rel="index"><span itemprop="name">hexo</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ul>
+<li><a target="_blank" rel="noopener" href="https://novnan.github.io/Hexo/update_hexo/">Hexo版本升级指南</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/java8-fang-fa-yin-yong/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -529,544 +869,10 @@ dive <span class="token operator">&lt;</span>source<span class="token operator">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-zi-ding-yi-banner/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-zi-ding-yi-banner/" class="post-title-link" itemprop="url">springboot自定义banner</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-09-19 14:15:04" itemprop="dateCreated datePublished" datetime="2022-09-19T14:15:04+08:00">2022-09-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><p>在 resources 目录下 (application.yml 同目录)创建 banner.txt 文件, springboot 启动时会自动加载这个文件替换原有的 spring boot banner.</p>
-<h3 id="生成banner"><a href="#生成banner" class="headerlink" title="生成banner"></a>生成banner</h3><ul>
-<li><a target="_blank" rel="noopener" href="http://www.network-science.de/ascii/">http://www.network-science.de/ascii/</a></li>
-<li><a target="_blank" rel="noopener" href="http://patorjk.com/software/taag">http://patorjk.com/software/taag</a></li>
-</ul>
-<h3 id="其他配置"><a href="#其他配置" class="headerlink" title="其他配置"></a>其他配置</h3><ul>
-<li>banner.txt 内配置</li>
-</ul>
-<pre class="line-numbers language-yml"><code class="language-yml">${AnsiColor.BRIGHT_RED}: 设置控制台中输出内容的颜色
-${application.version}: 用来获取MANIFEST.MF文件中的版本号
-${application.formatted-version}: 格式化后的${application.version}版本信息
-${spring-boot.version}: Spring Boot的版本号
-${spring-boot.formatted-version}: 格式化后的${spring-boot.version}版本信息
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>application.yml 配置</li>
-</ul>
-<pre class="line-numbers language-yml"><code class="language-yml">spring:
-  banner:
-    charset: UTF-8
-    location: classpath:banner.txt
-    image:
-      location: classpath:banner.gif
-      width: 76
-      height:
-      margin: 2
-      invert: false
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>关闭 banner</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@SpringBootApplication</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SpringbootBannerApplication</span> <span class="token punctuation">{</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        SpringApplication springApplication <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SpringApplication</span><span class="token punctuation">(</span>SpringbootBannerApplication<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//Banner.Mode.OFF 关闭</span>
-        springApplication<span class="token punctuation">.</span><span class="token function">setBannerMode</span><span class="token punctuation">(</span>Banner<span class="token punctuation">.</span>Mode<span class="token punctuation">.</span>OFF<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        springApplication<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/nei-wang-chuan-tou-gong-ju-frp/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/nei-wang-chuan-tou-gong-ju-frp/" class="post-title-link" itemprop="url">内网穿透工具frp</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-09-16 14:36:42" itemprop="dateCreated datePublished" datetime="2022-09-16T14:36:42+08:00">2022-09-16</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="内网穿透工具frp"><a href="#内网穿透工具frp" class="headerlink" title="内网穿透工具frp"></a>内网穿透工具frp</h3><p>通过在公网服务器部署 frp 服务端( <code>frps</code> )，内网部署 frp 客户端( <code>frpc</code> )，实现通过公网访问内网的服务.</p>
-<h3 id="frp目录说明"><a href="#frp目录说明" class="headerlink" title="frp目录说明"></a>frp目录说明</h3><pre class="line-numbers language-conf"><code class="language-conf">├── frpc //客户端
-├── frpc_full.ini
-├── frpc.ini//客户端配置
-├── frps//服务端
-├── frps_full.ini
-├── frps.ini//服务端配置
-└── LICENSE
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ul>
-<li>frps.ini</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>common<span class="token punctuation">]</span>
-<span class="token comment" spellcheck="true">#服务端口</span>
-bind_port <span class="token operator">=</span> 7000
-<span class="token comment" spellcheck="true">#监听地址</span>
-<span class="token comment" spellcheck="true">#bind_addr = 0.0.0.0</span>
-
-<span class="token comment" spellcheck="true">#认证token</span>
-<span class="token comment" spellcheck="true">#token = big_cat</span>
-<span class="token comment" spellcheck="true">#http服务端口</span>
-vhost_http_port <span class="token operator">=</span> 7080
-<span class="token comment" spellcheck="true">#https服务端口</span>
-vhost_https_port <span class="token operator">=</span> 70443
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>frpc.ini</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>common<span class="token punctuation">]</span>
-<span class="token comment" spellcheck="true">#frps的ip地址</span>
-server_addr <span class="token operator">=</span> 114.114.114.114
-<span class="token comment" spellcheck="true">#frps的端口</span>
-server_port <span class="token operator">=</span> 7000
-<span class="token comment" spellcheck="true">#认证token</span>
-<span class="token comment" spellcheck="true">#token = big_cat</span>
-
-<span class="token punctuation">[</span>web-01<span class="token punctuation">]</span>
-<span class="token comment" spellcheck="true"># 远端服务器定义好了 http 服务的端口 这里不需要指定</span>
-<span class="token comment" spellcheck="true"># 只需要指定 custom/sub_domains 用来做路由即可 </span>
-<span class="token comment" spellcheck="true"># 如果只是代理一台 则指定服务端ip 使用ip访问即可</span>
-<span class="token function">type</span> <span class="token operator">=</span> http
-<span class="token comment" spellcheck="true">#本地http服务端口</span>
-local_port <span class="token operator">=</span> 8081
-<span class="token comment" spellcheck="true">#本地http服务地址</span>
-local_ip <span class="token operator">=</span> 127.0.0.1
-<span class="token comment" spellcheck="true"># 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）</span>
-<span class="token comment" spellcheck="true">#custom_domains = 118.118.118.118</span>
-<span class="token comment" spellcheck="true"># 或者指定域名 可以使用其他域名继续绑定</span>
-custom_domains <span class="token operator">=</span> frp1.com
-
-<span class="token punctuation">[</span>web-02<span class="token punctuation">]</span>
-<span class="token function">type</span> <span class="token operator">=</span> http
-local_port <span class="token operator">=</span> 8082
-<span class="token comment" spellcheck="true">#本地http服务地址</span>
-local_ip <span class="token operator">=</span> 127.0.0.1
-<span class="token comment" spellcheck="true"># 直接使用服务端的公网ip绑定（这样一个frps只能代理一个http客户端）</span>
-<span class="token comment" spellcheck="true">#custom_domains = 118.118.118.118</span>
-<span class="token comment" spellcheck="true"># 或者指定域名 可以使用其他域名继续绑定</span>
-custom_domains <span class="token operator">=</span> frp2.com
-
-<span class="token punctuation">[</span>ssh<span class="token punctuation">]</span>
-<span class="token function">type</span> <span class="token operator">=</span> tcp
-local_port <span class="token operator">=</span> 22
-local_ip <span class="token operator">=</span> 127.0.0.1
-<span class="token comment" spellcheck="true"># 在服务端注册端口 服务端将监听 7022 ssh root@118.118.118.118 -p 7022 即可代理到本机 ssh 登录</span>
-remote_port <span class="token operator">=</span> 7022
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动服务端服务</span>
-<span class="token function">nohup</span> ./frps -c ./frps.ini <span class="token operator">&amp;</span>
-<span class="token comment" spellcheck="true"># 启动客户端服务</span>
-<span class="token function">nohup</span> ./frpc -c ./frpc.ini <span class="token operator">&amp;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意: <code>http/https</code> 服务是在服务端配置中定义的端口，客户端指定协议后会自动关联，<code>ssh</code> 等使用 tcp 的则是在客户端定义好 <code>remote_port</code> ，服务端开放此端口即可。</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-zhong-conditional-de-shi-yong/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-zhong-conditional-de-shi-yong/" class="post-title-link" itemprop="url">springboot中conditional的使用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-09-16 13:54:47" itemprop="dateCreated datePublished" datetime="2022-09-16T13:54:47+08:00">2022-09-16</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>在 springboot 中一个接口有多个实现，我们希望通过配置来控制<code>运行时</code>实例化哪个对象，springboot 中 @Conditional 注解可以帮助我们细粒度控制 bean 的实例化。</p>
-<p><code>Spring Boot</code> 在 <code>org.springframework.boot.autoconfigure.condition</code> 包下定义了以下注解:</p>
-<table>
-<thead>
-<tr>
-<th>注解名</th>
-<th>作用</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>@ConditionalOnJava</code></td>
-<td>基于JVM版本作为判断条件.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnBean</code></td>
-<td>当容器中有指定的Bean的条件下.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnClass</code></td>
-<td>当类路径下游指定的类的条件下.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnExpression</code></td>
-<td>基于SpEL表达式作为判断条件.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnJndi</code></td>
-<td>在JNDI存在的条件下查找指定的位置.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnMissingBean</code></td>
-<td>当容器中没有指定Bean的情况下.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnMissingClass</code></td>
-<td>当类路径下没有指定的类的情况下.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnNotWebApplication</code></td>
-<td>当前项目不是web项目的条件下.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnProperty</code></td>
-<td>指定的属性是否有指定的值.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnResource</code></td>
-<td>类路径是否有指定的值.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnSingleCandidate</code></td>
-<td>当指定Bean在容器中只有一个,或者虽然有多个但是指定首选的Bean.</td>
-</tr>
-<tr>
-<td><code>@ConditionalOnWebApplication</code></td>
-<td>当前项目是web项目的条件下.</td>
-</tr>
-</tbody></table>
-<h3 id="ConditionalOnExpression"><a href="#ConditionalOnExpression" class="headerlink" title="@ConditionalOnExpression"></a>@ConditionalOnExpression</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
-<span class="token comment" spellcheck="true">// user.label 属性等于 user2 创建TestBean</span>
-<span class="token comment" spellcheck="true">// @ConditionalOnExpression("'${user.label}'.equals('user2')")</span>
-
-<span class="token comment" spellcheck="true">// 可以使用 &amp;&amp; || 等运算符</span>
-<span class="token comment" spellcheck="true">// @ConditionalOnExpression("'${user.label}'.equals('user3') &amp;&amp; '${xxx}'.equals('xx')")</span>
-<span class="token comment" spellcheck="true">// @ConditionalOnExpression("'${user.label}'.equals('${xxx}')")</span>
-
-<span class="token comment" spellcheck="true">// 当环境变量 user.label=user2 创建TestBean, 注意: 这个环境变量可以通过 application.yml 传入</span>
-<span class="token annotation punctuation">@ConditionalOnExpression</span><span class="token punctuation">(</span><span class="token string">"#{'user2'.equals(environment['user.label'])}"</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestBean</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@PostConstruct</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">111</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="ConditionalOnProperty"><a href="#ConditionalOnProperty" class="headerlink" title="@ConditionalOnProperty"></a>@ConditionalOnProperty</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
-<span class="token comment" spellcheck="true">// 当有 user.label 这个属性时创建 TestBean</span>
-<span class="token comment" spellcheck="true">// @ConditionalOnProperty(name = "user.label")</span>
-<span class="token comment" spellcheck="true">// 当有 user.label 和 xxx 两个属性时创建 TestBean</span>
-<span class="token comment" spellcheck="true">// @ConditionalOnProperty(name = {"user.label", "xxx"})</span>
-<span class="token comment" spellcheck="true">// 当有 user.label 这个属性且值为 user2 时创建 TestBean</span>
-<span class="token annotation punctuation">@ConditionalOnProperty</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"user.label"</span><span class="token punctuation">,</span> havingValue <span class="token operator">=</span> <span class="token string">"user2"</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestBean</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@PostConstruct</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">111</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="自定义-Conditional"><a href="#自定义-Conditional" class="headerlink" title="自定义 Conditional"></a>自定义 Conditional</h3><h4 id="Bean对象"><a href="#Bean对象" class="headerlink" title="Bean对象"></a>Bean对象</h4><ul>
-<li>两个 User Bean</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Data</span>
-<span class="token annotation punctuation">@NoArgsConstructor</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">User1</span> <span class="token punctuation">{</span>
-    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
-    <span class="token keyword">private</span> <span class="token keyword">int</span> age<span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-
-<span class="token annotation punctuation">@Data</span>
-<span class="token annotation punctuation">@NoArgsConstructor</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">User2</span> <span class="token punctuation">{</span>
-    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
-    <span class="token keyword">private</span> <span class="token keyword">int</span> age<span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h4 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h4><ul>
-<li>为每类对象创建一个 Conditional，如下为 User1和User2分别创建一个</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyConditional1</span> <span class="token keyword">implements</span> <span class="token class-name">Condition</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">matches</span><span class="token punctuation">(</span>ConditionContext context<span class="token punctuation">,</span> AnnotatedTypeMetadata metadata<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        String v <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">getEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span><span class="token string">"user.label"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>v<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"user1"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyConditional2</span> <span class="token keyword">implements</span> <span class="token class-name">Condition</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">matches</span><span class="token punctuation">(</span>ConditionContext context<span class="token punctuation">,</span> AnnotatedTypeMetadata metadata<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        String v <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">getEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span><span class="token string">"user.label"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>v<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"user2"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>springboot 实例化 bean</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Bean</span>
-<span class="token annotation punctuation">@Conditional</span><span class="token punctuation">(</span>MyConditional1<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> User <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">111</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">User</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-
-<span class="token annotation punctuation">@Bean</span>
-<span class="token annotation punctuation">@Conditional</span><span class="token punctuation">(</span>MyConditional2<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> User2 <span class="token function">init2</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">222</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">User2</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>application.propeties</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 如果 label 匹配 bean 的label，该 bean 就会被实例化</span>
-user.label<span class="token operator">=</span>user1
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h4 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h4><ul>
-<li>新增注解给要实例化的对象打上标签</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Target</span><span class="token punctuation">(</span><span class="token punctuation">{</span>ElementType<span class="token punctuation">.</span>TYPE<span class="token punctuation">,</span>ElementType<span class="token punctuation">.</span>METHOD<span class="token punctuation">}</span><span class="token punctuation">)</span>
-<span class="token annotation punctuation">@Retention</span><span class="token punctuation">(</span>RetentionPolicy<span class="token punctuation">.</span>RUNTIME<span class="token punctuation">)</span>
-<span class="token annotation punctuation">@Documented</span>
-<span class="token annotation punctuation">@Conditional</span><span class="token punctuation">(</span>MyConditional<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> @<span class="token keyword">interface</span> <span class="token class-name">MyConditionalAnnotation</span> <span class="token punctuation">{</span>
-    String <span class="token function">label</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>MyConditional.java</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyConditional</span> <span class="token keyword">extends</span> <span class="token class-name">SpringBootCondition</span> <span class="token punctuation">{</span>
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> ConditionOutcome <span class="token function">getMatchOutcome</span><span class="token punctuation">(</span>ConditionContext context<span class="token punctuation">,</span> AnnotatedTypeMetadata metadata<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Object<span class="token operator">></span> annotationAttributes <span class="token operator">=</span> metadata<span class="token punctuation">.</span><span class="token function">getAnnotationAttributes</span><span class="token punctuation">(</span>MyConditionalAnnotation<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 获取注解所传入的 label</span>
-        Object value <span class="token operator">=</span> annotationAttributes<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"label"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-<span class="token comment" spellcheck="true">//            return new ConditionOutcome(false, "ERROR");</span>
-            <span class="token keyword">return</span> ConditionOutcome<span class="token punctuation">.</span><span class="token function">noMatch</span><span class="token punctuation">(</span><span class="token string">"ERROR"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token comment" spellcheck="true">// user.label 的值是通过application.propeties传入</span>
-        String v <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">getEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span><span class="token string">"user.label"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>v<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-            <span class="token comment" spellcheck="true">// 如果匹配就实例化该 bean</span>
-            <span class="token keyword">return</span> ConditionOutcome<span class="token punctuation">.</span><span class="token function">match</span><span class="token punctuation">(</span><span class="token string">"OK"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-        <span class="token keyword">return</span> ConditionOutcome<span class="token punctuation">.</span><span class="token function">noMatch</span><span class="token punctuation">(</span><span class="token string">"ERROR"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>注意：代码中通过 <code>application.propeties</code> 传入配置优先级比较高，所以通过context可以获取到，如果通过别的配置文件可能无法获取则需要手动加载。</p>
-</blockquote>
-<pre class="line-numbers language-java"><code class="language-java">Properties properties <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Properties</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">try</span> <span class="token punctuation">{</span>
-    properties<span class="token punctuation">.</span><span class="token function">load</span><span class="token punctuation">(</span>conditionContext<span class="token punctuation">.</span><span class="token function">getResourceLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token string">"test.properties"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    ex<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-String v <span class="token operator">=</span> properties<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span><span class="token string">"user.label"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>springboot 创建bean</li>
-</ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 通过自定义注解设置 label</span>
-<span class="token annotation punctuation">@MyConditionalAnnotation</span><span class="token punctuation">(</span>label <span class="token operator">=</span> <span class="token string">"MyUserLabel1"</span><span class="token punctuation">)</span>
-<span class="token annotation punctuation">@Bean</span>
-<span class="token keyword">public</span> User1 <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">111</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">User1</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-
-<span class="token annotation punctuation">@MyConditionalAnnotation</span><span class="token punctuation">(</span>label <span class="token operator">=</span> <span class="token string">"MyUserLabel2"</span><span class="token punctuation">)</span>
-<span class="token annotation punctuation">@Bean</span>
-<span class="token keyword">public</span> User2 <span class="token function">init2</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">222</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">User2</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>application.propeties</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 如果 label 匹配 bean 的label，该 bean 就会被实例化</span>
-user.label<span class="token operator">=</span>MyUserLabel2
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/11/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/11/">11</a><span class="page-number current">12</span><a class="page-number" href="/page/13/">13</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/13/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/11/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/11/">11</a><span class="page-number current">12</span><a class="page-number" href="/page/13/">13</a><span class="space">&hellip;</span><a class="page-number" href="/page/65/">65</a><a class="extend next" rel="next" href="/page/13/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1134,20 +940,20 @@ user.label<span class="token operator">=</span>MyUserLabel2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">382</span>
+          <span class="site-state-item-count">385</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">56</span>
+        <span class="site-state-item-count">57</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">236</span>
+        <span class="site-state-item-count">237</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

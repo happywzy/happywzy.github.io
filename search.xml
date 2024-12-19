@@ -35023,4 +35023,128 @@ ip neigh del 10.233.64.0 dev flannel.1 <span class="token operator">&amp;&amp;</
         <tag>flannel</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Go非侵入式添加链路追踪</title>
+    <url>/go-fei-qin-ru-shi-tian-jia-lian-lu-zhui-zong/</url>
+    <content><![CDATA[<ol>
+<li><p>下载最新的<a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases">otel-windows-amd64.exe</a>,改名<code>otel.exe</code>放到<code>$GOPATH/bin</code>目录下</p>
+<blockquote>
+<p><code>$GOPATH/bin</code> 需要加入到系统环境变量。</p>
+</blockquote>
+</li>
+<li><p>参考<a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/tree/main/example/demo">demo</a> 使用<code>otel</code>工具编译出可执行文件.</p>
+</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">OTEL_EXPORTER_OTLP_ENDPOINT<span class="token operator">=</span><span class="token string">"http://172.16.20.91:12394"</span>  GOOS<span class="token operator">=</span>linux GOARCH<span class="token operator">=</span>amd64 otel go build
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>tool</category>
+      </categories>
+      <tags>
+        <tag>链路追踪</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>containerd启动并使用</title>
+    <url>/containerd-qi-dong-bing-shi-yong/</url>
+    <content><![CDATA[<h3 id="离线安装"><a href="#离线安装" class="headerlink" title="离线安装"></a>离线安装</h3><p>如果是离线安装的docker,可以自己准备一份containerd.service用于管理containerd启停。</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成或检查默认配置文件</span>
+containerd config default <span class="token operator">></span> /etc/containerd/config.toml
+
+<span class="token comment" spellcheck="true"># 创建服务文件</span>
+<span class="token function">sudo</span> vim /etc/systemd/system/containerd.service
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
+Description=containerd container runtime
+Documentation=https://containerd.io
+After=network.target local-fs.target
+
+[Service]
+ExecStartPre=-/sbin/modprobe overlay
+ExecStart=/usr/bin/containerd
+
+Type=notify
+Delegate=yes
+KillMode=process
+Restart=always
+RestartSec=5
+# Having non-zero Limit*s causes performance problems due to accounting overhead
+# in the kernel. We recommend using cgroups to do container-local accounting.
+LimitNPROC=infinity
+LimitCORE=infinity
+LimitNOFILE=1048576
+# Comment TasksMax if your systemd version does not supports it.
+# Only systemd 226 and above support this version.
+TasksMax=infinity
+OOMScoreAdjust=-999
+
+[Install]
+WantedBy=multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 重新加载 Systemd 配置</span>
+<span class="token function">sudo</span> systemctl daemon-reload
+<span class="token comment" spellcheck="true"># 启动 containerd</span>
+<span class="token function">sudo</span> systemctl start containerd
+<span class="token comment" spellcheck="true"># 设置为开机自启动：</span>
+<span class="token function">sudo</span> systemctl <span class="token function">enable</span> containerd
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="nerdctl"><a href="#nerdctl" class="headerlink" title="nerdctl"></a>nerdctl</h3><p>containerd自带的ctl命令与docker命令不一样，使用不习惯的用户可以考虑安装<code>nerdctl</code>。这个工具命令风格和docker一致。</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 下载最新版本</span>
+<span class="token function">wget</span> https://github.com/containerd/nerdctl/releases/download/v2.0.1/nerdctl-2.0.1-linux-amd64.tar.gz
+<span class="token comment" spellcheck="true"># 安装</span>
+<span class="token function">sudo</span> <span class="token function">tar</span> -C /usr/local/bin -xzf nerdctl-2.0.1-linux-amd64.tar.gz
+<span class="token comment" spellcheck="true"># 测试</span>
+nerdctl version
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装CNI插件"><a href="#安装CNI插件" class="headerlink" title="安装CNI插件"></a>安装CNI插件</h3><p><a href="https://github.com/containernetworking/plugins/releases">下载页</a>下载最新版本</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">wget</span> https://github.com/containernetworking/plugins/releases/download/v1.6.1/cni-plugins-linux-amd64-v1.6.1.tgz
+<span class="token comment" spellcheck="true"># 解压到 /opt/cni/bin 目录</span>
+<span class="token function">sudo</span> <span class="token function">mkdir</span> -p /opt/cni/bin
+<span class="token function">sudo</span> <span class="token function">tar</span> -xzf cni-plugins-linux-amd64-v1.6.1.tgz -C /opt/cni/bin
+<span class="token comment" spellcheck="true"># 验证插件是否安装成功</span>
+<span class="token function">ls</span> /opt/cni/bin
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>检查containerd配置，确保CNI配置正确</p>
+<pre class="line-numbers language-conf"><code class="language-conf">[plugins."io.containerd.grpc.v1.cri".cni]
+  bin_dir = "/opt/cni/bin"
+  conf_dir = "/etc/cni/net.d"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>然后重启<code>sudo systemctl restart containerd</code>.</p>
+<p>使用<code>nerdctl network create bridge</code>创建一个新的默认 bridge 网络.</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 检查网络是否创建成功</span>
+nerdctl network <span class="token function">ls</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>containerd</category>
+      </categories>
+      <tags>
+        <tag>containerd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Java非侵入式添加链路追踪</title>
+    <url>/java-fei-qin-ru-shi-tian-jia-lian-lu-zhui-zong/</url>
+    <content><![CDATA[<ol>
+<li><p>下载一个<code>opentelemetry-javaagent.jar</code> 挂载到容器目录下，如<code>/root/trace</code></p>
+</li>
+<li><p>容器启动时添加环境变量</p>
+</li>
+</ol>
+<ul>
+<li><code>JAVA_TOOL_OPTIONS</code>: <code>-javaagent:/root/trace/opentelemetry-javaagent.jar</code></li>
+<li><code>OTEL_EXPORTER_JAEGER_ENDPOINT</code>: <code>http://opentelemetry-collector.loki:14250</code></li>
+<li><code>OTEL_SERVICE_NAME</code> : <code>自定义服务名</code></li>
+<li><code>OTEL_TRACES_EXPORTER</code> : <code>jaeger</code></li>
+<li><code>OTEL_METRICS_EXPORTER</code> : <code>none</code></li>
+</ul>
+]]></content>
+      <categories>
+        <category>tool</category>
+      </categories>
+      <tags>
+        <tag>链路追踪</tag>
+      </tags>
+  </entry>
 </search>

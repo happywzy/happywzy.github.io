@@ -196,6 +196,497 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/loki-cai-ji-docker-ri-zhi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/loki-cai-ji-docker-ri-zhi/" class="post-title-link" itemprop="url">loki采集docker日志</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-02-17 14:56:58" itemprop="dateCreated datePublished" datetime="2023-02-17T14:56:58+08:00">2023-02-17</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/loki/" itemprop="url" rel="index"><span itemprop="name">loki</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本文通过安装 docker loki plugin 直接采集docker容器日志，并推送至loki。<a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/clients/docker-driver/">官方文档</a></p>
+<h3 id="插件安装"><a href="#插件安装" class="headerlink" title="插件安装"></a>插件安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 安装最新的插件</span>
+docker plugin <span class="token function">install</span> grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+<span class="token comment" spellcheck="true"># 查看插件</span>
+<span class="token punctuation">[</span>root@data1 ~<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># docker plugin ls</span>
+ID             NAME          DESCRIPTION           ENABLED
+744b79d5d1a9   loki:latest   Loki Logging Driver   <span class="token boolean">true</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="插件升级"><a href="#插件升级" class="headerlink" title="插件升级"></a>插件升级</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 停用</span>
+docker plugin disable loki --force
+<span class="token comment" spellcheck="true"># 升级</span>
+docker plugin upgrade loki grafana/loki-docker-driver:latest --grant-all-permissions
+<span class="token comment" spellcheck="true"># 启用</span>
+docker plugin <span class="token function">enable</span> loki
+<span class="token comment" spellcheck="true"># 重启docker</span>
+systemctl restart docker
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="插件卸载"><a href="#插件卸载" class="headerlink" title="插件卸载"></a>插件卸载</h3><pre class="line-numbers language-bash"><code class="language-bash">docker plugin disable loki --force
+docker plugin <span class="token function">rm</span> loki
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><h4 id="单独为一个容器设置日志驱动"><a href="#单独为一个容器设置日志驱动" class="headerlink" title="单独为一个容器设置日志驱动"></a>单独为一个容器设置日志驱动</h4><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># --log-driver=loki</span>
+docker run --log-driver<span class="token operator">=</span>loki \
+    --log-opt loki-url<span class="token operator">=</span><span class="token string">"http://IP:3100/loki/api/v1/push"</span> \
+    --log-opt loki-retries<span class="token operator">=</span>5 \
+    --log-opt loki-batch-size<span class="token operator">=</span>400 \
+    --log-opt max-size<span class="token operator">=</span>50m \
+    --log-opt max-file<span class="token operator">=</span>3 \
+    grafana/grafana
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="为所有的容器设置默认参数"><a href="#为所有的容器设置默认参数" class="headerlink" title="为所有的容器设置默认参数"></a>为所有的容器设置默认参数</h4><p>编辑<code>/etc/docker/daemon.json</code>文件(如果没有就新建).</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+    <span class="token property">"debug"</span> <span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+    <span class="token property">"log-driver"</span><span class="token operator">:</span> <span class="token string">"loki"</span><span class="token punctuation">,</span>
+    <span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"loki-url"</span><span class="token operator">:</span> <span class="token string">"http://IP:3100/loki/api/v1/push"</span><span class="token punctuation">,</span>
+        <span class="token property">"loki-batch-size"</span><span class="token operator">:</span> <span class="token string">"400"</span><span class="token punctuation">,</span>
+        <span class="token property">"loki-retries"</span><span class="token operator">:</span> <span class="token number">5</span><span class="token punctuation">,</span>
+        <span class="token property">"max-size"</span><span class="token operator">:</span> <span class="token string">"50m"</span><span class="token punctuation">,</span>
+        <span class="token property">"max-file"</span><span class="token operator">:</span> <span class="token string">"10"</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>更多如<code>docker-compose</code>的用法参考<a target="_blank" rel="noopener" href="https://grafana.com/docs/loki/latest/clients/docker-driver/configuration/">官网文档</a>.</p>
+</blockquote>
+<ul>
+<li>loki.yaml</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">auth_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+
+<span class="token key atrule">server</span><span class="token punctuation">:</span>
+  <span class="token key atrule">http_listen_port</span><span class="token punctuation">:</span> <span class="token number">3100</span>
+  <span class="token key atrule">grpc_listen_port</span><span class="token punctuation">:</span> <span class="token number">9095</span>
+
+<span class="token key atrule">ingester</span><span class="token punctuation">:</span>
+  <span class="token key atrule">chunk_idle_period</span><span class="token punctuation">:</span> 3m
+  <span class="token key atrule">chunk_block_size</span><span class="token punctuation">:</span> <span class="token number">262144</span>
+  <span class="token key atrule">chunk_retain_period</span><span class="token punctuation">:</span> 1m
+  <span class="token key atrule">max_transfer_retries</span><span class="token punctuation">:</span> <span class="token number">0</span>
+  <span class="token key atrule">lifecycler</span><span class="token punctuation">:</span>
+    <span class="token key atrule">ring</span><span class="token punctuation">:</span>
+      <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
+        <span class="token key atrule">store</span><span class="token punctuation">:</span> inmemory
+      <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
+
+<span class="token key atrule">limits_config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">reject_old_samples</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">reject_old_samples_max_age</span><span class="token punctuation">:</span> 168h
+
+<span class="token key atrule">common</span><span class="token punctuation">:</span>
+  <span class="token key atrule">path_prefix</span><span class="token punctuation">:</span> /tmp/loki
+  <span class="token key atrule">storage</span><span class="token punctuation">:</span>
+    <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
+      <span class="token key atrule">chunks_directory</span><span class="token punctuation">:</span> /tmp/loki/chunks
+      <span class="token key atrule">rules_directory</span><span class="token punctuation">:</span> /tmp/loki/rules
+  <span class="token key atrule">replication_factor</span><span class="token punctuation">:</span> <span class="token number">1</span>
+  <span class="token key atrule">ring</span><span class="token punctuation">:</span>
+    <span class="token key atrule">instance_addr</span><span class="token punctuation">:</span> 127.0.0.1
+    <span class="token key atrule">kvstore</span><span class="token punctuation">:</span>
+      <span class="token key atrule">store</span><span class="token punctuation">:</span> inmemory
+
+<span class="token key atrule">storage_config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">boltdb_shipper</span><span class="token punctuation">:</span>
+    <span class="token key atrule">active_index_directory</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>active
+    <span class="token key atrule">cache_location</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>cache
+    <span class="token key atrule">cache_ttl</span><span class="token punctuation">:</span> 24h
+    <span class="token key atrule">shared_store</span><span class="token punctuation">:</span> filesystem
+  <span class="token key atrule">filesystem</span><span class="token punctuation">:</span>
+    <span class="token key atrule">directory</span><span class="token punctuation">:</span> /tmp/loki/chunks
+
+<span class="token key atrule">chunk_store_config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">max_look_back_period</span><span class="token punctuation">:</span> 672h
+
+<span class="token key atrule">table_manager</span><span class="token punctuation">:</span>
+  <span class="token key atrule">retention_deletes_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">retention_period</span><span class="token punctuation">:</span> 672h
+
+<span class="token key atrule">compactor</span><span class="token punctuation">:</span>
+  <span class="token key atrule">working_directory</span><span class="token punctuation">:</span> /tmp/loki/boltdb<span class="token punctuation">-</span>shipper<span class="token punctuation">-</span>compactor
+  <span class="token key atrule">shared_store</span><span class="token punctuation">:</span> filesystem
+  <span class="token key atrule">retention_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">retention_delete_delay</span><span class="token punctuation">:</span> 2h
+
+<span class="token key atrule">query_range</span><span class="token punctuation">:</span>
+  <span class="token key atrule">results_cache</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cache</span><span class="token punctuation">:</span>
+      <span class="token key atrule">embedded_cache</span><span class="token punctuation">:</span>
+        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+        <span class="token key atrule">max_size_mb</span><span class="token punctuation">:</span> <span class="token number">200</span>
+
+<span class="token key atrule">querier</span><span class="token punctuation">:</span>
+  <span class="token key atrule">query_timeout</span><span class="token punctuation">:</span> 2m
+
+<span class="token key atrule">schema_config</span><span class="token punctuation">:</span>
+  <span class="token key atrule">configs</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token datetime number">2020-10-24</span>
+      <span class="token key atrule">store</span><span class="token punctuation">:</span> boltdb<span class="token punctuation">-</span>shipper
+      <span class="token key atrule">object_store</span><span class="token punctuation">:</span> filesystem
+      <span class="token key atrule">schema</span><span class="token punctuation">:</span> v11
+      <span class="token key atrule">index</span><span class="token punctuation">:</span>
+        <span class="token key atrule">prefix</span><span class="token punctuation">:</span> index_
+        <span class="token key atrule">period</span><span class="token punctuation">:</span> 24h
+
+<span class="token comment" spellcheck="true"># ruler:</span>
+<span class="token comment" spellcheck="true">#   alertmanager_url: http://localhost:9093</span>
+
+<span class="token comment" spellcheck="true"># By default, Loki will send anonymous, but uniquely-identifiable usage and configuration</span>
+<span class="token comment" spellcheck="true"># analytics to Grafana Labs. These statistics are sent to https://stats.grafana.org/</span>
+<span class="token comment" spellcheck="true">#</span>
+<span class="token comment" spellcheck="true"># Statistics help us better understand how Loki is used, and they show us performance</span>
+<span class="token comment" spellcheck="true"># levels for most users. This helps us prioritize features and documentation.</span>
+<span class="token comment" spellcheck="true"># For more information on what's sent, look at</span>
+<span class="token comment" spellcheck="true"># https://github.com/grafana/loki/blob/main/pkg/usagestats/stats.go</span>
+<span class="token comment" spellcheck="true"># Refer to the buildReport method to see what goes into a report.</span>
+<span class="token comment" spellcheck="true">#</span>
+<span class="token comment" spellcheck="true"># If you would like to disable reporting, uncomment the following lines:</span>
+<span class="token key atrule">analytics</span><span class="token punctuation">:</span>
+ <span class="token key atrule">reporting_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-tong-guo-zhu-jie-shi-xian-xian-liu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/springboot-tong-guo-zhu-jie-shi-xian-xian-liu/" class="post-title-link" itemprop="url">springboot通过注解和redis实现接口限流</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-02-06 13:57:36" itemprop="dateCreated datePublished" datetime="2023-02-06T13:57:36+08:00">2023-02-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本文通过 <code>自定义注解</code> + <code>Redis</code> 实现接口限流。</p>
+<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><ul>
+<li>自定义注解</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Inherited</span>
+<span class="token annotation punctuation">@Documented</span>
+<span class="token annotation punctuation">@Target</span><span class="token punctuation">(</span><span class="token punctuation">{</span>ElementType<span class="token punctuation">.</span>METHOD<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Retention</span><span class="token punctuation">(</span>RetentionPolicy<span class="token punctuation">.</span>RUNTIME<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true">// 默认就是60秒内可以访问2次</span>
+<span class="token keyword">public</span> @<span class="token keyword">interface</span> <span class="token class-name">RequestLimit</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">/**
+     * 时间，秒为单位
+     */</span>
+    <span class="token keyword">int</span> <span class="token function">second</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token number">60</span><span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">/**
+     * second时间内允许访问的次数
+     */</span>
+    <span class="token keyword">int</span> <span class="token function">maxCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token number">2</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>通过AOP实现限流</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token annotation punctuation">@EnableAspectJAutoProxy</span>
+<span class="token annotation punctuation">@Aspect</span>
+<span class="token annotation punctuation">@Slf4j</span>
+<span class="token annotation punctuation">@Order</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">)</span> <span class="token comment" spellcheck="true">// 如果有多个AOP，需要将Order设置到最小，优先判断限流</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RequestLimitAspect</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 这里通过将访问信息保存在redis中，判断是否限流</span>
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> RedisTemplate<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">></span> redisTemplate<span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">// 定义切点，所有添加RequestLimit注解的</span>
+    <span class="token annotation punctuation">@Pointcut</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"@annotation(org.xxx.xxx.annotation.RequestLimit)"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">handleRequestLimit</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Around</span><span class="token punctuation">(</span><span class="token string">"handleRequestLimit()"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> Object <span class="token function">handleResponseEncrypt</span><span class="token punctuation">(</span>ProceedingJoinPoint pjp<span class="token punctuation">)</span> <span class="token keyword">throws</span> Throwable <span class="token punctuation">{</span>
+        MethodSignature signature <span class="token operator">=</span> <span class="token punctuation">(</span>MethodSignature<span class="token punctuation">)</span> pjp<span class="token punctuation">.</span><span class="token function">getSignature</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        Method method <span class="token operator">=</span> signature<span class="token punctuation">.</span><span class="token function">getMethod</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        RequestLimit requestLimit <span class="token operator">=</span> method<span class="token punctuation">.</span><span class="token function">getAnnotation</span><span class="token punctuation">(</span>RequestLimit<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 没有添加注解直接放行</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>null <span class="token operator">==</span> requestLimit<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> pjp<span class="token punctuation">.</span><span class="token function">proceed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        ServletRequestAttributes requestAttributes <span class="token operator">=</span> <span class="token punctuation">(</span>ServletRequestAttributes<span class="token punctuation">)</span> RequestContextHolder<span class="token punctuation">.</span><span class="token function">getRequestAttributes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 获取HttpServletRequest</span>
+        HttpServletRequest request <span class="token operator">=</span> <span class="token punctuation">(</span>HttpServletRequest<span class="token punctuation">)</span> requestAttributes<span class="token punctuation">.</span><span class="token function">resolveReference</span><span class="token punctuation">(</span>RequestAttributes<span class="token punctuation">.</span>REFERENCE_REQUEST<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 获取公网IP</span>
+        String ip <span class="token operator">=</span> CommonUtils<span class="token punctuation">.</span><span class="token function">getPublicIp</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 实现同一个公网IP 限流</span>
+        String key <span class="token operator">=</span> <span class="token string">"limit:"</span> <span class="token operator">+</span> ip <span class="token operator">+</span> <span class="token string">":"</span> <span class="token operator">+</span> request<span class="token punctuation">.</span><span class="token function">getServletPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        String count <span class="token operator">=</span> redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            count <span class="token operator">=</span> <span class="token string">"1"</span><span class="token punctuation">;</span>
+            redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> count<span class="token punctuation">,</span> requestLimit<span class="token punctuation">.</span><span class="token function">second</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> pjp<span class="token punctuation">.</span><span class="token function">proceed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>Integer<span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span> <span class="token operator">&lt;</span> requestLimit<span class="token punctuation">.</span><span class="token function">maxCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">increment</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> pjp<span class="token punctuation">.</span><span class="token function">proceed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"RemoteAddr:{} 请求接口:{} 请求过于频繁, 已拒绝请求."</span><span class="token punctuation">,</span> ip<span class="token punctuation">,</span> request<span class="token punctuation">.</span><span class="token function">getServletPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        HttpServletResponse response <span class="token operator">=</span> requestAttributes<span class="token punctuation">.</span><span class="token function">getResponse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">setCharacterEncoding</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">setContentType</span><span class="token punctuation">(</span><span class="token string">"application/json; charset=utf-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">getWriter</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token comment" spellcheck="true">// 触发限流自定义返回内容</span>
+                <span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>JSON<span class="token punctuation">.</span><span class="token function">toJSONString</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Response</span><span class="token punctuation">(</span>Constant<span class="token punctuation">.</span>ResponseCode<span class="token punctuation">.</span>RequestLimit<span class="token punctuation">,</span> Constant<span class="token punctuation">.</span>ResponseMsg<span class="token punctuation">.</span>RequestLimit<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>获取公网IP</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">getPublicIp</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    String ip <span class="token operator">=</span> null<span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"x-forwarded-for"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"Proxy-Client-IP"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> ip<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"WL-Proxy-Client-IP"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"HTTP_CLIENT_IP"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"HTTP_X_FORWARDED_FOR"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">"unknown"</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ip <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getRemoteAddr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"getPublicIp ERROR "</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment" spellcheck="true">//使用代理，则获取第一个IP地址</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> ip<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">15</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>ip<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token string">","</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ip <span class="token operator">=</span> ip<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> ip<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token string">","</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> ip<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-pei-zhi-exceptionhandler/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/springboot-pei-zhi-exceptionhandler/" class="post-title-link" itemprop="url">springboot配置ExceptionHandler</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-12-23 14:48:42" itemprop="dateCreated datePublished" datetime="2022-12-23T14:48:42+08:00">2022-12-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>springboot配置ExceptionHandler不仅可以统一处理全局异常，还可以用来自定义404、405返回。</p>
+<h3 id="自定义404、405"><a href="#自定义404、405" class="headerlink" title="自定义404、405"></a>自定义404、405</h3><ul>
+<li>配置application.yml</li>
+</ul>
+<pre class="line-numbers language-yml"><code class="language-yml"># 捕获404异常需要开启以下配置,其它异常无需开启
+spring:
+  mvc:
+    throw-exception-if-no-handler-found: true
+  resources:
+    add-mappings: false
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>编写java</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@RestControllerAdvice</span>
+<span class="token annotation punctuation">@Slf4j</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ExceptionHandle</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@ExceptionHandler</span><span class="token punctuation">(</span>Exception<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> Object <span class="token function">handlerException</span><span class="token punctuation">(</span>Exception e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 请求接口地址不存在 404</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>e <span class="token keyword">instanceof</span> <span class="token class-name">NoHandlerFoundException</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// Response是自定义的一个返回对象</span>
+            <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Response</span><span class="token punctuation">(</span>Constant<span class="token punctuation">.</span>NoHandlerFound<span class="token punctuation">,</span> e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment" spellcheck="true">// 请求方法不支持 405</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>e <span class="token keyword">instanceof</span> <span class="token class-name">HttpRequestMethodNotSupportedException</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Response</span><span class="token punctuation">(</span>Constant<span class="token punctuation">.</span>MethodNotSupported<span class="token punctuation">,</span> e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment" spellcheck="true">//其他异常都可以捕获</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Response</span><span class="token punctuation">(</span>Constant<span class="token punctuation">.</span>sysError<span class="token punctuation">,</span> Constant<span class="token punctuation">.</span>sysError<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/gson-zi-ding-yi-lei-xing-gua-pei-qi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -529,350 +1020,10 @@ openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-zheng-shu-ren-zheng/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-zheng-shu-ren-zheng/" class="post-title-link" itemprop="url">springboot证书单向/双向认证</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-11-10 13:40:45" itemprop="dateCreated datePublished" datetime="2022-11-10T13:40:45+08:00">2022-11-10</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index"><span itemprop="name">springboot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="springboot单向认证和双向认证"><a href="#springboot单向认证和双向认证" class="headerlink" title="springboot单向认证和双向认证"></a>springboot单向认证和双向认证</h3><ul>
-<li>单向认证<br>服务端开启 SSL 证书,通过 springboot 或者 nginx 都可以实现, 开启单向认证后访问服务端接口需要使用 https 协议即可。</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">server</span><span class="token punctuation">:</span>
-  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8443</span>
-  <span class="token key atrule">ssl</span><span class="token punctuation">:</span>
-    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-    <span class="token comment" spellcheck="true">#服务端证书路径, classpath:local-dev.p12</span>
-    <span class="token key atrule">key-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
-    <span class="token comment" spellcheck="true">#证书密码</span>
-    <span class="token key atrule">key-store-passwd</span><span class="token punctuation">:</span> <span class="token number">123456</span>
-    <span class="token comment" spellcheck="true">#证书类型</span>
-    <span class="token key atrule">key-store-type</span><span class="token punctuation">:</span> JKS
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>双向认证<br>springboot 服务端除了开启 SSL 证书,还要开启客户端证书认证 <code>client-auth: need</code>, 需要将客户端证书导入到服务端<code>信任库</code>中, 否则访问报错, 提示<code>无法建立连接, 不接受您的登录证书, 或者您可能没有提供登录证书</code> 等报错信息.</li>
-</ul>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">server</span><span class="token punctuation">:</span>
-  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8443</span>
-  <span class="token key atrule">ssl</span><span class="token punctuation">:</span>
-    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-    <span class="token comment" spellcheck="true">#服务端证书路径, classpath:local-dev.p12</span>
-    <span class="token key atrule">key-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
-    <span class="token comment" spellcheck="true">#证书密码</span>
-    <span class="token key atrule">key-store-passwd</span><span class="token punctuation">:</span> <span class="token number">123456</span>
-    <span class="token comment" spellcheck="true">#证书类型</span>
-    <span class="token key atrule">key-store-type</span><span class="token punctuation">:</span> JKS
-    <span class="token comment" spellcheck="true">#是否需要进行认证,可选: need/want/none</span>
-    <span class="token key atrule">client-auth</span><span class="token punctuation">:</span> need
-    <span class="token comment" spellcheck="true">#可信任的客户端证书, classpath:local-dev.p12</span>
-    <span class="token key atrule">trust-store</span><span class="token punctuation">:</span> classpath<span class="token punctuation">:</span>server.jks
-    <span class="token comment" spellcheck="true">#密码，即步骤一中输入的密码</span>
-    <span class="token key atrule">trust-store-password</span><span class="token punctuation">:</span> <span class="token number">123456</span>
-    <span class="token key atrule">trust-store-type</span><span class="token punctuation">:</span> JKS
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="使用-keytool-创建证书"><a href="#使用-keytool-创建证书" class="headerlink" title="使用 keytool 创建证书"></a>使用 keytool 创建证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建 test_server, 如果是单向认证创建完 test_server.jks 并配置正确即可.</span>
-keytool -genkeypair -alias test_server -keypass 123456 -storepass 123456  -dname <span class="token string">"C=CN,ST=JS,L=NJ,O=test,OU=dev,CN=test.server.cn"</span> -keyalg RSA -keysize 20
-48 -validity 3650 -keystore test_server.jks
-
-<span class="token comment" spellcheck="true"># 双向认证还需要进行以下步骤</span>
-<span class="token comment" spellcheck="true"># 使用 keytool 创建 test_client 证书库</span>
-keytool -genkeypair -alias test_client -keypass 123456 -storepass 123456  -dname <span class="token string">"C=CN,ST=JS,L=NJ,O=test,OU=dev,CN=test.client.cn"</span> -keyalg RSA -keysize 20
-48 -validity 3650 -keystore test_client.jks
-<span class="token comment" spellcheck="true"># 从证书库中导出客户端证书, 注意：加上 -rfc 选项输出PEM编码格式的证书, 否则导入服务端信任库会报错.</span>
-keytool -exportcert -keystore test_client.jks -rfc -file test_client.cer -alias test_client -storepass 123456
-<span class="token comment" spellcheck="true"># 将客户端证书导入到服务端信任库</span>
-keytool -importcert -keystore test_server.jks -file test_client.cer -alias test_client -storepass 123456 -noprompt
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>在信任库中, 导入后的证书为 <code>trustedCertEntry</code> 实体类型，而私钥证书为 <code>PrivateKeyEntry</code>.   </p>
-</blockquote>
-<blockquote>
-<p>上述操作完成后, 就可以通过客户端证书调用服务端接口，但是想要服务端调用客户端，需要按照上述步骤将服务端证书导入到客户端信任库.</p>
-</blockquote>
-<ul>
-<li>keytool 查看<code>证书库</code>详情</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">keytool -list -keystore test_server.jks -storepass 123456
-<span class="token comment" spellcheck="true"># 加 -v 查看详情</span>
-keytool -list -v -keystore test_server.jks -storepass 123456
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>keytool 查看<code>证书</code>详情</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash">keytool -printcert -file test_client.cer
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="openssl-创建自签名证书"><a href="#openssl-创建自签名证书" class="headerlink" title="openssl 创建自签名证书"></a>openssl 创建自签名证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 创建私钥（.key）</span>
-openssl genrsa -out my.key 2048
-<span class="token comment" spellcheck="true"># 基于私钥（.key）创建证书签名请求（.csr）</span>
-openssl req -new -key my.key -out my.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
-<span class="token comment" spellcheck="true"># （可选）直接同时生成私钥（.key）和证书签名请求（.csr）</span>
-openssl req -new -newkey rsa:2048 -nodes -keyout my.key -out my.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
-<span class="token comment" spellcheck="true"># 使用自己的私钥（.key）签署自己的证书签名请求（.csr），生成自签名证书（.crt）</span>
-openssl x509 -req -in my.csr -out my.crt -signkey my.key -days 3650
-<span class="token comment" spellcheck="true"># （可选）直接同时生成私钥（.key）和自签名证书（.crt）</span>
-openssl req -x509 -newkey rsa:2048 -nodes -keyout my.key -out my.crt -days 3650  -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="openssl-创建私有CA签发的证书"><a href="#openssl-创建私有CA签发的证书" class="headerlink" title="openssl 创建私有CA签发的证书"></a>openssl 创建私有CA签发的证书</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 生成CA私钥（ca.key）和CA自签名证书（ca.crt）</span>
-openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt -days 3650  -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
-<span class="token comment" spellcheck="true"># 生成Server端私钥（server.key）和证书签名请求（server.csr）</span>
-openssl req -new -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj <span class="token string">"/C=CN/ST=shanghai/L=shanghai/O=example/OU=it/CN=domain1/CN=domain2"</span>
-<span class="token comment" spellcheck="true"># 使用CA证书（ca.crt）与密钥（ca.key）签署服务器的证书签名请求（server.csr），生成私有CA签名的服务器证书（server.crt）</span>
-openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 3650
-<span class="token comment" spellcheck="true"># 验证server.crt是否真得是由ca签发的, 结果显示 ok</span>
-openssl verify -CAfile ca.crt server.crt
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="openssl创建的证书导入java证书信任库"><a href="#openssl创建的证书导入java证书信任库" class="headerlink" title="openssl创建的证书导入java证书信任库"></a>openssl创建的证书导入java证书信任库</h3><pre class="line-numbers language-bash"><code class="language-bash">keytool -importcert -keystore test_server.jks -file openssl_client.crt -alias test_client -storepass 123456 -noprompt
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="证书格式转换-参考链接"><a href="#证书格式转换-参考链接" class="headerlink" title="证书格式转换(参考链接)"></a>证书格式转换(<a target="_blank" rel="noopener" href="https://www.cnblogs.com/littleatp/p/5922362.html">参考链接</a>)</h3><ul>
-<li>jks / pkcs12 格式转换</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># jks 转 p12</span>
-keytool -importkeystore -srckeystore server.keystore -destkeystore server.p12 -srcalias serverkey -destalias serverkey \
-    -srcstoretype jks -deststoretype pkcs12 -srcstorepass 111111 -deststorepass 111111  -destkeypass  111111 -noprompt
-<span class="token comment" spellcheck="true"># p12 转 jks 同理</span>
-keytool -importkeystore -srckeystore server.p12 -destkeystore server.keystore \
--srcstoretype pkcs12 -deststoretype jks -srcalias server -destalias server \
--deststorepass 111111 -srcstorepass 111111
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>Nginx 证书 转 JKS<br>Java 通常使用 JKS 作为证书存储格式，而Nginx往往采用 PEM 证书格式</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># pem证书和私钥合成p12,注意定义-name 选项，这将作为keystore识别实体的参数</span>
-openssl pkcs12 -export -in server.crt -inkey server.key -passin pass:111111 -password pass:111111 -name server -out server.p12
-<span class="token comment" spellcheck="true"># p12 证书转jks 证书</span>
-keytool -importkeystore -srckeystore server.p12 -destkeystore server.keystore \
--srcstoretype pkcs12 -deststoretype jks -srcalias server -destalias server \
--deststorepass 111111 -srcstorepass 111111
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>如果 p12 文件中未指定实体名称，使用 keytool 转换时则不需提供 srcalias/destalias 参数，而输出的 keystore 实体名称默认为 1</p>
-</blockquote>
-<ul>
-<li>JKS 证书 转 Nginx证书</li>
-</ul>
-<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># jks 证书转p12</span>
-keytool -importkeystore -srckeystore server.keystore  -destkeystore server.p12 \
--srcstoretype jks -deststoretype pkcs12 -srcalias server -destalias server \
--deststorepass 111111 -destkeypass 111111 -srcstorepass 111111
-<span class="token comment" spellcheck="true"># p12 证书提取pem证书和私钥</span>
-openssl pkcs12 -in server.p12 -clcerts -nokeys -password pass:111111 -out server.crt
-openssl pkcs12 -in server.p12  -nocerts -password pass:111111 -passout pass:111111 -out server.key
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="postman-双向认证测试"><a href="#postman-双向认证测试" class="headerlink" title="postman 双向认证测试"></a>postman 双向认证测试</h3><ol>
-<li>创建服务端信任库</li>
-<li>创建客户端证书</li>
-<li>将客户端证书添加到服务端信任库</li>
-<li><code>postman</code> 设置选择：<code>setting</code> - <code>General</code> - 关闭<code>SSL certificate verification</code></li>
-<li><code>postman</code> 设置选择：<code>setting</code> - <code>Certificates</code> - <code>Client Certificates</code> - 选择 <code>Add Certificates</code></li>
-<li>设置<code>地址</code>和<code>端口号</code>、<code>CAR file</code> 、<code>KEY file</code>，证书有密码就输入<code>Passphrase</code></li>
-<li>测试</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubernetes-geng-xin-zheng-shu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/kubernetes-geng-xin-zheng-shu/" class="post-title-link" itemprop="url">kubernetes更新证书</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-11-08 09:36:15" itemprop="dateCreated datePublished" datetime="2022-11-08T09:36:15+08:00">2022-11-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 查看证书过期时间</span>
-kubeadm alpha certs check-expiration
-<span class="token comment" spellcheck="true"># 更新证书</span>
-kubeadm alpha certs renew all
-<span class="token comment" spellcheck="true"># 证书如果没有生效,重启相关服务生效</span>
-docker <span class="token function">ps</span> <span class="token operator">|</span> <span class="token function">grep</span> -E <span class="token string">'k8s_kube-apiserver|k8s_kube-controller-manager|k8s_kube-scheduler|k8s_etcd_etcd'</span> <span class="token operator">|</span> <span class="token function">awk</span> -F <span class="token string">' '</span> <span class="token string">'{print <span class="token variable">$1</span>}'</span> <span class="token operator">|</span> <span class="token function">xargs</span> docker restart
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/geng-xin-hexo/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/geng-xin-hexo/" class="post-title-link" itemprop="url">更新hexo版本</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-09-21 17:24:23" itemprop="dateCreated datePublished" datetime="2022-09-21T17:24:23+08:00">2022-09-21</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/hexo/" itemprop="url" rel="index"><span itemprop="name">hexo</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ul>
-<li><a target="_blank" rel="noopener" href="https://novnan.github.io/Hexo/update_hexo/">Hexo版本升级指南</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/65/">65</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -940,20 +1091,20 @@ docker <span class="token function">ps</span> <span class="token operator">|</sp
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">382</span>
+          <span class="site-state-item-count">385</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">56</span>
+        <span class="site-state-item-count">57</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">236</span>
+        <span class="site-state-item-count">237</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

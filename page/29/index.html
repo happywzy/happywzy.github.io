@@ -196,6 +196,311 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-xian-zhi-rong-qi-ri-zhi-da-xiao/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-xian-zhi-rong-qi-ri-zhi-da-xiao/" class="post-title-link" itemprop="url">docker限制容器日志大小</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-20 14:09:43" itemprop="dateCreated datePublished" datetime="2020-11-20T14:09:43+08:00">2020-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>容器日志一般存放在<code>/var/lib/docker/containers/container_id/</code>下面，以<code>json.log</code>结尾的文件(业务日志)很大.</p>
+<h3 id="处理"><a href="#处理" class="headerlink" title="处理"></a>处理</h3><ul>
+<li>临时清空日志</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh"># 注意不能用rm命令
+cat /dev/null > /var/lib/docker/containers/容器id/容器id-json.log
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>如果是docker-compose<br>通过配置容器<code>docker-compose.yml</code>的<code>max-size</code>选项来实现:</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">nginx</span><span class="token punctuation">:</span> 
+  <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span>1.12.1 
+  <span class="token key atrule">restart</span><span class="token punctuation">:</span> always 
+  <span class="token key atrule">logging</span><span class="token punctuation">:</span> 
+    <span class="token key atrule">driver</span><span class="token punctuation">:</span> <span class="token string">"json-file"</span>
+    <span class="token key atrule">options</span><span class="token punctuation">:</span> 
+      <span class="token key atrule">max-size</span><span class="token punctuation">:</span> <span class="token string">"5g"</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>限制docker容器日志大小</li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json">// vim /etc/docker/daemon.json
+<span class="token punctuation">{</span>
+  <span class="token property">"log-driver"</span><span class="token operator">:</span><span class="token string">"json-file"</span><span class="token punctuation">,</span>
+  <span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"max-size"</span><span class="token operator">:</span><span class="token string">"500m"</span><span class="token punctuation">,</span> <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>重启docker生效</p>
+<pre class="line-numbers language-sh"><code class="language-sh">systemctl daemon-reload
+systemctl restart docker
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/angel-devil/p/12558908.html">https://www.cnblogs.com/angel-devil/p/12558908.html</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-cha-zhao-zhan-yong-zhu-ji-ci-pan-zui-duo-de-rong-qi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/docker-cha-zhao-zhan-yong-zhu-ji-ci-pan-zui-duo-de-rong-qi/" class="post-title-link" itemprop="url">docker查找占用主机磁盘最多的容器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-20 13:49:00" itemprop="dateCreated datePublished" datetime="2020-11-20T13:49:00+08:00">2020-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>有时候我们一台主机上部署了多个容器，而且对部分数据做了持久化，时间长了，数据会越来越多，相应的可能会造成磁盘空间不足？那么我们如何，找出占用磁盘空间最大的容器，并删除容器的部分不需要的日志或数据文件呢？</p>
+<h3 id="overlay2简介"><a href="#overlay2简介" class="headerlink" title="overlay2简介"></a>overlay2简介</h3><p>OverlayFS是一种现代的联合文件系统，与AUFS类似，但速度更快且实现更简单。Docker为OverlayFS提供了两个存储驱动程序：原始的overlay，更新的和更稳定的overlay2。</p>
+<h3 id="容器存储目录"><a href="#容器存储目录" class="headerlink" title="容器存储目录"></a>容器存储目录</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda1        40G  4.1G   34G  11% /
+devtmpfs        911M     0  911M   0% /dev
+tmpfs           920M     0  920M   0% /dev/shm
+tmpfs           920M  1.3M  919M   1% /run
+tmpfs           920M     0  920M   0% /sys/fs/cgroup
+overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/6c21d550b2e37e23b777490d3f3b26c54ed5b98ad615ac833ff4248a288b9530/merged
+overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/aa7a46d5a35c404e956fa35c88c5ecb8f117d03299f3818d5c66c33caf4ee6f4/merged
+overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/507f4480d6ed67738d618080b0fcbf60ca22623ba9a87eade44fa403e421cf55/merged
+overlay          40G  4.1G   34G  11% /var/lib/docker/overlay2/5cc8105791fd74756b0f7cc36ec93685f3ca90bcb72ac025edb7389e5156228b/merged
+overlay          40G  4.1G   34G  11% 
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在当前版本中，容器存储目录为<code>/var/lib/docker/overlay2</code>。且当前占用宿主机磁盘空间的目录也为容器存储目录。</p>
+<h3 id="查找占用磁盘空间大小的容器目录"><a href="#查找占用磁盘空间大小的容器目录" class="headerlink" title="查找占用磁盘空间大小的容器目录"></a>查找占用磁盘空间大小的容器目录</h3><pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# du -s * | sort -nr | head -5
+334636	f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870
+159348	86444fb8a5127b41323bef731c14eb764135a7066bb5f904427f53816ff4fe2f
+146556	6c21d550b2e37e23b777490d3f3b26c54ed5b98ad615ac833ff4248a288b9530
+102080	1eb50142766d18f3927615f63f599d9de1885b2954397736b882bb89ab8ae265
+88504	ef4e0ff8bf2cd2f8d2f147e30e89e2c7b6f6e02795ebbcd45a3bba1d77b3b132
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：这里只列出了排名<code>前五</code>的容器目录。那么现在知道了容器目录，那么如何找出对应的容器呢？现在我们要找出<code>f6acb9573429</code>开头的目录对应时哪个容器？</p>
+</blockquote>
+<h3 id="查找容器目录对应的容器名"><a href="#查找容器目录对应的容器名" class="headerlink" title="查找容器目录对应的容器名"></a>查找容器目录对应的容器名</h3><ul>
+<li>通过 <code>docker ps -a</code> 查看容器列表</li>
+<li>通过 <code>docker inspect 容器ID</code> 查看容器配置信息</li>
+</ul>
+<pre class="line-numbers language-sh"><code class="language-sh">[root@docker overlay2]# for i in $(docker ps -q );do echo echo $i ; docker inspect $i|grep f6acb9573429  ; done
+echo 4332fe39163b
+                "LowerDir": "/var/lib/docker/overlay2/**f6acb9573429**712fe4d8b8b786e24d790fae8727f403693874b62a168b174870-init/diff:/var/lib/docker/overlay2/b76d30a66c8fef0123a2310bd861a0aa626b5a6e7bf83f9982a6344c8e466187/diff:/var/lib/docker/overlay2/c5b396df751ea053d81765d77f85a8dd44c1c847b6fbe95b38230509f372dfd2/diff:/var/lib/docker/overlay2/1efa8716d1f55fde7716deaacabe0e582aff78f7e460f18b9d5dc84db387533e/diff:/var/lib/docker/overlay2/3f78cbaa248e4f8b1e25599e5e1e2496a463b75e39adfaad2026f134a8ebf89f/diff:/var/lib/docker/overlay2/18ca1077ac90dff82d1085d19162d7b56c42effce18b416632c0e1627602fb17/diff:/var/lib/docker/overlay2/bcee6e758f7ac5769da672274262d61b38acc2cc6ade4b9b56cd0475ca886528/diff:/var/lib/docker/overlay2/e23e02b967bdf1aaaef8e002f0a9f1d778d7a7de7adb12cd925e84ef770b62c7/diff:/var/lib/docker/overlay2/916a116fc26d356a61a9e028c52a3a402349e87e1e9eea6f4d2039cf31391155/diff",
+                "MergedDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/merged",
+                "UpperDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/diff",
+                "WorkDir": "/var/lib/docker/overlay2/f6acb9573429712fe4d8b8b786e24d790fae8727f403693874b62a168b174870/work"
+echo 4172f0cf7985
+echo a622665b0a81
+echo 20fde2e0a903
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：这里就已经找出了最占用磁盘空间大小的容器了。<code>4332fe39163b</code>为容器<code>ID</code>.</p>
+</blockquote>
+<h3 id="查看镜像占用磁盘"><a href="#查看镜像占用磁盘" class="headerlink" title="查看镜像占用磁盘"></a>查看镜像占用磁盘</h3><pre class="line-numbers language-sh"><code class="language-sh">docker system df 
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="查看docker日志-json-log"><a href="#查看docker日志-json-log" class="headerlink" title="查看docker日志.json.log"></a>查看docker日志.json.log</h3><p><code>docker</code>日志默认不作限制,可能产生非常大的日志文件,需要清理或者作出限制.</p>
+<ul>
+<li>限制docker容器日志大小</li>
+</ul>
+<pre class="line-numbers language-json"><code class="language-json">// vim /etc/docker/daemon.json
+<span class="token punctuation">{</span>
+  <span class="token property">"log-driver"</span><span class="token operator">:</span><span class="token string">"json-file"</span><span class="token punctuation">,</span>
+  <span class="token property">"log-opts"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"max-size"</span><span class="token operator">:</span><span class="token string">"500m"</span><span class="token punctuation">,</span> <span class="token property">"max-file"</span><span class="token operator">:</span><span class="token string">"3"</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/m0_37814112/article/details/103049589">docker查找占用主机磁盘空间最大的容器</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/hnmpf/article/details/90237465">定位那个docker容器占用overlay2的问题之容器磁盘定位</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/kubeadm-bu-shu-k8s-geng-xin-zheng-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/kubeadm-bu-shu-k8s-geng-xin-zheng-shu/" class="post-title-link" itemprop="url">kubeadm部署k8s【更新证书】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-20 09:28:44" itemprop="dateCreated datePublished" datetime="2020-11-20T09:28:44+08:00">2020-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>通过 <code>kubeadm</code>部署<code>k8s</code>，默认生成的证书有效期是<code>一年</code>.需要每年更新证书.</p>
+<h3 id="查看证书有效期"><a href="#查看证书有效期" class="headerlink" title="查看证书有效期"></a>查看证书有效期</h3><pre class="line-numbers language-sh"><code class="language-sh">kubeadm alpha certs check-expiration
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="更新证书"><a href="#更新证书" class="headerlink" title="更新证书"></a>更新证书</h3><pre class="line-numbers language-sh"><code class="language-sh">kubeadm alpha certs renew all
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="通过crontab定时更新证书"><a href="#通过crontab定时更新证书" class="headerlink" title="通过crontab定时更新证书"></a>通过crontab定时更新证书</h3><pre class="line-numbers language-sh"><code class="language-sh">0 0 15 10 * kubeadm alpha certs renew all
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="证书过期kubectl命令无法使用"><a href="#证书过期kubectl命令无法使用" class="headerlink" title="证书过期kubectl命令无法使用"></a>证书过期kubectl命令无法使用</h3><pre class="line-numbers language-sh"><code class="language-sh"># 更新客户端配置
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="修改源码增加证书有效期"><a href="#修改源码增加证书有效期" class="headerlink" title="修改源码增加证书有效期"></a>修改源码增加证书有效期</h3><ul>
+<li>省略…</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/zhong-hua-ren-min-gong-he-guo-min-fa-dian/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2662,375 +2967,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/resttemplate-qing-qiu-put-delete-fang-fa-wu-fan-hui-zhi-wen-ti/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/resttemplate-qing-qiu-put-delete-fang-fa-wu-fan-hui-zhi-wen-ti/" class="post-title-link" itemprop="url">RestTemplate请求PUT/DELETE方法无返回值问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-11-17 14:50:00" itemprop="dateCreated datePublished" datetime="2020-11-17T14:50:00+08:00">2020-11-17</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="使用exchange"><a href="#使用exchange" class="headerlink" title="使用exchange"></a>使用exchange</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>fastjson<span class="token punctuation">.</span>JSON<span class="token punctuation">;</span>
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>crd<span class="token punctuation">.</span>service<span class="token punctuation">.</span>routing<span class="token punctuation">.</span>bean<span class="token punctuation">.</span>AddrInfo<span class="token punctuation">;</span>
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>crd<span class="token punctuation">.</span>service<span class="token punctuation">.</span>routing<span class="token punctuation">.</span>bean<span class="token punctuation">.</span>Response<span class="token punctuation">;</span>
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>fasterxml<span class="token punctuation">.</span>jackson<span class="token punctuation">.</span>core<span class="token punctuation">.</span>JsonProcessingException<span class="token punctuation">;</span>
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>fasterxml<span class="token punctuation">.</span>jackson<span class="token punctuation">.</span>databind<span class="token punctuation">.</span>ObjectMapper<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>http<span class="token punctuation">.</span>*<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>util<span class="token punctuation">.</span>MimeType<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>util<span class="token punctuation">.</span>MimeTypeUtils<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>util<span class="token punctuation">.</span>MultiValueMap<span class="token punctuation">;</span>
-<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>web<span class="token punctuation">.</span>client<span class="token punctuation">.</span>RestTemplate<span class="token punctuation">;</span>
-<span class="token keyword">import</span> java<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>charset<span class="token punctuation">.</span>Charset<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">/**
- * @Author: wzy
- * @Time: Created on 2018/4/27 16:04
- * @Project: sg-imq-console
- * @Modified By: 使用exchange发送put,delete，解决resttemplate无返回值问题
- */</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RestClientUtil</span> <span class="token punctuation">{</span>
-    <span class="token comment" spellcheck="true">/**
-     * 发送/获取 服务端数据(主要用于解决发送put,delete方法无返回值问题).
-     *
-     * @param url    绝对地址
-     * @param method 请求方式
-     * @param &lt;T>    返回类型
-     * @return 返回结果(响应体)
-     */</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">exchange</span><span class="token punctuation">(</span>String url<span class="token punctuation">,</span> HttpMethod method<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> response<span class="token punctuation">,</span> String request<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token comment" spellcheck="true">// 请求头</span>
-        HttpHeaders headers <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HttpHeaders</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        MimeType mimeType <span class="token operator">=</span> MimeTypeUtils<span class="token punctuation">.</span><span class="token function">parseMimeType</span><span class="token punctuation">(</span><span class="token string">"application/json"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        MediaType mediaType <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MediaType</span><span class="token punctuation">(</span>mimeType<span class="token punctuation">.</span><span class="token function">getType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> mimeType<span class="token punctuation">.</span><span class="token function">getSubtype</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Charset<span class="token punctuation">.</span><span class="token function">forName</span><span class="token punctuation">(</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        headers<span class="token punctuation">.</span><span class="token function">setContentType</span><span class="token punctuation">(</span>mediaType<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 发送请求</span>
-        HttpEntity<span class="token operator">&lt;</span>String<span class="token operator">></span> entity <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HttpEntity</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> headers<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        RestTemplate restTemplate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RestTemplate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        ResponseEntity<span class="token operator">&lt;</span>T<span class="token operator">></span> resultEntity <span class="token operator">=</span> restTemplate<span class="token punctuation">.</span><span class="token function">exchange</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> method<span class="token punctuation">,</span> entity<span class="token punctuation">,</span> response<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> resultEntity<span class="token punctuation">.</span><span class="token function">getBody</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        String url <span class="token operator">=</span> <span class="token string">"http://127.0.0.1:8088/route/addr/安徽"</span><span class="token punctuation">;</span>
-        AddrInfo addrInfo <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AddrInfo</span><span class="token punctuation">(</span><span class="token string">"安徽"</span><span class="token punctuation">,</span> <span class="token string">"127.0.0.1:9877"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">//        Response response = RestClientUtil.exchange(url,HttpMethod.PUT,Response.class,</span>
-<span class="token comment" spellcheck="true">//                JSON.toJSONString(addrInfo));</span>
-        Response response <span class="token operator">=</span> RestClientUtil<span class="token punctuation">.</span><span class="token function">exchange</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> HttpMethod<span class="token punctuation">.</span>DELETE<span class="token punctuation">,</span> Response<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span>
-                null<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>response<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">//        RestTemplate restTemplate = new RestTemplate();</span>
-<span class="token comment" spellcheck="true">//        restTemplate.put(url, addrInfo);</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-she-zhi-ttl/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/hbase-she-zhi-ttl/" class="post-title-link" itemprop="url">hbase设置ttl</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-11-12 10:09:22" itemprop="dateCreated datePublished" datetime="2020-11-12T10:09:22+08:00">2020-11-12</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="Hbase关于TTL"><a href="#Hbase关于TTL" class="headerlink" title="Hbase关于TTL"></a>Hbase关于TTL</h3><ul>
-<li><code>ColumnFamilies</code>可以以秒为单位来设置 <code>TTL</code>（<code>Time To Live</code>）长度，一旦达到到期时间，<code>HBase</code> 将自动删除行。</li>
-<li>设置 <code>hbase.store.delete.expired.storefile</code> 为 <code>false</code> 将禁用此功能。将最小版本数设置为 <code>0</code> 以外的值也会禁用此功能。</li>
-<li>也支持设置时间以每个单元为基础生存。单元<code>TTL</code> 是使用突变 <code>setTTL</code> 作为突变请求（例如：<code>Appends</code>、<code>Increments</code>、<code>Puts</code>）的属性提交的.</li>
-<li>单元 <code>TTL</code> 以毫秒为单位而不是秒;</li>
-<li>单元 <code>TTL</code> 不能将一个单元的有效生命周期延长超过 <code>ColumnFamily</code> 级 <code>TTL</code> 设置.</li>
-</ul>
-<h3 id="设置TTL"><a href="#设置TTL" class="headerlink" title="设置TTL"></a>设置TTL</h3><ol>
-<li>创建表的时候指定</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">create</span> <span class="token string">'t_task_log'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'cf'</span><span class="token punctuation">,</span> TTL<span class="token operator">=</span><span class="token operator">></span><span class="token string">'86400'</span>}
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ol start="2">
-<li>查看TTL</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">desc</span> <span class="token string">"t_task_log"</span>
-<span class="token comment" spellcheck="true">-- 默认: TTL => 'FOREVER'</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ol start="3">
-<li>修改TTL</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 禁用表</span>
-<span class="token keyword">disable</span> <span class="token string">"t_task_log"</span>
-<span class="token comment" spellcheck="true">-- 设置TTL值，作用于列族cf</span>
-<span class="token keyword">alter</span> <span class="token string">"t_task_log"</span><span class="token punctuation">,</span>NAME<span class="token operator">=</span><span class="token operator">></span><span class="token string">'cf'</span><span class="token punctuation">,</span>TTL<span class="token operator">=</span><span class="token operator">></span><span class="token string">'86400'</span>
-<span class="token comment" spellcheck="true">-- 恢复表</span>
-<span class="token keyword">enable</span>  <span class="token string">"t_task_log"</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>高版本<code>hbase</code>可以不需要先禁用表,可直接在线修改<code>TTL</code>.</p>
-</blockquote>
-<ol start="4">
-<li>编码设置列族TTL</li>
-</ol>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 1. 创建一个测试表,并添加列族cf</span>
-TableName tableName <span class="token operator">=</span> TableName<span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span><span class="token string">"test"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-TableDescriptor tableDescriptor <span class="token operator">=</span> TableDescriptorBuilder<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span>tableName<span class="token punctuation">)</span>
-        <span class="token punctuation">.</span><span class="token function">setColumnFamily</span><span class="token punctuation">(</span>ColumnFamilyDescriptorBuilder<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span><span class="token string">"cf"</span><span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-        <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-admin<span class="token punctuation">.</span><span class="token function">createTable</span><span class="token punctuation">(</span>tableDescriptor<span class="token punctuation">)</span><span class="token punctuation">;</span>
-System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"创建表并添加列族cf成功"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">// 2.为当前的表添加一个ttl的列族(默认设定时间为10秒)</span>
-ColumnFamilyDescriptor cfDesc <span class="token operator">=</span> ColumnFamilyDescriptorBuilder<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span><span class="token string">"ttl-cf"</span><span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setTimeToLive</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span>
-        <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-admin<span class="token punctuation">.</span><span class="token function">addColumnFamily</span><span class="token punctuation">(</span>tableName<span class="token punctuation">,</span> cfDesc<span class="token punctuation">)</span><span class="token punctuation">;</span>
-System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"为表添加一个具有TTL的列族ttl-cf,设定超时时间为10s"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ol start="5">
-<li>编码设置单元TTL</li>
-</ol>
-<pre class="line-numbers language-java"><code class="language-java">Put put <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Put</span><span class="token punctuation">(</span>Bytes<span class="token punctuation">.</span><span class="token function">toBytes</span><span class="token punctuation">(</span><span class="token string">"row1"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-put<span class="token punctuation">.</span><span class="token function">setTTL</span><span class="token punctuation">(</span>86400L<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="怎么重置TTL为FOREVER"><a href="#怎么重置TTL为FOREVER" class="headerlink" title="怎么重置TTL为FOREVER"></a>怎么重置TTL为FOREVER</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- HBase TTL 最大值为INT最大值 2147483647，只需将TTL设为该整数即可</span>
-<span class="token keyword">alter</span> <span class="token string">'test'</span><span class="token punctuation">,</span>{NAME <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'cf'</span><span class="token punctuation">,</span>TTL <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'2147483647'</span>}
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/zpb2016/p/12649831.html">https://www.cnblogs.com/zpb2016/p/12649831.html</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_45492007/article/details/106804808">https://blog.csdn.net/weixin_45492007/article/details/106804808</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.w3cschool.cn/hbase_doc/hbase_doc-x41d2mmo.html">https://www.w3cschool.cn/hbase_doc/hbase_doc-x41d2mmo.html</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-compose-pei-zhi-yi-lai-he-qi-dong-shun-xu/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/docker-compose-pei-zhi-yi-lai-he-qi-dong-shun-xu/" class="post-title-link" itemprop="url">docker-compose配置依赖和启动顺序</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-11-10 17:31:05" itemprop="dateCreated datePublished" datetime="2020-11-10T17:31:05+08:00">2020-11-10</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p><code>docker-compose</code>配置容器启动顺序,有时依靠<code>depends_on</code>并不能完全解决,主要原因是:</p>
-<ul>
-<li><code>depends_on</code>只能保证容器进入了<code>running</code>状态,而不保证进入<code>ready</code>状态.</li>
-<li><a target="_blank" rel="noopener" href="https://docs.docker.com/compose/startup-order/">Control startup and shutdown order in Compose</a></li>
-</ul>
-<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>启动命令前增加<code>判断依赖服务状态的工具</code></p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://github.com/vishnubob/wait-for-it">wait-for-it</a></li>
-<li><a target="_blank" rel="noopener" href="https://github.com/jwilder/dockerize">dockerize</a></li>
-<li><a target="_blank" rel="noopener" href="https://github.com/Eficode/wait-for">wait-for</a></li>
-</ul>
-<p>示例:</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">"2"</span>
-<span class="token key atrule">services</span><span class="token punctuation">:</span>
-  <span class="token key atrule">web</span><span class="token punctuation">:</span>
-    <span class="token key atrule">build</span><span class="token punctuation">:</span> .
-    <span class="token key atrule">ports</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">"80:8000"</span>
-    <span class="token key atrule">depends_on</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token string">"db"</span>
-    <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"./wait-for-it.sh"</span><span class="token punctuation">,</span> <span class="token string">"db:5432"</span><span class="token punctuation">,</span> <span class="token string">"--"</span><span class="token punctuation">,</span> <span class="token string">"python"</span><span class="token punctuation">,</span> <span class="token string">"app.py"</span><span class="token punctuation">]</span>
-  <span class="token key atrule">db</span><span class="token punctuation">:</span>
-    <span class="token key atrule">image</span><span class="token punctuation">:</span> postgres
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="自己编写script"><a href="#自己编写script" class="headerlink" title="自己编写script"></a>自己编写script</h3><pre class="line-numbers language-sh"><code class="language-sh">#!/bin/sh
-# wait-for-postgres.sh
-
-set -e
-  
-host="$1"
-shift
-cmd="$@"
-  
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$host" -U "postgres" -c '\q'; do
-  >&2 echo "Postgres is unavailable - sleeping"
-  sleep 1
-done
-  
->&2 echo "Postgres is up - executing command"
-exec $cmd
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>测试：</p>
-<pre class="line-numbers language-sh"><code class="language-sh">command: ["./wait-for-postgres.sh", "db", "python", "app.py"]
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="wait-for命令测试"><a href="#wait-for命令测试" class="headerlink" title="wait-for命令测试"></a>wait-for命令测试</h3><ul>
-<li>下载<a target="_blank" rel="noopener" href="https://github.com/eficode/wait-for/blob/master/wait-for">wait-for</a></li>
-</ul>
-<pre class="line-numbers language-sh"><code class="language-sh">[root@node1 ~]# chmod a+x wait_for 
-[root@node1 ~]# ./wait_for localhost:3306 -- echo "Mysql site is up"
-Eficode site is up
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/28/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/28/">28</a><span class="page-number current">29</span><a class="page-number" href="/page/30/">30</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/30/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/28/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/28/">28</a><span class="page-number current">29</span><a class="page-number" href="/page/30/">30</a><span class="space">&hellip;</span><a class="page-number" href="/page/65/">65</a><a class="extend next" rel="next" href="/page/30/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -3098,20 +3038,20 @@ Eficode site is up
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">382</span>
+          <span class="site-state-item-count">385</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">56</span>
+        <span class="site-state-item-count">57</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">236</span>
+        <span class="site-state-item-count">237</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

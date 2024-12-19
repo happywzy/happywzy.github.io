@@ -196,6 +196,583 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/patroni-an-zhuang-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/patroni-an-zhuang-shi-yong/" class="post-title-link" itemprop="url">patroni安装使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-06-25 17:15:27" itemprop="dateCreated datePublished" datetime="2024-06-25T17:15:27+08:00">2024-06-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="patroni"><a href="#patroni" class="headerlink" title="patroni"></a>patroni</h3><p>patroni 依赖第三方分布式存储, 可以托管 postgres 的配置管理和启停, 以及主备切换.</p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ol>
+<li>安装epel源，安装pyhton3</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">yum -y <span class="token function">install</span> epel-release
+yum -y <span class="token function">install</span> python3 python3-devel
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>pip安装patroni</li>
+</ol>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://patroni.readthedocs.io/en/latest/installation.html#general-installation-for-pip">官方文档</a></li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> -y python3-psycopg2
+pip3 <span class="token function">install</span> patroni<span class="token punctuation">[</span>etcd3,psycopg2<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true"># 执行patroni命令无报错证明安装完成</span>
+<span class="token punctuation">[</span>root@data8 data<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># patroni</span>
+Config is empty.
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>pip3 卸载命令:  <code>pip3 uninstall xxxx</code></p>
+</blockquote>
+<ol start="3">
+<li>生成patroni配置文件</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">patroni --generate-sample-config /etc/patroni/patroni.yml
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://patroni.readthedocs.io/en/latest/yaml_configuration.html">官方配置文件详细说明</a></li>
+</ul>
+<ol start="4">
+<li>patroni 配置文件样例</li>
+</ol>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">scope</span><span class="token punctuation">:</span> <span class="token string">'pg'</span> <span class="token comment" spellcheck="true"># 集群名称,保持一致</span>
+<span class="token key atrule">namespace</span><span class="token punctuation">:</span> <span class="token string">'/service'</span> <span class="token comment" spellcheck="true"># 保持默认</span>
+<span class="token key atrule">name</span><span class="token punctuation">:</span> data7 <span class="token comment" spellcheck="true"># 不同节点设置不同的name</span>
+
+<span class="token key atrule">log</span><span class="token punctuation">:</span>
+  <span class="token key atrule">format</span><span class="token punctuation">:</span> <span class="token string">'%(asctime)s %(levelname)s: %(message)s'</span>
+  <span class="token key atrule">level</span><span class="token punctuation">:</span> INFO
+  <span class="token key atrule">max_queue_size</span><span class="token punctuation">:</span> <span class="token number">1000</span>
+  <span class="token key atrule">traceback_level</span><span class="token punctuation">:</span> ERROR
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> plain
+
+<span class="token key atrule">restapi</span><span class="token punctuation">:</span>
+  <span class="token key atrule">connect_address</span><span class="token punctuation">:</span> 172.16.20.152<span class="token punctuation">:</span><span class="token number">8008</span>
+  <span class="token key atrule">listen</span><span class="token punctuation">:</span> 172.16.20.152<span class="token punctuation">:</span><span class="token number">8008</span>
+
+<span class="token comment" spellcheck="true"># 这里使用的是etcd3</span>
+<span class="token key atrule">etcd3</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> 172.16.20.152<span class="token punctuation">:</span><span class="token number">2379</span><span class="token punctuation">,</span>172.16.20.153<span class="token punctuation">:</span><span class="token number">2379</span><span class="token punctuation">,</span>172.16.20.154<span class="token punctuation">:</span><span class="token number">2379</span>
+
+<span class="token comment" spellcheck="true"># The bootstrap configuration. Works only when the cluster is not yet initialized.</span>
+<span class="token comment" spellcheck="true"># If the cluster is already initialized, all changes in the `bootstrap` section are ignored!</span>
+<span class="token key atrule">bootstrap</span><span class="token punctuation">:</span>
+  <span class="token comment" spellcheck="true"># This section will be written into &lt;dcs>:/&lt;namespace>/&lt;scope>/config after initializing</span>
+  <span class="token comment" spellcheck="true"># new cluster and all other cluster members will use it as a `global configuration`.</span>
+  <span class="token comment" spellcheck="true"># WARNING! If you want to change any of the parameters that were set up</span>
+  <span class="token comment" spellcheck="true"># via `bootstrap.dcs` section, please use `patronictl edit-config`!</span>
+  <span class="token key atrule">dcs</span><span class="token punctuation">:</span>
+    <span class="token key atrule">loop_wait</span><span class="token punctuation">:</span> <span class="token number">10</span>
+    <span class="token key atrule">retry_timeout</span><span class="token punctuation">:</span> <span class="token number">10</span>
+    <span class="token key atrule">ttl</span><span class="token punctuation">:</span> <span class="token number">30</span>
+    <span class="token key atrule">postgresql</span><span class="token punctuation">:</span>
+      <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+        <span class="token key atrule">hot_standby</span><span class="token punctuation">:</span> <span class="token string">'on'</span>
+        <span class="token key atrule">max_connections</span><span class="token punctuation">:</span> <span class="token number">200</span>
+        <span class="token key atrule">max_locks_per_transaction</span><span class="token punctuation">:</span> <span class="token number">64</span>
+        <span class="token key atrule">max_prepared_transactions</span><span class="token punctuation">:</span> <span class="token number">0</span>
+        <span class="token key atrule">max_replication_slots</span><span class="token punctuation">:</span> <span class="token number">10</span>
+        <span class="token key atrule">max_wal_senders</span><span class="token punctuation">:</span> <span class="token number">10</span>
+        <span class="token key atrule">max_worker_processes</span><span class="token punctuation">:</span> <span class="token number">8</span>
+        <span class="token key atrule">track_commit_timestamp</span><span class="token punctuation">:</span> <span class="token string">'off'</span>
+        <span class="token key atrule">wal_keep_size</span><span class="token punctuation">:</span> 128MB
+        <span class="token key atrule">wal_level</span><span class="token punctuation">:</span> replica
+        <span class="token key atrule">wal_log_hints</span><span class="token punctuation">:</span> <span class="token string">'on'</span>
+      <span class="token key atrule">use_pg_rewind</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+      <span class="token key atrule">use_slots</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">initdb</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> data<span class="token punctuation">-</span>checksums
+  <span class="token punctuation">-</span> <span class="token key atrule">encoding</span><span class="token punctuation">:</span> UTF8
+
+<span class="token key atrule">postgresql</span><span class="token punctuation">:</span>
+  <span class="token comment" spellcheck="true"># 这里的用户patroni会自动生成,直接写好用户密码即可.</span>
+  <span class="token key atrule">authentication</span><span class="token punctuation">:</span>
+    <span class="token key atrule">replication</span><span class="token punctuation">:</span>
+      <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token string">'replicator'</span>
+      <span class="token key atrule">username</span><span class="token punctuation">:</span> replicator
+    <span class="token key atrule">rewind</span><span class="token punctuation">:</span>
+      <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token string">'rewind_user'</span>
+      <span class="token key atrule">username</span><span class="token punctuation">:</span> rewind_user
+    <span class="token key atrule">superuser</span><span class="token punctuation">:</span>
+      <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token string">'123456'</span>
+      <span class="token key atrule">username</span><span class="token punctuation">:</span> postgres
+  <span class="token key atrule">connect_address</span><span class="token punctuation">:</span> 172.16.20.152<span class="token punctuation">:</span><span class="token number">5432</span>
+  <span class="token key atrule">data_dir</span><span class="token punctuation">:</span> <span class="token string">'/home/pgsql/data/'</span> <span class="token comment" spellcheck="true"># 指定data目录,需要设置好权限,可以是空目录表示一个新的pg集群,会自动初始化</span>
+  <span class="token key atrule">bin_dir</span><span class="token punctuation">:</span> <span class="token string">'/usr/local/pgsql/bin/'</span> <span class="token comment" spellcheck="true"># 指定pg的安装的bin目录</span>
+  <span class="token key atrule">listen</span><span class="token punctuation">:</span> 0.0.0.0<span class="token punctuation">:</span><span class="token number">5432 </span><span class="token comment" spellcheck="true"># 监听0.0.0.0</span>
+  <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+    <span class="token comment" spellcheck="true"># centos7 直接启动时会报错：SCRAM authentication requires libpq version 10 or above。解决办法写在后面。</span>
+    <span class="token key atrule">password_encryption</span><span class="token punctuation">:</span> scram<span class="token punctuation">-</span>sha<span class="token punctuation">-</span><span class="token number">256</span>
+  <span class="token key atrule">pg_hba</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> host all all 0.0.0.0/0 md5
+  <span class="token punctuation">-</span> host replication replicator 172.16.20.0/24 md5
+  <span class="token comment" spellcheck="true">#callbacks:</span>
+  <span class="token comment" spellcheck="true">#  on_reload: /etc/patroni/on_reload.sh</span>
+  <span class="token comment" spellcheck="true">#  on_restart: /etc/patroni/on_restart.sh</span>
+  <span class="token comment" spellcheck="true">#  on_role_change: /etc/patroni/on_role_change.sh</span>
+  <span class="token comment" spellcheck="true">#  on_start: /etc/patroni/on_start.sh</span>
+  <span class="token comment" spellcheck="true">#  on_stop: /etc/patroni/on_stop.sh</span>
+
+<span class="token key atrule">tags</span><span class="token punctuation">:</span>
+  <span class="token key atrule">clonefrom</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">failover_priority</span><span class="token punctuation">:</span> <span class="token number">1</span>
+  <span class="token key atrule">noloadbalance</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+  <span class="token key atrule">nostream</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+  <span class="token key atrule">nosync</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>脚本示例:</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token shebang important">#!/bin/bash</span>
+curl -X GET http://172.16.20.35:8085/ping/152/on_start
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意<code>#!/bin/bash</code>解析器一定要写，不然patroni执行报错.</p>
+</blockquote>
+<ol start="5">
+<li>注册 patroni service<br>创建文件<code>/usr/lib/systemd/system/patroni.service</code></li>
+</ol>
+<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
+Description=Runners to orchestrate a high-availability PostgreSQL
+After=syslog.target network.target
+ 
+[Service]
+Type=simple
+User=postgres
+Group=postgres
+ExecStart=/usr/local/bin/patroni /etc/patroni/patroni.yml
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=process
+TimeoutSec=30
+Restart=no
+ 
+[Install]
+WantedBy=multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>启动patroni</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 启动</span>
+systemctl start patroni
+<span class="token comment" spellcheck="true"># 检查运行状态,并查看pg data目录是否有数据了.</span>
+systemctl status patroni
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="7">
+<li>查询patroni节点状态</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data7 data<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># patronictl -c /etc/patroni/patroni.yml list</span>
++ Cluster: pg <span class="token punctuation">(</span>7384360501716690603<span class="token punctuation">)</span> -----------+----+-----------+----------------------+
+<span class="token operator">|</span> Member <span class="token operator">|</span> Host          <span class="token operator">|</span> Role    <span class="token operator">|</span> State     <span class="token operator">|</span> TL <span class="token operator">|</span> Lag <span class="token keyword">in</span> MB <span class="token operator">|</span> Tags                 <span class="token operator">|</span>
++--------+---------------+---------+-----------+----+-----------+----------------------+
+<span class="token operator">|</span> data7  <span class="token operator">|</span> 172.16.20.152 <span class="token operator">|</span> Leader  <span class="token operator">|</span> running   <span class="token operator">|</span>  1 <span class="token operator">|</span>           <span class="token operator">|</span> clonefrom: <span class="token boolean">true</span>      <span class="token operator">|</span>
+<span class="token operator">|</span>        <span class="token operator">|</span>               <span class="token operator">|</span>         <span class="token operator">|</span>           <span class="token operator">|</span>    <span class="token operator">|</span>           <span class="token operator">|</span> failover_priority: 1 <span class="token operator">|</span>
++--------+---------------+---------+-----------+----+-----------+----------------------+
+<span class="token operator">|</span> data8  <span class="token operator">|</span> 172.16.20.153 <span class="token operator">|</span> Replica <span class="token operator">|</span> streaming <span class="token operator">|</span>  1 <span class="token operator">|</span>         0 <span class="token operator">|</span> clonefrom: <span class="token boolean">true</span>      <span class="token operator">|</span>
+<span class="token operator">|</span>        <span class="token operator">|</span>               <span class="token operator">|</span>         <span class="token operator">|</span>           <span class="token operator">|</span>    <span class="token operator">|</span>           <span class="token operator">|</span> failover_priority: 1 <span class="token operator">|</span>
++--------+---------------+---------+-----------+----+-----------+----------------------+
+<span class="token operator">|</span> data9  <span class="token operator">|</span> 172.16.20.154 <span class="token operator">|</span> Replica <span class="token operator">|</span> streaming <span class="token operator">|</span>  1 <span class="token operator">|</span>         0 <span class="token operator">|</span> clonefrom: <span class="token boolean">true</span>      <span class="token operator">|</span>
+<span class="token operator">|</span>        <span class="token operator">|</span>               <span class="token operator">|</span>         <span class="token operator">|</span>           <span class="token operator">|</span>    <span class="token operator">|</span>           <span class="token operator">|</span> failover_priority: 1 <span class="token operator">|</span>
++--------+---------------+---------+-----------+----+-----------+----------------------+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="错误"><a href="#错误" class="headerlink" title="错误"></a>错误</h3><ol>
+<li><code>SCRAM authentication requires libpq version 10 or above</code><br>这个错误原因是 centos7 默认安装的 <code>postgresql-libs</code> 版本太低,需要升级.</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data8 data<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># yum list installed | grep postgre</span>
+postgresql-libs.x86_64                 9.2.24-9.el7_9                  @updates
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>卸载现有的lib</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum remove -y postgresql-libs.x86_64
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>安装pg yum 源</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>安装最新的,注意: <code>centos</code>最高只支持 <code>15</code> 版本</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> postgresql15-libs -y
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>确认</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data8 data<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># yum list installed | grep postgre</span>
+postgresql15-libs.x86_64               15.7-1PGDG.rhel7                @pgdg15 
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>注意,重新安装lib后patroni运行会报错</li>
+</ul>
+<pre class="line-numbers language-log"><code class="language-log"> FATAL: Patroni requires psycopg2>=2.5.4, psycopg2-binary, or psycopg>=3.0.0
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>需要 重新安装 </p>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> -y python3-psycopg2 
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/zai-centos7-shang-postgres-yuan-ma-an-zhuang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/zai-centos7-shang-postgres-yuan-ma-an-zhuang/" class="post-title-link" itemprop="url">centos7 postgres源码安装</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-06-25 08:58:50" itemprop="dateCreated datePublished" datetime="2024-06-25T08:58:50+08:00">2024-06-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ol>
+<li>下载源码</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">wget</span> https://ftp.postgresql.org/pub/source/v16.3/postgresql-16.3.tar.gz --no-check-certificate
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="2">
+<li>安装依赖</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> gcc gcc-c++ readline-devel readline readline-dev zlib-devel
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="3">
+<li>解压编译</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 解压</span>
+<span class="token function">tar</span> -zxvf postgresql-16.3.tar.gz
+<span class="token comment" spellcheck="true"># 配置,默认安装路径 --prefix=/usr/local/pgsql</span>
+./configure --without-icu
+<span class="token comment" spellcheck="true"># 编译</span>
+<span class="token function">make</span>
+<span class="token function">make</span> <span class="token function">install</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>添加数据目录</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">adduser postgres
+<span class="token function">mkdir</span> -p /usr/local/pgsql/data
+<span class="token function">chown</span> postgres /usr/local/pgsql/data
+<span class="token function">su</span> - postgres
+<span class="token comment" spellcheck="true"># 初始化</span>
+/usr/local/pgsql/bin/initdb -D /usr/local/pgsql/data
+<span class="token comment" spellcheck="true"># 启动</span>
+/usr/local/pgsql/bin/pg_ctl -D /usr/local/pgsql/data -l logfile start
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>测试</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 连接</span>
+/usr/local/pgsql/bin/psql -h 127.0.0.1 -U postgres -p 5432
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>配置环境变量</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/profile
+
+<span class="token comment" spellcheck="true">#PG安装目录</span>
+<span class="token function">export</span> PGHOME<span class="token operator">=</span>/usr/local/pgsql
+<span class="token function">export</span> PATH<span class="token operator">=</span><span class="token variable">$PGHOME</span>/bin:<span class="token variable">$PATH</span>
+
+<span class="token function">source</span> /etc/profile
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><blockquote>
+<p>默认只能 <code>localhost</code>/<code>127.0.0.1</code> 才能连接数据库,需要修改以下配置,修改完重启生效.</p>
+</blockquote>
+<ol>
+<li><code>/usr/local/pgsql/data/postgresql.conf</code></li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 修改监听的地址,默认localhost</span>
+listen_addresses <span class="token operator">=</span> <span class="token string">'*'</span>
+<span class="token comment" spellcheck="true"># 修改端口,默认5432</span>
+port <span class="token operator">=</span> 5432
+<span class="token comment" spellcheck="true"># 修改最大连接数,默认100</span>
+max_connections <span class="token operator">=</span> 200
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="2">
+<li><code>/usr/local/pgsql/data/pg_hba.conf</code></li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 通过本地登录完全信任,无需密码</span>
+host    all             all             127.0.0.1/32            trust
+<span class="token comment" spellcheck="true"># 设置部分网段可以连接数据库</span>
+host    all             all             172.16.20.0/24          md5
+<span class="token comment" spellcheck="true"># 设置所有IP都可以连接数据库</span>
+<span class="token comment" spellcheck="true"># host    all             all             0.0.0.0/0               md5</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>修改默认用户的密码</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">psql -h 127.0.0.1 -U postgres -p 5432
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-sql"><code class="language-sql"> <span class="token keyword">alter</span> <span class="token keyword">user</span> postgres password <span class="token string">'123456'</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/etcd-ji-qun-bu-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/etcd-ji-qun-bu-shu/" class="post-title-link" itemprop="url">etcd集群部署</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-06-24 16:57:39" itemprop="dateCreated datePublished" datetime="2024-06-24T16:57:39+08:00">2024-06-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/etcd/" itemprop="url" rel="index"><span itemprop="name">etcd</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>在三台机器上搭建一个集群</p>
+<table>
+<thead>
+<tr>
+<th>服务器</th>
+<th>IP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>node152</code></td>
+<td><code>172.16.20.152</code></td>
+</tr>
+<tr>
+<td><code>node153</code></td>
+<td><code>172.16.20.153</code></td>
+</tr>
+<tr>
+<td><code>node154</code></td>
+<td><code>172.16.20.154</code></td>
+</tr>
+</tbody></table>
+<h3 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h3><ul>
+<li>安装etcd</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">yum -y <span class="token function">install</span> etcd
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>修改默认配置: <code>/etc/etcd/etcd.conf</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">ETCD_DATA_DIR="/home/etcd/node152.etcd"
+ETCD_LISTEN_PEER_URLS="http://172.16.20.152:2380"
+ETCD_LISTEN_CLIENT_URLS="http://172.16.20.152:2379,http://localhost:2379"
+ETCD_NAME="node152"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://172.16.20.152:2380"
+ETCD_ADVERTISE_CLIENT_URLS="http://172.16.20.152:2379"
+ETCD_INITIAL_CLUSTER="node152=http://172.16.20.152:2380,node153=http://172.16.20.153:2380,node154=http://172.16.20.154:2380"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_INITIAL_CLUSTER_STATE="new"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意：数据目录etcd用户有权限创建,或者提前创建好并分配权限;<br>其他节点根据IP修改.</p>
+</blockquote>
+<ul>
+<li>修改服务配置: <code>/usr/lib/systemd/system/etcd.service</code></li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">[Unit]
+Description=Etcd Server
+After=network.target
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+WorkingDirectory=/var/lib/etcd/
+EnvironmentFile=-/etc/etcd/etcd.conf
+User=etcd
+# set GOMAXPROCS to number of processors
+ExecStart=/bin/bash -c "GOMAXPROCS=$(nproc) /usr/bin/etcd --name=\"${ETCD_NAME}\" --data-dir=\"${ETCD_DATA_DIR}\" --listen-client-urls=\"${ETCD_LISTEN_CLIENT_URLS}\" \
+--listen-peer-urls=\"${ETCD_LISTEN_PEER_URLS}\" \
+--initial-advertise-peer-urls=\"${ETCD_INITIAL_ADVERTISE_PEER_URLS}\" \
+--advertise-client-urls=\"${ETCD_ADVERTISE_CLIENT_URLS}\" \
+--initial-cluster=\"${ETCD_INITIAL_CLUSTER}\"  \
+--initial-cluster-token=\"${ETCD_INITIAL_CLUSTER_TOKEN}\" \
+--initial-cluster-state=\"${ETCD_INITIAL_CLUSTER_STATE}\""
+
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>启动并设置开机启动</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">systemctl start etcd
+systemctl <span class="token function">enable</span> etcd
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>检查集群状态</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token punctuation">[</span>root@data7 home<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># etcdctl cluster-health</span>
+member 1031e29bb8572c51 is healthy: got healthy result from http://172.16.20.152:2379
+member 6937e3968a3fec18 is healthy: got healthy result from http://172.16.20.154:2379
+member 8b79f77c6775414b is healthy: got healthy result from http://172.16.20.153:2379
+cluster is healthy
+
+<span class="token punctuation">[</span>root@data7 home<span class="token punctuation">]</span><span class="token comment" spellcheck="true"># etcdctl member list</span>
+1031e29bb8572c51: name<span class="token operator">=</span>node152 peerURLs<span class="token operator">=</span>http://172.16.20.152:2380 clientURLs<span class="token operator">=</span>http://172.16.20.152:2379 isLeader<span class="token operator">=</span>true
+6937e3968a3fec18: name<span class="token operator">=</span>node154 peerURLs<span class="token operator">=</span>http://172.16.20.154:2380 clientURLs<span class="token operator">=</span>http://172.16.20.154:2379 isLeader<span class="token operator">=</span>false
+8b79f77c6775414b: name<span class="token operator">=</span>node153 peerURLs<span class="token operator">=</span>http://172.16.20.153:2380 clientURLs<span class="token operator">=</span>http://172.16.20.153:2379 isLeader<span class="token operator">=</span>false
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h3><ol>
+<li>通过v3版本写入，<code>etcdctl</code> 命令查不到.<br>ETCD v2 v3版本数据不互通,需要指定版本：<code>export ETCDCTL_API=3</code></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/gin-xiu-gai-qing-qiu-ti-huo-fan-hui-body/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -563,372 +1140,10 @@ message HelloResponse {
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/mysql8-shuang-zhu-pei-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mysql8-shuang-zhu-pei-zhi/" class="post-title-link" itemprop="url">mysql8双主配置</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-05-31 11:21:25" itemprop="dateCreated datePublished" datetime="2024-05-31T11:21:25+08:00">2024-05-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="MySQL-8-4-版本"><a href="#MySQL-8-4-版本" class="headerlink" title="MySQL 8.4 版本"></a>MySQL 8.4 版本</h3><blockquote>
-<p>不同版本配置不同！</p>
-</blockquote>
-<ul>
-<li>server 1</li>
-</ul>
-<pre class="line-numbers language-conf"><code class="language-conf">server-id=1
-log-bin=mysql-bin
-binlog-format=ROW
-max_binlog_size=1024M
-slow_query_log=1
-binlog_expire_logs_seconds =864000
-# 异步落盘
-sync-binlog=0
-replica_skip_errors=all
-# 自增ID偏移量设置
-auto-increment-increment=2
-auto-increment-offset=1
-# 半同步复制
-rpl_semi_sync_source_enabled=1
-rpl_semi_sync_replica_enabled=1
-# 开启GTID
-gtid_mode=ON
-enforce-gtid-consistency=ON
-
-mysql_native_password=ON
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<ul>
-<li>server 2</li>
-</ul>
-<pre class="line-numbers language-conf"><code class="language-conf">server-id=2
-log-bin=mysql-bin
-binlog-format=ROW
-max_binlog_size=1024M
-slow_query_log=1
-binlog_expire_logs_seconds =864000
-# 异步落盘
-sync-binlog=0
-replica_skip_errors=all
-# 自增ID偏移量设置
-auto-increment-increment=2
-auto-increment-offset=2
-# 半同步复制
-rpl_semi_sync_source_enabled=1
-rpl_semi_sync_replica_enabled=1
-# 开启GTID
-gtid_mode=ON
-enforce-gtid-consistency=ON
-
-mysql_native_password=ON
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="启动半同步复制"><a href="#启动半同步复制" class="headerlink" title="启动半同步复制"></a>启动半同步复制</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 要求 MySQL 服务器支持动态加载</span>
-<span class="token keyword">show</span> variables <span class="token operator">like</span> <span class="token string">'%have_dynamic_loading%'</span><span class="token punctuation">;</span>
-
-INSTALL PLUGIN rpl_semi_sync_source <span class="token keyword">SONAME</span> <span class="token string">'semisync_source.so'</span><span class="token punctuation">;</span>
-INSTALL PLUGIN rpl_semi_sync_replica <span class="token keyword">SONAME</span> <span class="token string">'semisync_replica.so'</span><span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">-- 确认安装是否成功：</span>
-<span class="token keyword">SELECT</span> PLUGIN_NAME<span class="token punctuation">,</span> PLUGIN_STATUS <span class="token keyword">FROM</span> INFORMATION_SCHEMA<span class="token punctuation">.</span>PLUGINS <span class="token keyword">WHERE</span> PLUGIN_NAME <span class="token operator">LIKE</span> <span class="token string">'%semi%'</span><span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">-- 查看半同步监控 </span>
-<span class="token keyword">SHOW</span> <span class="token keyword">STATUS</span> <span class="token operator">LIKE</span> <span class="token string">'Rpl_semi_sync%'</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="创建复制用户"><a href="#创建复制用户" class="headerlink" title="创建复制用户"></a>创建复制用户</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">USER</span> <span class="token string">'repl'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED BY '</span>password<span class="token string">';
-GRANT REPLICATION SLAVE ON *.* TO '</span>repl<span class="token string">'@'</span><span class="token operator">%</span>'<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.4/en/replication-howto-repuser.html">https://dev.mysql.com/doc/refman/8.4/en/replication-howto-repuser.html</a></li>
-</ul>
-<blockquote>
-<p>这个用户直接配置复制会报错。<code>Message: Authentication plugin 'caching_sha2_password' reported error: Authentication requires secure connection.</code> 原因是用户默认密码加密方式是 <code>caching_sha2_password</code>， 需要改成 <code>mysql_native_password</code>.</p>
-</blockquote>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">ALTER</span> <span class="token keyword">USER</span> <span class="token string">'repl'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED WITH mysql_native_password BY '</span>password'<span class="token punctuation">;</span>
-FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<h3 id="通过GTID启动复制-2台MySQL分别执行"><a href="#通过GTID启动复制-2台MySQL分别执行" class="headerlink" title="通过GTID启动复制(2台MySQL分别执行)"></a>通过GTID启动复制(2台MySQL分别执行)</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 注意修改IP、端口等信息</span>
-CHANGE <span class="token keyword">REPLICATION</span> SOURCE <span class="token keyword">TO</span> SOURCE_HOST <span class="token operator">=</span> <span class="token string">'172.16.20.153'</span><span class="token punctuation">,</span>SOURCE_PORT <span class="token operator">=</span> <span class="token number">3306</span><span class="token punctuation">,</span>SOURCE_USER <span class="token operator">=</span> <span class="token string">'repl'</span><span class="token punctuation">,</span>SOURCE_PASSWORD <span class="token operator">=</span> <span class="token string">'password'</span><span class="token punctuation">,</span>SOURCE_AUTO_POSITION <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>启动</p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">START</span> REPLICA<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>查看复制状态</p>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SHOW</span> REPLICA <span class="token keyword">STATUS</span>\G
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.4/en/replication.html">https://dev.mysql.com/doc/refman/8.4/en/replication.html</a></li>
-</ul>
-<h3 id="双主模式下的读写分离"><a href="#双主模式下的读写分离" class="headerlink" title="双主模式下的读写分离"></a>双主模式下的读写分离</h3><ol>
-<li>创建一个普通用户</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">USER</span> <span class="token string">'test'</span>@'<span class="token operator">%</span><span class="token string">' IDENTIFIED BY '</span>Test<span class="token variable">@123456</span><span class="token string">';
-GRANT SELECT, INSERT, UPDATE, DELETE ON *.* TO '</span>test<span class="token string">'@'</span><span class="token operator">%</span>'<span class="token punctuation">;</span>
-FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<ol start="2">
-<li>超级用户可以在另一台MySQL动态设置只读<br>这里需要开发一个动态设置的读VIP所在MySQL只读的工具.</li>
-</ol>
-<pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 普通用户只能读，超级用户依然可以写</span>
-<span class="token keyword">set</span> <span class="token keyword">global</span> read_only <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">-- 检查设置的状态</span>
-<span class="token keyword">show</span> <span class="token keyword">global</span> variables <span class="token operator">like</span> <span class="token string">'%read_only%'</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<blockquote>
-<p>额外说明：<code>super_read_only</code>和<code>read_only</code>不一样，<code>super_read_only</code>是所有用户都不能写。</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/yum-an-zhuang-mysql8/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/yum-an-zhuang-mysql8/" class="post-title-link" itemprop="url">yum安装mysql8</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-05-31 09:30:15" itemprop="dateCreated datePublished" datetime="2024-05-31T09:30:15+08:00">2024-05-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="1-打开官网MySQL安装文档"><a href="#1-打开官网MySQL安装文档" class="headerlink" title="1. 打开官网MySQL安装文档"></a>1. 打开官网MySQL安装文档</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.4/en/linux-installation-yum-repo.html">https://dev.mysql.com/doc/refman/8.4/en/linux-installation-yum-repo.html</a></li>
-</ul>
-<h3 id="2-根据Linux版本下载yum源"><a href="#2-根据Linux版本下载yum源" class="headerlink" title="2. 根据Linux版本下载yum源"></a>2. 根据Linux版本下载yum源</h3><pre class="line-numbers language-shell"><code class="language-shell">cat /etc/os-release
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a></li>
-</ul>
-<pre class="line-numbers language-shell"><code class="language-shell">yum localinstall mysql84-community-release-el7-1.noarch.rpm
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="3-查看可安装的MySQL包"><a href="#3-查看可安装的MySQL包" class="headerlink" title="3. 查看可安装的MySQL包"></a>3. 查看可安装的MySQL包</h3><pre class="line-numbers language-shell"><code class="language-shell">yum repolist enabled | grep mysql.*-community
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="4-安装MySQL"><a href="#4-安装MySQL" class="headerlink" title="4. 安装MySQL"></a>4. 安装MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell"># EL8 systems 需要先禁止.
-yum module disable mysql
-yum install mysql-community-server
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<h3 id="5-启动MySQL"><a href="#5-启动MySQL" class="headerlink" title="5. 启动MySQL"></a>5. 启动MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell">systemctl start mysqld
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="6-登录MySQL"><a href="#6-登录MySQL" class="headerlink" title="6. 登录MySQL"></a>6. 登录MySQL</h3><pre class="line-numbers language-shell"><code class="language-shell"># 查看生成的随机密码
-cat /var/log/mysqld.log |grep password
-
-mysql -uroot -p
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="7-初始化操作"><a href="#7-初始化操作" class="headerlink" title="7. 初始化操作"></a>7. 初始化操作</h3><pre class="line-numbers language-sql"><code class="language-sql"><span class="token comment" spellcheck="true">-- 重置root密码</span>
-<span class="token keyword">ALTER</span> <span class="token keyword">USER</span> <span class="token string">'root'</span>@'localhost<span class="token string">' IDENTIFIED BY '</span>Test<span class="token variable">@123</span>'<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 设置root可以远程登录</span>
-<span class="token keyword">update</span> mysql<span class="token punctuation">.</span><span class="token keyword">user</span> <span class="token keyword">set</span>  host<span class="token operator">=</span><span class="token string">'%'</span> <span class="token keyword">WHERE</span> <span class="token keyword">user</span><span class="token operator">=</span><span class="token string">'root'</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">-- 刷新权限</span>
-FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="问题：-Error-13-Permission-denied"><a href="#问题：-Error-13-Permission-denied" class="headerlink" title="问题： Error: 13 (Permission denied)"></a>问题： Error: 13 (Permission denied)</h3><pre class="line-numbers language-shell"><code class="language-shell">vim /etc/selinux/config 
-# 关闭后重启系统
-SELINUX=disabled
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/gorm-zhong-raw-he-exec-de-qu-bie/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/gorm-zhong-raw-he-exec-de-qu-bie/" class="post-title-link" itemprop="url">gorm中Raw和Exec的区别</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-05-28 15:58:59" itemprop="dateCreated datePublished" datetime="2024-05-28T15:58:59+08:00">2024-05-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="Raw和Exec"><a href="#Raw和Exec" class="headerlink" title="Raw和Exec"></a>Raw和Exec</h3><p>在 <code>GORM</code> 中，<code>db.Raw</code> 和 <code>db.Exec</code> 是执行 <code>原生 SQL</code> 查询的两种不同方法，它们有不同的用途和返回值。</p>
-<ul>
-<li><code>db.Raw</code> 用于执行原生 SQL 查询并返回记录。通常用于执行 <code>SELECT</code> 查询，需要使用 <code>Scan</code> 方法将结果扫描到指定的结构体或变量中</li>
-<li><code>db.Exec</code> 用于执行不需要返回记录的原生 SQL 查询，通常用于 <code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code> 语句，或者执行 <code>DDL</code>（数据定义语言）语句，如创建表或修改表结构, 不需要 <code>Scan</code>，可以直接检查 <code>result.RowsAffected</code> 和 <code>result.Error</code>.</li>
-</ul>
-<h3 id="Raw"><a href="#Raw" class="headerlink" title="Raw"></a>Raw</h3><pre class="line-numbers language-go"><code class="language-go"><span class="token keyword">var</span> users <span class="token punctuation">[</span><span class="token punctuation">]</span>User
-result <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Raw</span><span class="token punctuation">(</span><span class="token string">"SELECT id, name, email FROM users"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Scan</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>users<span class="token punctuation">)</span>
-<span class="token keyword">if</span> result<span class="token punctuation">.</span>Error <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
-    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Error<span class="token punctuation">)</span>
-    <span class="token keyword">return</span>
-<span class="token punctuation">}</span>
-
-<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> user <span class="token operator">:=</span> <span class="token keyword">range</span> users <span class="token punctuation">{</span>
-    fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"ID: %d, Name: %s, Email: %s\n"</span><span class="token punctuation">,</span> user<span class="token punctuation">.</span>ID<span class="token punctuation">,</span> user<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> user<span class="token punctuation">.</span>Email<span class="token punctuation">)</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="Exec"><a href="#Exec" class="headerlink" title="Exec"></a>Exec</h3><pre class="line-numbers language-go"><code class="language-go">result <span class="token operator">:=</span> db<span class="token punctuation">.</span><span class="token function">Exec</span><span class="token punctuation">(</span><span class="token string">"INSERT INTO users (name, email) VALUES (?, ?)"</span><span class="token punctuation">,</span> <span class="token string">"John Doe"</span><span class="token punctuation">,</span> <span class="token string">"john@example.com"</span><span class="token punctuation">)</span>
-<span class="token keyword">if</span> result<span class="token punctuation">.</span>Error <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
-    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>Error<span class="token punctuation">)</span>
-    <span class="token keyword">return</span>
-<span class="token punctuation">}</span>
-
-fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"Rows affected: %d\n"</span><span class="token punctuation">,</span> result<span class="token punctuation">.</span>RowsAffected<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><span class="space">&hellip;</span><a class="page-number" href="/page/64/">64</a><a class="extend next" rel="next" href="/page/6/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><span class="space">&hellip;</span><a class="page-number" href="/page/65/">65</a><a class="extend next" rel="next" href="/page/6/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -996,20 +1211,20 @@ fmt<span class="token punctuation">.</span><span class="token function">Printf</
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">382</span>
+          <span class="site-state-item-count">385</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">56</span>
+        <span class="site-state-item-count">57</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">236</span>
+        <span class="site-state-item-count">237</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
