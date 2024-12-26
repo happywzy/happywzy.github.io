@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,199 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/rook-ceph-an-zhuang-shi-yong/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/rook-ceph-an-zhuang-shi-yong/" class="post-title-link" itemprop="url">rook-ceph安装使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-06 09:58:13" itemprop="dateCreated datePublished" datetime="2021-07-06T09:58:13+08:00">2021-07-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://rook.github.io/docs/rook/master/ceph-quickstart.html">官网</a></li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 检查磁盘是否满足条件</span>
+lsblk -f
+
+<span class="token comment" spellcheck="true"># 2. clone相关配置</span>
+<span class="token function">git</span> clone --single-branch --branch master https://github.com/rook/rook.git
+
+<span class="token comment" spellcheck="true"># 3. 进入rook ceph目录</span>
+<span class="token function">cd</span> rook/cluster/examples/kubernetes/ceph
+
+<span class="token comment" spellcheck="true"># 4. 安装crd,operator</span>
+kubectl create -f crds.yaml -f common.yaml -f operator.yaml
+
+<span class="token comment" spellcheck="true"># 5. 检查pod运行情况</span>
+kubectl -n rook-ceph get pod
+
+<span class="token comment" spellcheck="true"># 6. 安装ceph cluster</span>
+kubectl create -f cluster.yaml
+
+<span class="token comment" spellcheck="true"># 7. 检查pod运行情况</span>
+kubectl -n rook-ceph get pod
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装ceph-tool"><a href="#安装ceph-tool" class="headerlink" title="安装ceph tool"></a>安装ceph tool</h3><p>保存<code>toolbox.yaml</code></p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">1</span>
+  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
+  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+        <span class="token key atrule">app</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
+    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+      <span class="token key atrule">dnsPolicy</span><span class="token punctuation">:</span> ClusterFirstWithHostNet
+      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>tools
+        <span class="token key atrule">image</span><span class="token punctuation">:</span> rook/ceph<span class="token punctuation">:</span>master
+        <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/tini"</span><span class="token punctuation">]</span>
+        <span class="token key atrule">args</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"-g"</span><span class="token punctuation">,</span> <span class="token string">"--"</span><span class="token punctuation">,</span> <span class="token string">"/usr/local/bin/toolbox.sh"</span><span class="token punctuation">]</span>
+        <span class="token key atrule">imagePullPolicy</span><span class="token punctuation">:</span> IfNotPresent
+        <span class="token key atrule">env</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ROOK_CEPH_USERNAME
+            <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
+              <span class="token key atrule">secretKeyRef</span><span class="token punctuation">:</span>
+                <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon
+                <span class="token key atrule">key</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>username
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ROOK_CEPH_SECRET
+            <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
+              <span class="token key atrule">secretKeyRef</span><span class="token punctuation">:</span>
+                <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon
+                <span class="token key atrule">key</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>secret
+        <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /etc/ceph
+            <span class="token key atrule">name</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>config
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoint<span class="token punctuation">-</span>volume
+            <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /etc/rook
+      <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoint<span class="token punctuation">-</span>volume
+          <span class="token key atrule">configMap</span><span class="token punctuation">:</span>
+            <span class="token key atrule">name</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph<span class="token punctuation">-</span>mon<span class="token punctuation">-</span>endpoints
+            <span class="token key atrule">items</span><span class="token punctuation">:</span>
+            <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> data
+              <span class="token key atrule">path</span><span class="token punctuation">:</span> mon<span class="token punctuation">-</span>endpoints
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ceph<span class="token punctuation">-</span>config
+          <span class="token key atrule">emptyDir</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+      <span class="token key atrule">tolerations</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"node.kubernetes.io/unreachable"</span>
+          <span class="token key atrule">operator</span><span class="token punctuation">:</span> <span class="token string">"Exists"</span>
+          <span class="token key atrule">effect</span><span class="token punctuation">:</span> <span class="token string">"NoExecute"</span>
+          <span class="token key atrule">tolerationSeconds</span><span class="token punctuation">:</span> <span class="token number">5</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. 安装</span>
+kubectl create -f toolbox.yaml
+
+<span class="token comment" spellcheck="true"># 2. 进入容器</span>
+kubectl -n rook-ceph <span class="token function">exec</span> -it deploy/rook-ceph-tools -- <span class="token function">bash</span>
+
+<span class="token comment" spellcheck="true"># 3. 执行相关命令</span>
+ceph status
+ceph osd status
+ceph <span class="token function">df</span>
+rados <span class="token function">df</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="block存储-被单个pod使用"><a href="#block存储-被单个pod使用" class="headerlink" title="block存储(被单个pod使用)"></a>block存储(被单个pod使用)</h3><pre class="line-numbers language-bash"><code class="language-bash">kubectl create -f cluster/examples/kubernetes/ceph/csi/rbd/storageclass.yaml
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="Shared-Filesystem存储-被多个pod共享使用"><a href="#Shared-Filesystem存储-被多个pod共享使用" class="headerlink" title="Shared Filesystem存储(被多个pod共享使用)"></a>Shared Filesystem存储(被多个pod共享使用)</h3><ul>
+<li><code>filesystem.yaml</code></li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> ceph.rook.io/v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> CephFilesystem
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> myfs
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> rook<span class="token punctuation">-</span>ceph
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">metadataPool</span><span class="token punctuation">:</span>
+    <span class="token key atrule">replicated</span><span class="token punctuation">:</span>
+      <span class="token key atrule">size</span><span class="token punctuation">:</span> <span class="token number">3</span>
+  <span class="token key atrule">dataPools</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">replicated</span><span class="token punctuation">:</span>
+        <span class="token key atrule">size</span><span class="token punctuation">:</span> <span class="token number">3</span>
+  <span class="token key atrule">preserveFilesystemOnDelete</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">metadataServer</span><span class="token punctuation">:</span>
+    <span class="token key atrule">activeCount</span><span class="token punctuation">:</span> <span class="token number">1</span>
+    <span class="token key atrule">activeStandby</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 1. </span>
+kubectl create -f filesystem.yaml
+
+<span class="token comment" spellcheck="true"># 2. </span>
+kubectl create -f cluster/examples/kubernetes/ceph/csi/cephfs/storageclass.yaml
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置自动扩容"><a href="#配置自动扩容" class="headerlink" title="配置自动扩容"></a>配置自动扩容</h3><blockquote>
+<p>新增一块设备后能被自动发现</p>
+</blockquote>
+<pre class="line-numbers language-yml"><code class="language-yml"># 开启自动发现磁盘
+# vim operator.yaml
+ROOK_ENABLE_DISCOVERY_DAEMON: "true"
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1298,140 +1491,6 @@ Username<span class="token punctuation">:</span> <span class="token punctuation"
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/springboot-ji-cheng-prometheus/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/springboot-ji-cheng-prometheus/" class="post-title-link" itemprop="url">springboot集成Prometheus</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-06-23 10:26:02" itemprop="dateCreated datePublished" datetime="2021-06-23T10:26:02+08:00">2021-06-23</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="接口说明"><a href="#接口说明" class="headerlink" title="接口说明"></a>接口说明</h3><p>springboot集成Prometheus需要开发的接口有：</p>
-<ul>
-<li>监控JVM、tomcat等相关的指标；</li>
-<li>自定义监控程序相关指标;</li>
-</ul>
-<h3 id="监控JVM、tomcat等相关的指标"><a href="#监控JVM、tomcat等相关的指标" class="headerlink" title="监控JVM、tomcat等相关的指标"></a>监控JVM、tomcat等相关的指标</h3><p><code>micrometer</code>已经为我们做好了相关的接口，只需要引入依赖即可.</p>
-<pre class="line-numbers language-xml"><code class="language-xml"><span class="token comment" spellcheck="true">&lt;!--集成Prometheus--></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-actuator<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>io.micrometer<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>micrometer-registry-prometheus<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>设置<code>application.yml</code></p>
-<pre class="line-numbers language-yml"><code class="language-yml">server:
-  port: 9090
-
-spring:
-  application:
-    name: application-name
-
-management:
-  endpoint:
-  endpoints:
-    web:
-      exposure:
-        include: '*'
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Bean</span>
-MeterRegistryCustomizer<span class="token operator">&lt;</span>MeterRegistry<span class="token operator">></span> <span class="token function">configurer</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Value</span><span class="token punctuation">(</span><span class="token string">"${spring.application.name}"</span><span class="token punctuation">)</span> String applicationName<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token keyword">return</span> registry <span class="token operator">-</span><span class="token operator">></span> registry<span class="token punctuation">.</span><span class="token function">config</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">commonTags</span><span class="token punctuation">(</span><span class="token string">"application"</span><span class="token punctuation">,</span> applicationName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<p>启动程序后，访问<code>/actuator/prometheus</code>即可获取相关指标.</p>
-<h3 id="使用Micrometer实现方法执行时间监控"><a href="#使用Micrometer实现方法执行时间监控" class="headerlink" title="使用Micrometer实现方法执行时间监控"></a>使用Micrometer实现方法执行时间监控</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Bean</span>
-<span class="token keyword">public</span> TimedAspect <span class="token function">timedAspect</span><span class="token punctuation">(</span>MeterRegistry registry<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">TimedAspect</span><span class="token punctuation">(</span>registry<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 类上要开启@Aspect</span>
-<span class="token comment" spellcheck="true">// 在方法上添加 @Timed 注解即可</span>
-<span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/log/warn"</span><span class="token punctuation">)</span>
-<span class="token annotation punctuation">@Timed</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"warn_methord"</span><span class="token punctuation">,</span>description <span class="token operator">=</span> <span class="token string">"健康检查接口"</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> String <span class="token function">warn</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    log<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"warn msg."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token string">"warn"</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>启动服务后，访问本地的<code>/actuator/prometheus</code>接口，就能看到如下的指标数据了，其中就有我们自定义的<code>warn_methord</code>的三个指标（count sum max）。</p>
-<pre class="line-numbers language-conf"><code class="language-conf"># HELP warn_methord_seconds 健康检查接口
-# TYPE warn_methord_seconds summary
-warn_methord_seconds_count{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 3.0
-warn_methord_seconds_sum{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 0.0208932
-# HELP warn_methord_seconds_max 健康检查接口
-# TYPE warn_methord_seconds_max gauge
-warn_methord_seconds_max{application="ggis",exception="None",method="GET",status="200",uri="/log/warn",} 0.01753
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="自定义监控程序相关指标"><a href="#自定义监控程序相关指标" class="headerlink" title="自定义监控程序相关指标"></a>自定义监控程序相关指标</h3><p>如果上面的接口返回的指标不够用，需要自己开发，可以参考下面的：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"/metrics"</span><span class="token punctuation">,</span> produces <span class="token operator">=</span> <span class="token string">"text/plain"</span><span class="token punctuation">)</span>
-<span class="token annotation punctuation">@ResponseBody</span>
-String <span class="token function">metrics</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token comment" spellcheck="true">// 这里产生的随机数,实际按需修改</span>
-    <span class="token keyword">return</span> <span class="token string">"user_random{application=\"application\"} "</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">(</span>Math<span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="然后配置到Prometheus的Targets中即可"><a href="#然后配置到Prometheus的Targets中即可" class="headerlink" title="然后配置到Prometheus的Targets中即可."></a>然后配置到Prometheus的Targets中即可.</h3>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1503,7 +1562,7 @@ String <span class="token function">metrics</span><span class="token punctuation
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">385</span>
+          <span class="site-state-item-count">386</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

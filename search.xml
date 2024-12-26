@@ -35147,4 +35147,51 @@ nerdctl network <span class="token function">ls</span>
         <tag>链路追踪</tag>
       </tags>
   </entry>
+  <entry>
+    <title>nginx基础认证使用</title>
+    <url>/nginx-ji-chu-ren-zheng-shi-yong/</url>
+    <content><![CDATA[<h3 id="生成-htpasswd-文件"><a href="#生成-htpasswd-文件" class="headerlink" title="生成 .htpasswd 文件"></a>生成 .htpasswd 文件</h3><pre class="line-numbers language-bash"><code class="language-bash">htpasswd -c /etc/nginx/.htpasswd user
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>这里的参数解释：</p>
+<ul>
+<li>-c：表示创建新的 .htpasswd 文件（如果文件已经存在，使用该选项会覆盖文件）。</li>
+<li>/etc/nginx/.htpasswd：这是 .htpasswd 文件的存储位置，你可以根据需要修改这个路径。</li>
+<li>user：你要创建的用户名。</li>
+</ul>
+<p>执行命令后，它会提示你输入并确认密码。输入密码后，htpasswd 工具会自动将其加密并保存到 .htpasswd 文件中。</p>
+<h3 id="配置-Nginx-使用基本认证"><a href="#配置-Nginx-使用基本认证" class="headerlink" title="配置 Nginx 使用基本认证"></a>配置 Nginx 使用基本认证</h3><pre class="line-numbers language-nginx"><code class="language-nginx"><span class="token keyword">server</span> <span class="token punctuation">{</span>
+    <span class="token keyword">listen</span> <span class="token number">80</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">location</span> <span class="token operator">/</span> <span class="token punctuation">{</span>
+        <span class="token keyword">auth_basic</span> <span class="token string">"Restricted Area"</span><span class="token punctuation">;</span>           <span class="token comment" spellcheck="true"># 提示消息</span>
+        <span class="token keyword">auth_basic_user_file</span> <span class="token operator">/</span>etc<span class="token operator">/</span>nginx<span class="token operator">/</span><span class="token punctuation">.</span>htpasswd<span class="token punctuation">;</span>  <span class="token comment" spellcheck="true"># 指定 .htpasswd 文件路径</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="代码中使用认证"><a href="#代码中使用认证" class="headerlink" title="代码中使用认证"></a>代码中使用认证</h3><ol>
+<li>拼接用户名和密码<br>首先，你需要将用户名和密码拼接成一个字符串，格式为 username:password。例如：</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">username:password
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="2">
+<li>对 username:password 字符串进行 Base64 编码</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token keyword">echo</span> -n <span class="token string">"user:password123"</span> <span class="token operator">|</span> base64
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>输出将是类似以下的 Base64 编码：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">dXNlcjpwYXNzd29yZDEyMw<span class="token operator">==</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="3">
+<li>在 Authorization 头中使用<br>生成的 Base64 编码字符串可以直接用于 HTTP 请求的 Authorization 头中，如下所示：</li>
+</ol>
+<pre class="line-numbers language-bash"><code class="language-bash">Authorization: Basic dXNlcjpwYXNzd29yZDEyMw<span class="token operator">==</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<blockquote>
+<p>使用命令行解码 Base64 编码: <code>echo "dXNlcjpwYXNzd29yZDEyMw==" | base64 --decode</code></p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>nginx</category>
+      </categories>
+  </entry>
 </search>
