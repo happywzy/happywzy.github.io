@@ -196,6 +196,104 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-de-rowkey-she-ji/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/hbase-de-rowkey-she-ji/" class="post-title-link" itemprop="url">hbase的rowkey设计</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-16 10:12:51" itemprop="dateCreated datePublished" datetime="2020-04-16T10:12:51+08:00">2020-04-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>HBase是一个<code>K/V</code>存储型NoSQL数据库，与一般k/v数据库不同的是，Hbase的<code>value</code>由<code>rowkey</code>、<code>column family</code>:<code>qualifier</code>和<code>TimeStamp</code>这个三个维度快速定位。</p>
+<p>HBase中rowkey可以唯一标识一行记录，在HBase查询的时候，有两种方式：</p>
+<ul>
+<li>通过get方式，指定rowkey获取唯一一条记录</li>
+<li>通过scan方式，设置startRow和stopRow参数进行范围匹配</li>
+<li>全表扫描，即直接扫描整张表中所有行记录</li>
+</ul>
+<h3 id="rowkey长度原则"><a href="#rowkey长度原则" class="headerlink" title="rowkey长度原则"></a>rowkey长度原则</h3><p>rowkey是一个二进制码流，可以是任意字符串，最大长度64kb，实际应用中一般为10-100bytes，以byte[]形式保存，一般设计成定长。</p>
+<blockquote>
+<p>建议越短越好，不要超过16个字节</p>
+</blockquote>
+<h3 id="rowkey散列原则"><a href="#rowkey散列原则" class="headerlink" title="rowkey散列原则"></a>rowkey散列原则</h3><ul>
+<li>尽量不要将rowkey设计成连续的值，如时间戳;</li>
+<li>为rowkey增加随机散列字段，使数据均衡分布在每个RegionServer;</li>
+<li>如果没有散列字段，所有的数据都会集中在一个RegionServer上，这样在数据检索的时候负载会集中在个别的RegionServer上，造成热点问题，会降低查询效率。</li>
+</ul>
+<blockquote>
+<p><strong>什么是热点?</strong><br>热点发生在大量的client直接访问集群的一个或极少数个节点（访问可能是读，写或者其他操作）。大量访问会使热点region所在的单个机器超出自身承受能力，引起性能下降甚至region不可用.</p>
+</blockquote>
+<h3 id="rowkey唯一原则"><a href="#rowkey唯一原则" class="headerlink" title="rowkey唯一原则"></a>rowkey唯一原则</h3><p>必须在设计上保证其唯一性，rowkey是按照字典顺序排序存储的.</p>
+<h3 id="设计方法"><a href="#设计方法" class="headerlink" title="设计方法"></a>设计方法</h3><ul>
+<li>Salting: 指将随机数据添加到行键的开头。</li>
+<li>Hashing: 哈希会使同一行永远用一个前缀加盐。</li>
+<li>反转: 以手机号为rowkey，可以将手机号反转后的字符串作为rowkey</li>
+<li>时间戳反转: <code>Long.Max_Value - timestamp</code></li>
+<li>尽量保持 ColumnFamily 名称尽可能小，最好是一个字符</li>
+<li>虽然详细的属性名称更易于阅读，但更喜欢使用较短的属性名称来存储在<code>HBase</code>中。</li>
+</ul>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/64748254">https://zhuanlan.zhihu.com/p/64748254</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.imooc.com/hbase/rowkey.html">https://wiki.imooc.com/hbase/rowkey.html</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/hbase-shu-ju-ban-ben/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1113,117 +1211,6 @@ Truncating 'test' table (it may take a while):
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/spring-boot-ding-shi-ren-wu-cong-pei-zhi-wen-jian-zhong-huo-qu-cron-biao-da-shi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/spring-boot-ding-shi-ren-wu-cong-pei-zhi-wen-jian-zhong-huo-qu-cron-biao-da-shi/" class="post-title-link" itemprop="url">springboot定时任务从配置文件中获取cron表达式</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-07 17:27:05" itemprop="dateCreated datePublished" datetime="2020-04-07T17:27:05+08:00">2020-04-07</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="Scheduled"><a href="#Scheduled" class="headerlink" title="@Scheduled"></a>@Scheduled</h3><p>实现cron表达式从application.yml文件中获取</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">dbc</span><span class="token punctuation">:</span>
-  <span class="token key atrule">cron</span><span class="token punctuation">:</span> 0/5 * * * * <span class="token punctuation">?</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
-<span class="token annotation punctuation">@EnableScheduling</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CompareSchedule</span> <span class="token punctuation">{</span>
-
-    <span class="token annotation punctuation">@Scheduled</span><span class="token punctuation">(</span>cron <span class="token operator">=</span> <span class="token string">"${dbc.cron}"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">schedule</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-<span class="token punctuation">}</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="cron表达式含义"><a href="#cron表达式含义" class="headerlink" title="cron表达式含义"></a>cron表达式含义</h3><p>cron一共有7位，但是最后一位是年，可以留空，所以我们可以写6位：</p>
-<ul>
-<li>第一位，表示秒，取值0-59</li>
-<li>第二位，表示分，取值0-59&nbsp;</li>
-<li>第三位，表示小时，取值0-23&nbsp;</li>
-<li>第四位，日期天/日，取值1-31</li>
-<li>第五位，日期月份，取值1-12&nbsp;</li>
-<li>第六位，星期，取值1-7，星期一，星期二…，注：不是第1周，第二周的意思 另外：1表示星期天，2表示星期一。</li>
-<li>第七位，年份，可以留空，取值1970-2099</li>
-</ul>
-<p>&nbsp;</p>
-<p>cron中，还有一些特殊的符号，含义如下：</p>
-<ul>
-<li>(*)星号：可以理解为每的意思，每秒，每分，每天，每月，每年…&nbsp;</li>
-<li>(?)问号：问号只能出现在日期和星期这两个位置，表示这个位置的值不确定，每天3点执行，所以第六位星期的位置，我们是不需要关注的，就是不确定的值。同时：日期和星期是两个相互排斥的元素，通过问号来表明不指定值。比如，1月10日，比如是星期1，如果在星期的位置是另指定星期二，就前后冲突矛盾了。</li>
-<li>(-)减号：表达一个范围，如在小时字段中使用“10-12”，则表示从10到12点，即10,11,12&nbsp;</li>
-<li>(,)逗号：表达一个列表值，如在星期字段中使用“1,2,4”，则表示星期一，星期二，星期四&nbsp;</li>
-<li>(/)斜杠：如：x/y，x是开始值，y是步长，比如在第一位（秒） 0/15就是，从0秒开始，每15秒，最后就是0，15，30，45，60 另：*/y，等同于0/y</li>
-</ul>
-<p>&nbsp;</p>
-<p>下面列举几个例子供大家来验证：</p>
-<ul>
-<li>0 0 3 * * ? 每天3点执行&nbsp;</li>
-<li>0 5 3 * * ? 每天3点5分执行&nbsp;</li>
-<li>0 5 3 ? * * 每天3点5分执行，与上面作用相同</li>
-<li>0 5/10 3 * * ? 每天3点的 5分，15分，25分，35分，45分，55分这几个时间点执行&nbsp;</li>
-<li>0 10 3 ? * 1 每周星期天，3点10分 执行，注：1表示星期天&nbsp;</li>
-<li>0 10 3 ? * 1&nbsp;#3 每个月的第三个星期，星期天 执行，#号只能出现在星期的位置</li>
-</ul>
-<p>&nbsp;</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1295,7 +1282,7 @@ Truncating 'test' table (it may take a while):
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">386</span>
+          <span class="site-state-item-count">387</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1368,7 +1355,7 @@ Truncating 'test' table (it may take a while):
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2024</span>
+  <span itemprop="copyrightYear">2025</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

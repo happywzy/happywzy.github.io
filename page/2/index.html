@@ -196,6 +196,176 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/traefik-jie-jue-man-su-gong-ji-wen-ti/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/traefik-jie-jue-man-su-gong-ji-wen-ti/" class="post-title-link" itemprop="url">traefik解决慢速攻击问题</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-09-29 10:40:27" itemprop="dateCreated datePublished" datetime="2024-09-29T10:40:27+08:00">2024-09-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/traefik/" itemprop="url" rel="index"><span itemprop="name">traefik</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="配置客户端最大连接数"><a href="#配置客户端最大连接数" class="headerlink" title="配置客户端最大连接数"></a>配置客户端最大连接数</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> traefik.containo.us/v1alpha1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Middleware
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> rate<span class="token punctuation">-</span>limit
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">rateLimit</span><span class="token punctuation">:</span>
+    <span class="token key atrule">average</span><span class="token punctuation">:</span> <span class="token number">50  </span><span class="token comment" spellcheck="true"># 每秒允许的平均请求数</span>
+    <span class="token key atrule">burst</span><span class="token punctuation">:</span> <span class="token number">100   </span><span class="token comment" spellcheck="true"># 最大突发请求数</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>然后将这个 <code>Middleware</code> 应用到你的 <code>IngressRoute</code> 中：</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> traefik.containo.us/v1alpha1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> IngressRoute
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> example
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">entryPoints</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> web
+  <span class="token key atrule">routes</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">match</span><span class="token punctuation">:</span> Host(`example.com`)
+      <span class="token key atrule">kind</span><span class="token punctuation">:</span> Rule
+      <span class="token key atrule">middlewares</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> rate<span class="token punctuation">-</span>limit
+      <span class="token key atrule">services</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> example<span class="token punctuation">-</span>service
+          <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">80</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置读超时时间"><a href="#配置读超时时间" class="headerlink" title="配置读超时时间"></a>配置读超时时间</h3><ul>
+<li><code>EntryPoints</code> 配置</li>
+</ul>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">entryPoints</span><span class="token punctuation">:</span>
+  <span class="token key atrule">web</span><span class="token punctuation">:</span>
+    <span class="token key atrule">address</span><span class="token punctuation">:</span> <span class="token string">":80"</span>
+    <span class="token key atrule">transport</span><span class="token punctuation">:</span>
+      <span class="token key atrule">lifeCycle</span><span class="token punctuation">:</span>
+        <span class="token key atrule">requestAcceptGraceTimeout</span><span class="token punctuation">:</span> 0s
+        <span class="token key atrule">graceTimeOut</span><span class="token punctuation">:</span> 10s
+      <span class="token key atrule">respondingTimeouts</span><span class="token punctuation">:</span>
+        <span class="token key atrule">readTimeout</span><span class="token punctuation">:</span> 5s <span class="token comment" spellcheck="true"># 设置从客户端读取请求头的超时时间，防止慢速发送请求头的攻击。</span>
+        <span class="token key atrule">writeTimeout</span><span class="token punctuation">:</span> 5s <span class="token comment" spellcheck="true"># 设置向客户端写入响应的超时时间。</span>
+        <span class="token key atrule">idleTimeout</span><span class="token punctuation">:</span> 180s <span class="token comment" spellcheck="true"># 空闲连接超时时间，防止攻击者占用空闲连接。</span>
+  <span class="token key atrule">websecure</span><span class="token punctuation">:</span>
+    <span class="token key atrule">address</span><span class="token punctuation">:</span> <span class="token string">":443"</span>
+    <span class="token key atrule">transport</span><span class="token punctuation">:</span>
+      <span class="token key atrule">lifeCycle</span><span class="token punctuation">:</span>
+        <span class="token key atrule">requestAcceptGraceTimeout</span><span class="token punctuation">:</span> 0s
+        <span class="token key atrule">graceTimeOut</span><span class="token punctuation">:</span> 10s
+      <span class="token key atrule">respondingTimeouts</span><span class="token punctuation">:</span>
+        <span class="token key atrule">readTimeout</span><span class="token punctuation">:</span> 5s <span class="token comment" spellcheck="true"># 设置从客户端读取请求头的超时时间，防止慢速发送请求头的攻击。</span>
+        <span class="token key atrule">writeTimeout</span><span class="token punctuation">:</span> 5s <span class="token comment" spellcheck="true"># 设置向客户端写入响应的超时时间。</span>
+        <span class="token key atrule">idleTimeout</span><span class="token punctuation">:</span> 180s <span class="token comment" spellcheck="true"># 空闲连接超时时间，防止攻击者占用空闲连接。</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>也可以在命令行启动时添加参数</li>
+</ul>
+<pre class="line-numbers language-conf"><code class="language-conf">traefik \
+  --entryPoints.web.address=":80" \
+  --entryPoints.web.transport.respondingTimeouts.readTimeout="10s" \
+  --entryPoints.web.transport.respondingTimeouts.writeTimeout="10s" \
+  --entryPoints.web.transport.respondingTimeouts.idleTimeout="60s" \
+  --entryPoints.websecure.address=":443" \
+  --entryPoints.websecure.transport.respondingTimeouts.readTimeout="5s" \
+  --entryPoints.websecure.transport.respondingTimeouts.writeTimeout="5s" \
+  --entryPoints.websecure.transport.respondingTimeouts.idleTimeout="120s" \
+  --entryPoints.websecure.transport.maxIdleConnsPerHost=100
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>设置 <code>readTimeout</code> 即可。</p>
+</blockquote>
+<h3 id="什么是慢速攻击"><a href="#什么是慢速攻击" class="headerlink" title="什么是慢速攻击"></a>什么是慢速攻击</h3><p>对任何一个开放了HTTP访问的服务器HTTP服务器，先建立了一个连接（三次握手），指定一个比较大的content-length，然后以非常低的速度发包，比如1-10s发一个字节，然后维持住这个连接不断开。如果客户端持续建立这样的连接，那么服务器上可用的连接将一点一点被占满，从而导致拒绝服务。对HTTP服务而言，会有几种基本攻击方式：</p>
+<ul>
+<li>Slow header</li>
+<li>Slow body</li>
+<li>Slow read<br>我们可以使用httpslowtest工具来测试程序是否存在此漏洞，这个工具目前提供了docker镜像：</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">docker run --rm shekyan/slowhttptest:latest -c 1000 -H -g -o my_header_stats -i 10 -r 200 -t GET -u <span class="token operator">&lt;</span>test_url<span class="token operator">></span> -p 3
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>工具的参数如下:</p>
+<pre class="line-numbers language-bash"><code class="language-bash">-g 在测试完成后，以时间戳为名生成一个CVS和HTML文件的统计数据
+-H SlowLoris模式
+-B Slow POST模式
+-R Range Header模式
+-X Slow Read模式
+-c number of connections 测试时建立的连接数
+-d HTTP proxy host:port 为所有连接指定代理
+-e HTTP proxy host:port 为探测连接指定代理
+-i seconds 在slowrois和Slow POST模式中，指定发送数据间的间隔。
+-l seconds 测试维持时间 -n seconds 在Slow Read模式下，指定每次操作的时间间隔。
+-o <span class="token function">file</span> name 使用-g参数时，可以使用此参数指定输出文件名
+-p seconds 指定等待时间来确认DoS攻击已经成功
+-r connections per second 每秒连接个数
+-s bytes 声明Content-Length header的值
+-t HTTP verb 在请求时使用什么操作，默认GET
+-u URL 指定目标url
+-v level 日志等级（详细度）
+-w bytes slow read模式中指定tcp窗口范围下限
+-x bytes 在slowloris and Slow POST tests模式中，指定发送的最大数据长度
+-y bytes slow read模式中指定tcp窗口范围上限
+-z bytes 在每次的read<span class="token punctuation">(</span><span class="token punctuation">)</span>中，从buffer中读取数据量
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/docker-chi-xian-an-zhuang/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -710,80 +880,6 @@ native-image.cmd --version
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/jdk17-an-zhuang/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/jdk17-an-zhuang/" class="post-title-link" itemprop="url">jdk17安装</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-08-13 13:37:01" itemprop="dateCreated datePublished" datetime="2024-08-13T13:37:01+08:00">2024-08-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/jdk17/" itemprop="url" rel="index"><span itemprop="name">jdk17</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>Oracle JDK 在 1.8 之后商业版本需要按人头收费,所以基本需要选择 OpenJDK。OpenJDK 有很多版本可以选择，本文选择官方 <a target="_blank" rel="noopener" href="https://jdk.java.net/archive/">OpenJDK 17</a>。</p>
-<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 下载地址</span>
-https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_windows-x64_bin.zip
-
-<span class="token comment" spellcheck="true"># 下载好了之后解压，配置JAVA_HOME和PATH即可。</span>
-
-<span class="token comment" spellcheck="true"># 通过命令 java -version 打印出是你下载的版本即可安装正确。</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -855,7 +951,7 @@ https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/G
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">386</span>
+          <span class="site-state-item-count">387</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -928,7 +1024,7 @@ https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/G
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2024</span>
+  <span itemprop="copyrightYear">2025</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
