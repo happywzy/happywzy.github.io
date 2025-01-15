@@ -196,6 +196,203 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/redis-zong-jie/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/redis-zong-jie/" class="post-title-link" itemprop="url">redis总结</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-28 10:26:31" itemprop="dateCreated datePublished" datetime="2020-02-28T10:26:31+08:00">2020-02-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="redis高可用"><a href="#redis高可用" class="headerlink" title="redis高可用"></a>redis高可用</h1><h2 id="主从复制"><a href="#主从复制" class="headerlink" title="主从复制"></a>主从复制</h2><p><img data-src="/images/redis1.png" alt="主从复制"></p>
+<ul>
+<li>一个master可以拥有多个slave，一个slave又可以拥有多个slave，如此下去，形成了强大的多级服务器集群架构</li>
+<li>master用来写数据，slave用来读数据，经统计：网站的读写比率是10:1</li>
+<li>通过主从配置可以实现读写分离</li>
+<li>master和slave都是一个redis实例(redis服务)</li>
+</ul>
+<h3 id="全量同步过程"><a href="#全量同步过程" class="headerlink" title="全量同步过程"></a>全量同步过程</h3><p><img data-src="/images/redis2.png" alt="主从复制"></p>
+<ol>
+<li>当一个从数据库启动时，会向主数据库发送sync命令</li>
+<li>主数据库接收到sync命令后会开始在后台保存快照（执行rdb操作），并用缓存区记录后续的所有写操作</li>
+<li>当主服务器快照保存完成后，redis会将快照文件发送给从数据库。</li>
+<li>从数据库收到快照文件后，会丢弃所有旧数据，载入收到的快照。</li>
+<li>主服务器快照发送完毕后开始向从服务器发送缓冲区中的写命令。</li>
+<li>从服务器完成对快照的载入，开始接收命令请求，并执行来自主服务器缓冲区的写命令。</li>
+</ol>
+<p>&nbsp;</p>
+<h3 id="增量同步的过程"><a href="#增量同步的过程" class="headerlink" title="增量同步的过程"></a>增量同步的过程</h3><p>Redis增量复制是指slave初始化后开始正常工作时主服务器发生的写操作同步到从服务器的过程。&nbsp;</p>
+<p>增量复制的过程主要是主服务器每执行一个写命令就会向从服务器发送相同的写命令，从服务器接收并执行收到的写命令。</p>
+<p>&nbsp;</p>
+<h3 id="Redis主从复制全量与增量同步的选择"><a href="#Redis主从复制全量与增量同步的选择" class="headerlink" title="Redis主从复制全量与增量同步的选择"></a>Redis主从复制全量与增量同步的选择</h3><p>主从服务器刚刚连接的时候，会先进行全量同步；全同步结束后，再进行增量同步。当然，如果有需要，slave 在任何时候都可以发起全量同步。redis 策略是，无论如何，首先会尝试进行增量同步，如不成功，要求从机进行全量同步。</p>
+<h3 id="主从复制优缺点："><a href="#主从复制优缺点：" class="headerlink" title="主从复制优缺点："></a>主从复制优缺点：</h3><p><strong>优点：</strong></p>
+<ul>
+<li>支持主从复制，主机会自动将数据同步到从机，可以进行读写分离</li>
+<li>为了分载Master的读操作压力，Slave服务器可以为客户端提供只读操作的服务，写服务仍然必须由Master来完成</li>
+<li>Slave同样可以接受其它Slaves的连接和同步请求，这样可以有效的分载Master的同步压力。</li>
+<li>Master Server是以非阻塞的方式为Slaves提供服务。所以在Master-Slave同步期间，客户端仍然可以提交查询或修改请求。</li>
+<li>Slave Server同样是以非阻塞的方式完成数据同步。在同步期间，如果有客户端提交查询请求，Redis则返回同步之前的数据</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li>Redis不具备自动容错和恢复功能，主机从机的宕机都会导致前端部分读写请求失败，需要等待机器重启或者手动切换前端的IP才能恢复。</li>
+<li>主机宕机，宕机前有部分数据未能及时同步到从机，切换IP后还会引入数据不一致的问题，降低了系统的可用性。</li>
+<li>Redis较难支持在线扩容，在集群容量达到上限时在线扩容会变得很复杂。</li>
+</ul>
+<h2 id="哨兵模式（Redis-Sentinel）"><a href="#哨兵模式（Redis-Sentinel）" class="headerlink" title="哨兵模式（Redis Sentinel）"></a>哨兵模式（Redis Sentinel）</h2><p><img data-src="/images/redis3.png" alt="哨兵模式"></p>
+<h3 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h3><p>Sentinel 的主要功能包括 主节点存活检测、主从运行情况检测、自动故障转移 （failover）、主从切换。Redis 的 Sentinel 最小配置是 一主一从。<br>Redis 的 Sentinel 系统可以用来管理多个 Redis 服务器，该系统可以执行以下四个任务：</p>
+<ul>
+<li><p>监控</p>
+<blockquote>
+<p>Sentinel 会不断的检查 主服务器 和 从服务器 是否正常运行。</p>
+</blockquote>
+</li>
+<li><p>通知</p>
+<blockquote>
+<p>当被监控的某个 Redis 服务器出现问题，Sentinel 通过 API 脚本 向 管理员 或者其他的 应用程序 发送通知。</p>
+</blockquote>
+</li>
+</ul>
+<p>-自动故障转移</p>
+<blockquote>
+<p>当 主节点 不能正常工作时，Sentinel 会开始一次 自动的 故障转移操作，它会将与 失效主节点 是 主从关系 的其中一个 从节点 升级为新的 主节点，并且将其他的 从节点 指向 新的主节点。</p>
+</blockquote>
+<ul>
+<li>配置提供者<blockquote>
+<p>在 Redis Sentinel 模式下，客户端应用 在初始化时连接的是 Sentinel 节点集合，从中获取 主节点 的信息。</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="主观下线和客观下线"><a href="#主观下线和客观下线" class="headerlink" title="主观下线和客观下线"></a>主观下线和客观下线</h3><p>默认情况下，每个 Sentinel 节点会以 每秒一次 的频率对 Redis 节点和 其它 的 Sentinel 节点发送 PING 命令，并通过节点的 回复 来判断节点是否在线。</p>
+<h4 id="主观下线"><a href="#主观下线" class="headerlink" title="主观下线"></a>主观下线</h4><p>主观下线 适用于所有 主节点 和 从节点。如果在 down-after-milliseconds 毫秒内，Sentinel 没有收到 目标节点 的有效回复，则会判定 该节点 为 主观下线。</p>
+<h4 id="客观下线"><a href="#客观下线" class="headerlink" title="客观下线"></a>客观下线</h4><p>客观下线 只适用于 主节点。如果 主节点 出现故障，Sentinel 节点会通过 sentinel is-master-down-by-addr 命令，向其它 Sentinel 节点询问对该节点的 状态判断。如果超过 <quorum> 个数的节点判定 主节点 不可达，则该 Sentinel 节点会判断 主节点 为 客观下线。</quorum></p>
+<p><a target="_blank" rel="noopener" href="https://juejin.im/post/5b7d226a6fb9a01a1e01ff64">更多参考</a></p>
+<h3 id="哨兵模式的优缺点"><a href="#哨兵模式的优缺点" class="headerlink" title="哨兵模式的优缺点"></a>哨兵模式的优缺点</h3><p><strong>优点</strong></p>
+<ul>
+<li>哨兵模式是基于主从模式的，所有主从的优点，哨兵模式都具有。</li>
+<li>主从可以自动切换，系统更健壮，可用性更高。</li>
+</ul>
+<p><strong>缺点</strong></p>
+<ul>
+<li>Redis较难支持在线扩容，在集群容量达到上限时在线扩容会变得很复杂。</li>
+</ul>
+<h2 id="集群模式"><a href="#集群模式" class="headerlink" title="集群模式"></a>集群模式</h2><p>在 <code>Redis 3.0</code> 之前，使用 哨兵（<code>sentinel</code>）机制来监控各个节点之间的状态。Redis Cluster 是 Redis 的 分布式解决方案，在 3.0 版本正式推出，有效地解决了 Redis 在 分布式 方面的需求。当遇到 单机内存、并发、流量 等瓶颈时，可以采用 Cluster 架构方案达到 负载均衡 的目的。</p>
+<h3 id="数据分区"><a href="#数据分区" class="headerlink" title="数据分区"></a>数据分区</h3><p><img data-src="/images/redis4.png" alt="虚拟槽分区"></p>
+<p>redis集群中数据是和槽（slot）挂钩的，其总共定义了16384个槽，所有的数据根据一致哈希算法会被映射到这16384个槽中的某个槽中；</p>
+<p>另一方面，这16384个槽是按照设置被分配到不同的redis节点上的，比如启动了三个redis实例：cluster-A，cluster-B和cluster-C，这里将0-5460号槽分配给cluster-A，将5461-10922号槽分配给cluster-B，将10923-16383号槽分配给cluster-C（总共有16384个槽，但是其标号类似数组下标，是从0到16383）。也就是说数据的存储只和槽有关，并且槽的数量是一定的，由于一致hash算法是一定的，因而将这16384个槽分配给无论多少个redis实例，对于确认的数据其都将被分配到确定的槽位上。redis集群通过这种方式来达到redis的高效和高可用性目的。</p>
+<p><a target="_blank" rel="noopener" href="https://juejin.im/post/5b8fc5536fb9a05d2d01fb11#heading-4">更多参考</a></p>
+<h3 id="Redis虚拟槽分区的特点"><a href="#Redis虚拟槽分区的特点" class="headerlink" title="Redis虚拟槽分区的特点"></a>Redis虚拟槽分区的特点</h3><ul>
+<li>解耦数据和节点之间的关系，简化了节点扩容和收缩难度。</li>
+<li>节点自身维护槽的映射关系，不需要客户端或者代理服务维护槽分区元数据。</li>
+<li>支持节点、槽、键 之间的映射查询，用于数据路由、在线伸缩等场景</li>
+</ul>
+<h3 id="Redis集群的功能限制"><a href="#Redis集群的功能限制" class="headerlink" title="Redis集群的功能限制"></a>Redis集群的功能限制</h3><p>Redis 集群相对单机在功能上存在一些限制。</p>
+<ul>
+<li><p>key批量操作支持有限。</p>
+<blockquote>
+<p>类似mset、mget操作，目前只支持对具有相同slot值的key执行 批量操作。对于映射为不同slot值的key由于执行mget、mget等操作可能存在于多个节点上，因此不被支持。</p>
+</blockquote>
+</li>
+<li><p>key事务操作支持有限。</p>
+<blockquote>
+<p>只支持多key在同一节点上的事务操作，当多个key分布在不同的节点上时无法使用事务功能。</p>
+</blockquote>
+</li>
+<li><p>key作为数据分区的最小粒度</p>
+<blockquote>
+<p>不能将一个大的键值对象如hash、list等映射到不同的节点。</p>
+</blockquote>
+</li>
+<li><p>不支持多数据库空间</p>
+<blockquote>
+<p>单机下的<code>Redis</code>可以支持<code>16</code>个数据库（db0 ~ db15），集群模式 下只能使用一个数据库空间，即<code>db0</code>。</p>
+</blockquote>
+</li>
+<li><p>复制结构只支持一层</p>
+<blockquote>
+<p>从节点只能复制主节点，不支持<code>嵌套树状复制</code>结构。</p>
+</blockquote>
+</li>
+</ul>
+<h1 id="redis常见问题"><a href="#redis常见问题" class="headerlink" title="redis常见问题"></a>redis常见问题</h1><h2 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h2><p>缓存雪崩我们可以简单的理解为：由于原有缓存失效，新缓存未到期间(例如：我们设置缓存时采用了相同的过期时间，在同一时刻出现大面积的缓存过期)，所有原本应该访问缓存的请求都去查询数据库了，而对数据库CPU和内存造成巨大压力，严重的会造成数据库宕机。从而形成一系列连锁反应，造成整个系统崩溃。</p>
+<p>解决方案：</p>
+<ul>
+<li>排队加锁</li>
+<li>缓存增加标记，过期前就更新</li>
+<li>缓存时间增加随机属性，错开同一时间过期</li>
+</ul>
+<h2 id="缓存穿透"><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h2><p>缓存穿透是指用户查询数据，在数据库没有，自然在缓存中也不会有。这样就导致用户查询的时候，在缓存中找不到，每次都要去数据库再查询一遍，然后返回空（相当于进行了两次无用的查询）。这样请求就绕过缓存直接查数据库，这也是经常提的缓存命中率问题。</p>
+<p>解决方案：</p>
+<ul>
+<li>采用布隆过滤器，将所有可能存在的数据哈希到一个足够大的bitmap中，一个一定不存在的数据会被这个bitmap拦截掉，从而避免了对底层存储系统的查询压力。</li>
+<li>如果一个查询返回的数据为空（不管是数据不存在，还是系统故障），我们仍然把这个空结果进行缓存，但它的过期时间会很短，最长不超过五分钟。通过这个直接设置的默认值存放到缓存，这样第二次到缓存中获取就有值了，而不会继续访问数据库，这种办法最简单粗暴！</li>
+</ul>
+<h2 id="缓存击穿"><a href="#缓存击穿" class="headerlink" title="缓存击穿"></a>缓存击穿</h2><p>对于一些设置了过期时间的key，如果这些key可能会在某些时间点被超高并发地访问，是一种非常“热点”的数据。这个时候，需要考虑一个问题：缓存被“击穿”的问题，这个和缓存雪崩的区别在于这里针对某一key缓存，前者则是很多key。</p>
+<p>缓存在某个时间点过期的时候，恰好在这个时间点对这个Key有大量的并发请求过来，这些请求发现缓存过期一般都会从后端DB加载数据并回设到缓存，这个时候大并发的请求可能会瞬间把后端DB压垮。</p>
+<p>解决方案：</p>
+<ul>
+<li>使用互斥锁(mutex key)</li>
+<li>“设置永不过期”，<a target="_blank" rel="noopener" href="https://blog.csdn.net/zeb_perfect/article/details/54135506">参考</a></li>
+</ul>
+<h2 id="缓存预热"><a href="#缓存预热" class="headerlink" title="缓存预热"></a>缓存预热</h2><p>缓存预热就是系统上线后，提前将相关的缓存数据直接加载到缓存系统。避免在用户请求的时候，先查询数据库，然后再将数据缓存的问题！用户直接查询事先被预热的缓存数据！</p>
+<h2 id=""><a href="#" class="headerlink" title=""></a></h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/liu-shi-ji-suan/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -789,72 +986,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/influxdb-javaapi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/influxdb-javaapi/" class="post-title-link" itemprop="url">influxdb-javaAPI</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-02-25 16:37:12" itemprop="dateCreated datePublished" datetime="2020-02-25T16:37:12+08:00">2020-02-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/influxdb/" itemprop="url" rel="index"><span itemprop="name">influxdb</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -926,7 +1057,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">387</span>
+          <span class="site-state-item-count">388</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -939,7 +1070,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">237</span>
+        <span class="site-state-item-count">238</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

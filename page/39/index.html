@@ -196,6 +196,140 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/spring-cloud-gateway-zhong-redis-yi-zhi-da-yin-chong-lian-ri-zhi-wen-ti/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/spring-cloud-gateway-zhong-redis-yi-zhi-da-yin-chong-lian-ri-zhi-wen-ti/" class="post-title-link" itemprop="url">spring cloud gateway中redis一直打印重连日志问题</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-28 11:14:13" itemprop="dateCreated datePublished" datetime="2020-06-28T11:14:13+08:00">2020-06-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring-cloud/" itemprop="url" rel="index"><span itemprop="name">spring cloud</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p><code>spring cloud gateway</code>集成了<code>redis</code>后，一直出现重连的日志，如下：</p>
+<pre class="line-numbers language-log"><code class="language-log">gateway        | 2020-06-28 10:56:11.133  INFO 1 --- [xecutorLoop-2-2] i.l.core.protocol.ConnectionWatchdog     : Reconnecting, last destination was 192.171.0.9/192.171.0.9:6379
+gateway        | 2020-06-28 10:56:11.148  INFO 1 --- [llEventLoop-4-6] i.l.core.protocol.ReconnectionHandler    : Reconnected to 192.171.0.9:6379
+gateway        | 2020-06-28 11:01:12.431  INFO 1 --- [xecutorLoop-2-3] i.l.core.protocol.ConnectionWatchdog     : Reconnecting, last destination was 192.171.0.9/192.171.0.9:6379
+gateway        | 2020-06-28 11:01:12.441  INFO 1 --- [llEventLoop-4-8] i.l.core.protocol.ReconnectionHandler    : Reconnected to 192.171.0.9:6379
+gateway        | 2020-06-28 11:06:13.231  INFO 1 --- [xecutorLoop-2-4] i.l.core.protocol.ConnectionWatchdog     : Reconnecting, last destination was 192.171.0.9/192.171.0.9:6379
+gateway        | 2020-06-28 11:06:13.237  INFO 1 --- [llEventLoop-4-2] i.l.core.protocol.ReconnectionHandler    : Reconnected to 192.171.0.9:6379
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p><code>spring boot 2.0</code>之后<code>spring-boot-starter-data-redis</code>默认不再使用<code>jedis</code>连接<code>redis</code>，而是<code>lettuce</code>.</p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-data-redis<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token comment" spellcheck="true">&lt;!-- 排除lettuce包，使用jedis代替--></span>
+    <span class="token comment" spellcheck="true">&lt;!--&lt;exclusions>--></span>
+        <span class="token comment" spellcheck="true">&lt;!--&lt;exclusion>--></span>
+            <span class="token comment" spellcheck="true">&lt;!--&lt;groupId>io.lettuce&lt;/groupId>--></span>
+            <span class="token comment" spellcheck="true">&lt;!--&lt;artifactId>lettuce-core&lt;/artifactId>--></span>
+        <span class="token comment" spellcheck="true">&lt;!--&lt;/exclusion>--></span>
+    <span class="token comment" spellcheck="true">&lt;!--&lt;/exclusions>--></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+<span class="token comment" spellcheck="true">&lt;!-- jedis --></span>
+<span class="token comment" spellcheck="true">&lt;!--&lt;dependency>--></span>
+    <span class="token comment" spellcheck="true">&lt;!--&lt;groupId>redis.clients&lt;/groupId>--></span>
+    <span class="token comment" spellcheck="true">&lt;!--&lt;artifactId>jedis&lt;/artifactId>--></span>
+    <span class="token comment" spellcheck="true">&lt;!--&lt;version>2.9.0&lt;/version>--></span>
+<span class="token comment" spellcheck="true">&lt;!--&lt;/dependency>--></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>考虑是不是程序长时间没有使用<code>redis</code>,而导致连接断开.修改连接池最小空闲连接数:</p>
+<pre class="line-numbers language-yml"><code class="language-yml">spring.redis.host=localhost
+spring.redis.password=
+# 连接超时时间（毫秒）
+spring.redis.timeout=10000
+# Redis默认情况下有16个分片，这里配置具体使用的分片，默认是0
+spring.redis.database=0
+# 连接池最大连接数（使用负值表示没有限制） 默认 8
+spring.redis.lettuce.pool.max-active=8
+# 连接池最大阻塞等待时间（使用负值表示没有限制） 默认 -1
+spring.redis.lettuce.pool.max-wait=-1
+# 连接池中的最大空闲连接 默认 8
+spring.redis.lettuce.pool.max-idle=8
+# 连接池中的最小空闲连接 默认 0, 修改为1
+spring.redis.lettuce.pool.min-idle=1
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<blockquote>
+<p>注意修改完之后需要增加新的依赖包,不然会报错</p>
+</blockquote>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token comment" spellcheck="true">&lt;!--配置lettuce.pool.min-idle需要增加的依赖--></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.apache.commons<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>commons-pool2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>2.4.2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>重启完程序之后，发现每5分钟打印重连日志依然存在.</p>
+<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><ul>
+<li>这个不是错误，只是一个<code>INFO</code>级别的日志,可以日志级别调高，例如：</li>
+</ul>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>logger</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>io.lettuce.core.protocol<span class="token punctuation">"</span></span> <span class="token attr-name">level</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ERROR<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appender-ref</span> <span class="token attr-name">ref</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ERROR_FILE<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>logger</span><span class="token punctuation">></span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>原因：这是<code>lettuce-core</code>的实现里，有类似心跳机制的保持长连接方式，不过心跳机制是不停的来回发心跳包直到连接不可用再去被动重新连接，而<code>lettuce</code>的方案是将连接池里处于空闲（<code>idle</code>）状态的<code>client</code>每隔一段时间就主动断开，然后再重新连接。</li>
+</ul>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/lettuce-io/lettuce-core/issues/861">why lettuce client keep reconnecting</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/diffx/p/11000101.html">io.lettuce.core.protocol.ConnectionWatchdog - Reconnecting, last destination was ***</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://happywzy.top/mei-ri-suan-fa-ti-zhi-chu-xian-yi-ci-de-shu-zi/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -744,81 +878,6 @@ mysql<span class="token operator">></span> <span class="token keyword">select</s
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/vmware-xu-ni-ji-yi-wai-guan-ji-hou-qi-dong-bao-cuo/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/vmware-xu-ni-ji-yi-wai-guan-ji-hou-qi-dong-bao-cuo/" class="post-title-link" itemprop="url">vmware虚拟机意外关机后启动报错</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-18 14:59:11" itemprop="dateCreated datePublished" datetime="2020-06-18T14:59:11+08:00">2020-06-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="虚拟机意外关机后启动报错"><a href="#虚拟机意外关机后启动报错" class="headerlink" title="虚拟机意外关机后启动报错"></a>虚拟机意外关机后启动报错</h3><blockquote>
-<p>以独占方式锁定此配置文件失败。可能其它正在运行VMware进程在使用此配置文件</p>
-</blockquote>
-<h3 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h3><pre><code>任务管理器 -&gt; 启动 -&gt; VMware Tray Process -&gt; 禁用
-</code></pre>
-<pre><code>重启机器
-</code></pre>
-<pre><code>VMware Tray Process -&gt; 启用 -&gt; 重启打开虚拟机
-</code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -890,7 +949,7 @@ mysql<span class="token operator">></span> <span class="token keyword">select</s
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">387</span>
+          <span class="site-state-item-count">388</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -903,7 +962,7 @@ mysql<span class="token operator">></span> <span class="token keyword">select</s
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">237</span>
+        <span class="site-state-item-count">238</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
