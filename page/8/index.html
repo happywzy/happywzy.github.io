@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,313 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/keepalived-tong-guo-jian-ce-duan-kou-jue-ding-vip/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/keepalived-tong-guo-jian-ce-duan-kou-jue-ding-vip/" class="post-title-link" itemprop="url">keepalived通过检测端口决定vip漂移到哪台机器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-14 15:08:38" itemprop="dateCreated datePublished" datetime="2024-05-14T15:08:38+08:00">2024-05-14</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre class="line-numbers language-bash"><code class="language-bash">yum <span class="token function">install</span> keepalived -y
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="编写检查端口是否通的脚本"><a href="#编写检查端口是否通的脚本" class="headerlink" title="编写检查端口是否通的脚本"></a>编写检查端口是否通的脚本</h3><pre class="line-numbers language-shell"><code class="language-shell">#!/bin/bash
+CHK_PORT=$1
+if [ -n "$CHK_PORT" ];then
+        PORT_PROCESS=`ss -lnt|grep $CHK_PORT|wc -l`
+        if [ $PORT_PROCESS -eq 0 ];then
+                echo "Port $CHK_PORT Is Not Used,End."
+                exit 1
+        fi
+else
+        echo "Check Port Cant Be Empty!"
+fi
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>测试：<code>./check_port.sh 8080</code>检测8080端口是否开通.</p>
+<h3 id="keepalived主节点配置"><a href="#keepalived主节点配置" class="headerlink" title="keepalived主节点配置"></a>keepalived主节点配置</h3><pre class="line-numbers language-conf"><code class="language-conf">! Configuration File for keepalived
+
+global_defs {
+   router_id 20.153
+}
+
+vrrp_script chk_port {
+    script "/etc/keepalived/check_port.sh 8080"
+    interval 2
+    weight -20
+}
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface ens192
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    unicast_src_ip 192.168.1.1  # 本地节点的 IP 地址
+    unicast_peer {
+        192.168.1.2  # 另一个节点的 IP 地址
+        192.168.1.3  # 另一个节点的 IP 地址
+    }
+    virtual_ipaddress {
+        172.16.20.99
+    }
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="keepalived备节点配置"><a href="#keepalived备节点配置" class="headerlink" title="keepalived备节点配置"></a>keepalived备节点配置</h3><pre class="line-numbers language-conf"><code class="language-conf">! Configuration File for keepalived
+
+global_defs {
+   router_id 20.154
+}
+
+vrrp_script chk_port {
+    script "/etc/keepalived/check_port.sh 8080"
+    interval 2
+    weight -20
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface ens192
+    virtual_router_id 51
+    priority 90
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    unicast_src_ip 192.168.1.2  # 本地节点的 IP 地址
+    unicast_peer {
+        192.168.1.1  # 另一个节点的 IP 地址
+        192.168.1.3  # 另一个节点的 IP 地址
+    }
+    virtual_ipaddress {
+        172.16.20.99
+    }
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="非抢占式及通知服务"><a href="#非抢占式及通知服务" class="headerlink" title="非抢占式及通知服务"></a>非抢占式及通知服务</h3><pre class="line-numbers language-conf"><code class="language-conf">vrrp_instance VI_1 {
+    state BACKUP // 主备都用BACKUP
+    interface ens192
+    virtual_router_id 51
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+         chk_port
+    }
+    virtual_ipaddress {
+        192.168.20.99
+    }
+    nopreempt // 非抢占式
+    notify_master /etc/keepalived/notify_master.sh
+    notify_backup /etc/keepalived/notify_backup.sh
+    notify_fault /etc/keepalived/notify_fault.sh
+    notify_stop /etc/keepalived/notify_stop.sh
+}
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/ognl-he-spel-biao-da-shi-yu-yan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ognl-he-spel-biao-da-shi-yu-yan/" class="post-title-link" itemprop="url">OGNL和SpEL表达式语言</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-04-30 09:26:40" itemprop="dateCreated datePublished" datetime="2024-04-30T09:26:40+08:00">2024-04-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>OGNL（Object-Graph Navigation Language）和SpEL（Spring Expression Language）都是用于在Java应用程序中进行对象导航和操作的表达式语言。</p>
+<h3 id="SpEL"><a href="#SpEL" class="headerlink" title="SpEL"></a>SpEL</h3><p>SpEL是一种表达式语言，用于在运行时在Spring应用程序中进行查询和操作对象图。您可以使用SpEL来访问对象的属性、调用对象的方法、进行算术运算等等。SpelExpressionParser是Spring框架中的一部分，用于解析SpEL（Spring表达式语言）。</p>
+<p>以下是一个简单的示例，演示如何在Spring应用程序中使用SpelExpressionParser：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>expression<span class="token punctuation">.</span>ExpressionParser<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>expression<span class="token punctuation">.</span>spel<span class="token punctuation">.</span>standard<span class="token punctuation">.</span>SpelExpressionParser<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>expression<span class="token punctuation">.</span>spel<span class="token punctuation">.</span>support<span class="token punctuation">.</span>StandardEvaluationContext<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SpelExample</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 创建SpelExpressionParser对象</span>
+        ExpressionParser parser <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SpelExpressionParser</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment" spellcheck="true">// 创建StandardEvaluationContext对象，它表示SpEL表达式的上下文</span>
+        StandardEvaluationContext context <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StandardEvaluationContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment" spellcheck="true">// 在上下文中添加变量</span>
+        context<span class="token punctuation">.</span><span class="token function">setVariable</span><span class="token punctuation">(</span><span class="token string">"name"</span><span class="token punctuation">,</span> <span class="token string">"Alice"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment" spellcheck="true">// 定义SpEL表达式</span>
+        String expression <span class="token operator">=</span> <span class="token string">"'Hello, ' + #name"</span><span class="token punctuation">;</span>
+        
+        <span class="token comment" spellcheck="true">// 解析并评估表达式</span>
+        String result <span class="token operator">=</span> parser<span class="token punctuation">.</span><span class="token function">parseExpression</span><span class="token punctuation">(</span>expression<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> String<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment" spellcheck="true">// 输出结果</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// 输出: Hello, Alice</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol>
+<li>访问对象属性和方法：SpEL允许您通过对象的属性名称直接访问对象的属性，也可以调用对象的方法。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">person<span class="token punctuation">.</span>name   <span class="token comment" spellcheck="true">// 访问person对象的name属性</span>
+person<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span>   <span class="token comment" spellcheck="true">// 调用person对象的getName()方法</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="2">
+<li>进行算术运算和逻辑运算：您可以在SpEL中执行各种算术运算和逻辑运算。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+<span class="token number">5</span> <span class="token operator">+</span> <span class="token number">3</span>   <span class="token comment" spellcheck="true">// 执行加法运算，结果为8</span>
+age <span class="token operator">></span> <span class="token number">18</span>   <span class="token comment" spellcheck="true">// 执行大于运算，判断age是否大于18</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="3">
+<li>调用静态方法和属性：您可以调用静态方法和属性，甚至可以调用静态常量。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+<span class="token function">T</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Math<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token punctuation">)</span>   <span class="token comment" spellcheck="true">// 调用Math类的random()方法</span>
+<span class="token function">T</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Integer<span class="token punctuation">)</span><span class="token punctuation">.</span>MAX_VALUE   <span class="token comment" spellcheck="true">// 获取Integer类的MAX_VALUE常量</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>集合操作：SpEL支持对集合进行操作，如访问集合元素、计算集合大小等。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+myList<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>   <span class="token comment" spellcheck="true">// 访问列表中的第一个元素</span>
+myMap<span class="token punctuation">[</span><span class="token string">'key'</span><span class="token punctuation">]</span>   <span class="token comment" spellcheck="true">// 访问映射中键为'key'的值</span>
+#myList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span>   <span class="token comment" spellcheck="true">// 计算列表的大小</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>条件运算：您可以在SpEL中使用条件运算符执行条件判断。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+isVip <span class="token operator">?</span> discountPrice <span class="token operator">:</span> regularPrice   <span class="token comment" spellcheck="true">// 如果isVip为true，则返回discountPrice，否则返回regularPrice</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="6">
+<li>正则表达式：SpEL支持对字符串进行匹配和替换操作，使用正则表达式。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+#email<span class="token punctuation">.</span><span class="token function">matches</span><span class="token punctuation">(</span><span class="token string">'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}'</span><span class="token punctuation">)</span>   <span class="token comment" spellcheck="true">// 检查email是否匹配电子邮件格式</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="7">
+<li>安全导航运算符：SpEL引入了安全导航运算符（?.），用于避免空指针异常。</li>
+</ol>
+<pre class="line-numbers language-java"><code class="language-java">Copy code
+person<span class="token operator">?</span><span class="token punctuation">.</span>address<span class="token operator">?</span><span class="token punctuation">.</span>city   <span class="token comment" spellcheck="true">// 如果person或address为null，则返回null，而不是抛出空指针异常</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这只是SpEL的一些基本用法示例，SpEL还提供了更多功能，例如集成Spring Bean引用、类型转换、字符串操作等等。通过这些功能，您可以编写更加灵活和强大的表达式来满足各种需求。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -631,243 +938,10 @@ curl -H "Authorization:Basic base64加密后的字符串" http://127.0.0.1:38750
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/idea-kuai-jie-jian/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/idea-kuai-jie-jian/" class="post-title-link" itemprop="url">开发工具快捷键</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-12-08 14:13:19" itemprop="dateCreated datePublished" datetime="2023-12-08T14:13:19+08:00">2023-12-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="IDEA快捷键"><a href="#IDEA快捷键" class="headerlink" title="IDEA快捷键"></a>IDEA快捷键</h3><table>
-<thead>
-<tr>
-<th>快捷键</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>Shift + Ctrl + V</code></td>
-<td>选择要粘贴的内容</td>
-</tr>
-<tr>
-<td><code>Ctrl + Alt + L</code></td>
-<td>重新格式化代码</td>
-</tr>
-<tr>
-<td><code>Ctrl + F12</code></td>
-<td>显示文件结构</td>
-</tr>
-<tr>
-<td>Ctrl + `</td>
-<td>更改视图模式</td>
-</tr>
-<tr>
-<td><code>Ctrl + G</code></td>
-<td>转到行:列</td>
-</tr>
-<tr>
-<td><code>Ctrl -/+</code></td>
-<td>收起和展开代码块</td>
-</tr>
-<tr>
-<td><code>Alt + Shift + ,/.</code></td>
-<td>缩小/放大字体</td>
-</tr>
-</tbody></table>
-<ul>
-<li><code>https://blog.jetbrains.com/zh-hans/idea/2022/11/intellij-idea-3/</code></li>
-</ul>
-<h3 id="VS-Code快捷键"><a href="#VS-Code快捷键" class="headerlink" title="VS Code快捷键"></a>VS Code快捷键</h3><table>
-<thead>
-<tr>
-<th>快捷键</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>Shift + Ctrl + K</code></td>
-<td>删除一行</td>
-</tr>
-<tr>
-<td><code>Shift + Alt + ↑/↓</code></td>
-<td>向上/向下复制一行</td>
-</tr>
-<tr>
-<td><code>Alt + ↑/↓</code></td>
-<td>向上/向下移动一行</td>
-</tr>
-<tr>
-<td><code>Shift + Alt + f</code></td>
-<td>代码格式化</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + n</code></td>
-<td>新建一个窗口</td>
-</tr>
-<tr>
-<td><code>Ctrl + ]/[</code></td>
-<td>行增加/减少缩进</td>
-</tr>
-<tr>
-<td><code>Ctrl -/+</code></td>
-<td>字体放大/减小</td>
-</tr>
-<tr>
-<td><code>Ctrl + b</code></td>
-<td>显示/隐藏左侧目录栏</td>
-</tr>
-<tr>
-<td><code>Ctrl + ~</code></td>
-<td>打开/关闭终端</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + ~</code></td>
-<td>打开新的终端</td>
-</tr>
-<tr>
-<td><code>Ctrl + Shift + c</code></td>
-<td>当前目录打开cmd窗口</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/k8s-dong-tai-zhun-ru-kong-zhi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/k8s-dong-tai-zhun-ru-kong-zhi/" class="post-title-link" itemprop="url">k8s动态准入控制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-11-27 15:28:47" itemprop="dateCreated datePublished" datetime="2023-11-27T15:28:47+08:00">2023-11-27</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>什么是准入 Webhook？</p>
-<p>准入 Webhook 是一种用于接收准入请求并对其进行处理的 HTTP 回调机制。 可以定义两种类型的准入 Webhook， 即验证性质的准入 Webhook 和变更性质的准入 Webhook。 变更性质的准入 Webhook 会先被调用。它们可以修改发送到 API 服务器的对象以执行自定义的设置默认值操作。</p>
-<h3 id="Admission-Webhook"><a href="#Admission-Webhook" class="headerlink" title="Admission Webhook"></a>Admission Webhook</h3><p>包涵两种 CRD：<code>mutatingwebhookconfiguration</code> 和 <code>validatingwebhookconfiguration</code>.</p>
-<p>MutatingWebhookConfiguration 描述准入 Webhook 的配置，该 Webhook 可接受或拒绝对象请求，并且可能变更对象。</p>
-<p>ValidatingWebhookConfiguration 描述准入 Webhook 的配置，该 Webhook 可在不更改对象的情况下接受或拒绝对象请求。</p>
-<h3 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/reference/access-authn-authz/extensible-admission-controllers/">https://kubernetes.io/zh-cn/docs/reference/access-authn-authz/extensible-admission-controllers/</a></li>
-<li><a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/extend-resources/mutating-webhook-configuration-v1/">https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/extend-resources/mutating-webhook-configuration-v1/</a></li>
-<li><a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/extend-resources/validating-webhook-configuration-v1/">https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/extend-resources/validating-webhook-configuration-v1/</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/7/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><span class="page-number current">8</span><a class="page-number" href="/page/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/65/">65</a><a class="extend next" rel="next" href="/page/9/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/7/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><span class="page-number current">8</span><a class="page-number" href="/page/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/66/">66</a><a class="extend next" rel="next" href="/page/9/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -935,20 +1009,20 @@ curl -H "Authorization:Basic base64加密后的字符串" http://127.0.0.1:38750
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">389</span>
+          <span class="site-state-item-count">391</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">58</span>
+        <span class="site-state-item-count">60</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">238</span>
+        <span class="site-state-item-count">239</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
