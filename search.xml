@@ -35343,4 +35343,85 @@ docker run --restart<span class="token operator">=</span>always --network host -
         <tag>springboot</tag>
       </tags>
   </entry>
+  <entry>
+    <title>openvpn给客户端分配固定ip</title>
+    <url>/openvpn-fen-pei-gu-ding-ip/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><ul>
+<li>openvpn server.conf</li>
+</ul>
+<pre class="line-numbers language-bash"><code class="language-bash">port 1194
+<span class="token punctuation">;</span>proto tcp
+
+proto udp
+
+dev tun
+<span class="token punctuation">;</span>dev tap
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+tls-auth /etc/openvpn/server/ta.key 0
+dh /etc/openvpn/server/dh.pem
+
+log /etc/openvpn/hbase2/openvpn.log
+duplicate-cn
+
+local 172.16.0.250
+
+push <span class="token string">"route 10.234.0.0 255.255.255.0"</span>
+push <span class="token string">"route 172.16.0.0 255.255.255.0"</span>
+
+script-security 2
+client-connect /etc/openvpn/hbase2/up.sh
+client-disconnect /etc/openvpn/hbase2/down.sh
+<span class="token comment" spellcheck="true">#up /etc/openvpn/hbase2/up.sh</span>
+<span class="token comment" spellcheck="true">#client-config-dir /etc/openvpn/hbase2/ccd</span>
+
+server 10.237.0.0 255.255.255.0
+ifconfig-pool-persist /etc/openvpn/hbase2/ipp.txt 0
+keepalive 10 120
+cipher AES-256-CBC
+persist-key
+persist-tun
+status /etc/openvpn/hbase2/openvpn-status.log
+verb 3
+explicit-exit-notify 1
+script-security 3
+auth-user-pass-verify /etc/openvpn/hbase2/check.sh via-env
+username-as-common-name
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="设置固定客户端ip"><a href="#设置固定客户端ip" class="headerlink" title="设置固定客户端ip"></a>设置固定客户端ip</h3><pre class="line-numbers language-bash"><code class="language-bash"><span class="token comment" spellcheck="true"># 添加配置</span>
+client-config-dir /etc/openvpn/hbase2/ccd
+ifconfig-pool-persist /etc/openvpn/hbase2/ipp.txt
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>ccd文件夹中新增文件名CN</p>
+<pre class="line-numbers language-bash"><code class="language-bash">vim /etc/openvpn/hbase2/ccd/test-cn
+ifconfig-push 10.237.0.13 10.237.0.14
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>openvpn</category>
+      </categories>
+      <tags>
+        <tag>openvpn</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在windows上安装make</title>
+    <url>/zai-windows-shang-an-zhuang-make/</url>
+    <content><![CDATA[<p>下载地址，选择下载<a href="https://gnuwin32.sourceforge.net/downlinks/make.php">Complete package, except sources</a></p>
+<p><a href="https://link.zhihu.com/?target=https://gnuwin32.sourceforge.net/packages/make.htm">https://link.zhihu.com/?target=https%3A//gnuwin32.sourceforge.net/packages/make.htm</a></p>
+<p>把安装路径添加到环境变量 PATH 中.</p>
+<pre class="line-numbers language-bash"><code class="language-bash">C:\Program Files <span class="token punctuation">(</span>x86<span class="token punctuation">)</span>\GnuWin32\bin
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>在终端，执行以下命令，将出现Make版本信息：</p>
+<pre class="line-numbers language-bash"><code class="language-bash"><span class="token function">make</span> -v
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>make</category>
+      </categories>
+      <tags>
+        <tag>make</tag>
+      </tags>
+  </entry>
 </search>

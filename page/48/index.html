@@ -75,9 +75,9 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+<link rel="alternate" href="/atom.xml" title="Happywzy" type="application/atom+xml">
 <link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css">
 <link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
 
@@ -192,6 +192,502 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flinksql-client-chu-ti-yan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flinksql-client-chu-ti-yan/" class="post-title-link" itemprop="url">flinkSQL-client初体验</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-26 16:31:19" itemprop="dateCreated datePublished" datetime="2020-03-26T16:31:19+08:00">2020-03-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>本章创建一个模拟数据源将模拟数据源源不断写到<code>kafka</code>中，然后使用<code>Flink SQL client</code>查询<code>kafka</code>中的数据。</p>
+<p>模拟数据由java对象序列化而成的json格式字符串，包含book的id、type、price和时间。</p>
+<h3 id="BookPojo-java"><a href="#BookPojo-java" class="headerlink" title="BookPojo.java"></a>BookPojo.java</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">.</span>util<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>fastjson<span class="token punctuation">.</span>annotation<span class="token punctuation">.</span>JSONField<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>sql<span class="token punctuation">.</span>Timestamp<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Date<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">/**
+ * @ClassName: BookPojo
+ * @Description: TODO
+ * @Author: wuzhiyong
+ * @Time: 2020/3/20 9:48
+ * @Version: v1.0
+ **/</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BookPojo</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> id<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String type<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> price<span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">//Currently, JSON format only allowed the timestamp data is in RFC-3339, i.e. "2019-07-09 02:02:00.040Z".</span>
+    <span class="token comment" spellcheck="true">//注意引入的是java.util.Date;而不是java.sql.Date;</span>
+    <span class="token annotation punctuation">@JSONField</span><span class="token punctuation">(</span>format <span class="token operator">=</span> <span class="token string">"yyyy-MM-dd'T'HH:mm:ss'Z'"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> Date ts<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token function">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getId</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> id<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setId</span><span class="token punctuation">(</span><span class="token keyword">int</span> id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>id <span class="token operator">=</span> id<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> String <span class="token function">getType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> type<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setType</span><span class="token punctuation">(</span>String type<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>type <span class="token operator">=</span> type<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getPrice</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> price<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token keyword">int</span> price<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>price <span class="token operator">=</span> price<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> Date <span class="token function">getTs</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> ts<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setTs</span><span class="token punctuation">(</span>Date ts<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>ts <span class="token operator">=</span> ts<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="模拟书籍Books-java"><a href="#模拟书籍Books-java" class="headerlink" title="模拟书籍Books.java"></a>模拟书籍Books.java</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">.</span>util<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ArrayList<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>List<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Random<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">/**
+ * @ClassName: Books
+ * @Description: TODO
+ * @Author: wuzhiyong
+ * @Time: 2020/3/20 10:52
+ * @Version: v1.0
+ **/</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Books</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> BookPojo <span class="token function">getBook</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        List<span class="token operator">&lt;</span>BookPojo<span class="token operator">></span> bookPojos <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">{</span>
+            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"cs"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">80</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token punctuation">{</span>
+            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"math"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">70</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token punctuation">{</span>
+            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"ph"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">60</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token punctuation">{</span>
+            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"cs"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">50</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token punctuation">{</span>
+            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"math"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">40</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token punctuation">{</span>
+            BookPojo book1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BookPojo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setType</span><span class="token punctuation">(</span><span class="token string">"ph"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book1<span class="token punctuation">.</span><span class="token function">setPrice</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bookPojos<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>book1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> bookPojos<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建flink-source"><a href="#创建flink-source" class="headerlink" title="创建flink source"></a>创建flink source</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">.</span>util<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>fastjson<span class="token punctuation">.</span>JSON<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>functions<span class="token punctuation">.</span>source<span class="token punctuation">.</span>SourceFunction<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>sql<span class="token punctuation">.</span>Timestamp<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Arrays<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Date<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>List<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Random<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">/**
+ * @ClassName: MyNoParalleSource
+ * @Description: TODO
+ * @Author: wuzhiyong
+ * @Time: 2020/3/4 10:15
+ * @Version: v1.0
+ **/</span>
+<span class="token comment" spellcheck="true">//使用并行度为1的source</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyPojoSource</span> <span class="token keyword">implements</span> <span class="token class-name">SourceFunction</span><span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token punctuation">{</span><span class="token comment" spellcheck="true">//1</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">boolean</span> isRunning <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span>SourceContext<span class="token operator">&lt;</span>String<span class="token operator">></span> ctx<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>isRunning<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            BookPojo book <span class="token operator">=</span> Books<span class="token punctuation">.</span><span class="token function">getBook</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            book<span class="token punctuation">.</span><span class="token function">setTs</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            ctx<span class="token punctuation">.</span><span class="token function">collectWithTimestamp</span><span class="token punctuation">(</span>JSON<span class="token punctuation">.</span><span class="token function">toJSONString</span><span class="token punctuation">(</span>book<span class="token punctuation">)</span><span class="token punctuation">,</span>book<span class="token punctuation">.</span><span class="token function">getTs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">4000</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">cancel</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        isRunning <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="创建flink任务，此任务只是将模拟数据写到kafka中"><a href="#创建flink任务，此任务只是将模拟数据写到kafka中" class="headerlink" title="创建flink任务，此任务只是将模拟数据写到kafka中"></a>创建flink任务，此任务只是将模拟数据写到kafka中</h3><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> com<span class="token punctuation">.</span>deri<span class="token punctuation">.</span>pojo<span class="token punctuation">.</span>util<span class="token punctuation">.</span>MyPojoSource<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>common<span class="token punctuation">.</span>serialization<span class="token punctuation">.</span>SimpleStringSchema<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>datastream<span class="token punctuation">.</span>DataStreamSource<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>environment<span class="token punctuation">.</span>StreamExecutionEnvironment<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>connectors<span class="token punctuation">.</span>kafka<span class="token punctuation">.</span>FlinkKafkaProducer<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Properties<span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">/**
+ * @ClassName: KafkaProducer
+ * @Description: TODO
+ * @Author: wuzhiyong
+ * @Time: 2020/3/4 10:16
+ * @Version: v1.0
+ **/</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">KafkaPojoProducer</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+
+        StreamExecutionEnvironment env <span class="token operator">=</span> StreamExecutionEnvironment<span class="token punctuation">.</span><span class="token function">getExecutionEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        DataStreamSource<span class="token operator">&lt;</span>String<span class="token operator">></span> text <span class="token operator">=</span> env<span class="token punctuation">.</span><span class="token function">addSource</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MyPojoSource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setParallelism</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token comment" spellcheck="true">/*设置并行度*/</span><span class="token punctuation">;</span>
+
+        Properties properties <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Properties</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        properties<span class="token punctuation">.</span><span class="token function">setProperty</span><span class="token punctuation">(</span><span class="token string">"bootstrap.servers"</span><span class="token punctuation">,</span> <span class="token string">"192.168.41.128:9092"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">//new FlinkKafkaProducer("topn",new KeyedSerializationSchemaWrapper(new SimpleStringSchema()),properties,FlinkKafkaProducer.Semantic.EXACTLY_ONCE);</span>
+        FlinkKafkaProducer<span class="token operator">&lt;</span>String<span class="token operator">></span> producer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">FlinkKafkaProducer</span><span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">(</span><span class="token string">"pojo4"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">SimpleStringSchema</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> properties<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment" spellcheck="true">//event-timestamp事件的发生时间</span>
+        producer<span class="token punctuation">.</span><span class="token function">setWriteTimestampToKafka</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        text<span class="token punctuation">.</span><span class="token function">addSink</span><span class="token punctuation">(</span>producer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        env<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token string">"POJO Kafka Source"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="配置sql-client-defaults-yaml"><a href="#配置sql-client-defaults-yaml" class="headerlink" title="配置sql-client-defaults.yaml"></a>配置sql-client-defaults.yaml</h3><p>配置文件位于<code>flink根目录/conf</code>下</p>
+<p>配置table</p>
+<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">tables</span><span class="token punctuation">:</span> 
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> book
+    <span class="token key atrule">type</span><span class="token punctuation">:</span> source<span class="token punctuation">-</span>table
+    <span class="token key atrule">update-mode</span><span class="token punctuation">:</span> append
+    <span class="token key atrule">connector</span><span class="token punctuation">:</span> 
+      <span class="token key atrule">property-version</span><span class="token punctuation">:</span> <span class="token number">1</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> kafka
+      <span class="token key atrule">version</span><span class="token punctuation">:</span> <span class="token string">"universal"</span>
+      <span class="token key atrule">topic</span><span class="token punctuation">:</span> pojo4
+      <span class="token key atrule">startup-mode</span><span class="token punctuation">:</span> earliest<span class="token punctuation">-</span>offset
+      <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+        <span class="token key atrule">zookeeper.connect</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">2181</span>
+        <span class="token key atrule">bootstrap.servers</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">9092</span>
+        <span class="token key atrule">group.id</span><span class="token punctuation">:</span> testGroup
+    <span class="token key atrule">format</span><span class="token punctuation">:</span> 
+      <span class="token key atrule">property-version</span><span class="token punctuation">:</span> <span class="token number">1</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> json
+      <span class="token comment" spellcheck="true"># derive-schema: true</span>
+      <span class="token key atrule">schema</span><span class="token punctuation">:</span> <span class="token string">"ROW&lt;id INT, type STRING, price INT, ts TIMESTAMP>"</span>
+    <span class="token key atrule">schema</span><span class="token punctuation">:</span> 
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> id
+        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> INT
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> type
+        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> STRING
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> price
+        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> INT
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> tss
+        <span class="token key atrule">data-type</span><span class="token punctuation">:</span> TIMESTAMP
+        <span class="token key atrule">rowtime</span><span class="token punctuation">:</span>
+          <span class="token key atrule">timestamps</span><span class="token punctuation">:</span>
+            <span class="token key atrule">type</span><span class="token punctuation">:</span> <span class="token string">"from-field"</span>
+            <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token string">"ts"</span>
+          <span class="token key atrule">watermarks</span><span class="token punctuation">:</span>
+            <span class="token key atrule">type</span><span class="token punctuation">:</span> <span class="token string">"periodic-bounded"</span>
+            <span class="token key atrule">delay</span><span class="token punctuation">:</span> <span class="token string">"60000"</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="启动SQL-client"><a href="#启动SQL-client" class="headerlink" title="启动SQL client"></a>启动SQL client</h3><p>进入到flink根目录下，执行</p>
+<pre class="line-numbers language-sh"><code class="language-sh">./bin/sql-client.sh embedded
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>如果没有报错，可以看到一个小松鼠，并进入以下界面</p>
+<pre><code>...
+Flink SQL&gt; 
+</code></pre>
+<h3 id="一些测试SQL语句"><a href="#一些测试SQL语句" class="headerlink" title="一些测试SQL语句"></a>一些测试SQL语句</h3><ol>
+<li>最简单的查询</li>
+</ol>
+<pre class="line-numbers language-SQL"><code class="language-SQL">SELECT * FROM book;
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="2">
+<li>查询价格大于50的</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> book <span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  id<span class="token punctuation">,</span>price<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">,</span>tss  <span class="token keyword">having</span> price <span class="token operator">></span> <span class="token number">50</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="3">
+<li>每五分钟book的总销售额</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> 
+id<span class="token punctuation">,</span>
+<span class="token keyword">type</span><span class="token punctuation">,</span>
+TUMBLE_END<span class="token punctuation">(</span>tss<span class="token punctuation">,</span> INTERVAL <span class="token string">'5'</span> MINUTE<span class="token punctuation">)</span> <span class="token keyword">AS</span> window_end<span class="token punctuation">,</span>
+<span class="token function">SUM</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">AS</span> sumprice
+<span class="token keyword">FROM</span> book
+<span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  
+id<span class="token punctuation">,</span>
+<span class="token keyword">type</span><span class="token punctuation">,</span>
+TUMBLE<span class="token punctuation">(</span>tss<span class="token punctuation">,</span> INTERVAL <span class="token string">'5'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="4">
+<li>创建一个新的view，用于存放SELECT结果</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">VIEW</span> book_view <span class="token keyword">AS</span>
+<span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> book <span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  id<span class="token punctuation">,</span>price<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">,</span>tss  <span class="token keyword">having</span> price <span class="token operator">></span> <span class="token number">60</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ol start="5">
+<li>根据id查询卖出的总数量</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> id<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">AS</span> cnt <span class="token keyword">FROM</span> book <span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  id<span class="token punctuation">,</span><span class="token keyword">type</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="6">
+<li>根据type查询卖出的总数量</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> <span class="token keyword">type</span><span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">AS</span> cnt <span class="token keyword">FROM</span> book <span class="token keyword">GROUP</span> <span class="token keyword">BY</span> <span class="token keyword">type</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol start="7">
+<li>查询过去5分钟不同id的书卖出的总额，每1分钟刷新一次</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span> 
+id<span class="token punctuation">,</span>
+<span class="token keyword">type</span><span class="token punctuation">,</span>
+HOP_START <span class="token punctuation">(</span>tss<span class="token punctuation">,</span> INTERVAL <span class="token string">'60'</span> SECOND<span class="token punctuation">,</span> INTERVAL <span class="token string">'5'</span> MINUTE<span class="token punctuation">)</span> <span class="token keyword">AS</span> window_end<span class="token punctuation">,</span>
+<span class="token function">SUM</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">AS</span> sumprice
+<span class="token keyword">FROM</span> book
+<span class="token keyword">GROUP</span> <span class="token keyword">BY</span>  
+id<span class="token punctuation">,</span>
+<span class="token keyword">type</span><span class="token punctuation">,</span>
+HOP <span class="token punctuation">(</span>tss<span class="token punctuation">,</span> INTERVAL <span class="token string">'60'</span> SECOND<span class="token punctuation">,</span> INTERVAL <span class="token string">'5'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ol start="8">
+<li>创建一个模拟列，存放系统处理的时间</li>
+</ol>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">select</span> id<span class="token punctuation">,</span>price<span class="token punctuation">,</span>tss<span class="token punctuation">,</span> PROCTIME<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">AS</span> ts <span class="token keyword">from</span> book<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flinksql-zhong-chuang-kou-han-shu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="wuzhiyong">
+      <meta itemprop="description" content="日常学习笔记,共同进步">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Happywzy">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/flinksql-zhong-chuang-kou-han-shu/" class="post-title-link" itemprop="url">FlinkSQL中窗口函数</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-26 16:16:38" itemprop="dateCreated datePublished" datetime="2020-03-26T16:16:38+08:00">2020-03-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="滚动窗口（TUMBLE）"><a href="#滚动窗口（TUMBLE）" class="headerlink" title="滚动窗口（TUMBLE）"></a>滚动窗口（TUMBLE）</h3><p>滚动窗口（TUMBLE）将每个元素分配到一个指定大小的窗口中。通常滚动窗口有一个固定的大小，并且不会出现重叠。例如：如果指定了一个5分钟大小的滚动窗口，无限流的数据会根据时间划分成[0:00 - 0:05)、[0:05, 0:10)、 [0:10, 0:15)等窗口。</p>
+<p><img data-src="/images/flink28.png" alt="tumble"></p>
+<h4 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h4><p>TUMBLE函数用在GROUP BY子句中，用来定义滚动窗口。</p>
+<pre class="line-numbers language-sql"><code class="language-sql">TUMBLE<span class="token punctuation">(</span><span class="token operator">&lt;</span>time<span class="token operator">-</span>attr<span class="token operator">></span><span class="token punctuation">,</span> <span class="token operator">&lt;</span>size<span class="token operator">-</span>interval<span class="token operator">></span><span class="token punctuation">)</span>
+<span class="token operator">&lt;</span>size<span class="token operator">-</span>interval<span class="token operator">></span>: INTERVAL <span class="token string">'string'</span> timeUnit
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h4 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h4><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span>
+TUMBLE_START<span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'1'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">,</span>
+TUMBLE_END<span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'1'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">,</span>
+username<span class="token punctuation">,</span>
+<span class="token function">COUNT</span><span class="token punctuation">(</span>click_url<span class="token punctuation">)</span>
+<span class="token keyword">FROM</span> user_clicks
+<span class="token keyword">GROUP</span> <span class="token keyword">BY</span> TUMBLE<span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'1'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">,</span> username
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><a target="_blank" rel="noopener" href="https://help.aliyun.com/document_detail/62511.html?spm=a2c4g.11186623.6.654.23083f50O8pvx8">具体参考阿里云</a></p>
+<h3 id="滑动窗口（HOP）"><a href="#滑动窗口（HOP）" class="headerlink" title="滑动窗口（HOP）"></a>滑动窗口（HOP）</h3><p>滑动窗口（HOP），也被称作Sliding Window。不同于滚动窗口，滑动窗口的窗口可以重叠。</p>
+<p>滑动窗口有两个参数：slide和size。slide为每次滑动的步长，size为窗口的大小。</p>
+<ul>
+<li>slide &lt; size，则窗口会重叠，每个元素会被分配到多个窗口。</li>
+<li>slide = size，则等同于滚动窗口（TUMBLE）。</li>
+<li>slide &gt; size，则为跳跃窗口，窗口之间不重叠且有间隙。</li>
+</ul>
+<p><img data-src="/images/flink29.png" alt="hop"></p>
+<p>通常情况下大部分元素符合多个窗口情景，窗口是重叠的。因此，滑动窗口在计算移动平均数（moving averages）时很实用。例如，计算过去5分钟数据的平均值，每10秒钟更新一次，可以设置slide为10秒，size为5分钟。</p>
+<h4 id="滑动窗口函数语法"><a href="#滑动窗口函数语法" class="headerlink" title="滑动窗口函数语法"></a>滑动窗口函数语法</h4><p>HOP函数用在group by子句中，用来定义滑动窗口。</p>
+<pre class="line-numbers language-sql"><code class="language-sql">HOP<span class="token punctuation">(</span><span class="token operator">&lt;</span>time<span class="token operator">-</span>attr<span class="token operator">></span><span class="token punctuation">,</span> <span class="token operator">&lt;</span>slide<span class="token operator">-</span>interval<span class="token operator">></span><span class="token punctuation">,</span><span class="token operator">&lt;</span>size<span class="token operator">-</span>interval<span class="token operator">></span><span class="token punctuation">)</span>
+<span class="token operator">&lt;</span>slide<span class="token operator">-</span>interval<span class="token operator">></span>: INTERVAL <span class="token string">'string'</span> timeUnit
+<span class="token operator">&lt;</span>size<span class="token operator">-</span>interval<span class="token operator">></span>: INTERVAL <span class="token string">'string'</span> timeUnit  
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h4 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h4><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span>
+    HOP_START <span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'30'</span> SECOND<span class="token punctuation">,</span> INTERVAL <span class="token string">'1'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">,</span>
+    HOP_END <span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'30'</span> SECOND<span class="token punctuation">,</span> INTERVAL <span class="token string">'1'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">,</span>
+    username<span class="token punctuation">,</span>
+    <span class="token function">COUNT</span> <span class="token punctuation">(</span>click_url<span class="token punctuation">)</span>
+<span class="token keyword">FROM</span>
+    user_clicks
+<span class="token keyword">GROUP</span> <span class="token keyword">BY</span>
+    HOP <span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'30'</span> SECOND<span class="token punctuation">,</span> INTERVAL <span class="token string">'1'</span> MINUTE<span class="token punctuation">)</span><span class="token punctuation">,</span>
+    username  
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><a target="_blank" rel="noopener" href="https://help.aliyun.com/document_detail/62512.html?spm=a2c4g.11186623.6.655.10d7ca8c6hnmCW">具体参考阿里云</a></p>
+<h3 id="会话窗口（SESSION）"><a href="#会话窗口（SESSION）" class="headerlink" title="会话窗口（SESSION）"></a>会话窗口（SESSION）</h3><p>会话窗口（SESSION）通过Session活动来对元素进行分组。会话窗口与滚动窗口和滑动窗口相比，没有窗口重叠，没有固定窗口大小。相反，当它在一个固定的时间周期内不再收到元素，即会话断开时，这个窗口就会关闭。</p>
+<p>会话窗口通过一个间隔时间（Gap）来配置，这个间隔定义了非活跃周期的长度。例如，一个表示鼠标点击活动的数据流可能具有长时间的空闲时间，并在两段空闲之间散布着高浓度的点击。 如果数据在指定的间隔（Gap）之后到达，则会开始一个新的窗口。</p>
+<p>会话窗口示例如下图。每个Key由于不同的数据分布，形成了不同的Window。<br><img data-src="/images/flink30.png" alt="session"></p>
+<h4 id="会话窗口函数语法"><a href="#会话窗口函数语法" class="headerlink" title="会话窗口函数语法"></a>会话窗口函数语法</h4><p>SESSION函数用于在GROUP BY子句中定义会话窗口。</p>
+<pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SESSION</span><span class="token punctuation">(</span><span class="token operator">&lt;</span>time<span class="token operator">-</span>attr<span class="token operator">></span><span class="token punctuation">,</span> <span class="token operator">&lt;</span>gap<span class="token operator">-</span>interval<span class="token operator">></span><span class="token punctuation">)</span>
+<span class="token operator">&lt;</span>gap<span class="token operator">-</span>interval<span class="token operator">></span>: INTERVAL <span class="token string">'string'</span> timeUnit
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h4 id="示例-2"><a href="#示例-2" class="headerlink" title="示例"></a>示例</h4><pre class="line-numbers language-sql"><code class="language-sql"><span class="token keyword">SELECT</span>
+SESSION_START<span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'30'</span> SECOND<span class="token punctuation">)</span><span class="token punctuation">,</span>
+SESSION_END<span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'30'</span> SECOND<span class="token punctuation">)</span><span class="token punctuation">,</span>
+username<span class="token punctuation">,</span>
+<span class="token function">COUNT</span><span class="token punctuation">(</span>click_url<span class="token punctuation">)</span>
+<span class="token keyword">FROM</span> user_clicks
+<span class="token keyword">GROUP</span> <span class="token keyword">BY</span> <span class="token keyword">SESSION</span><span class="token punctuation">(</span>ts<span class="token punctuation">,</span> INTERVAL <span class="token string">'30'</span> SECOND<span class="token punctuation">)</span><span class="token punctuation">,</span> username
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><a target="_blank" rel="noopener" href="https://help.aliyun.com/document_detail/62513.html?spm=a2c4g.11186623.6.656.781b3d4249MJZT">具体参考阿里云</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -699,286 +1195,6 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-zhong-zhuang-tai-guan-li/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/flink-zhong-zhuang-tai-guan-li/" class="post-title-link" itemprop="url">flink中状态管理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-25 09:41:54" itemprop="dateCreated datePublished" datetime="2020-03-25T09:41:54+08:00">2020-03-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="流处理状态管理"><a href="#流处理状态管理" class="headerlink" title="流处理状态管理"></a>流处理状态管理</h3><p>有状态的计算是流处理框架要实现的重要功能，因为稍复杂的流处理场景都需要记录状态，然后在新流入数据的基础上不断更新状态。下面的几个场景都需要使用流处理的状态功能：</p>
-<ul>
-<li>数据流中的数据有重复，我们想对重复数据去重，需要记录哪些数据已经流入过应用，当新数据流入时，根据已流入过的数据来判断去重。</li>
-<li>检查输入流是否符合某个特定的模式，需要将之前流入的元素以状态的形式缓存下来。比如，判断一个温度传感器数据流中的温度是否在持续上升。</li>
-<li>对一个时间窗口内的数据进行聚合分析，分析一个小时内某项指标的75分位或99分位的数值。</li>
-<li>在线机器学习场景下，需要根据新流入数据不断更新机器学习的模型参数。</li>
-</ul>
-<h3 id="flink状态管理"><a href="#flink状态管理" class="headerlink" title="flink状态管理"></a>flink状态管理</h3><p>Flink的一个算子有多个子任务，每个子任务分布在不同实例上，我们可以把状态理解为某个算子子任务在其当前实例上的一个变量，变量记录了数据流的历史信息。当新数据流入时，我们可以结合历史信息来进行计算。实际上，Flink的状态是由算子的子任务来创建和管理的。一个状态更新和获取的流程如下图所示，一个算子子任务接收输入流，获取对应的状态，根据新的计算结果更新状态。一个简单的例子是对一个时间窗口内输入流的某个整数字段求和，那么当算子子任务接收到新元素时，会获取已经存储在状态中的数值，然后将当前输入加到状态上，并将状态数据更新。<br><img data-src="/images/flink20.png" alt="状态管理"></p>
-<p>获取和更新状态的逻辑其实并不复杂，但流处理框架还需要解决以下几类问题：</p>
-<ul>
-<li>数据的产出要保证实时性，延迟不能太高。</li>
-<li>需要保证数据不丢不重，恰好计算一次，尤其是当状态数据非常大或者应用出现故障需要恢复时，要保证状态的计算不出任何错误。</li>
-<li>一般流处理任务都是7*24小时运行的，程序的可靠性非常高。</li>
-</ul>
-<p>基于上述要求，我们不能将状态直接交由内存管理，因为内存的容量是有限制的，当状态数据稍微大一些时，就会出现内存不够的问题。作为一个计算框架，Flink提供了有状态的计算，封装了一些底层的实现，比如状态的高效存储、Checkpoint和Savepoint持久化备份机制、计算资源扩缩容等问题。因为Flink接管了这些问题，开发者只需调用Flink API，这样可以更加专注于业务逻辑。</p>
-<h3 id="Flink的几种状态类型"><a href="#Flink的几种状态类型" class="headerlink" title="Flink的几种状态类型"></a>Flink的几种状态类型</h3><h4 id="Managed-State和Raw-State"><a href="#Managed-State和Raw-State" class="headerlink" title="Managed State和Raw State"></a>Managed State和Raw State</h4><p>Flink有两种基本类型的状态：托管状态（Managed State）和原生状态（Raw State）。从名称中也能读出两者的区别：Managed State是由Flink管理的，Flink帮忙存储、恢复和优化，Raw State是开发者自己管理的，需要自己序列化。</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Managed State</th>
-<th>Raw State</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>状态管理方式</td>
-<td>Flink Runtime自动管理，自动存储，自动恢复，内存管理优化</td>
-<td>用户自己管理；需要自己序列化</td>
-</tr>
-<tr>
-<td>状态数据结构</td>
-<td>已知的数据结构：value，list，map…</td>
-<td>字节数组：byte[]</td>
-</tr>
-<tr>
-<td>推荐使用场景</td>
-<td>大多数场景</td>
-<td>自定义Operator时可使用</td>
-</tr>
-</tbody></table>
-<p>两者的具体区别有：</p>
-<ul>
-<li>从状态管理的方式上来说，Managed State由Flink Runtime托管，状态是自动存储、自动恢复的，Flink在存储管理和持久化上做了一些优化。当我们横向伸缩，或者说我们修改Flink应用的并行度时，状态也能自动重新分布到多个并行实例上。Raw State是用户自定义的状态。</li>
-<li>从状态的数据结构上来说，Managed State支持了一系列常见的数据结构，如ValueState、ListState、MapState等。Raw State只支持字节，任何上层数据结构需要序列化为字节数组。使用时，需要用户自己序列化，以非常底层的字节数组形式存储，Flink并不知道存储的是什么样的数据结构。</li>
-<li>从具体使用场景来说，绝大多数的算子都可以通过继承Rich函数类或其他提供好的接口类，在里面使用Managed State。Raw State是在已有算子和Managed State不够用时，用户自定义算子时使用。</li>
-</ul>
-<h4 id="Keyed-State和Operator-State"><a href="#Keyed-State和Operator-State" class="headerlink" title="Keyed State和Operator State"></a>Keyed State和Operator State</h4><p>对Managed State继续细分，它又有两种类型：Keyed State和Operator State。</p>
-<h4 id="Keyed-State"><a href="#Keyed-State" class="headerlink" title="Keyed State"></a><strong>Keyed State</strong></h4><p>Keyed State是<code>KeyedStream</code>上的状态。假如输入流按照id为Key进行了keyBy分组，形成一个KeyedStream，数据流中所有id为1的数据共享一个状态，可以访问和更新这个状态，以此类推，每个Key对应一个自己的状态。下图展示了Keyed State，因为一个算子子任务可以处理一到多个Key，算子子任务1处理了两种Key，两种Key分别对应自己的状态。</p>
-<p><img data-src="/images/flink21.png" alt="状态管理"></p>
-<h4 id="Operator-State"><a href="#Operator-State" class="headerlink" title="Operator State"></a><strong>Operator State</strong></h4><p>Operator State可以用在所有算子上，每个算子子任务或者说每个算子实例共享一个状态，流入这个算子子任务的数据可以访问和更新这个状态。下图展示了Operator State，算子子任务1上的所有数据可以共享第一个Operator State，以此类推，每个算子子任务上的数据共享自己的状态。</p>
-<p><img data-src="/images/flink22.png" alt="状态管理"></p>
-<p>无论是Keyed State还是Operator State，Flink的状态都是基于本地的，即每个算子子任务维护着这个算子子任务对应的状态存储，算子子任务之间的状态不能相互访问。</p>
-<p>在之前各算子的介绍中曾提到，为了自定义Flink的算子，我们可以重写Rich Function接口类，比如<code>RichFlatMapFunction</code>。使用Keyed State时，我们也可以通过重写<code>Rich Function</code>接口类，在里面创建和访问状态。对于Operator State，我们还需进一步实现<code>CheckpointedFunction</code>接口。</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Keyed State</th>
-<th>Operator State</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>适用算子类型</td>
-<td>只适用<code>keyedStream</code>上的算子</td>
-<td>适用所有算子</td>
-</tr>
-<tr>
-<td>状态分配</td>
-<td>每一个key对应一个状态</td>
-<td>一个算子上的子任务对应一个状态</td>
-</tr>
-<tr>
-<td>创建和访问方式</td>
-<td>重写<code>Rich Function</code>,通过里面的<code>RuntimeContext</code>访问</td>
-<td>实现<code>CheckpointedFunction</code>或<code>ListCheckpointed</code>接口</td>
-</tr>
-<tr>
-<td>横向扩展</td>
-<td>状态随着key自动在多个算子子任务上迁移</td>
-<td>有多种状态重新分配的方式:均匀分配、合并后每个得到全量</td>
-</tr>
-<tr>
-<td>支持的数据结构</td>
-<td><code>ValueState</code>、<code>ListState</code>、<code>MapState</code>、<code>ReducingState</code>等</td>
-<td><code>ListState</code></td>
-</tr>
-</tbody></table>
-<h4 id="几种KeyedState之间的关系"><a href="#几种KeyedState之间的关系" class="headerlink" title="几种KeyedState之间的关系"></a>几种KeyedState之间的关系</h4><p><img data-src="/images/flink23.png" alt="状态管理"></p>
-<h4 id="几种KeyedState之间的差异"><a href="#几种KeyedState之间的差异" class="headerlink" title="几种KeyedState之间的差异"></a>几种KeyedState之间的差异</h4><p><img data-src="/images/flink24.png" alt="状态管理"></p>
-<h3 id="状态的保存与恢复"><a href="#状态的保存与恢复" class="headerlink" title="状态的保存与恢复"></a>状态的保存与恢复</h3><p><img data-src="/images/flink25.png" alt="状态管理"></p>
-<h3 id="可选的状态存储方式"><a href="#可选的状态存储方式" class="headerlink" title="可选的状态存储方式"></a>可选的状态存储方式</h3><h4 id="MemoryStateBackend"><a href="#MemoryStateBackend" class="headerlink" title="MemoryStateBackend"></a>MemoryStateBackend</h4><p>Checkpoint 的存储，第一种是内存存储，即 <code>MemoryStateBackend</code>，构造方法是设置最大的StateSize，选择是否做异步快照，这种存储状态本身存储在 TaskManager 节点也就是执行节点内存中的，因为内存有容量限制，所以单个 State maxStateSize 默认 5 M，且需要注意 maxStateSize &lt;= akka.framesize 默认 10 M。Checkpoint 存储在 JobManager 内存中，因此总大小不超过 JobManager 的内存。<strong>推荐使用的场景为：本地测试、几乎无状态的作业，比如 ETL、JobManager 不容易挂，或挂掉影响不大的情况。不推荐在生产场景使用</strong>。</p>
-<h4 id="FsStateBackend"><a href="#FsStateBackend" class="headerlink" title="FsStateBackend"></a>FsStateBackend</h4><p>在文件系统上的 <code>FsStateBackend</code> ，构建方法是需要传一个文件路径和是否异步快照。State 依然在 TaskManager 内存中，但不会像 MemoryStateBackend 有 5 M 的设置上限，Checkpoint 存储在外部文件系统（本地或 HDFS），打破了总大小 Jobmanager 内存的限制。容量限制上，单 TaskManager 上 State 总量不超过它的内存，总大小不超过配置的文件系统容量。<strong>推荐使用的场景、常规使用状态的作业、例如分钟级窗口聚合或 join、需要开启HA的作业</strong>。</p>
-<h4 id="RocksDBStateBacked"><a href="#RocksDBStateBacked" class="headerlink" title="RocksDBStateBacked"></a>RocksDBStateBacked</h4><p>还有一种存储为 <code>RocksDBStateBackend</code> ，RocksDB 是一个 key/value 的内存存储系统，和其他的 key/value 一样，先将状态放到内存中，如果内存快满时，则写入到磁盘中，但需要注意 <strong>RocksDB 不支持同步的 Checkpoint</strong>，构造方法中没有同步快照这个选项。不过 <strong>RocksDB 支持增量的 Checkpoint</strong>，也是目前唯一增量 Checkpoint 的 Backend，意味着并不需要把所有 sst 文件上传到 Checkpoint 目录，仅需要上传新生成的 sst 文件即可。它的 Checkpoint 存储在外部文件系统（本地或HDFS），其容量限制只要单个 TaskManager 上 State 总量不超过它的内存+磁盘，单 Key最大 2G，总大小不超过配置的文件系统容量即可。<strong>推荐使用的场景为：超大状态的作业，例如天级窗口聚合、需要开启 HA 的作业、最好是对状态读写性能要求不高的作业</strong>。</p>
-<h4 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h4><ul>
-<li><p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/JLl-LMjcnVrIyHCCq7Yv7A">Flink状态管理详解：Keyed State和Operator List State深度解析</a></p>
-</li>
-<li><p><a target="_blank" rel="noopener" href="https://ververica.cn/developers/state-management/">Apache Flink 零基础入门（七）：状态管理及容错机制</a></p>
-</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://happywzy.top/flink-zhong-processfunction/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="wuzhiyong">
-      <meta itemprop="description" content="日常学习笔记,共同进步">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Happywzy">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/flink-zhong-processfunction/" class="post-title-link" itemprop="url">flink中ProcessFunction</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-25 09:20:32" itemprop="dateCreated datePublished" datetime="2020-03-25T09:20:32+08:00">2020-03-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/flink/" itemprop="url" rel="index"><span itemprop="name">flink</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="ProcessFunction简介"><a href="#ProcessFunction简介" class="headerlink" title="ProcessFunction简介"></a>ProcessFunction简介</h3><p><code>ProcessFunction</code>是flink中最底层的API。<br><img data-src="/images/flink26.png" alt="low-api"></p>
-<p>Flink的一些算子和函数能够进行一些时间上的操作，但是不能获取算子当前的<code>Processing Time</code>或者是<code>Watermark时间戳</code>，调用起来简单但功能相对受限。如果想获取数据流中Watermark的时间戳，或者在时间上前后穿梭，需要使用<code>ProcessFunction</code>系列函数，它们是Flink体系中<strong>最底层的API</strong>，提供了对数据流<strong>更细粒度的操作权限</strong>。Flink SQL是基于这些函数实现的，一些需要高度个性化的业务场景也需要使用这些函数。</p>
-<p>目前，这个系列函数主要包括<code>KeyedProcessFunction</code>、<code>ProcessFunction</code>、<code>CoProcessFunction</code>、<code>KeyedCoProcessFunction</code>、<code>ProcessJoinFunction</code>和<code>ProcessWindowFunction</code>等多种函数，这些函数各有侧重，但核心功能比较相似，主要包括两点：</p>
-<ul>
-<li>状态：我们可以在这些函数中访问和更新<code>Keyed State</code>。</li>
-<li>定时器（Timer）：像定闹钟一样设置定时器，我们可以在时间维度上设计更复杂的业务逻辑。使用前先在Timer中注册一个未来的时间，当这个时间到达，闹钟会“响起”，程序会执行一个回调函数，回调函数中执行一定的业务逻辑。</li>
-</ul>
-<h3 id="ProcessFunction使用"><a href="#ProcessFunction使用" class="headerlink" title="ProcessFunction使用"></a>ProcessFunction使用</h3><p><code>ProcessFunction</code>有两个重要的接口<code>processElement</code>和<code>onTimer</code></p>
-<p>其中processElement函数在源码中的Java签名如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 处理数据流中的一条元素</span>
-<span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">void</span> <span class="token function">processElement</span><span class="token punctuation">(</span>I value<span class="token punctuation">,</span> Context ctx<span class="token punctuation">,</span> Collector<span class="token operator">&lt;</span>O<span class="token operator">></span> out<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p><code>processElement</code>方法处理数据流中的一条元素，并通过<code>Collector&lt;O&gt;</code>输出出来。<code>Context</code>是它的区别于<code>FlatMapFunction</code>等普通函数的特色，<strong>开发者可以通过Context来获取时间戳，访问<code>TimerService</code>，设置Timer</strong>。</p>
-<p>另外一个接口是<code>onTimer</code>：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 时间到达后的回调函数</span>
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onTimer</span><span class="token punctuation">(</span><span class="token keyword">long</span> timestamp<span class="token punctuation">,</span> OnTimerContext ctx<span class="token punctuation">,</span> Collector<span class="token operator">&lt;</span>O<span class="token operator">></span> out<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>这是一个回调函数，当到了“闹钟”时间，<code>Flink</code>会调用<code>onTimer</code>，并执行一些业务逻辑。这里也有一个参数<code>OnTimerContext</code>，它实际上是继承了前面的<code>Context</code>，与<code>Context</code>几乎相同。</p>
-<p>使用Timer的方法主要逻辑为：</p>
-<ol>
-<li>在<code>processElement</code>方法中通过<code>Context</code>注册一个未来的时间戳<code>t</code>。这个时间戳的语义可以是<code>Processing Time</code>，也可以是<code>Event Time</code>，根据业务需求来选择。</li>
-<li>在<code>onTimer</code>方法中实现一些逻辑，到达<code>t</code>时刻，<code>onTimer</code>方法被自动调用。</li>
-</ol>
-<p><strong>获取、注册和删除<code>Timer</code></strong></p>
-<ul>
-<li><p>从<code>Context</code>中，我们可以获取一个<code>TimerService</code>，这是一个访问时间戳和Timer的接口。</p>
-</li>
-<li><p>我们可以通过<code>Context.timerService.registerProcessingTimeTimer</code>或<code>Context.timerService.registerEventTimeTimer</code>这两个方法来注册<code>Timer</code>，只需要传入一个时间戳即可。</p>
-</li>
-<li><p>我们可以通过<code>Context.timerService.deleteProcessingTimeTimer</code>和<code>Context.timerService.deleteEventTimeTimer</code>来删除之前注册的Timer。</p>
-</li>
-<li><p>此外，还可以从中获取当前的时间戳：<code>Context.timerService.currentProcessingTime</code>和<code>Context.timerService.currentWatermark</code>。</p>
-</li>
-</ul>
-<blockquote>
-<p>注意，我们只能在KeyedStream上注册Timer。每个Key下可以使用不同的时间戳注册不同的Timer，但是每个Key的每个时间戳只能注册一个Timer。如果想在一个DataStream上应用Timer，可以将所有数据映射到一个伪造的Key上，但这样所有数据会流入一个算子子任务。</p>
-</blockquote>
-<blockquote>
-<p>Flink 框架会自动忽略同一时间的重复注册Timer。</p>
-</blockquote>
-<h3 id="使用ProcessFunction实现Join"><a href="#使用ProcessFunction实现Join" class="headerlink" title="使用ProcessFunction实现Join"></a>使用ProcessFunction实现Join</h3><p>如果想从更细的粒度上实现两个数据流的<code>Join</code>，可以使用<code>CoProcessFunction</code>或<code>KeyedCoProcessFunction</code>。这两个函数都有<code>processElement1</code>和<code>processElement2</code>方法，分别对第一个数据流和第二个数据流的每个元素进行处理。两个数据流的数据类型以及输出类型可以互不相同。尽管数据来自两个不同的流，但是他们可以共享同样的状态，所以可以参考下面的逻辑来实现<code>Join</code>：</p>
-<ul>
-<li>创建一到多个状态，两个数据流都能访问到这些状态，这里以状态<code>a</code>为例。</li>
-<li><code>processElement1</code>方法处理第一个数据流，更新状态<code>a</code>。</li>
-<li><code>processElement2</code>方法处理第二个数据流，根据状态<code>a</code>中的数据，生成相应的输出。</li>
-</ul>
-<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://juejin.im/post/5e3a7ebfe51d4526e03f8f8f">ProcessFunction：Flink最底层API使用教程</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1050,20 +1266,20 @@ org.apache.calcite.sql.validate.SqlValidatorException: Cannot apply 'TO_TIMESTAM
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">391</span>
+          <span class="site-state-item-count">393</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-count">61</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">239</span>
+        <span class="site-state-item-count">241</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
